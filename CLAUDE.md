@@ -5,19 +5,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Development Commands
 
 ```bash
-# Type checking
-bun run check
+bun run check          # Type checking
+bun run format         # Format code with Prettier
+bun run test           # Run tests (vitest)
+bun run compile        # Compile to single executable
 
-# Format code
-bun run format
-
-# Compile to single executable
-bun run compile
-
-# Run tests (when implemented)
-bun run test
-
-# Run the CLI directly
+# Run CLI directly
 bun apps/cli/bin/autonoe.ts run
 ```
 
@@ -37,25 +30,28 @@ apps/cli (Presentation)  →  packages/core (Application/Domain/Infrastructure)
 
 ### Packages
 
-- `@autonoe/cli` - Entry point, argument parsing with CAC
-- `@autonoe/core` - Session orchestration, AgentClient, BashSecurity, StatusTool, prompts
+- `@autonoe/cli` - Entry point, argument parsing with CAC (`apps/cli/bin/autonoe.ts`)
+- `@autonoe/core` - Session orchestration, exports `runSession()` and types
 
-### Configuration Sources (merge order)
+### Testing
 
-1. Hardcoded defaults (sandbox, built-in MCP servers)
-2. Security baseline (always enforced)
-3. User config (`.autonoe/agent.json`) - merged, cannot override security
+Tests use Vitest with workspace configuration (`vitest.workspace.ts`). Each package can have its own `vitest.config.ts`.
+
+```bash
+bun run test                           # Run all tests
+bun run test packages/core             # Run tests for a specific package
+```
 
 ## Conventions
 
 - **Formatting**: Prettier with `semi: false`, `singleQuote: true`
 - **Commits**: Conventional commits format
 - **TypeScript**: Strict mode, ESNext target/module
-- **Prompts**: Markdown files imported via `with { type: 'text' }`
+- **Prompts**: Markdown files imported via `with { type: 'text' }` (requires `markdown.d.ts`)
 
-## Security Model
+## Security Model (Target Architecture)
 
-The agent operates under three security layers:
+The agent will operate under three security layers:
 
 1. OS sandbox (SDK)
 2. Filesystem scope limited to project directory
@@ -65,4 +61,4 @@ The agent operates under three security layers:
 
 ## Specification
 
-`SPEC.md` is the single source of truth for requirements, interfaces, and scenarios. It defines the complete system architecture and expected behavior.
+`SPEC.md` is the single source of truth for requirements, interfaces, and scenarios. Always consult it when implementing new features.
