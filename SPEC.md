@@ -49,6 +49,7 @@
 | Runtime         | Bun >= 1.3                     |
 | Language        | TypeScript >= 5.9              |
 | Agent SDK       | @anthropic-ai/claude-agent-sdk |
+| CLI Framework   | CAC                            |
 | Package Manager | Bun Workspaces                 |
 | Distribution    | Bun Single Executable          |
 | Container       | Docker                         |
@@ -550,7 +551,8 @@ Tools available to the Coding Agent (configured by Autonoe):
     "autonoe": "./bin/autonoe.ts"
   },
   "dependencies": {
-    "@autonoe/core": "workspace:*"
+    "@autonoe/core": "workspace:*",
+    "cac": "^6.7.14"
   }
 }
 ```
@@ -626,6 +628,33 @@ Options:
 - Reads `SPEC.md` for project specification
 - Recommends using Gherkin (`.feature` files) to define acceptance criteria
 - Agent SDK auto-detects API credentials
+
+### 10.3 Implementation
+
+Uses CAC for argument parsing. CAC was chosen for:
+- Zero nested dependencies (single file)
+- TypeScript-first design
+- Minimal API (4 methods)
+- Automatic help/version generation
+
+```typescript
+// apps/cli/bin/autonoe.ts
+import cac from 'cac'
+
+const cli = cac('autonoe')
+
+cli
+  .command('run', 'Run the coding agent')
+  .option('-n, --max-iterations <count>', 'Maximum coding sessions')
+  .option('-m, --model <model>', 'Claude model to use')
+  .action((options) => {
+    // Run session with options
+  })
+
+cli.help()
+cli.version('0.1.0')
+cli.parse()
+```
 
 ---
 

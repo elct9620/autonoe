@@ -6,6 +6,7 @@
     "autonoe": "./bin/autonoe.ts"
   },
   "dependencies": {
-    "@autonoe/core": "workspace:*"
+    "@autonoe/core": "workspace:*",
+    "cac": "^6.7.14"
   }
 }
