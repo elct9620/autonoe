@@ -628,6 +628,7 @@ Options:
 - Reads `SPEC.md` for project specification
 - Recommends using Gherkin (`.feature` files) to define acceptance criteria
 - Agent SDK auto-detects API credentials
+- Shows help message when no command is provided
 
 ### 10.3 Implementation
 
