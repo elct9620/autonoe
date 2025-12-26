@@ -2,7 +2,10 @@
   "name": "autonoe",
   "type": "module",
   "private": true,
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "format": "prettier --write .",
     "check": "tsc --noEmit",

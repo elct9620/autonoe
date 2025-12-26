@@ -44,8 +44,8 @@
 
 ### 1.2 Technology Stack
 
-| Component       | Technology                      |
-|-----------------|--------------------------------|
+| Component       | Technology                     |
+| --------------- | ------------------------------ |
 | Runtime         | Bun >= 1.3                     |
 | Language        | TypeScript >= 5.9              |
 | Agent SDK       | @anthropic-ai/claude-agent-sdk |
@@ -59,11 +59,11 @@
 
 ### 1.3 Coding Agent Tools (MCP Servers)
 
-| Tool            | MCP Server      | Purpose                    |
-|-----------------|-----------------|----------------------------|
-| Browser         | Playwright MCP  | E2E testing via browser    |
-| File System     | Built-in        | Read/Write project files   |
-| Bash            | Built-in        | Execute allowed commands   |
+| Tool        | MCP Server     | Purpose                  |
+| ----------- | -------------- | ------------------------ |
+| Browser     | Playwright MCP | E2E testing via browser  |
+| File System | Built-in       | Read/Write project files |
+| Bash        | Built-in       | Execute allowed commands |
 
 ### 1.4 Project Structure
 
@@ -248,23 +248,23 @@ interface StatusTool {
 
 ### 4.1 Playwright MCP Tools
 
-| Tool                                   | Description                |
-|----------------------------------------|----------------------------|
-| mcp__playwright__browser_navigate      | Navigate to URL            |
-| mcp__playwright__browser_snapshot      | Get accessibility tree     |
-| mcp__playwright__browser_click         | Click element by ref       |
-| mcp__playwright__browser_fill_form     | Fill form fields           |
-| mcp__playwright__browser_select_option | Select dropdown option     |
-| mcp__playwright__browser_hover         | Hover over element         |
-| mcp__playwright__browser_type          | Type text                  |
-| mcp__playwright__browser_press_key     | Press keyboard key         |
-| mcp__playwright__browser_wait_for      | Wait for condition         |
-| mcp__playwright__browser_verify_element_visible | Assert element visible |
-| mcp__playwright__browser_verify_text_visible | Assert text visible   |
-| mcp__playwright__browser_handle_dialog | Handle dialog              |
-| mcp__playwright__browser_console_messages | Get console logs        |
-| mcp__playwright__browser_evaluate      | Execute JavaScript         |
-| mcp__playwright__browser_close         | Close browser              |
+| Tool                                            | Description            |
+| ----------------------------------------------- | ---------------------- |
+| mcp**playwright**browser_navigate               | Navigate to URL        |
+| mcp**playwright**browser_snapshot               | Get accessibility tree |
+| mcp**playwright**browser_click                  | Click element by ref   |
+| mcp**playwright**browser_fill_form              | Fill form fields       |
+| mcp**playwright**browser_select_option          | Select dropdown option |
+| mcp**playwright**browser_hover                  | Hover over element     |
+| mcp**playwright**browser_type                   | Type text              |
+| mcp**playwright**browser_press_key              | Press keyboard key     |
+| mcp**playwright**browser_wait_for               | Wait for condition     |
+| mcp**playwright**browser_verify_element_visible | Assert element visible |
+| mcp**playwright**browser_verify_text_visible    | Assert text visible    |
+| mcp**playwright**browser_handle_dialog          | Handle dialog          |
+| mcp**playwright**browser_console_messages       | Get console logs       |
+| mcp**playwright**browser_evaluate               | Execute JavaScript     |
+| mcp**playwright**browser_close                  | Close browser          |
 
 ### 4.2 Verification Flow
 
@@ -307,11 +307,11 @@ project/
 
 ### 5.3 State Persistence
 
-| State                  | Writer                        | Reader |
-|------------------------|-------------------------------|--------|
-| Project Files          | Coding Agent (Direct)         | Both   |
-| .autonoe/status.json   | Coding Agent (via StatusTool) | Both   |
-| Git History            | Coding Agent (Direct)         | Both   |
+| State                | Writer                        | Reader |
+| -------------------- | ----------------------------- | ------ |
+| Project Files        | Coding Agent (Direct)         | Both   |
+| .autonoe/status.json | Coding Agent (via StatusTool) | Both   |
+| Git History          | Coding Agent (Direct)         | Both   |
 
 ### 5.4 Configuration
 
@@ -338,13 +338,13 @@ project/
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-| Setting | Source | Customizable | Note |
-|---------|--------|--------------|------|
-| sandbox | Hardcoded | NO | Always enabled |
-| permissions | agent.json | YES | Autonoe enforces security baseline |
-| hooks | agent.json | YES | Autonoe enforces security baseline |
-| mcpServers (built-in) | Hardcoded | NO | |
-| mcpServers (custom) | agent.json | YES | |
+| Setting               | Source     | Customizable | Note                               |
+| --------------------- | ---------- | ------------ | ---------------------------------- |
+| sandbox               | Hardcoded  | NO           | Always enabled                     |
+| permissions           | agent.json | YES          | Autonoe enforces security baseline |
+| hooks                 | agent.json | YES          | Autonoe enforces security baseline |
+| mcpServers (built-in) | Hardcoded  | NO           |                                    |
+| mcpServers (custom)   | agent.json | YES          |                                    |
 
 **agent.json Structure:**
 
@@ -379,34 +379,34 @@ Load hardcoded ──▶ Load security baseline ──▶ Read agent.json ──
 
 Autonoe applies the following controls when creating the Coding Agent:
 
-| Control               | Method              | Description                        |
-|-----------------------|---------------------|------------------------------------|
-| OS-Level Sandbox      | SDK Configuration   | Isolates agent execution           |
-| Filesystem Scope      | SDK Permissions     | Limits to project directory        |
-| Bash Allowlist        | PreToolUse Hook     | Filters unsafe commands            |
-| .autonoe/ Protection  | PreToolUse Hook     | Blocks direct writes               |
+| Control              | Method            | Description                 |
+| -------------------- | ----------------- | --------------------------- |
+| OS-Level Sandbox     | SDK Configuration | Isolates agent execution    |
+| Filesystem Scope     | SDK Permissions   | Limits to project directory |
+| Bash Allowlist       | PreToolUse Hook   | Filters unsafe commands     |
+| .autonoe/ Protection | PreToolUse Hook   | Blocks direct writes        |
 
 ### 6.2 Coding Agent Restrictions
 
 The Coding Agent operates under these constraints:
 
-| Resource        | Direct Access | Tool Access         | Enforcement                       |
-|-----------------|---------------|---------------------|-----------------------------------|
-| Project Files   | R/W           | -                   | SDK permissions                   |
-| .autonoe/       | Read-only     | Write (StatusTool)  | PreToolUse hook blocks direct W/E |
-| Bash Commands   | -             | Limited allowlist   | BashSecurity hook                 |
+| Resource      | Direct Access | Tool Access        | Enforcement                       |
+| ------------- | ------------- | ------------------ | --------------------------------- |
+| Project Files | R/W           | -                  | SDK permissions                   |
+| .autonoe/     | Read-only     | Write (StatusTool) | PreToolUse hook blocks direct W/E |
+| Bash Commands | -             | Limited allowlist  | BashSecurity hook                 |
 
 ### 6.3 Allowed Commands
 
-| Category   | Commands                                    |
-|------------|---------------------------------------------|
-| Navigation | ls, pwd, cd, cat, head, tail, find, grep   |
-| File Ops   | mkdir, cp                                   |
-| Git        | git                                         |
-| Node.js    | node, npm, npx                              |
-| Build      | tsc, esbuild, vite                          |
-| Test       | jest, vitest, playwright                    |
-| Process    | echo, which                                 |
+| Category   | Commands                                 |
+| ---------- | ---------------------------------------- |
+| Navigation | ls, pwd, cd, cat, head, tail, find, grep |
+| File Ops   | mkdir, cp                                |
+| Git        | git                                      |
+| Node.js    | node, npm, npx                           |
+| Build      | tsc, esbuild, vite                       |
+| Test       | jest, vitest, playwright                 |
+| Process    | echo, which                              |
 
 ---
 
@@ -414,19 +414,19 @@ The Coding Agent operates under these constraints:
 
 ### 7.1 Session Behavior
 
-| .autonoe/status.json | Action                              |
-|----------------------|-------------------------------------|
-| NOT EXISTS           | Use initializerPrompt               |
-| EXISTS (no passed)   | Run all scenarios                   |
-| EXISTS (partial)     | Run scenarios with passed=false     |
-| EXISTS (all passed)  | Complete, exit                      |
+| .autonoe/status.json | Action                          |
+| -------------------- | ------------------------------- |
+| NOT EXISTS           | Use initializerPrompt           |
+| EXISTS (no passed)   | Run all scenarios               |
+| EXISTS (partial)     | Run scenarios with passed=false |
+| EXISTS (all passed)  | Complete, exit                  |
 
 ### 7.2 Coding Agent Tool Availability
 
 Tools available to the Coding Agent (configured by Autonoe):
 
 | Tool Category | Available |
-|---------------|-----------|
+| ------------- | --------- |
 | File Read     | YES       |
 | File Write    | YES       |
 | Bash (safe)   | YES       |
@@ -436,20 +436,20 @@ Tools available to the Coding Agent (configured by Autonoe):
 
 ### 7.3 Prompt Selection
 
-| Condition                     | Prompt Used       |
-|-------------------------------|-------------------|
-| No .autonoe/status.json       | initializerPrompt |
-| .autonoe/status.json exists   | codingPrompt      |
+| Condition                   | Prompt Used       |
+| --------------------------- | ----------------- |
+| No .autonoe/status.json     | initializerPrompt |
+| .autonoe/status.json exists | codingPrompt      |
 
 ### 7.4 Configuration Merge
 
-| User Config (agent.json)       | Autonoe Behavior                              |
-|--------------------------------|-----------------------------------------------|
-| Custom permissions             | Merge with security baseline                  |
-| Custom hooks                   | Merge with security baseline                  |
-| Custom mcpServers              | Merge with built-in servers                   |
-| Disable sandbox                | Ignored, always enabled                       |
-| Remove .autonoe/ protection    | Re-apply security baseline                    |
+| User Config (agent.json)    | Autonoe Behavior             |
+| --------------------------- | ---------------------------- |
+| Custom permissions          | Merge with security baseline |
+| Custom hooks                | Merge with security baseline |
+| Custom mcpServers           | Merge with built-in servers  |
+| Disable sandbox             | Ignored, always enabled      |
+| Remove .autonoe/ protection | Re-apply security baseline   |
 
 ---
 
@@ -457,52 +457,52 @@ Tools available to the Coding Agent (configured by Autonoe):
 
 ### 8.1 Session Scenarios
 
-| ID      | Input                        | Expected Output                    |
-|---------|------------------------------|------------------------------------|
-| SC-S001 | Project with SPEC.md         | Session starts successfully        |
-| SC-S002 | No .autonoe/status.json      | Use initializerPrompt              |
-| SC-S003 | All scenarios passed         | Session completes with success     |
-| SC-S004 | Max iterations reached       | Session stops, partial progress    |
-| SC-S005 | Agent interruption           | Session stops cleanly              |
+| ID      | Input                   | Expected Output                 |
+| ------- | ----------------------- | ------------------------------- |
+| SC-S001 | Project with SPEC.md    | Session starts successfully     |
+| SC-S002 | No .autonoe/status.json | Use initializerPrompt           |
+| SC-S003 | All scenarios passed    | Session completes with success  |
+| SC-S004 | Max iterations reached  | Session stops, partial progress |
+| SC-S005 | Agent interruption      | Session stops cleanly           |
 
 ### 8.2 Security Scenarios
 
-| ID      | Input                              | Expected Output                    |
-|---------|------------------------------------|------------------------------------|
-| SC-X001 | Allowed: `npm install`             | Command executed                   |
-| SC-X002 | Blocked: `rm -rf /`                | Command denied                     |
-| SC-X003 | File read outside project          | Permission denied                  |
-| SC-X004 | Chained with blocked cmd           | Entire command denied              |
-| SC-X005 | Direct write to .autonoe/          | Permission denied (PreToolUse)     |
-| SC-X006 | Direct edit .autonoe/status.json   | Permission denied (PreToolUse)     |
-| SC-X007 | StatusTool update status.json      | Allowed                            |
+| ID      | Input                            | Expected Output                |
+| ------- | -------------------------------- | ------------------------------ |
+| SC-X001 | Allowed: `npm install`           | Command executed               |
+| SC-X002 | Blocked: `rm -rf /`              | Command denied                 |
+| SC-X003 | File read outside project        | Permission denied              |
+| SC-X004 | Chained with blocked cmd         | Entire command denied          |
+| SC-X005 | Direct write to .autonoe/        | Permission denied (PreToolUse) |
+| SC-X006 | Direct edit .autonoe/status.json | Permission denied (PreToolUse) |
+| SC-X007 | StatusTool update status.json    | Allowed                        |
 
 ### 8.3 Browser Scenarios
 
-| ID      | Input                        | Expected Output                    |
-|---------|------------------------------|------------------------------------|
-| SC-B001 | Navigate to localhost        | Page loaded                        |
-| SC-B002 | Click without snapshot       | Error: snapshot required           |
-| SC-B003 | Form submission              | Form submitted, verified           |
-| SC-B004 | Text verification            | Assertion passes/fails             |
+| ID      | Input                  | Expected Output          |
+| ------- | ---------------------- | ------------------------ |
+| SC-B001 | Navigate to localhost  | Page loaded              |
+| SC-B002 | Click without snapshot | Error: snapshot required |
+| SC-B003 | Form submission        | Form submitted, verified |
+| SC-B004 | Text verification      | Assertion passes/fails   |
 
 ### 8.4 Status Tool Scenarios
 
-| ID      | Input                        | Expected Output                    |
-|---------|------------------------------|------------------------------------|
-| SC-T001 | Update status: passed=true   | status.json updated                |
-| SC-T002 | Update invalid scenario ID   | Error: scenario not found          |
+| ID      | Input                      | Expected Output           |
+| ------- | -------------------------- | ------------------------- |
+| SC-T001 | Update status: passed=true | status.json updated       |
+| SC-T002 | Update invalid scenario ID | Error: scenario not found |
 
 ### 8.5 Configuration Scenarios
 
-| ID      | Input                                    | Expected Output                     |
-|---------|------------------------------------------|-------------------------------------|
-| SC-C001 | No agent.json                            | Use hardcoded settings only         |
-| SC-C002 | User adds custom MCP server              | Merged with hardcoded mcpServers    |
-| SC-C003 | User adds custom permissions             | Merged, security baseline enforced  |
-| SC-C004 | User adds custom hooks                   | Merged, security baseline enforced  |
-| SC-C005 | User tries to disable sandbox            | Ignored, sandbox always enabled     |
-| SC-C006 | User tries to remove .autonoe protection | Security baseline re-applied        |
+| ID      | Input                                    | Expected Output                    |
+| ------- | ---------------------------------------- | ---------------------------------- |
+| SC-C001 | No agent.json                            | Use hardcoded settings only        |
+| SC-C002 | User adds custom MCP server              | Merged with hardcoded mcpServers   |
+| SC-C003 | User adds custom permissions             | Merged, security baseline enforced |
+| SC-C004 | User adds custom hooks                   | Merged, security baseline enforced |
+| SC-C005 | User tries to disable sandbox            | Ignored, sandbox always enabled    |
+| SC-C006 | User tries to remove .autonoe protection | Security baseline re-applied       |
 
 ---
 
@@ -597,10 +597,10 @@ ENTRYPOINT ["autonoe"]
 
 ### 9.6 Release Management
 
-| Tool           | Purpose                              |
-|----------------|--------------------------------------|
-| Release Please | Version management, CHANGELOG        |
-| GoReleaser     | Multi-platform binary distribution   |
+| Tool           | Purpose                            |
+| -------------- | ---------------------------------- |
+| Release Please | Version management, CHANGELOG      |
+| GoReleaser     | Multi-platform binary distribution |
 
 ```yaml
 # .github/workflows/release.yml
@@ -632,6 +632,7 @@ Options:
 ### 10.3 Implementation
 
 Uses CAC for argument parsing. CAC was chosen for:
+
 - Zero nested dependencies (single file)
 - TypeScript-first design
 - Minimal API (4 methods)
@@ -676,15 +677,15 @@ packages/core/
 
 ```typescript
 // packages/core/src/prompts.ts
-import initializerPrompt from "./prompts/initializer.md" with { type: "text" }
-import codingPrompt from "./prompts/coding.md" with { type: "text" }
+import initializerPrompt from './prompts/initializer.md' with { type: 'text' }
+import codingPrompt from './prompts/coding.md' with { type: 'text' }
 
 export { initializerPrompt, codingPrompt }
 ```
 
 ```typescript
 // packages/core/markdown.d.ts
-declare module "*.md" {
+declare module '*.md' {
   const content: string
   export default content
 }
@@ -692,7 +693,7 @@ declare module "*.md" {
 
 ### A.3 Prompt Usage
 
-| Prompt             | Condition                   |
-|--------------------|-----------------------------|
-| initializerPrompt  | No .autonoe/status.json     |
-| codingPrompt       | .autonoe/status.json exists |
+| Prompt            | Condition                   |
+| ----------------- | --------------------------- |
+| initializerPrompt | No .autonoe/status.json     |
+| codingPrompt      | .autonoe/status.json exists |
