@@ -56,6 +56,7 @@ apps/cli (Presentation)  →  packages/core (Application/Domain/Infrastructure)
 ## Security Model
 
 The agent operates under three security layers:
+
 1. OS sandbox (SDK)
 2. Filesystem scope limited to project directory
 3. Bash allowlist via PreToolUse hook

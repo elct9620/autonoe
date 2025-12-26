@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun init:*)",
+      "Bash(bun add:*)",
+      "Bash(bun install:*)",
+      "Bash(bun run tsc:*)",
+      "Bash(bun run check:*)",
+      "Bash(bun run format:*)",
+      "Bash(bun run compile:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read file_path; if echo \\\"$file_path\\\" | grep -q '\\\\.ts$'; then bun run format \\\"$file_path\\\"; fi; }"
+          }
+        ]
+      }
+    ]
+  }
+}
