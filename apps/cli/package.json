@@ -1,0 +1,11 @@
+{
+  "name": "@autonoe/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "autonoe": "./bin/autonoe.ts"
+  },
+  "dependencies": {
+    "@autonoe/core": "workspace:*"
+  }
+}
