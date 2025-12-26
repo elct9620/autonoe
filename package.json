@@ -7,13 +7,15 @@
     "apps/*"
   ],
   "scripts": {
+    "test": "vitest --run",
     "format": "prettier --write .",
     "check": "tsc --noEmit",
     "compile": "bun build apps/cli/bin/autonoe.ts --compile --outfile dist/autonoe"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "prettier": "^3.7.4"
+    "prettier": "^3.7.4",
+    "vitest": "^4.0.16"
   },
   "peerDependencies": {
     "typescript": "^5"
