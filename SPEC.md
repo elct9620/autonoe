@@ -264,20 +264,24 @@ Session(options) ──▶ run(client, logger) ──▶ client.query()
 
 ```typescript
 // packages/core/src/logger.ts
-type LogLevel = 'info' | 'debug'
+type LogLevel = 'info' | 'debug' | 'warning' | 'error'
 
 interface Logger {
   info(message: string): void
   debug(message: string): void
+  warn(message: string): void
+  error(message: string): void
 }
 
 const silentLogger: Logger
 ```
 
-| Level | Visibility        | Purpose                        |
-| ----- | ----------------- | ------------------------------ |
-| info  | Always            | Session status, configuration  |
-| debug | --debug flag only | Internal operations, tracing   |
+| Level   | Visibility        | Purpose                        |
+| ------- | ----------------- | ------------------------------ |
+| info    | Always            | Session status, configuration  |
+| debug   | --debug flag only | Internal operations, tracing   |
+| warning | Always            | Non-fatal issues, deprecations |
+| error   | Always            | Failures, critical errors      |
 
 | Layer        | Logger Usage                           |
 | ------------ | -------------------------------------- |
@@ -545,6 +549,8 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-L002 | TestLogger captures debug    | Message in entries with level   |
 | SC-L003 | silentLogger discards output | No side effects                 |
 | SC-L004 | Session uses injected logger | Messages captured in TestLogger |
+| SC-L005 | TestLogger captures warning  | Message in entries with level   |
+| SC-L006 | TestLogger captures error    | Message in entries with level   |
 
 ---
 

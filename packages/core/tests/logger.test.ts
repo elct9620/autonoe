@@ -9,6 +9,8 @@ describe('Logger', () => {
       expect(() => {
         silentLogger.info('test info message')
         silentLogger.debug('test debug message')
+        silentLogger.warn('test warning message')
+        silentLogger.error('test error message')
       }).not.toThrow()
     })
   })
@@ -37,6 +39,32 @@ describe('Logger', () => {
       expect(entries[0]).toEqual({
         level: 'debug',
         message: 'test debug message',
+      })
+    })
+
+    it('SC-L005: captures warning messages with level', () => {
+      const logger = new TestLogger()
+
+      logger.warn('test warning message')
+
+      const entries = logger.getEntries()
+      expect(entries).toHaveLength(1)
+      expect(entries[0]).toEqual({
+        level: 'warning',
+        message: 'test warning message',
+      })
+    })
+
+    it('SC-L006: captures error messages with level', () => {
+      const logger = new TestLogger()
+
+      logger.error('test error message')
+
+      const entries = logger.getEntries()
+      expect(entries).toHaveLength(1)
+      expect(entries[0]).toEqual({
+        level: 'error',
+        message: 'test error message',
       })
     })
 

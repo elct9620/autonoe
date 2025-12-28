@@ -7,6 +7,8 @@ const colors = {
   reset: '\x1b[0m',
   cyan: '\x1b[36m',
   gray: '\x1b[90m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
 }
 
 /**
@@ -38,5 +40,13 @@ export class ConsoleLogger implements Logger {
     if (this.showDebug) {
       console.log(`${colors.gray}[debug] ${message}${colors.reset}`)
     }
+  }
+
+  warn(message: string): void {
+    console.log(`${colors.yellow}${message}${colors.reset}`)
+  }
+
+  error(message: string): void {
+    console.log(`${colors.red}${message}${colors.reset}`)
   }
 }

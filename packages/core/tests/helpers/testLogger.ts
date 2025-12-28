@@ -23,6 +23,14 @@ export class TestLogger implements Logger {
     this.entries.push({ level: 'debug', message })
   }
 
+  warn(message: string): void {
+    this.entries.push({ level: 'warning', message })
+  }
+
+  error(message: string): void {
+    this.entries.push({ level: 'error', message })
+  }
+
   /**
    * Get all captured log entries
    */

@@ -50,11 +50,11 @@ export async function handleRunCommand(
     if (result.success) {
       logger.info('Session completed successfully')
     } else {
-      logger.info('Session completed with errors')
+      logger.error('Session completed with errors')
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    console.error('Error:', message)
+    logger.error(`Error: ${message}`)
     process.exit(1)
   }
 }

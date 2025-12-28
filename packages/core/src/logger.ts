@@ -2,7 +2,7 @@
  * Log levels for Autonoe output
  * @see SPEC.md Section 3.7
  */
-export type LogLevel = 'info' | 'debug'
+export type LogLevel = 'info' | 'debug' | 'warning' | 'error'
 
 /**
  * Logger interface for session output
@@ -20,6 +20,18 @@ export interface Logger {
    * Used for: internal operations, message tracing
    */
   debug(message: string): void
+
+  /**
+   * Log warning message (always shown)
+   * Used for: non-fatal issues, deprecations
+   */
+  warn(message: string): void
+
+  /**
+   * Log error message (always shown)
+   * Used for: failures, critical errors
+   */
+  error(message: string): void
 }
 
 /**
@@ -29,4 +41,6 @@ export interface Logger {
 export const silentLogger: Logger = {
   info: () => {},
   debug: () => {},
+  warn: () => {},
+  error: () => {},
 }
