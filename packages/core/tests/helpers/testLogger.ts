@@ -1,4 +1,4 @@
-import type { Logger, LogLevel } from '../src/logger'
+import type { Logger, LogLevel } from '../../src/logger'
 
 /**
  * A log entry captured by TestLogger

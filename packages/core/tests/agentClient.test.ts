@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { MockAgentClient } from './mockAgentClient'
-import { createMockTextMessage } from './fixtures'
+import { MockAgentClient, createMockTextMessage } from './helpers'
 
 describe('MockAgentClient', () => {
   let client: MockAgentClient

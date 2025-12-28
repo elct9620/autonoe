@@ -1,4 +1,4 @@
-import type { AgentClient, Query } from '../src/agentClient'
+import type { AgentClient, Query } from '../../src/agentClient'
 
 /**
  * Mock message type for testing

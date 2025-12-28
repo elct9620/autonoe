@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { silentLogger } from '../src/logger'
-import { TestLogger } from './testLogger'
+import { TestLogger } from './helpers'
 
 describe('Logger', () => {
   describe('silentLogger', () => {

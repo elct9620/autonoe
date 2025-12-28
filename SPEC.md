@@ -94,11 +94,12 @@ autonoe/
 │       │       ├── initializer.md
 │       │       └── coding.md
 │       └── tests/
-│           ├── session.test.ts
-│           ├── logger.test.ts
-│           ├── statusTool.test.ts
-│           ├── bashSecurity.test.ts
-│           └── testLogger.ts
+│           ├── *.test.ts
+│           └── helpers/
+│               ├── index.ts
+│               ├── mockAgentClient.ts
+│               ├── testLogger.ts
+│               └── fixtures.ts
 └── apps/
     └── cli/
         ├── package.json

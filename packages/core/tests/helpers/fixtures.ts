@@ -1,5 +1,5 @@
 import type { SessionOptions, SessionResult } from '../../src/index'
-import type { MockMessage } from '../mockAgentClient'
+import type { MockMessage } from './mockAgentClient'
 
 /**
  * Create a minimal valid SessionOptions for testing

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mockScenarios, createMockStatusJson } from './fixtures'
+import { mockScenarios, createMockStatusJson } from './helpers'
 
 // TODO: Import when StatusTool is implemented
 // import { StatusTool } from '../src/statusTool'

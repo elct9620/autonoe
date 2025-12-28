@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { Session } from '../src/session'
-import { MockAgentClient } from './mockAgentClient'
-import { createMockTextMessage } from './fixtures'
-import { TestLogger } from './testLogger'
+import {
+  MockAgentClient,
+  createMockTextMessage,
+  TestLogger,
+} from './helpers'
 
 describe('Session', () => {
   describe('run()', () => {
