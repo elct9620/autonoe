@@ -1,50 +1,35 @@
-/**
- * Session configuration options
- * @see SPEC.md Section 3.3
- */
-export interface SessionOptions {
-  projectDir: string
-  maxIterations?: number
-  model?: string
-}
+// AgentClient exports
+export type {
+  AgentClient,
+  Query,
+  QueryOptions,
+  SDKMessage,
+  McpServerConfig,
+  PermissionMode,
+} from './agentClient'
+export { ClaudeAgentClient } from './agentClient'
+
+// Session exports
+export { Session, type SessionOptions, type SessionResult } from './session'
+
+import { ClaudeAgentClient } from './agentClient'
+import { Session, type SessionOptions, type SessionResult } from './session'
 
 /**
- * Result of a session execution
- * @see SPEC.md Section 3.3
- */
-export interface SessionResult {
-  success: boolean
-  scenariosPassedCount: number
-  scenariosTotalCount: number
-  duration: number
-}
-
-/**
- * Run a coding agent session
+ * Convenience function to run a coding agent session
+ * Creates default ClaudeAgentClient and runs the session
  *
  * @param options - Session configuration
  * @returns Session execution result
- *
- * @remarks
- * This is a stub implementation. Real behavior will be added
- * when AgentClient is implemented.
  */
 export async function runSession(
   options: SessionOptions,
 ): Promise<SessionResult> {
-  console.log('[Stub] Session would run here')
-  console.log(`  Project: ${options.projectDir}`)
-  if (options.maxIterations) {
-    console.log(`  Max iterations: ${options.maxIterations}`)
-  }
-  if (options.model) {
-    console.log(`  Model: ${options.model}`)
-  }
+  const client = new ClaudeAgentClient({
+    cwd: options.projectDir,
+    permissionMode: 'default',
+  })
 
-  return {
-    success: true,
-    scenariosPassedCount: 0,
-    scenariosTotalCount: 0,
-    duration: 0,
-  }
+  const session = new Session(options)
+  return session.run(client)
 }

@@ -240,6 +240,20 @@ interface StatusTool {
 
 > Registered via Agent SDK as custom tool
 
+### 3.6 Dependency Injection
+
+| Component    | Injected Via      | Purpose                   |
+| ------------ | ----------------- | ------------------------- |
+| AgentClient  | Session.run()     | Enable testing with mocks |
+| BashSecurity | PreToolUse hook   | Validate bash commands    |
+| StatusTool   | MCP Server config | Update scenario status    |
+
+```
+Session(options) ──▶ run(client) ──▶ client.query()
+         │                │
+    Configuration    Dependency
+```
+
 ---
 
 ## 4. Browser Automation (Coding Agent)
@@ -530,9 +544,14 @@ Tools available to the Coding Agent (configured by Autonoe):
     "format": "prettier --write .",
     "check": "tsc --noEmit",
     "compile": "bun build apps/cli/bin/autonoe.ts --compile --outfile dist/autonoe"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "latest"
   }
 }
 ```
+
+> Note: External npm dependencies are managed in root package.json. Child packages use `*` to inherit the resolved version.
 
 ### 10.2 Package: core
 
@@ -542,13 +561,12 @@ Tools available to the Coding Agent (configured by Autonoe):
   "version": "0.1.0",
   "main": "src/index.ts",
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "workspace:*"
-  },
-  "devDependencies": {
-    "vitest": "^4.0.0"
+    "@anthropic-ai/claude-agent-sdk": "*"
   }
 }
 ```
+
+> Note: `workspace:*` is only for local workspace packages (e.g., `@autonoe/core`). Use `*` for npm packages to inherit from root.
 
 ### 10.3 Package: cli
 

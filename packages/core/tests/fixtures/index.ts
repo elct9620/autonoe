@@ -1,4 +1,5 @@
 import type { SessionOptions, SessionResult } from '../../src/index'
+import type { MockMessage } from '../mockAgentClient'
 
 /**
  * Create a minimal valid SessionOptions for testing
@@ -65,3 +66,13 @@ export const mockScenarios: StatusScenario[] = [
     passed: false,
   },
 ]
+
+/**
+ * Create a mock text message for testing AgentClient
+ */
+export function createMockTextMessage(text: string): MockMessage {
+  return {
+    type: 'text',
+    text,
+  }
+}

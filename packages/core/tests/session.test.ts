@@ -1,15 +1,16 @@
 import { describe, it, expect } from 'vitest'
-import { runSession } from '../src/index'
-import type { SessionOptions } from '../src/index'
-import { createSessionOptions } from './fixtures'
+import { Session } from '../src/session'
+import { MockAgentClient } from './mockAgentClient'
+import { createMockTextMessage } from './fixtures'
 
 describe('Session', () => {
-  describe('runSession() stub', () => {
+  describe('run()', () => {
     it('returns a SessionResult', async () => {
-      const options: SessionOptions = {
-        projectDir: '/test/project',
-      }
-      const result = await runSession(options)
+      const client = new MockAgentClient()
+      client.setResponses([createMockTextMessage('2')])
+
+      const session = new Session({ projectDir: '/test/project' })
+      const result = await session.run(client)
 
       expect(result).toHaveProperty('success')
       expect(result).toHaveProperty('scenariosPassedCount')
@@ -17,19 +18,33 @@ describe('Session', () => {
       expect(result).toHaveProperty('duration')
     })
 
-    it('accepts all session options', async () => {
-      const options = createSessionOptions({
+    it('queries the agent with test message', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([])
+
+      const session = new Session({ projectDir: '/test/project' })
+      await session.run(client)
+
+      expect(client.getLastMessage()).toBe('Hello, what is 1 + 1?')
+    })
+
+    it('accepts session options', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([])
+
+      const session = new Session({
+        projectDir: '/test/project',
         maxIterations: 10,
-        model: 'claude-3-opus',
       })
-      const result = await runSession(options)
+      const result = await session.run(client)
+
       expect(result.success).toBe(true)
     })
   })
 
   describe('SC-S001: Session with SPEC.md', () => {
     it.skip('starts session successfully when SPEC.md exists', async () => {
-      // TODO: Implement when Session class is created
+      // TODO: Implement when Session reads SPEC.md
       // - Create temp directory with SPEC.md
       // - Create Session with MockAgentClient
       // - Verify session starts without error

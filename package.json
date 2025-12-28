@@ -12,6 +12,9 @@
     "check": "tsc --noEmit",
     "compile": "bun build apps/cli/bin/autonoe.ts --compile --outfile dist/autonoe"
   },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "latest"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "prettier": "^3.7.4",
