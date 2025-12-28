@@ -712,17 +712,29 @@ ENTRYPOINT ["autonoe"]
 autonoe run [options]
 
 Options:
+  --project-dir, -p       Project directory (default: cwd)
   --max-iterations, -n    Maximum coding sessions
   --model, -m             Claude model to use
+  --debug, -d             Show debug output
 ```
 
 ### 11.2 Behavior
 
-- Runs in current working directory
+- Runs in specified project directory (or cwd if not specified)
+- All relative paths (.autonoe/, SPEC.md) resolved from project directory
 - Reads `SPEC.md` for project specification
 - Recommends using Gherkin (`.feature` files) to define acceptance criteria
 - Agent SDK auto-detects API credentials
 - Shows help message when no command is provided
+
+**Project Directory Resolution:**
+
+| --project-dir     | Directory Exists | Result             |
+| ----------------- | ---------------- | ------------------ |
+| (not provided)    | -                | Use `process.cwd()`|
+| absolute path     | YES              | Use as-is          |
+| relative path     | YES              | Resolve to absolute|
+| any path          | NO               | Exit with error    |
 
 ### 11.3 Implementation
 
@@ -741,8 +753,10 @@ const cli = cac('autonoe')
 
 cli
   .command('run', 'Run the coding agent')
+  .option('-p, --project-dir <path>', 'Project directory')
   .option('-n, --max-iterations <count>', 'Maximum coding sessions')
   .option('-m, --model <model>', 'Claude model to use')
+  .option('-d, --debug', 'Show debug output')
   .action((options) => {
     // Run session with options
   })
