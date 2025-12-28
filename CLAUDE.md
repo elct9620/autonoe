@@ -35,11 +35,12 @@ apps/cli (Presentation)  →  packages/core (Application/Domain/Infrastructure)
 
 ### Testing
 
-Tests use Vitest with workspace configuration (`vitest.workspace.ts`). Each package can have its own `vitest.config.ts`.
+Tests use Vitest with workspace configuration (`vitest.workspace.ts`). Each package has its own `vitest.config.ts`.
 
 ```bash
-bun run test                           # Run all tests
-bun run test packages/core             # Run tests for a specific package
+bun run test                                  # Run all tests
+bunx vitest --project @autonoe/core           # Run tests for a specific package
+bunx vitest packages/core/tests/session.test  # Run a single test file
 ```
 
 ## Conventions
@@ -58,6 +59,15 @@ The agent will operate under three security layers:
 3. Bash allowlist via PreToolUse hook
 
 `.autonoe/` directory is read-only for direct access; writes only via StatusTool.
+
+## Implementation Status
+
+The project is in early development. Core exports `runSession()` as a stub. Key components from SPEC.md pending implementation:
+
+- AgentClient / MockAgentClient
+- BashSecurity (PreToolUse hook)
+- StatusTool
+- Prompt system (initializer.md, coding.md)
 
 ## Specification
 
