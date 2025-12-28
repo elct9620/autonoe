@@ -1,5 +1,9 @@
-import type { SessionOptions, SessionResult } from '../../src/index'
-import type { MockMessage } from './mockAgentClient'
+import type {
+  SessionOptions,
+  SessionResult,
+  AgentMessage,
+} from '../../src/index'
+import { AgentMessageType, ResultSubtype } from '../../src/index'
 
 /**
  * Create a minimal valid SessionOptions for testing
@@ -70,11 +74,11 @@ export const mockScenarios: StatusScenario[] = [
 /**
  * Create a mock text message for testing AgentClient
  */
-export function createMockTextMessage(text: string): MockMessage {
+export function createMockTextMessage(text: string): AgentMessage {
   return {
-    type: 'text',
+    type: AgentMessageType.Text,
     text,
-  }
+  } as AgentMessage
 }
 
 /**
@@ -83,15 +87,13 @@ export function createMockTextMessage(text: string): MockMessage {
 export function createMockResultMessage(
   result: string,
   totalCostUsd?: number,
-): MockMessage {
+): AgentMessage {
   return {
-    type: 'result',
-    subtype: 'success',
+    type: AgentMessageType.Result,
+    subtype: ResultSubtype.Success,
     result,
-    total_cost_usd: totalCostUsd,
-    duration_ms: 1000,
-    num_turns: 1,
-  }
+    totalCostUsd,
+  } as AgentMessage
 }
 
 /**
@@ -99,13 +101,11 @@ export function createMockResultMessage(
  */
 export function createMockErrorResultMessage(
   errors: string[],
-  subtype: string = 'error_during_execution',
-): MockMessage {
+  subtype: ResultSubtype = ResultSubtype.ErrorDuringExecution,
+): AgentMessage {
   return {
-    type: 'result',
+    type: AgentMessageType.Result,
     subtype,
     errors,
-    duration_ms: 1000,
-    num_turns: 1,
-  }
+  } as AgentMessage
 }

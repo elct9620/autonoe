@@ -158,6 +158,61 @@ Presentation → Application → Domain ← Infrastructure
               Infrastructure
 ```
 
+### 2.3 Domain Model
+
+#### Value Objects
+
+**AgentMessage** - Base message from coding agent
+
+| Field | Type | Description |
+|-------|------|-------------|
+| type | AgentMessageType | Message type discriminator |
+
+**ResultMessage** - Execution result (extends AgentMessage)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| type | AgentMessageType.Result | Fixed to Result |
+| subtype | ResultSubtype | Execution outcome |
+| result | string? | Output text (on success) |
+| errors | string[]? | Error messages (on failure) |
+| totalCostUsd | number? | API cost in USD |
+
+**McpServer** - External tool server configuration
+
+| Field | Type | Description |
+|-------|------|-------------|
+| command | string | Server executable command |
+| args | string[]? | Command arguments |
+
+#### Enums
+
+**AgentMessageType** - Message type discriminator
+
+| Value | Description |
+|-------|-------------|
+| Text | Text content message |
+| Result | Execution result message |
+
+**ResultSubtype** - Execution outcome
+
+| Value | Description |
+|-------|-------------|
+| Success | Execution completed |
+| ErrorMaxTurns | Max iterations reached |
+| ErrorDuringExecution | Runtime error |
+| ErrorMaxBudgetUsd | Budget limit exceeded |
+
+**PermissionLevel** - Security permission level
+
+| Value | Description |
+|-------|-------------|
+| default | Standard permissions |
+| acceptEdits | Auto-accept file edits |
+| bypassPermissions | Skip all permission checks |
+
+**Type Definitions:** See `packages/core/src/types.ts`
+
 ---
 
 ## 3. Core Interfaces
@@ -167,34 +222,27 @@ Presentation → Application → Domain ← Infrastructure
 ```typescript
 // packages/core/src/agentClient.ts
 interface AgentClient {
-  query(message: string): Query
-}
-
-interface Query extends AsyncGenerator<SDKMessage, void> {
-  interrupt(): Promise<void>
+  query(message: string): MessageStream
 }
 
 interface QueryOptions {
   cwd: string
-  mcpServers: Record<string, McpServerConfig>
-  permissionMode: PermissionMode
-  hooks: HookConfig
-  allowedTools: string[]
-  systemPrompt: string | SystemPromptPreset
+  mcpServers?: Record<string, McpServer>
+  permissionLevel?: PermissionLevel
+  allowedTools?: string[]
+  systemPrompt?: string
 }
-
-type PermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions'
 ```
 
 ### 3.2 MockAgentClient
 
 ```typescript
-// packages/core/src/mockAgentClient.ts
+// packages/core/tests/helpers/mockAgentClient.ts
 class MockAgentClient implements AgentClient {
-  private responses: SDKMessage[] = []
+  private responses: AgentMessage[] = []
 
-  setResponses(responses: SDKMessage[]): void
-  query(message: string): Query
+  setResponses(responses: AgentMessage[]): void
+  query(message: string): MessageStream
 }
 ```
 
@@ -218,25 +266,14 @@ interface SessionResult {
   scenariosTotalCount: number
   duration: number
 }
-
-// SDK Result Message (from @anthropic-ai/claude-agent-sdk)
-interface SDKResultMessage {
-  type: 'result'
-  subtype: 'success' | 'error_max_turns' | 'error_during_execution' | 'error_max_budget_usd'
-  result?: string       // Present on success
-  errors?: string[]     // Present on error
-  total_cost_usd?: number
-  duration_ms: number
-  num_turns: number
-}
 ```
 
 **Result Event Handling:**
 
-| Subtype   | Action                                    |
-| --------- | ----------------------------------------- |
-| success   | Display result text and cost via logger   |
-| error_*   | Display error messages via logger.error() |
+| Subtype | Action |
+| ------- | ------ |
+| Success | Display result text and cost via logger |
+| Error*  | Display error messages via logger.error() |
 
 ### 3.4 BashSecurity
 

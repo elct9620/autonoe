@@ -1,26 +1,18 @@
-import type { AgentClient, Query } from '../../src/agentClient'
-
-/**
- * Mock message type for testing
- * Simplified version of SDKMessage for unit tests
- */
-export interface MockMessage {
-  type: string
-  [key: string]: unknown
-}
+import type { AgentClient } from '../../src/agentClient'
+import type { AgentMessage, MessageStream } from '../../src/types'
 
 /**
  * Mock implementation of AgentClient for unit testing
  * @see SPEC.md Section 3.2
  */
 export class MockAgentClient implements AgentClient {
-  private responses: MockMessage[] = []
+  private responses: AgentMessage[] = []
   private lastMessage: string | null = null
 
   /**
    * Set the responses that will be yielded by query()
    */
-  setResponses(responses: MockMessage[]): void {
+  setResponses(responses: AgentMessage[]): void {
     this.responses = [...responses]
   }
 
@@ -31,7 +23,7 @@ export class MockAgentClient implements AgentClient {
     return this.lastMessage
   }
 
-  query(message: string): Query {
+  query(message: string): MessageStream {
     this.lastMessage = message
     const responses = this.responses
 
@@ -42,11 +34,11 @@ export class MockAgentClient implements AgentClient {
     })()
 
     // Add interrupt method to the generator
-    const query = generator as Query
-    query.interrupt = async () => {
+    const stream = generator as MessageStream
+    stream.interrupt = async () => {
       // Mock interrupt - does nothing in tests
     }
 
-    return query
+    return stream
   }
 }

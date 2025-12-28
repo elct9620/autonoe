@@ -1,12 +1,15 @@
-// AgentClient exports
+// Domain types exports
 export type {
-  AgentClient,
-  Query,
-  QueryOptions,
-  SDKMessage,
-  McpServerConfig,
-  PermissionMode,
-} from './agentClient'
+  AgentMessage,
+  ResultMessage,
+  MessageStream,
+  McpServer,
+  PermissionLevel,
+} from './types'
+export { AgentMessageType, ResultSubtype } from './types'
+
+// AgentClient exports
+export type { AgentClient, QueryOptions } from './agentClient'
 export { ClaudeAgentClient } from './agentClient'
 
 // Logger exports
@@ -34,7 +37,7 @@ export async function runSession(
 ): Promise<SessionResult> {
   const client = new ClaudeAgentClient({
     cwd: options.projectDir,
-    permissionMode: 'default',
+    permissionLevel: 'default',
   })
 
   const session = new Session(options)
