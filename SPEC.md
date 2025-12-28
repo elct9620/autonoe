@@ -218,7 +218,25 @@ interface SessionResult {
   scenariosTotalCount: number
   duration: number
 }
+
+// SDK Result Message (from @anthropic-ai/claude-agent-sdk)
+interface SDKResultMessage {
+  type: 'result'
+  subtype: 'success' | 'error_max_turns' | 'error_during_execution' | 'error_max_budget_usd'
+  result?: string       // Present on success
+  errors?: string[]     // Present on error
+  total_cost_usd?: number
+  duration_ms: number
+  num_turns: number
+}
 ```
+
+**Result Event Handling:**
+
+| Subtype   | Action                                    |
+| --------- | ----------------------------------------- |
+| success   | Display result text and cost via logger   |
+| error_*   | Display error messages via logger.error() |
 
 ### 3.4 BashSecurity
 
@@ -507,13 +525,15 @@ Tools available to the Coding Agent (configured by Autonoe):
 
 ### 8.1 Session
 
-| ID      | Input                   | Expected Output                 |
-| ------- | ----------------------- | ------------------------------- |
-| SC-S001 | Project with SPEC.md    | Session starts successfully     |
-| SC-S002 | No .autonoe/status.json | Use initializerPrompt           |
-| SC-S003 | All scenarios passed    | Session completes with success  |
-| SC-S004 | Max iterations reached  | Session stops, partial progress |
-| SC-S005 | Agent interruption      | Session stops cleanly           |
+| ID      | Input                   | Expected Output                         |
+| ------- | ----------------------- | --------------------------------------- |
+| SC-S001 | Project with SPEC.md    | Session starts successfully             |
+| SC-S002 | No .autonoe/status.json | Use initializerPrompt                   |
+| SC-S003 | All scenarios passed    | Session completes with success          |
+| SC-S004 | Max iterations reached  | Session stops, partial progress         |
+| SC-S005 | Agent interruption      | Session stops cleanly                   |
+| SC-S006 | Result event (success)  | Result text + cost displayed via logger |
+| SC-S007 | Result event (error)    | Error messages displayed via logger     |
 
 ### 8.2 Bash Security
 

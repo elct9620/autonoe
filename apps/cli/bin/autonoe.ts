@@ -7,9 +7,7 @@ const cli = cac('autonoe')
 
 cli
   .command('run', 'Run the coding agent')
-  .option('-n, --max-iterations <count>', 'Maximum coding sessions', {
-    type: [Number],
-  })
+  .option('-n, --max-iterations <count>', 'Maximum coding sessions')
   .option('-m, --model <model>', 'Claude model to use')
   .option('-d, --debug', 'Show debug output')
   .action(async (options) => {

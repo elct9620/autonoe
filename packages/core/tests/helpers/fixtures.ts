@@ -76,3 +76,36 @@ export function createMockTextMessage(text: string): MockMessage {
     text,
   }
 }
+
+/**
+ * Create a mock result message with success subtype
+ */
+export function createMockResultMessage(
+  result: string,
+  totalCostUsd?: number,
+): MockMessage {
+  return {
+    type: 'result',
+    subtype: 'success',
+    result,
+    total_cost_usd: totalCostUsd,
+    duration_ms: 1000,
+    num_turns: 1,
+  }
+}
+
+/**
+ * Create a mock result message with error subtype
+ */
+export function createMockErrorResultMessage(
+  errors: string[],
+  subtype: string = 'error_during_execution',
+): MockMessage {
+  return {
+    type: 'result',
+    subtype,
+    errors,
+    duration_ms: 1000,
+    num_turns: 1,
+  }
+}

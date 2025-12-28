@@ -3,6 +3,8 @@ import { Session } from '../src/session'
 import {
   MockAgentClient,
   createMockTextMessage,
+  createMockResultMessage,
+  createMockErrorResultMessage,
   TestLogger,
 } from './helpers'
 
@@ -101,6 +103,66 @@ describe('Session', () => {
       // - Start session
       // - Call interrupt mid-execution
       // - Verify clean shutdown
+    })
+  })
+
+  describe('SC-S006: Result event (success)', () => {
+    it('displays result text via logger.info', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockResultMessage('The answer is 2', 0.0123)])
+      const logger = new TestLogger()
+
+      const session = new Session({ projectDir: '/test/project' })
+      await session.run(client, logger)
+
+      expect(logger.hasMessage('The answer is 2')).toBe(true)
+      const infoEntries = logger.getEntriesByLevel('info')
+      expect(infoEntries.some((e) => e.message === 'The answer is 2')).toBe(
+        true,
+      )
+    })
+
+    it('displays cost via logger.info', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockResultMessage('Result', 0.0123)])
+      const logger = new TestLogger()
+
+      const session = new Session({ projectDir: '/test/project' })
+      await session.run(client, logger)
+
+      expect(logger.hasMessage('Cost: $0.0123')).toBe(true)
+    })
+
+    it('handles result without cost gracefully', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockResultMessage('Result')])
+      const logger = new TestLogger()
+
+      const session = new Session({ projectDir: '/test/project' })
+      await session.run(client, logger)
+
+      expect(logger.hasMessage('Result')).toBe(true)
+      expect(logger.hasMessage('Cost:')).toBe(false)
+    })
+  })
+
+  describe('SC-S007: Result event (error)', () => {
+    it('displays error messages via logger.error', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockErrorResultMessage(['Error 1', 'Error 2']),
+      ])
+      const logger = new TestLogger()
+
+      const session = new Session({ projectDir: '/test/project' })
+      await session.run(client, logger)
+
+      expect(logger.hasMessage('Error 1')).toBe(true)
+      expect(logger.hasMessage('Error 2')).toBe(true)
+
+      const errorEntries = logger.getEntriesByLevel('error')
+      expect(errorEntries.some((e) => e.message === 'Error 1')).toBe(true)
+      expect(errorEntries.some((e) => e.message === 'Error 2')).toBe(true)
     })
   })
 })

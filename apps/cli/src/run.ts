@@ -10,7 +10,7 @@ export const VERSION = '0.1.0'
  * Options passed from CLI argument parsing
  */
 export interface RunCommandOptions {
-  maxIterations?: number
+  maxIterations?: string
   model?: string
   debug?: boolean
 }
@@ -25,9 +25,13 @@ export async function handleRunCommand(
 ): Promise<void> {
   const logger = new ConsoleLogger({ debug: options.debug })
 
+  const maxIterations = options.maxIterations
+    ? parseInt(options.maxIterations, 10)
+    : undefined
+
   const sessionOptions: SessionOptions = {
     projectDir: process.cwd(),
-    maxIterations: options.maxIterations,
+    maxIterations: Number.isNaN(maxIterations) ? undefined : maxIterations,
     model: options.model,
   }
 

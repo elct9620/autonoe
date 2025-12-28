@@ -47,6 +47,10 @@ export class Session {
 
     for await (const message of query) {
       logger.debug(`Received: ${message.type}`)
+
+      if (message.type === 'result') {
+        this.handleResultMessage(message, logger)
+      }
     }
 
     return {
@@ -54,6 +58,33 @@ export class Session {
       scenariosPassedCount: 0,
       scenariosTotalCount: 0,
       duration: Date.now() - startTime,
+    }
+  }
+
+  /**
+   * Handle SDK result message and display to user
+   * @see SPEC.md Section 3.3 SDKResultMessage
+   */
+  private handleResultMessage(
+    message: {
+      subtype?: string
+      result?: string
+      errors?: string[]
+      total_cost_usd?: number
+    },
+    logger: Logger,
+  ): void {
+    if (message.subtype === 'success') {
+      if (message.result) {
+        logger.info(message.result)
+      }
+      if (message.total_cost_usd !== undefined) {
+        logger.info(`Cost: $${message.total_cost_usd.toFixed(4)}`)
+      }
+    } else if (message.errors) {
+      for (const error of message.errors) {
+        logger.error(error)
+      }
     }
   }
 }
