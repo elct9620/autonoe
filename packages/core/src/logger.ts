@@ -1,0 +1,32 @@
+/**
+ * Log levels for Autonoe output
+ * @see SPEC.md Section 3.7
+ */
+export type LogLevel = 'info' | 'debug'
+
+/**
+ * Logger interface for session output
+ * @see SPEC.md Section 3.7
+ */
+export interface Logger {
+  /**
+   * Log informational message (always shown)
+   * Used for: session start/end, configuration display
+   */
+  info(message: string): void
+
+  /**
+   * Log debug message (hidden by default, shown with --debug flag)
+   * Used for: internal operations, message tracing
+   */
+  debug(message: string): void
+}
+
+/**
+ * Silent logger that discards all output
+ * Used as default when no logger is provided
+ */
+export const silentLogger: Logger = {
+  info: () => {},
+  debug: () => {},
+}

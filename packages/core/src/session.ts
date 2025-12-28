@@ -1,4 +1,5 @@
 import type { AgentClient } from './agentClient'
+import { silentLogger, type Logger } from './logger'
 
 /**
  * Session configuration options
@@ -29,20 +30,23 @@ export class Session {
   constructor(private options: SessionOptions) {}
 
   /**
-   * Run the session with an injected AgentClient
+   * Run the session with an injected AgentClient and Logger
    * @see SPEC.md Section 3.6 Dependency Injection
    */
-  async run(client: AgentClient): Promise<SessionResult> {
+  async run(
+    client: AgentClient,
+    logger: Logger = silentLogger,
+  ): Promise<SessionResult> {
     const startTime = Date.now()
 
     // Fixed test message for now
     const testMessage = 'Hello, what is 1 + 1?'
-    console.log(`Sending: ${testMessage}`)
+    logger.debug(`Sending: ${testMessage}`)
 
     const query = client.query(testMessage)
 
     for await (const message of query) {
-      console.log(`Received: ${message.type}`)
+      logger.debug(`Received: ${message.type}`)
     }
 
     return {

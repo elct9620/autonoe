@@ -85,6 +85,7 @@ autonoe/
 │       │   ├── index.ts
 │       │   ├── agentClient.ts
 │       │   ├── session.ts
+│       │   ├── logger.ts
 │       │   ├── statusTool.ts
 │       │   ├── bashSecurity.ts
 │       │   ├── prompts.ts
@@ -94,15 +95,18 @@ autonoe/
 │       │       └── coding.md
 │       └── tests/
 │           ├── session.test.ts
+│           ├── logger.test.ts
 │           ├── statusTool.test.ts
-│           └── bashSecurity.test.ts
+│           ├── bashSecurity.test.ts
+│           └── testLogger.ts
 └── apps/
     └── cli/
         ├── package.json
         ├── tsconfig.json
         ├── src/
         │   ├── index.ts
-        │   └── run.ts
+        │   ├── run.ts
+        │   └── consoleLogger.ts
         └── bin/
             └── autonoe.ts
 
@@ -247,12 +251,39 @@ interface StatusTool {
 | AgentClient  | Session.run()     | Enable testing with mocks |
 | BashSecurity | PreToolUse hook   | Validate bash commands    |
 | StatusTool   | MCP Server config | Update scenario status    |
+| Logger       | Session.run()     | Enable output capture     |
 
 ```
-Session(options) ──▶ run(client) ──▶ client.query()
+Session(options) ──▶ run(client, logger) ──▶ client.query()
          │                │
     Configuration    Dependency
 ```
+
+### 3.7 Logger
+
+```typescript
+// packages/core/src/logger.ts
+type LogLevel = 'info' | 'debug'
+
+interface Logger {
+  info(message: string): void
+  debug(message: string): void
+}
+
+const silentLogger: Logger
+```
+
+| Level | Visibility        | Purpose                        |
+| ----- | ----------------- | ------------------------------ |
+| info  | Always            | Session status, configuration  |
+| debug | --debug flag only | Internal operations, tracing   |
+
+| Layer        | Logger Usage                           |
+| ------------ | -------------------------------------- |
+| Presentation | ConsoleLogger with colored output      |
+| Application  | Use injected Logger for messages       |
+| Domain       | No direct logging (pure functions)     |
+| Tests        | TestLogger to capture and verify       |
 
 ---
 
@@ -504,6 +535,15 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-C004 | User adds custom hooks                   | Merged, security baseline enforced |
 | SC-C005 | User tries to disable sandbox            | Ignored, sandbox always enabled    |
 | SC-C006 | User tries to remove .autonoe protection | Security baseline re-applied       |
+
+### 8.5 Logger
+
+| ID      | Input                        | Expected Output                 |
+| ------- | ---------------------------- | ------------------------------- |
+| SC-L001 | TestLogger captures info     | Message in entries with level   |
+| SC-L002 | TestLogger captures debug    | Message in entries with level   |
+| SC-L003 | silentLogger discards output | No side effects                 |
+| SC-L004 | Session uses injected logger | Messages captured in TestLogger |
 
 ---
 

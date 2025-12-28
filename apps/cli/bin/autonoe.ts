@@ -1,9 +1,7 @@
 #!/usr/bin/env bun
 
 import cac from 'cac'
-import { handleRunCommand } from '../src/run.ts'
-
-const VERSION = '0.1.0'
+import { handleRunCommand, VERSION } from '../src/run.ts'
 
 const cli = cac('autonoe')
 
@@ -13,12 +11,12 @@ cli
     type: [Number],
   })
   .option('-m, --model <model>', 'Claude model to use')
+  .option('-d, --debug', 'Show debug output')
   .action(async (options) => {
-    console.log(`Autonoe v${VERSION}`)
-    console.log('')
     await handleRunCommand({
       maxIterations: options.maxIterations,
       model: options.model,
+      debug: options.debug,
     })
   })
 

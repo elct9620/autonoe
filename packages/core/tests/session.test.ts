@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { Session } from '../src/session'
 import { MockAgentClient } from './mockAgentClient'
 import { createMockTextMessage } from './fixtures'
+import { TestLogger } from './testLogger'
 
 describe('Session', () => {
   describe('run()', () => {
@@ -39,6 +40,21 @@ describe('Session', () => {
       const result = await session.run(client)
 
       expect(result.success).toBe(true)
+    })
+
+    it('SC-L004: uses injected logger for debug messages', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockTextMessage('2')])
+      const logger = new TestLogger()
+
+      const session = new Session({ projectDir: '/test/project' })
+      await session.run(client, logger)
+
+      expect(logger.hasMessage('Sending:')).toBe(true)
+      expect(logger.hasMessage('Received:')).toBe(true)
+
+      const debugEntries = logger.getEntriesByLevel('debug')
+      expect(debugEntries.length).toBeGreaterThan(0)
     })
   })
 
