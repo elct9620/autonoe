@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 import { existsSync, statSync } from 'node:fs'
-import { runSession, type SessionOptions } from '@autonoe/core'
+import { Session, type SessionOptions } from '@autonoe/core'
+import { ClaudeAgentClient } from '@autonoe/claude-agent-client'
 import { ConsoleLogger } from './consoleLogger'
 
 /**
@@ -62,7 +63,13 @@ export async function handleRunCommand(
   logger.info('')
 
   try {
-    const result = await runSession(sessionOptions, logger)
+    const client = new ClaudeAgentClient({
+      cwd: sessionOptions.projectDir,
+      permissionLevel: 'default',
+    })
+
+    const session = new Session(sessionOptions)
+    const result = await session.run(client, logger)
 
     logger.info('')
     if (result.success) {

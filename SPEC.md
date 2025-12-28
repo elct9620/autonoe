@@ -8,13 +8,16 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              Autonoe                                     │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  ┌────────────────┐    ┌────────────────┐                               │
-│  │    apps/cli    │───▶│ packages/core  │                               │
-│  │  (Entry Point) │    │ (Orchestrator) │                               │
-│  └────────────────┘    └───────┬────────┘                               │
-│                                │                                         │
-│                                │ Creates & Controls                      │
-│                                ▼                                         │
+│  ┌────────────────┐    ┌────────────────┐   ┌────────────────────────┐  │
+│  │    apps/cli    │───▶│ packages/core  │   │ packages/               │  │
+│  │  (Entry Point) │    │ (Orchestrator) │◀──│ claude-agent-client    │  │
+│  └───────┬────────┘    └───────┬────────┘   │ (SDK Wrapper)          │  │
+│          │                     │            └───────────┬────────────┘  │
+│          │ Injects             │ Uses                   │               │
+│          └─────────────────────┼───────────────────────▶│               │
+│                                │                        │               │
+│                                │ Creates & Controls     │ Wraps         │
+│                                ▼                        ▼               │
 │  ┌─────────────────────────────────────────────────────────────────────┐│
 │  │                        Coding Agent                                  ││
 │  │  ┌─────────────────────────────────────────────────────────────────┐││
@@ -76,30 +79,38 @@ autonoe/
 ├── Dockerfile
 ├── .goreleaser.yaml
 ├── packages/
-│   └── core/
+│   ├── core/
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── vitest.config.ts
+│   │   ├── markdown.d.ts
+│   │   ├── src/
+│   │   │   ├── index.ts
+│   │   │   ├── agentClient.ts      # Interface only
+│   │   │   ├── session.ts
+│   │   │   ├── logger.ts
+│   │   │   ├── statusTool.ts
+│   │   │   ├── bashSecurity.ts
+│   │   │   ├── prompts.ts
+│   │   │   └── prompts/
+│   │   │       ├── initializer.md
+│   │   │       └── coding.md
+│   │   └── tests/
+│   │       ├── *.test.ts
+│   │       └── helpers/
+│   │           ├── index.ts
+│   │           ├── mockAgentClient.ts
+│   │           ├── testLogger.ts
+│   │           └── fixtures.ts
+│   └── claude-agent-client/
 │       ├── package.json
 │       ├── tsconfig.json
 │       ├── vitest.config.ts
-│       ├── markdown.d.ts
-│       ├── src/
-│       │   ├── index.ts
-│       │   ├── agentClient.ts
-│       │   ├── session.ts
-│       │   ├── logger.ts
-│       │   ├── statusTool.ts
-│       │   ├── bashSecurity.ts
-│       │   ├── prompts.ts
-│       │   ├── mockAgentClient.ts
-│       │   └── prompts/
-│       │       ├── initializer.md
-│       │       └── coding.md
-│       └── tests/
-│           ├── *.test.ts
-│           └── helpers/
-│               ├── index.ts
-│               ├── mockAgentClient.ts
-│               ├── testLogger.ts
-│               └── fixtures.ts
+│       └── src/
+│           ├── index.ts
+│           ├── claudeAgentClient.ts
+│           ├── claudeCodePath.ts
+│           └── converters.ts
 └── apps/
     └── cli/
         ├── package.json
@@ -129,34 +140,41 @@ autonoe/
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │                    Presentation Layer                      │  │
 │  │  CLI commands, argument parsing, output formatting         │  │
+│  │  Creates ClaudeAgentClient, injects into Session           │  │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                               │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      packages/core                               │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                    Application Layer                       │  │
-│  │  Session orchestration, use cases                          │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                      Domain Layer                          │  │
-│  │  ValidationResult                                          │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                  Infrastructure Layer                      │  │
-│  │  AgentClient, file I/O, prompts                            │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+          ┌───────────────────┼───────────────────┐
+          ▼                                       ▼
+┌─────────────────────────────────┐  ┌─────────────────────────────────┐
+│       packages/core             │  │  packages/claude-agent-client   │
+│  ┌───────────────────────────┐  │  │  ┌───────────────────────────┐  │
+│  │    Application Layer      │  │  │  │   Infrastructure Layer    │  │
+│  │  Session orchestration    │  │  │  │  ClaudeAgentClient        │  │
+│  └───────────────────────────┘  │  │  │  SDK Converters           │  │
+│  ┌───────────────────────────┐  │  │  └───────────────────────────┘  │
+│  │      Domain Layer         │  │  └─────────────────────────────────┘
+│  │  Types, Interfaces        │  │                │
+│  └───────────────────────────┘  │                │ imports types
+└─────────────────────────────────┘                │
+          ▲                                        │
+          └────────────────────────────────────────┘
 ```
 
 ### 2.2 Dependency Rule
 
 ```
-Presentation → Application → Domain ← Infrastructure
-                    ↓
-              Infrastructure
+                    Presentation (apps/cli)
+                           │
+              ┌────────────┴────────────┐
+              ▼                         ▼
+    Application + Domain    ←    Infrastructure
+     (packages/core)         (packages/claude-agent-client)
 ```
+
+- `packages/core` has NO external dependencies (pure domain + application)
+- `packages/claude-agent-client` depends on `@autonoe/core` for types
+- `apps/cli` creates infrastructure and injects into application layer
 
 ### 2.3 Domain Model
 
@@ -663,16 +681,29 @@ Tools available to the Coding Agent (configured by Autonoe):
 {
   "name": "@autonoe/core",
   "version": "0.1.0",
+  "main": "src/index.ts"
+}
+```
+
+> Note: `packages/core` has NO external dependencies. Domain types and application logic only.
+
+### 10.3 Package: claude-agent-client
+
+```json
+{
+  "name": "@autonoe/claude-agent-client",
+  "version": "0.1.0",
   "main": "src/index.ts",
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "*"
+    "@anthropic-ai/claude-agent-sdk": "*",
+    "@autonoe/core": "workspace:*"
   }
 }
 ```
 
-> Note: `workspace:*` is only for local workspace packages (e.g., `@autonoe/core`). Use `*` for npm packages to inherit from root.
+> Wraps `@anthropic-ai/claude-agent-sdk` and implements `AgentClient` interface from `@autonoe/core`.
 
-### 10.3 Package: cli
+### 10.4 Package: cli
 
 ```json
 {
@@ -683,19 +714,22 @@ Tools available to the Coding Agent (configured by Autonoe):
   },
   "dependencies": {
     "@autonoe/core": "workspace:*",
+    "@autonoe/claude-agent-client": "workspace:*",
     "cac": "^6.7.14"
   }
 }
 ```
 
-### 10.4 Single Executable
+> CLI creates `ClaudeAgentClient` and injects it into `Session` from core.
+
+### 10.5 Single Executable
 
 ```bash
 bun build apps/cli/bin/autonoe.ts --compile --outfile dist/autonoe
 bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dist/autonoe-linux
 ```
 
-### 10.5 Docker
+### 10.6 Docker
 
 ```dockerfile
 FROM oven/bun:1.3 AS builder
@@ -726,7 +760,7 @@ COPY --from=builder /app/autonoe /usr/local/bin/autonoe
 ENTRYPOINT ["autonoe"]
 ```
 
-### 10.6 Release Management
+### 10.7 Release Management
 
 | Tool           | Purpose                            |
 | -------------- | ---------------------------------- |

@@ -2,8 +2,5 @@
   "name": "@autonoe/core",
   "version": "0.1.0",
   "type": "module",
-  "main": "src/index.ts",
-  "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "*"
-  }
+  "main": "src/index.ts"
 }
