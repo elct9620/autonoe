@@ -453,9 +453,9 @@ Tools available to the Coding Agent (configured by Autonoe):
 
 ---
 
-## 8. Scenario Table
+## 8. Unit Test Scenarios
 
-### 8.1 Session Scenarios
+### 8.1 Session
 
 | ID      | Input                   | Expected Output                 |
 | ------- | ----------------------- | ------------------------------- |
@@ -465,35 +465,22 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-S004 | Max iterations reached  | Session stops, partial progress |
 | SC-S005 | Agent interruption      | Session stops cleanly           |
 
-### 8.2 Security Scenarios
+### 8.2 Bash Security
 
-| ID      | Input                            | Expected Output                |
-| ------- | -------------------------------- | ------------------------------ |
-| SC-X001 | Allowed: `npm install`           | Command executed               |
-| SC-X002 | Blocked: `rm -rf /`              | Command denied                 |
-| SC-X003 | File read outside project        | Permission denied              |
-| SC-X004 | Chained with blocked cmd         | Entire command denied          |
-| SC-X005 | Direct write to .autonoe/        | Permission denied (PreToolUse) |
-| SC-X006 | Direct edit .autonoe/status.json | Permission denied (PreToolUse) |
-| SC-X007 | StatusTool update status.json    | Allowed                        |
+| ID      | Input                    | Expected Output       |
+| ------- | ------------------------ | --------------------- |
+| SC-X001 | Allowed: `npm install`   | Command executed      |
+| SC-X002 | Blocked: `rm -rf /`      | Command denied        |
+| SC-X004 | Chained with blocked cmd | Entire command denied |
 
-### 8.3 Browser Scenarios
-
-| ID      | Input                  | Expected Output          |
-| ------- | ---------------------- | ------------------------ |
-| SC-B001 | Navigate to localhost  | Page loaded              |
-| SC-B002 | Click without snapshot | Error: snapshot required |
-| SC-B003 | Form submission        | Form submitted, verified |
-| SC-B004 | Text verification      | Assertion passes/fails   |
-
-### 8.4 Status Tool Scenarios
+### 8.3 StatusTool
 
 | ID      | Input                      | Expected Output           |
 | ------- | -------------------------- | ------------------------- |
 | SC-T001 | Update status: passed=true | status.json updated       |
 | SC-T002 | Update invalid scenario ID | Error: scenario not found |
 
-### 8.5 Configuration Scenarios
+### 8.4 Configuration
 
 | ID      | Input                                    | Expected Output                    |
 | ------- | ---------------------------------------- | ---------------------------------- |
@@ -506,9 +493,31 @@ Tools available to the Coding Agent (configured by Autonoe):
 
 ---
 
-## 9. Build & Distribution
+## 9. Integration Test Scenarios
 
-### 9.1 Workspace Configuration
+### 9.1 Security (SDK)
+
+| ID      | Input                            | Expected Output                |
+| ------- | -------------------------------- | ------------------------------ |
+| SC-X003 | File read outside project        | Permission denied              |
+| SC-X005 | Direct write to .autonoe/        | Permission denied (PreToolUse) |
+| SC-X006 | Direct edit .autonoe/status.json | Permission denied (PreToolUse) |
+| SC-X007 | StatusTool update status.json    | Allowed                        |
+
+### 9.2 Browser
+
+| ID      | Input                  | Expected Output          |
+| ------- | ---------------------- | ------------------------ |
+| SC-B001 | Navigate to localhost  | Page loaded              |
+| SC-B002 | Click without snapshot | Error: snapshot required |
+| SC-B003 | Form submission        | Form submitted, verified |
+| SC-B004 | Text verification      | Assertion passes/fails   |
+
+---
+
+## 10. Build & Distribution
+
+### 10.1 Workspace Configuration
 
 ```json
 {
@@ -525,7 +534,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 }
 ```
 
-### 9.2 Package: core
+### 10.2 Package: core
 
 ```json
 {
@@ -541,7 +550,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 }
 ```
 
-### 9.3 Package: cli
+### 10.3 Package: cli
 
 ```json
 {
@@ -557,14 +566,14 @@ Tools available to the Coding Agent (configured by Autonoe):
 }
 ```
 
-### 9.4 Single Executable
+### 10.4 Single Executable
 
 ```bash
 bun build apps/cli/bin/autonoe.ts --compile --outfile dist/autonoe
 bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dist/autonoe-linux
 ```
 
-### 9.5 Docker
+### 10.5 Docker
 
 ```dockerfile
 FROM oven/bun:1.3 AS builder
@@ -595,7 +604,7 @@ COPY --from=builder /app/autonoe /usr/local/bin/autonoe
 ENTRYPOINT ["autonoe"]
 ```
 
-### 9.6 Release Management
+### 10.6 Release Management
 
 | Tool           | Purpose                            |
 | -------------- | ---------------------------------- |
@@ -610,9 +619,9 @@ ENTRYPOINT ["autonoe"]
 
 ---
 
-## 10. CLI
+## 11. CLI
 
-### 10.1 Usage
+### 11.1 Usage
 
 ```
 autonoe run [options]
@@ -622,7 +631,7 @@ Options:
   --model, -m             Claude model to use
 ```
 
-### 10.2 Behavior
+### 11.2 Behavior
 
 - Runs in current working directory
 - Reads `SPEC.md` for project specification
@@ -630,7 +639,7 @@ Options:
 - Agent SDK auto-detects API credentials
 - Shows help message when no command is provided
 
-### 10.3 Implementation
+### 11.3 Implementation
 
 Uses CAC for argument parsing. CAC was chosen for:
 
