@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { DefaultBashSecurity } from '../src/bashSecurity'
+import {
+  DefaultBashSecurity,
+  createBashSecurityHook,
+  type BashSecurity,
+} from '../src/bashSecurity'
+import type { PreToolUseInput } from '../src/agentClient'
 
 describe('BashSecurity', () => {
   describe('SC-X001: Allowed commands', () => {
@@ -260,6 +265,13 @@ describe('BashSecurity', () => {
       expect(result.allowed).toBe(false)
       expect(result.reason).toContain('requires a process name')
     })
+
+    it('blocks pkill with only flags (no process name)', () => {
+      const security = new DefaultBashSecurity()
+      const result = security.isCommandAllowed('pkill -f')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('requires a process name')
+    })
   })
 
   describe('SC-X012: chmod -R blocked', () => {
@@ -273,6 +285,20 @@ describe('BashSecurity', () => {
     it('blocks chmod with -R flag anywhere', () => {
       const security = new DefaultBashSecurity()
       expect(security.isCommandAllowed('chmod +x -R dir/').allowed).toBe(false)
+    })
+  })
+
+  describe('SC-X013/SC-X014: Escape character handling', () => {
+    it('SC-X013: backslash does not bypass security check', () => {
+      const security = new DefaultBashSecurity()
+      // Backslash should not allow dangerous commands to pass
+      const result = security.isCommandAllowed('r\\m -rf /')
+      expect(result.allowed).toBe(false)
+    })
+
+    it('SC-X014: allows escaped characters in quoted arguments', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('echo "test\\nvalue"').allowed).toBe(true)
     })
   })
 
@@ -326,5 +352,61 @@ describe('BashSecurity', () => {
       const security = new DefaultBashSecurity()
       expect(security.isCommandAllowed('chmod +w file').allowed).toBe(false)
     })
+
+    it('SC-X015: handles command that parses to empty base', () => {
+      const security = new DefaultBashSecurity()
+      // Empty quoted command
+      expect(security.isCommandAllowed('""').allowed).toBe(true)
+    })
+  })
+})
+
+describe('SC-X016: createBashSecurityHook', () => {
+  it('returns hook with correct name and matcher', () => {
+    const hook = createBashSecurityHook()
+    expect(hook.name).toBe('bash-security')
+    expect(hook.matcher).toBe('Bash')
+  })
+
+  it('approves when no command provided', async () => {
+    const hook = createBashSecurityHook()
+    const result = await hook.callback({
+      toolName: 'Bash',
+      toolInput: {},
+    } as PreToolUseInput)
+    expect(result.decision).toBe('approve')
+    expect(result.continue).toBe(true)
+  })
+
+  it('approves allowed commands', async () => {
+    const hook = createBashSecurityHook()
+    const result = await hook.callback({
+      toolName: 'Bash',
+      toolInput: { command: 'npm install' },
+    } as PreToolUseInput)
+    expect(result.decision).toBe('approve')
+  })
+
+  it('blocks dangerous commands with reason', async () => {
+    const hook = createBashSecurityHook()
+    const result = await hook.callback({
+      toolName: 'Bash',
+      toolInput: { command: 'rm -rf /' },
+    } as PreToolUseInput)
+    expect(result.decision).toBe('block')
+    expect(result.continue).toBe(false)
+    expect(result.reason).toBeDefined()
+  })
+
+  it('provides default reason when none given', async () => {
+    const mockSecurity: BashSecurity = {
+      isCommandAllowed: () => ({ allowed: false }),
+    }
+    const hook = createBashSecurityHook(mockSecurity)
+    const result = await hook.callback({
+      toolName: 'Bash',
+      toolInput: { command: 'some-command' },
+    } as PreToolUseInput)
+    expect(result.reason).toBe('Command not allowed')
   })
 })

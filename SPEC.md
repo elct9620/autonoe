@@ -834,6 +834,10 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-X010 | `pkill node`                | Allowed (dev process)           |
 | SC-X011 | `pkill postgres`            | Denied (non-dev process)        |
 | SC-X012 | `chmod -R +x dir/`          | Denied (-R flag blocked)        |
+| SC-X013 | `r\m -rf /`                 | Denied (backslash no bypass)    |
+| SC-X014 | `echo "test\nvalue"`        | Allowed (escaped in quotes)     |
+| SC-X015 | `""`                        | Allowed (empty command)         |
+| SC-X016 | Hook with no command        | Approved (continue=true)        |
 
 ### 8.3 Status Tools (autonoe-status)
 
