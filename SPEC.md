@@ -627,20 +627,55 @@ project/
 Load hardcoded ──▶ Load security baseline ──▶ Read agent.json ──▶ Merge (enforce baseline) ──▶ Pass to SDK
 ```
 
+### 5.5 SDK Sandbox Configuration
+
+**SandboxSettings (Hardcoded, NOT customizable):**
+
+| Setting                  | Value | Purpose                      |
+| ------------------------ | ----- | ---------------------------- |
+| enabled                  | true  | Enable OS-level isolation    |
+| autoAllowBashIfSandboxed | true  | Auto-approve bash in sandbox |
+
+```typescript
+// Passed to SDK query() options
+const sandboxSettings: SandboxSettings = {
+  enabled: true,
+  autoAllowBashIfSandboxed: true,
+}
+```
+
+**Security Layers:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│              Autonoe Security Layers                │
+├─────────────────────────────────────────────────────┤
+│  Layer 1: SDK Sandbox (enabled: true)               │
+│  ├── OS-level process isolation                     │
+│  └── Filesystem/network containment                 │
+├─────────────────────────────────────────────────────┤
+│  Layer 2: Filesystem Scope (SDK permissions)        │
+│  └── Read/Write limited to project directory        │
+├─────────────────────────────────────────────────────┤
+│  Layer 3: PreToolUse Hooks                          │
+│  ├── BashSecurity: Command allowlist                │
+│  └── .autonoe/ Protection: Block direct writes      │
+└─────────────────────────────────────────────────────┘
+```
+
 ---
 
 ## 6. Security
 
 ### 6.1 Autonoe Security Controls
 
-Autonoe applies the following controls when creating the Coding Agent:
-
-| Control              | Method            | Description                 |
-| -------------------- | ----------------- | --------------------------- |
-| OS-Level Sandbox     | SDK Configuration | Isolates agent execution    |
-| Filesystem Scope     | SDK Permissions   | Limits to project directory |
-| Bash Allowlist       | PreToolUse Hook   | Filters unsafe commands     |
-| .autonoe/ Protection | PreToolUse Hook   | Blocks direct writes        |
+| Control              | Implementation              | Enforcement     |
+| -------------------- | --------------------------- | --------------- |
+| OS-Level Sandbox     | SandboxSettings.enabled     | SDK (hardcoded) |
+| Bash Auto-Allow      | autoAllowBashIfSandboxed    | SDK (hardcoded) |
+| Filesystem Scope     | permissions: ["./**"]       | SDK             |
+| Bash Allowlist       | BashSecurity hook           | PreToolUse      |
+| .autonoe/ Protection | PreToolUse hook             | PreToolUse      |
 
 ### 6.2 Coding Agent Restrictions
 
@@ -755,6 +790,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-C004 | User adds custom hooks                   | Merged, security baseline enforced |
 | SC-C005 | User tries to disable sandbox            | Ignored, sandbox always enabled    |
 | SC-C006 | User tries to remove .autonoe protection | Security baseline re-applied       |
+| SC-C007 | Verify sandbox configuration             | enabled=true, autoAllow=true       |
 
 ### 8.5 Logger
 
