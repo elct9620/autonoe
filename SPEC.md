@@ -627,6 +627,25 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-L005 | TestLogger captures warning  | Message in entries with level   |
 | SC-L006 | TestLogger captures error    | Message in entries with level   |
 
+### 8.6 Claude Agent Client
+
+| ID       | Function             | Input                      | Expected Output                    |
+| -------- | -------------------- | -------------------------- | ---------------------------------- |
+| SC-AC001 | toSdkMcpServers      | Empty record               | Empty record                       |
+| SC-AC002 | toSdkMcpServers      | Server with args           | SDK format preserved               |
+| SC-AC003 | toAgentMessageType   | 'text'                     | AgentMessageType.Text              |
+| SC-AC004 | toAgentMessageType   | 'result'                   | AgentMessageType.Result            |
+| SC-AC005 | toAgentMessageType   | unknown                    | AgentMessageType.Text              |
+| SC-AC006 | toResultSubtype      | 'success'                  | ResultSubtype.Success              |
+| SC-AC007 | toResultSubtype      | 'error_max_turns'          | ResultSubtype.ErrorMaxTurns        |
+| SC-AC008 | toResultSubtype      | 'error_during_execution'   | ResultSubtype.ErrorDuringExecution |
+| SC-AC009 | toResultSubtype      | 'error_max_budget_usd'     | ResultSubtype.ErrorMaxBudgetUsd    |
+| SC-AC010 | toResultSubtype      | unknown                    | ResultSubtype.ErrorDuringExecution |
+| SC-AC011 | toAgentMessage       | Text message               | Domain AgentMessage                |
+| SC-AC012 | toAgentMessage       | Result with total_cost_usd | totalCostUsd (camelCase)           |
+| SC-AC013 | detectClaudeCodePath | claude found               | Path string                        |
+| SC-AC014 | detectClaudeCodePath | claude not found           | undefined                          |
+
 ---
 
 ## 9. Integration Test Scenarios
