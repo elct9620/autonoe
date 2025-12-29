@@ -276,7 +276,7 @@ class MockAgentClient implements AgentClient {
 ```typescript
 // packages/core/src/session.ts
 interface Session {
-  run(client: AgentClient, instruction: string): Promise<SessionResult>
+  run(client: AgentClient, instruction: string, logger?: Logger): Promise<SessionResult>
 }
 
 interface SessionOptions {
@@ -300,8 +300,9 @@ interface SessionResult {
 | Single execution         | One agent query cycle                    |
 | Cost tracking            | Track API cost for this session          |
 | Duration tracking        | Measure execution time                   |
-| Logging boundaries       | Mark session start/end in logs           |
-| Result processing        | Handle ResultMessage from agent          |
+| Debug logging            | Log message sending/receiving (debug)    |
+| Result display           | Display result text via logger.info      |
+| Error display            | Display error messages via logger.error  |
 
 ### 3.4 BashSecurity
 

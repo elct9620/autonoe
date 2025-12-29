@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { existsSync, statSync } from 'node:fs'
-import { Session, type SessionOptions } from '@autonoe/core'
+import { SessionRunner, type SessionRunnerOptions } from '@autonoe/core'
 import { ClaudeAgentClient } from '@autonoe/claude-agent-client'
 import { ConsoleLogger } from './consoleLogger'
 
@@ -44,7 +44,7 @@ export async function handleRunCommand(
     ? parseInt(options.maxIterations, 10)
     : undefined
 
-  const sessionOptions: SessionOptions = {
+  const runnerOptions: SessionRunnerOptions = {
     projectDir,
     maxIterations: Number.isNaN(maxIterations) ? undefined : maxIterations,
     model: options.model,
@@ -53,23 +53,23 @@ export async function handleRunCommand(
   logger.info(`Autonoe v${VERSION}`)
   logger.info('')
   logger.info('Starting coding agent session...')
-  logger.info(`  Working directory: ${sessionOptions.projectDir}`)
-  if (sessionOptions.maxIterations) {
-    logger.info(`  Max iterations: ${sessionOptions.maxIterations}`)
+  logger.info(`  Working directory: ${runnerOptions.projectDir}`)
+  if (runnerOptions.maxIterations) {
+    logger.info(`  Max iterations: ${runnerOptions.maxIterations}`)
   }
-  if (sessionOptions.model) {
-    logger.info(`  Model: ${sessionOptions.model}`)
+  if (runnerOptions.model) {
+    logger.info(`  Model: ${runnerOptions.model}`)
   }
   logger.info('')
 
   try {
     const client = new ClaudeAgentClient({
-      cwd: sessionOptions.projectDir,
+      cwd: runnerOptions.projectDir,
       permissionLevel: 'default',
     })
 
-    const session = new Session(sessionOptions)
-    const result = await session.run(client, logger)
+    const runner = new SessionRunner(runnerOptions)
+    const result = await runner.run(client, logger)
 
     logger.info('')
     if (result.success) {

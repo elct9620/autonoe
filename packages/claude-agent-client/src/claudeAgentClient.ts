@@ -4,7 +4,7 @@ import type {
   Options as SDKOptions,
   PermissionMode as SDKPermissionMode,
 } from '@anthropic-ai/claude-agent-sdk'
-import type { AgentClient, MessageStream, QueryOptions } from '@autonoe/core'
+import type { AgentClient, MessageStream, AgentClientOptions } from '@autonoe/core'
 import { detectClaudeCodePath } from './claudeCodePath'
 import { toSdkMcpServers, toAgentMessage } from './converters'
 
@@ -14,7 +14,7 @@ import { toSdkMcpServers, toAgentMessage } from './converters'
 export class ClaudeAgentClient implements AgentClient {
   private abortController: AbortController | null = null
 
-  constructor(private options: QueryOptions) {}
+  constructor(private options: AgentClientOptions) {}
 
   query(message: string): MessageStream {
     this.abortController = new AbortController()
@@ -25,10 +25,6 @@ export class ClaudeAgentClient implements AgentClient {
       cwd: options.cwd,
       abortController,
       pathToClaudeCodeExecutable: detectClaudeCodePath(),
-    }
-
-    if (options.systemPrompt) {
-      sdkOptions.systemPrompt = options.systemPrompt
     }
 
     if (options.mcpServers) {

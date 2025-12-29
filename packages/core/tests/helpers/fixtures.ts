@@ -25,9 +25,10 @@ export function createSessionResult(
 ): SessionResult {
   return {
     success: true,
+    costUsd: 0,
+    duration: 0,
     scenariosPassedCount: 0,
     scenariosTotalCount: 0,
-    duration: 0,
     ...overrides,
   }
 }

@@ -5,17 +5,16 @@ import type { MessageStream, McpServer, PermissionLevel } from './types'
  * @see SPEC.md Section 3.1
  */
 export interface AgentClient {
-  query(message: string): MessageStream
+  query(instruction: string): MessageStream
 }
 
 /**
- * Configuration options for creating an AgentClient
+ * Constructor options for AgentClient implementations
  * @see SPEC.md Section 3.1
  */
-export interface QueryOptions {
+export interface AgentClientOptions {
   cwd: string
   mcpServers?: Record<string, McpServer>
   permissionLevel?: PermissionLevel
   allowedTools?: string[]
-  systemPrompt?: string
 }

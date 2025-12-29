@@ -9,7 +9,6 @@ import type { ResultMessage } from './types'
  */
 export interface SessionOptions {
   projectDir: string
-  maxIterations?: number
   model?: string
 }
 
@@ -19,47 +18,53 @@ export interface SessionOptions {
  */
 export interface SessionResult {
   success: boolean
+  costUsd: number
+  duration: number
   scenariosPassedCount: number
   scenariosTotalCount: number
-  duration: number
 }
 
 /**
- * Session orchestrates the coding agent execution
+ * Session handles a single agent query execution
  * @see SPEC.md Section 3.3
  */
 export class Session {
   constructor(private options: SessionOptions) {}
 
   /**
-   * Run the session with an injected AgentClient and Logger
-   * @see SPEC.md Section 3.6 Dependency Injection
+   * Run the session with an injected AgentClient, instruction, and Logger
+   * @see SPEC.md Section 3.3
    */
   async run(
     client: AgentClient,
+    instruction: string,
     logger: Logger = silentLogger,
   ): Promise<SessionResult> {
     const startTime = Date.now()
+    let costUsd = 0
 
-    // Fixed test message for now
-    const testMessage = 'Hello, what is 1 + 1?'
-    logger.debug(`Sending: ${testMessage}`)
+    logger.debug(`Sending instruction`)
 
-    const query = client.query(testMessage)
+    const query = client.query(instruction)
 
     for await (const message of query) {
       logger.debug(`Received: ${message.type}`)
 
       if (message.type === AgentMessageType.Result) {
-        this.handleResultMessage(message as ResultMessage, logger)
+        const resultMessage = message as ResultMessage
+        if (resultMessage.totalCostUsd !== undefined) {
+          costUsd = resultMessage.totalCostUsd
+        }
+        this.handleResultMessage(resultMessage, logger)
       }
     }
 
     return {
       success: true,
+      costUsd,
+      duration: Date.now() - startTime,
       scenariosPassedCount: 0,
       scenariosTotalCount: 0,
-      duration: Date.now() - startTime,
     }
   }
 
@@ -71,9 +76,6 @@ export class Session {
     if (message.subtype === ResultSubtype.Success) {
       if (message.result) {
         logger.info(message.result)
-      }
-      if (message.totalCostUsd !== undefined) {
-        logger.info(`Cost: $${message.totalCostUsd.toFixed(4)}`)
       }
     } else if (message.errors) {
       for (const error of message.errors) {
