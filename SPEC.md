@@ -87,12 +87,13 @@ autonoe/
 │   │   ├── src/
 │   │   │   ├── index.ts
 │   │   │   ├── agentClient.ts      # Interface only
-│   │   │   ├── session.ts
+│   │   │   ├── session.ts          # Single execution
+│   │   │   ├── sessionRunner.ts    # Loop orchestration
 │   │   │   ├── logger.ts
 │   │   │   ├── statusTool.ts
 │   │   │   ├── bashSecurity.ts
-│   │   │   ├── prompts.ts
-│   │   │   └── prompts/
+│   │   │   ├── instructions.ts
+│   │   │   └── instructions/
 │   │   │       ├── initializer.md
 │   │   │       └── coding.md
 │   │   └── tests/
@@ -140,7 +141,7 @@ autonoe/
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │                    Presentation Layer                      │  │
 │  │  CLI commands, argument parsing, output formatting         │  │
-│  │  Creates ClaudeAgentClient, injects into Session           │  │
+│  │  Creates ClaudeAgentClient, injects into SessionRunner     │  │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -150,7 +151,7 @@ autonoe/
 │       packages/core             │  │  packages/claude-agent-client   │
 │  ┌───────────────────────────┐  │  │  ┌───────────────────────────┐  │
 │  │    Application Layer      │  │  │  │   Infrastructure Layer    │  │
-│  │  Session orchestration    │  │  │  │  ClaudeAgentClient        │  │
+│  │  SessionRunner            │  │  │  │  ClaudeAgentClient        │  │
 │  └───────────────────────────┘  │  │  │  SDK Converters           │  │
 │  ┌───────────────────────────┐  │  │  └───────────────────────────┘  │
 │  │      Domain Layer         │  │  └─────────────────────────────────┘
@@ -240,7 +241,7 @@ autonoe/
 ```typescript
 // packages/core/src/agentClient.ts
 interface AgentClient {
-  query(message: string): MessageStream
+  query(instruction: string): MessageStream
 }
 
 interface QueryOptions {
@@ -248,7 +249,6 @@ interface QueryOptions {
   mcpServers?: Record<string, McpServer>
   permissionLevel?: PermissionLevel
   allowedTools?: string[]
-  systemPrompt?: string
 }
 ```
 
@@ -269,29 +269,32 @@ class MockAgentClient implements AgentClient {
 ```typescript
 // packages/core/src/session.ts
 interface Session {
-  run(client: AgentClient): Promise<SessionResult>
+  run(client: AgentClient, instruction: string): Promise<SessionResult>
 }
 
 interface SessionOptions {
   projectDir: string
-  maxIterations?: number
-  delayBetweenSessions?: number
+  model?: string
 }
 
 interface SessionResult {
   success: boolean
+  costUsd: number
+  duration: number
   scenariosPassedCount: number
   scenariosTotalCount: number
-  duration: number
 }
 ```
 
-**Result Event Handling:**
+**Responsibilities:**
 
-| Subtype | Action |
-| ------- | ------ |
-| Success | Display result text and cost via logger |
-| Error*  | Display error messages via logger.error() |
+| Responsibility           | Description                              |
+| ------------------------ | ---------------------------------------- |
+| Single execution         | One agent query cycle                    |
+| Cost tracking            | Track API cost for this session          |
+| Duration tracking        | Measure execution time                   |
+| Logging boundaries       | Mark session start/end in logs           |
+| Result processing        | Handle ResultMessage from agent          |
 
 ### 3.4 BashSecurity
 
@@ -320,17 +323,17 @@ interface StatusTool {
 
 ### 3.6 Dependency Injection
 
-| Component    | Injected Via      | Purpose                   |
-| ------------ | ----------------- | ------------------------- |
-| AgentClient  | Session.run()     | Enable testing with mocks |
-| BashSecurity | PreToolUse hook   | Validate bash commands    |
-| StatusTool   | MCP Server config | Update scenario status    |
-| Logger       | Session.run()     | Enable output capture     |
+| Component    | Injected Via           | Purpose                   |
+| ------------ | ---------------------- | ------------------------- |
+| AgentClient  | SessionRunner.run()    | Enable testing with mocks |
+| BashSecurity | PreToolUse hook        | Validate bash commands    |
+| StatusTool   | MCP Server config      | Update scenario status    |
+| Logger       | SessionRunner.run()    | Enable output capture     |
 
 ```
-Session(options) ──▶ run(client, logger) ──▶ client.query()
-         │                │
-    Configuration    Dependency
+SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ──▶ client.query()
+              │                    │                    │
+         Configuration        Dependency          Per-session
 ```
 
 ### 3.7 Logger
@@ -362,6 +365,88 @@ const silentLogger: Logger
 | Application  | Use injected Logger for messages       |
 | Domain       | No direct logging (pure functions)     |
 | Tests        | TestLogger to capture and verify       |
+
+### 3.8 Session Loop
+
+#### 3.8.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      packages/core                              │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                   SessionRunner                            │  │
+│  │  client = AgentClient (reused)                             │  │
+│  │                        │                                   │  │
+│  │   ┌────────────────────▼────────────────────┐              │  │
+│  │   │           Session Loop                   │              │  │
+│  │   │  while (not terminated):                 │              │  │
+│  │   │    session = new Session(options)        │              │  │
+│  │   │    result = session.run(client, prompt)  │              │  │
+│  │   │    if (allScenariosPassed) break         │              │  │
+│  │   │    if (maxIterations reached) break      │              │  │
+│  │   │    delay(delayBetweenSessions)           │              │  │
+│  │   └──────────────────────────────────────────┘              │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                      Session                               │  │
+│  │  ┌─────────────────────────────────────────────────────┐   │  │
+│  │  │ logger.info("Session N started")                     │   │  │
+│  │  │ messages = client.query(instruction)                 │   │  │
+│  │  │ for message in messages: process(message)            │   │  │
+│  │  │ logger.info("Session N: cost=$X, duration=Ys")       │   │  │
+│  │  └─────────────────────────────────────────────────────┘   │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.8.2 Loop Types
+
+| Loop             | Location         | Controller       | Purpose                          |
+| ---------------- | ---------------- | ---------------- | -------------------------------- |
+| Session Loop     | SessionRunner    | --max-iterations | Run multiple agent sessions      |
+| Agent Turn Loop  | Claude Agent SDK | SDK internal     | Process messages within session  |
+
+#### 3.8.3 Client Reuse
+
+| Per Session                | Shared                    |
+| -------------------------- | ------------------------- |
+| instruction                | cwd, permissionMode       |
+|                            | mcpServers, hooks         |
+
+#### 3.8.4 SessionRunner Interface
+
+```typescript
+// packages/core/src/sessionRunner.ts
+interface SessionRunner {
+  run(client: AgentClient): Promise<SessionRunnerResult>
+}
+
+interface SessionRunnerOptions {
+  projectDir: string
+  maxIterations?: number        // undefined = unlimited
+  delayBetweenSessions?: number // default: 3000ms
+  model?: string
+}
+
+interface SessionRunnerResult {
+  success: boolean
+  iterations: number
+  scenariosPassedCount: number
+  scenariosTotalCount: number
+  totalDuration: number
+}
+```
+
+### 3.9 Termination Conditions
+
+| Priority | Condition              | Check                          | Result        |
+| -------- | ---------------------- | ------------------------------ | ------------- |
+| 1        | All scenarios passed   | status.json: all passed=true   | success=true  |
+| 2        | Max iterations reached | iteration >= maxIterations     | success=false |
+| 3        | User interrupt         | SIGINT received                | success=false |
+
+> Default: When --max-iterations not specified, loop continues until all scenarios pass.
 
 ---
 
@@ -535,14 +620,16 @@ The Coding Agent operates under these constraints:
 
 ## 7. Decision Table
 
-### 7.1 Session Behavior
+### 7.1 Session Loop Behavior
 
-| .autonoe/status.json | Action                          |
-| -------------------- | ------------------------------- |
-| NOT EXISTS           | Use initializerPrompt           |
-| EXISTS (no passed)   | Run all scenarios               |
-| EXISTS (partial)     | Run scenarios with passed=false |
-| EXISTS (all passed)  | Complete, exit                  |
+| .autonoe/status.json | --max-iterations | Action                              |
+| -------------------- | ---------------- | ----------------------------------- |
+| NOT EXISTS           | any              | Use initializerInstruction, continue|
+| EXISTS (none passed) | any              | Run all scenarios                   |
+| EXISTS (partial)     | any              | Run scenarios with passed=false     |
+| EXISTS (all passed)  | any              | Exit loop, success                  |
+| any                  | reached limit    | Exit loop, partial                  |
+| any                  | undefined        | Continue until all pass             |
 
 ### 7.2 Coding Agent Tool Availability
 
@@ -557,12 +644,12 @@ Tools available to the Coding Agent (configured by Autonoe):
 | Playwright    | YES       |
 | StatusTool    | YES       |
 
-### 7.3 Prompt Selection
+### 7.3 Instruction Selection
 
-| Condition                   | Prompt Used       |
-| --------------------------- | ----------------- |
-| No .autonoe/status.json     | initializerPrompt |
-| .autonoe/status.json exists | codingPrompt      |
+| Condition                   | Instruction              |
+| --------------------------- | ------------------------ |
+| No .autonoe/status.json     | initializerInstruction   |
+| .autonoe/status.json exists | codingInstruction        |
 
 ### 7.4 Configuration Merge
 
@@ -578,17 +665,20 @@ Tools available to the Coding Agent (configured by Autonoe):
 
 ## 8. Unit Test Scenarios
 
-### 8.1 Session
+### 8.1 SessionRunner
 
-| ID      | Input                   | Expected Output                         |
-| ------- | ----------------------- | --------------------------------------- |
-| SC-S001 | Project with SPEC.md    | Session starts successfully             |
-| SC-S002 | No .autonoe/status.json | Use initializerPrompt                   |
-| SC-S003 | All scenarios passed    | Session completes with success          |
-| SC-S004 | Max iterations reached  | Session stops, partial progress         |
-| SC-S005 | Agent interruption      | Session stops cleanly                   |
-| SC-S006 | Result event (success)  | Result text + cost displayed via logger |
-| SC-S007 | Result event (error)    | Error messages displayed via logger     |
+| ID      | Input                              | Expected Output                         |
+| ------- | ---------------------------------- | --------------------------------------- |
+| SC-S001 | Project with SPEC.md               | Session starts successfully             |
+| SC-S002 | No .autonoe/status.json            | Use initializerPrompt                   |
+| SC-S003 | All scenarios passed               | Session completes with success          |
+| SC-S004 | maxIterations: 2, not all pass     | Loop stops after 2 sessions             |
+| SC-S005 | Agent interruption                 | Session stops cleanly                   |
+| SC-S006 | Result event (success)             | Result text + cost displayed via logger |
+| SC-S007 | Result event (error)               | Error messages displayed via logger     |
+| SC-S008 | All scenarios pass on iteration 1  | Loop exits immediately with success     |
+| SC-S009 | No maxIterations, partial progress | Loop continues to next session          |
+| SC-S010 | delayBetweenSessions: 5000         | 5s delay observed between sessions      |
 
 ### 8.2 Bash Security
 
@@ -739,7 +829,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 }
 ```
 
-> CLI creates `ClaudeAgentClient` and injects it into `Session` from core.
+> CLI creates `ClaudeAgentClient` and injects it into `SessionRunner` from core.
 
 ### 10.5 Single Executable
 
@@ -858,15 +948,15 @@ cli.parse()
 
 ---
 
-## Appendix A: Prompts
+## Appendix A: Instructions
 
 ### A.1 File Structure
 
 ```
 packages/core/
 ├── src/
-│   ├── prompts.ts
-│   └── prompts/
+│   ├── instructions.ts
+│   └── instructions/
 │       ├── initializer.md
 │       └── coding.md
 └── markdown.d.ts
@@ -875,11 +965,11 @@ packages/core/
 ### A.2 Import Method
 
 ```typescript
-// packages/core/src/prompts.ts
-import initializerPrompt from './prompts/initializer.md' with { type: 'text' }
-import codingPrompt from './prompts/coding.md' with { type: 'text' }
+// packages/core/src/instructions.ts
+import initializerInstruction from './instructions/initializer.md' with { type: 'text' }
+import codingInstruction from './instructions/coding.md' with { type: 'text' }
 
-export { initializerPrompt, codingPrompt }
+export { initializerInstruction, codingInstruction }
 ```
 
 ```typescript
@@ -890,9 +980,9 @@ declare module '*.md' {
 }
 ```
 
-### A.3 Prompt Usage
+### A.3 Instruction Usage
 
-| Prompt            | Condition                   |
-| ----------------- | --------------------------- |
-| initializerPrompt | No .autonoe/status.json     |
-| codingPrompt      | .autonoe/status.json exists |
+| Instruction            | Condition                   |
+| ---------------------- | --------------------------- |
+| initializerInstruction | No .autonoe/status.json     |
+| codingInstruction      | .autonoe/status.json exists |
