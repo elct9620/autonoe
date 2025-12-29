@@ -60,13 +60,13 @@
 | Type Check      | tsc                            |
 | Unit Test       | Vitest                         |
 
-### 1.3 Coding Agent Tools (MCP Servers)
+### 1.3 Coding Agent Tools
 
-| Tool        | MCP Server     | Purpose                  |
+| Tool        | Source         | Purpose                  |
 | ----------- | -------------- | ------------------------ |
 | Browser     | Playwright MCP | E2E testing via browser  |
-| File System | Built-in       | Read/Write project files |
-| Bash        | Built-in       | Execute allowed commands |
+| File System | SDK Built-in   | Read/Write project files |
+| Bash        | SDK Built-in   | Execute allowed commands |
 
 ### 1.4 Project Structure
 
@@ -90,7 +90,7 @@ autonoe/
 │   │   │   ├── session.ts          # Single execution
 │   │   │   ├── sessionRunner.ts    # Loop orchestration
 │   │   │   ├── logger.ts
-│   │   │   ├── statusTool.ts
+│   │   │   ├── statusTools.ts
 │   │   │   ├── bashSecurity.ts
 │   │   │   ├── instructions.ts
 │   │   │   └── instructions/
@@ -230,6 +230,12 @@ autonoe/
 | acceptEdits | Auto-accept file edits |
 | bypassPermissions | Skip all permission checks |
 
+#### Type Aliases
+
+| Alias | Definition | Description |
+|-------|------------|-------------|
+| MessageStream | AsyncIterable\<AgentMessage\> | Async stream of agent messages |
+
 **Type Definitions:** See `packages/core/src/types.ts`
 
 ---
@@ -244,7 +250,8 @@ interface AgentClient {
   query(instruction: string): MessageStream
 }
 
-interface QueryOptions {
+// Constructor options for AgentClient implementations
+interface AgentClientOptions {
   cwd: string
   mcpServers?: Record<string, McpServer>
   permissionLevel?: PermissionLevel
@@ -310,25 +317,67 @@ interface ValidationResult {
 }
 ```
 
-### 3.5 StatusTool (Autonoe Tool)
+### 3.5 Status Management Tools (SDK Custom Tools)
+
+#### 3.5.1 Tool Registration
 
 ```typescript
-// packages/core/src/statusTool.ts
-interface StatusTool {
-  updateStatus(scenarioId: string, passed: boolean): Promise<void>
-}
+// packages/core/src/statusTools.ts
+import { tool, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk'
+import { z } from 'zod'
+
+const statusServer = createSdkMcpServer({
+  name: 'autonoe-status',
+  version: '1.0.0',
+  tools: [createScenarioTool, updateStatusTool]
+})
 ```
 
-> Registered via Agent SDK as custom tool
+#### 3.5.2 createScenario Tool
+
+```typescript
+const createScenarioTool = tool(
+  'create_scenario',
+  'Create a new scenario in status.json',
+  {
+    id: z.string(),
+    feature: z.string(),
+    name: z.string()
+  },
+  async ({ id, feature, name }) => { /* ... */ }
+)
+```
+
+#### 3.5.3 updateStatus Tool
+
+```typescript
+const updateStatusTool = tool(
+  'update_status',
+  'Update scenario passed status',
+  {
+    scenarioId: z.string(),
+    passed: z.boolean()
+  },
+  async ({ scenarioId, passed }) => { /* ... */ }
+)
+```
+
+#### 3.5.4 Tool Usage
+
+| Tool            | Phase          | Operation       |
+| --------------- | -------------- | --------------- |
+| create_scenario | Initialization | Create scenario |
+| update_status   | Coding         | Mark passed     |
 
 ### 3.6 Dependency Injection
 
-| Component    | Injected Via           | Purpose                   |
-| ------------ | ---------------------- | ------------------------- |
-| AgentClient  | SessionRunner.run()    | Enable testing with mocks |
-| BashSecurity | PreToolUse hook        | Validate bash commands    |
-| StatusTool   | MCP Server config      | Update scenario status    |
-| Logger       | SessionRunner.run()    | Enable output capture     |
+| Component       | Injected Via              | Purpose                   |
+| --------------- | ------------------------- | ------------------------- |
+| AgentClient     | SessionRunner.run()       | Enable testing with mocks |
+| BashSecurity    | PreToolUse hook           | Validate bash commands    |
+| create_scenario | SDK createSdkMcpServer    | Create scenarios          |
+| update_status   | SDK createSdkMcpServer    | Update scenario status    |
+| Logger          | SessionRunner.run()       | Enable output capture     |
 
 ```
 SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ──▶ client.query()
@@ -419,7 +468,7 @@ const silentLogger: Logger
 ```typescript
 // packages/core/src/sessionRunner.ts
 interface SessionRunner {
-  run(client: AgentClient): Promise<SessionRunnerResult>
+  run(client: AgentClient, logger: Logger): Promise<SessionRunnerResult>
 }
 
 interface SessionRunnerOptions {
@@ -511,15 +560,13 @@ project/
 }
 ```
 
-> Generated and managed by Prompt, structure kept minimal
-
 ### 5.3 State Persistence
 
-| State                | Writer                        | Reader |
-| -------------------- | ----------------------------- | ------ |
-| Project Files        | Coding Agent (Direct)         | Both   |
-| .autonoe/status.json | Coding Agent (via StatusTool) | Both   |
-| Git History          | Coding Agent (Direct)         | Both   |
+| State                | Writer                               | Reader |
+| -------------------- | ------------------------------------ | ------ |
+| Project Files        | Coding Agent (Direct)                | Both   |
+| .autonoe/status.json | create_scenario / update_status Tool | Both   |
+| Git History          | Coding Agent (Direct)                | Both   |
 
 ### 5.4 Configuration
 
@@ -598,11 +645,11 @@ Autonoe applies the following controls when creating the Coding Agent:
 
 The Coding Agent operates under these constraints:
 
-| Resource      | Direct Access | Tool Access        | Enforcement                       |
-| ------------- | ------------- | ------------------ | --------------------------------- |
-| Project Files | R/W           | -                  | SDK permissions                   |
-| .autonoe/     | Read-only     | Write (StatusTool) | PreToolUse hook blocks direct W/E |
-| Bash Commands | -             | Limited allowlist  | BashSecurity hook                 |
+| Resource      | Direct Access | Tool Access            | Enforcement                       |
+| ------------- | ------------- | ---------------------- | --------------------------------- |
+| Project Files | R/W           | -                      | SDK permissions                   |
+| .autonoe/     | Read-only     | Write (status tools)   | PreToolUse hook blocks direct W/E |
+| Bash Commands | -             | Limited allowlist      | BashSecurity hook                 |
 
 ### 6.3 Allowed Commands
 
@@ -624,7 +671,7 @@ The Coding Agent operates under these constraints:
 
 | .autonoe/status.json | --max-iterations | Action                              |
 | -------------------- | ---------------- | ----------------------------------- |
-| NOT EXISTS           | any              | Use initializerInstruction, continue|
+| NOT EXISTS           | any              | Use initializerInstruction, continue |
 | EXISTS (none passed) | any              | Run all scenarios                   |
 | EXISTS (partial)     | any              | Run scenarios with passed=false     |
 | EXISTS (all passed)  | any              | Exit loop, success                  |
@@ -635,14 +682,14 @@ The Coding Agent operates under these constraints:
 
 Tools available to the Coding Agent (configured by Autonoe):
 
-| Tool Category | Available |
-| ------------- | --------- |
-| File Read     | YES       |
-| File Write    | YES       |
-| Bash (safe)   | YES       |
-| Git           | YES       |
-| Playwright    | YES       |
-| StatusTool    | YES       |
+| Tool Category   | Available |
+| --------------- | --------- |
+| File Read       | YES       |
+| File Write      | YES       |
+| Bash (safe)     | YES       |
+| Git             | YES       |
+| Playwright      | YES       |
+| autonoe-status  | YES       |
 
 ### 7.3 Instruction Selection
 
@@ -670,7 +717,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | ID      | Input                              | Expected Output                         |
 | ------- | ---------------------------------- | --------------------------------------- |
 | SC-S001 | Project with SPEC.md               | Session starts successfully             |
-| SC-S002 | No .autonoe/status.json            | Use initializerPrompt                   |
+| SC-S002 | No .autonoe/status.json            | Use initializerInstruction              |
 | SC-S003 | All scenarios passed               | Session completes with success          |
 | SC-S004 | maxIterations: 2, not all pass     | Loop stops after 2 sessions             |
 | SC-S005 | Agent interruption                 | Session stops cleanly                   |
@@ -688,12 +735,14 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-X002 | Blocked: `rm -rf /`      | Command denied        |
 | SC-X004 | Chained with blocked cmd | Entire command denied |
 
-### 8.3 StatusTool
+### 8.3 Status Tools (autonoe-status)
 
-| ID      | Input                      | Expected Output           |
-| ------- | -------------------------- | ------------------------- |
-| SC-T001 | Update status: passed=true | status.json updated       |
-| SC-T002 | Update invalid scenario ID | Error: scenario not found |
+| ID      | Tool            | Input                      | Expected Output           |
+| ------- | --------------- | -------------------------- | ------------------------- |
+| SC-T001 | create_scenario | Valid scenario input       | Scenario added to status  |
+| SC-T002 | create_scenario | Duplicate scenario ID      | Error: already exists     |
+| SC-T003 | update_status   | Valid ID, passed=true      | status.json updated       |
+| SC-T004 | update_status   | Invalid scenario ID        | Error: scenario not found |
 
 ### 8.4 Configuration
 
@@ -742,12 +791,12 @@ Tools available to the Coding Agent (configured by Autonoe):
 
 ### 9.1 Security (SDK)
 
-| ID      | Input                            | Expected Output                |
-| ------- | -------------------------------- | ------------------------------ |
-| SC-X003 | File read outside project        | Permission denied              |
-| SC-X005 | Direct write to .autonoe/        | Permission denied (PreToolUse) |
-| SC-X006 | Direct edit .autonoe/status.json | Permission denied (PreToolUse) |
-| SC-X007 | StatusTool update status.json    | Allowed                        |
+| ID      | Input                              | Expected Output                |
+| ------- | ---------------------------------- | ------------------------------ |
+| SC-X003 | File read outside project          | Permission denied              |
+| SC-X005 | Direct write to .autonoe/          | Permission denied (PreToolUse) |
+| SC-X006 | Direct edit .autonoe/status.json   | Permission denied (PreToolUse) |
+| SC-X007 | update_status tool write status    | Allowed                        |
 
 ### 9.2 Browser
 
