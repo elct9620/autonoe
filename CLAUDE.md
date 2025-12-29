@@ -7,41 +7,60 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 bun run check          # Type checking
 bun run format         # Format code with Prettier
-bun run test           # Run tests (vitest)
+bun run test           # Run all tests (vitest)
 bun run compile        # Compile to single executable
 
 # Run CLI directly
 bun apps/cli/bin/autonoe.ts run
 ```
 
+### Testing
+
+```bash
+bun run test                                       # Run all tests
+bun run test --project core                        # Run tests for a specific package
+bun run test packages/core/tests/session.test.ts   # Run a single test file
+```
+
+Project names are defined in each package's `vitest.config.ts` (e.g., `name: 'core'`).
+
 ## Architecture
 
 Autonoe is a Bun/TypeScript monorepo that orchestrates an autonomous coding agent via Claude's Agent SDK.
 
 ```
-apps/cli (Presentation)  →  packages/core (Application/Domain/Infrastructure)
-                                    ↓
-                            Coding Agent (Claude Agent SDK)
-                                    ↓
-                            MCP Servers (Playwright, Bash, File System)
+┌─────────────────────────────────────────────────────────────────┐
+│  apps/cli (Presentation)                                        │
+│    Creates ClaudeAgentClient, injects into SessionRunner        │
+└─────────────────────────────────────────────────────────────────┘
+              │                                       │
+              ▼                                       ▼
+┌─────────────────────────────────┐  ┌─────────────────────────────────┐
+│       packages/core             │  │  packages/claude-agent-client   │
+│  SessionRunner, Session         │  │  ClaudeAgentClient (SDK wrapper)│
+│  BashSecurity, Configuration    │  │  Converters (SDK ↔ Domain)      │
+│  Types (NO external deps)       │  │  Depends on @autonoe/core       │
+└─────────────────────────────────┘  └─────────────────────────────────┘
 ```
 
-**Key flow**: CLI parses args → `runSession(options)` → Agent reads SPEC.md → executes scenarios → updates `.autonoe/status.json` via StatusTool
+**Key flow**: CLI parses args → `SessionRunner.run(client, logger)` → `Session.run()` → `client.query()` → Agent reads SPEC.md → executes scenarios → updates `.autonoe/status.json` via StatusTool
 
 ### Packages
 
 - `@autonoe/cli` - Entry point, argument parsing with CAC (`apps/cli/bin/autonoe.ts`)
-- `@autonoe/core` - Session orchestration, exports `runSession()` and types
+- `@autonoe/core` - Session orchestration, domain types, security hooks (NO external deps)
+- `@autonoe/claude-agent-client` - SDK wrapper implementing `AgentClient` interface
 
-### Testing
+### Dependency Rule
 
-Tests use Vitest with workspace configuration (`vitest.workspace.ts`). Each package has its own `vitest.config.ts`.
-
-```bash
-bun run test                                  # Run all tests
-bunx vitest --project @autonoe/core           # Run tests for a specific package
-bunx vitest packages/core/tests/session.test  # Run a single test file
 ```
+apps/cli
+    ├── @autonoe/core (types, SessionRunner)
+    └── @autonoe/claude-agent-client (ClaudeAgentClient)
+            └── @autonoe/core (types only)
+```
+
+`packages/core` has NO external dependencies - pure domain + application logic.
 
 ## Conventions
 
@@ -50,23 +69,29 @@ bunx vitest packages/core/tests/session.test  # Run a single test file
 - **TypeScript**: Strict mode, ESNext target/module
 - **Prompts**: Markdown files imported via `with { type: 'text' }` (requires `markdown.d.ts`)
 
-## Security Model (Target Architecture)
+## Security Model (Three-Layer Architecture)
 
-The agent will operate under three security layers:
+```
+Layer 1: SDK Sandbox (enabled: true, autoAllowBashIfSandboxed: true)
+Layer 2: Filesystem Scope (SDK permissions: "./**")
+Layer 3: PreToolUse Hooks
+         ├── BashSecurity: Command allowlist with argument validation
+         └── AutonoeProtection: Block direct writes to .autonoe/
+```
 
-1. OS sandbox (SDK)
-2. Filesystem scope limited to project directory
-3. Bash allowlist via PreToolUse hook
-
-`.autonoe/` directory is read-only for direct access; writes only via StatusTool.
+See `SPEC.md` Section 6 for bash command allowlist and validation rules.
 
 ## Implementation Status
 
-The project is in early development. Core exports `runSession()` as a stub. Key components from SPEC.md pending implementation:
+Core functionality implemented:
+- Session / SessionRunner with logger injection
+- BashSecurity (PreToolUse hook with command chain parsing)
+- AutonoeProtection hook
+- Configuration loading and merging
+- ClaudeAgentClient with SDK converters
 
-- AgentClient / MockAgentClient
-- BashSecurity (PreToolUse hook)
-- StatusTool
+Pending:
+- StatusTool (autonoe-status MCP server)
 - Prompt system (initializer.md, coding.md)
 
 ## Specification
