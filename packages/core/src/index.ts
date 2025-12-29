@@ -9,7 +9,13 @@ export type {
 export { AgentMessageType, ResultSubtype } from './types'
 
 // AgentClient exports (interface only)
-export type { AgentClient, AgentClientOptions } from './agentClient'
+export type {
+  AgentClient,
+  AgentClientOptions,
+  PreToolUseHook,
+  PreToolUseInput,
+  HookResult,
+} from './agentClient'
 
 // Logger exports
 export type { Logger, LogLevel } from './logger'
@@ -24,3 +30,24 @@ export {
   type SessionRunnerOptions,
   type SessionRunnerResult,
 } from './sessionRunner'
+
+// BashSecurity exports
+export type { BashSecurity, ValidationResult } from './bashSecurity'
+export { DefaultBashSecurity, createBashSecurityHook } from './bashSecurity'
+
+// Configuration exports
+export type {
+  SandboxConfig,
+  HookConfig,
+  AgentConfig,
+  UserConfig,
+} from './configuration'
+export {
+  loadConfig,
+  mergeConfig,
+  SECURITY_BASELINE,
+  BUILTIN_MCP_SERVERS,
+} from './configuration'
+
+// Autonoe Protection exports
+export { createAutonoeProtectionHook } from './autonoeProtection'

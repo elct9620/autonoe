@@ -1,102 +1,316 @@
-import { describe, it, expect } from 'vitest'
-
-// TODO: Import when configuration module is implemented
-// import { loadConfig, mergeConfig } from '../src/configuration'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+import {
+  loadConfig,
+  mergeConfig,
+  SECURITY_BASELINE,
+  BUILTIN_MCP_SERVERS,
+} from '../src/configuration'
 
 describe('Configuration', () => {
+  let testDir: string
+
+  beforeEach(() => {
+    testDir = join(tmpdir(), `autonoe-test-${Date.now()}`)
+    mkdirSync(testDir, { recursive: true })
+  })
+
+  afterEach(() => {
+    if (existsSync(testDir)) {
+      rmSync(testDir, { recursive: true, force: true })
+    }
+  })
+
   describe('SC-C001: No agent.json', () => {
-    it.skip('uses hardcoded settings when no agent.json exists', async () => {
-      // TODO: Implement configuration loading
-      // - Create project without .autonoe/agent.json
-      // - Load configuration
-      // - Verify hardcoded defaults are used
+    it('uses hardcoded settings when no agent.json exists', async () => {
+      const config = await loadConfig(testDir)
+
+      expect(config.sandbox.enabled).toBe(true)
+      expect(config.sandbox.autoAllowBashIfSandboxed).toBe(true)
+      expect(config.permissions).toContain('./**')
+      expect(config.hooks.PreToolUse).toContain('bash-security')
+      expect(config.hooks.PreToolUse).toContain('autonoe-protection')
     })
 
-    it.skip('returns default MCP servers', async () => {
-      // TODO: Verify Playwright MCP is included by default
+    it('returns default MCP servers', async () => {
+      const config = await loadConfig(testDir)
+
+      expect(config.mcpServers.playwright).toBeDefined()
+      expect(config.mcpServers.playwright!.command).toBe('npx')
     })
   })
 
   describe('SC-C002: Custom MCP servers', () => {
-    it.skip('merges user MCP servers with hardcoded servers', async () => {
-      // TODO: Implement MCP server merging
-      // - Create agent.json with custom mcpServers
-      // - Load configuration
-      // - Verify both hardcoded and custom servers present
+    it('merges user MCP servers with hardcoded servers', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          mcpServers: {
+            'custom-tool': {
+              command: 'npx',
+              args: ['custom-mcp-server'],
+            },
+          },
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.mcpServers.playwright).toBeDefined()
+      expect(config.mcpServers['custom-tool']).toBeDefined()
+      expect(config.mcpServers['custom-tool']!.command).toBe('npx')
     })
 
-    it.skip('preserves built-in Playwright server', async () => {
-      // TODO: Verify Playwright always available
+    it('preserves built-in Playwright server', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          mcpServers: {
+            'my-server': { command: 'node', args: ['server.js'] },
+          },
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.mcpServers.playwright).toEqual(
+        BUILTIN_MCP_SERVERS.playwright,
+      )
     })
 
-    it.skip('does not override built-in servers', async () => {
-      // TODO: Verify user cannot replace built-in servers
+    it('does not override built-in servers', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          mcpServers: {
+            playwright: {
+              command: 'malicious',
+              args: ['--evil'],
+            },
+          },
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.mcpServers.playwright!.command).toBe('npx')
+      expect(config.mcpServers.playwright!.args).toContain(
+        '@anthropic-ai/mcp-server-playwright',
+      )
     })
   })
 
   describe('SC-C003: Custom permissions', () => {
-    it.skip('merges user permissions with security baseline', async () => {
-      // TODO: Implement permission merging
-      // - Create agent.json with custom permissions
-      // - Load configuration
-      // - Verify baseline permissions still enforced
+    it('merges user permissions with security baseline', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          permissions: ['./docs/**', './scripts/**'],
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.permissions).toContain('./**')
+      expect(config.permissions).toContain('./docs/**')
+      expect(config.permissions).toContain('./scripts/**')
     })
 
-    it.skip('allows extending permissions', async () => {
-      // TODO: Verify user can add new permissions
+    it('allows extending permissions', async () => {
+      const result = mergeConfig(SECURITY_BASELINE, {
+        permissions: ['./extra/**'],
+      })
+
+      expect(result.permissions).toContain('./**')
+      expect(result.permissions).toContain('./extra/**')
+    })
+
+    it('deduplicates permissions', async () => {
+      const result = mergeConfig(SECURITY_BASELINE, {
+        permissions: ['./**', './new/**'],
+      })
+
+      const occurrences = result.permissions.filter((p) => p === './**').length
+      expect(occurrences).toBe(1)
     })
   })
 
   describe('SC-C004: Custom hooks', () => {
-    it.skip('merges user hooks with security baseline hooks', async () => {
-      // TODO: Implement hook merging
-      // - Create agent.json with custom hooks
-      // - Verify BashSecurity hook still present
-      // - Verify .autonoe protection hook still present
+    it('merges user hooks with security baseline hooks', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          hooks: {
+            PreToolUse: ['custom-validator'],
+          },
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.hooks.PreToolUse).toContain('bash-security')
+      expect(config.hooks.PreToolUse).toContain('autonoe-protection')
+      expect(config.hooks.PreToolUse).toContain('custom-validator')
     })
 
-    it.skip('allows adding custom PreToolUse hooks', async () => {
-      // TODO: Verify user can add custom hooks
+    it('allows adding custom PreToolUse hooks', async () => {
+      const result = mergeConfig(SECURITY_BASELINE, {
+        hooks: { PreToolUse: ['my-hook'] },
+      })
+
+      expect(result.hooks.PreToolUse).toContain('my-hook')
+    })
+
+    it('baseline hooks come first', async () => {
+      const result = mergeConfig(SECURITY_BASELINE, {
+        hooks: { PreToolUse: ['custom-hook'] },
+      })
+
+      const bashSecurityIndex = result.hooks.PreToolUse.indexOf('bash-security')
+      const customHookIndex = result.hooks.PreToolUse.indexOf('custom-hook')
+
+      expect(bashSecurityIndex).toBeLessThan(customHookIndex)
+    })
+
+    it('does not duplicate baseline hooks', async () => {
+      const result = mergeConfig(SECURITY_BASELINE, {
+        hooks: { PreToolUse: ['bash-security', 'custom-hook'] },
+      })
+
+      const occurrences = result.hooks.PreToolUse.filter(
+        (h) => h === 'bash-security',
+      ).length
+      expect(occurrences).toBe(1)
     })
   })
 
   describe('SC-C005: Sandbox override attempt', () => {
-    it.skip('ignores user attempt to disable sandbox', async () => {
-      // TODO: Implement sandbox enforcement
-      // - Create agent.json with sandbox: { enabled: false }
-      // - Load configuration
-      // - Verify sandbox remains enabled
+    it('ignores user attempt to disable sandbox', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          sandbox: { enabled: false },
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.sandbox.enabled).toBe(true)
+    })
+
+    it('ignores user attempt to disable autoAllowBashIfSandboxed', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          sandbox: { autoAllowBashIfSandboxed: false },
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.sandbox.autoAllowBashIfSandboxed).toBe(true)
     })
   })
 
   describe('SC-C006: Protection removal attempt', () => {
-    it.skip('re-applies security baseline when protection removed', async () => {
-      // TODO: Implement baseline enforcement
-      // - Create agent.json that attempts to remove protection
-      // - Load configuration
-      // - Verify protection hooks are re-applied
+    it('re-applies security baseline when protection removed', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          hooks: {
+            PreToolUse: [], // Empty - trying to remove all hooks
+          },
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.hooks.PreToolUse).toContain('bash-security')
+      expect(config.hooks.PreToolUse).toContain('autonoe-protection')
     })
 
-    it.skip('maintains BashSecurity hook', async () => {
-      // TODO: Verify BashSecurity cannot be removed
+    it('maintains BashSecurity hook', async () => {
+      const result = mergeConfig(SECURITY_BASELINE, {
+        hooks: { PreToolUse: [] },
+      })
+
+      expect(result.hooks.PreToolUse).toContain('bash-security')
     })
 
-    it.skip('maintains .autonoe protection', async () => {
-      // TODO: Verify .autonoe protection cannot be removed
+    it('maintains .autonoe protection', async () => {
+      const result = mergeConfig(SECURITY_BASELINE, {
+        hooks: { PreToolUse: [] },
+      })
+
+      expect(result.hooks.PreToolUse).toContain('autonoe-protection')
+    })
+  })
+
+  describe('SC-C007: Verify sandbox configuration', () => {
+    it('sandbox enabled is always true', async () => {
+      const config = await loadConfig(testDir)
+      expect(config.sandbox.enabled).toBe(true)
+    })
+
+    it('autoAllowBashIfSandboxed is always true', async () => {
+      const config = await loadConfig(testDir)
+      expect(config.sandbox.autoAllowBashIfSandboxed).toBe(true)
+    })
+
+    it('SECURITY_BASELINE has correct sandbox values', () => {
+      expect(SECURITY_BASELINE.sandbox.enabled).toBe(true)
+      expect(SECURITY_BASELINE.sandbox.autoAllowBashIfSandboxed).toBe(true)
+    })
+
+    it('cannot modify SECURITY_BASELINE sandbox', () => {
+      expect(() => {
+        // Testing runtime immutability - Object.freeze prevents modification
+        ;(SECURITY_BASELINE.sandbox as { enabled: boolean }).enabled = false
+      }).toThrow()
     })
   })
 
   describe('Configuration loading', () => {
-    it.skip('loads agent.json from .autonoe directory', async () => {
-      // TODO: Test file loading
+    it('loads agent.json from .autonoe directory', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          permissions: ['./custom/**'],
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.permissions).toContain('./custom/**')
     })
 
-    it.skip('handles malformed agent.json gracefully', async () => {
-      // TODO: Test error handling for invalid JSON
+    it('handles malformed agent.json gracefully', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(join(testDir, '.autonoe', 'agent.json'), '{ invalid json }')
+
+      const config = await loadConfig(testDir)
+
+      // Should fall back to defaults
+      expect(config.sandbox.enabled).toBe(true)
+      expect(config.hooks.PreToolUse).toContain('bash-security')
     })
 
-    it.skip('handles missing .autonoe directory', async () => {
-      // TODO: Test fallback to defaults
+    it('handles missing .autonoe directory', async () => {
+      const config = await loadConfig(testDir)
+
+      expect(config.sandbox.enabled).toBe(true)
+      expect(config.permissions).toContain('./**')
     })
   })
 })

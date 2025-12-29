@@ -1,6 +1,13 @@
 import { resolve } from 'node:path'
 import { existsSync, statSync } from 'node:fs'
-import { SessionRunner, type SessionRunnerOptions } from '@autonoe/core'
+import {
+  SessionRunner,
+  loadConfig,
+  DefaultBashSecurity,
+  createBashSecurityHook,
+  createAutonoeProtectionHook,
+  type SessionRunnerOptions,
+} from '@autonoe/core'
 import { ClaudeAgentClient } from '@autonoe/claude-agent-client'
 import { ConsoleLogger } from './consoleLogger'
 
@@ -63,9 +70,22 @@ export async function handleRunCommand(
   logger.info('')
 
   try {
+    // Load configuration (merges hardcoded + user agent.json)
+    const config = await loadConfig(runnerOptions.projectDir)
+
+    // Create security hooks
+    const bashSecurity = new DefaultBashSecurity()
+    const preToolUseHooks = [
+      createBashSecurityHook(bashSecurity),
+      createAutonoeProtectionHook(),
+    ]
+
     const client = new ClaudeAgentClient({
       cwd: runnerOptions.projectDir,
       permissionLevel: 'default',
+      sandbox: config.sandbox,
+      mcpServers: config.mcpServers,
+      preToolUseHooks,
     })
 
     const runner = new SessionRunner(runnerOptions)

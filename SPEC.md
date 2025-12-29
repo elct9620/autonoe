@@ -687,17 +687,76 @@ The Coding Agent operates under these constraints:
 | .autonoe/     | Read-only     | Write (status tools)   | PreToolUse hook blocks direct W/E |
 | Bash Commands | -             | Limited allowlist      | BashSecurity hook                 |
 
-### 6.3 Allowed Commands
+### 6.3 Bash Command Security
 
-| Category   | Commands                                 |
-| ---------- | ---------------------------------------- |
-| Navigation | ls, pwd, cd, cat, head, tail, find, grep |
-| File Ops   | mkdir, cp                                |
-| Git        | git                                      |
-| Node.js    | node, npm, npx                           |
-| Build      | tsc, esbuild, vite                       |
-| Test       | jest, vitest, playwright                 |
-| Process    | echo, which                              |
+#### 6.3.1 Command Allowlist
+
+| Category   | Commands                                 | Validation       |
+| ---------- | ---------------------------------------- | ---------------- |
+| Navigation | ls, pwd, cat, head, tail, wc, find, grep | Allowlist        |
+| File Ops   | mkdir, cp, chmod                         | chmod: args      |
+| Git        | git                                      | Allowlist        |
+| Node.js    | node, npm, npx                           | Allowlist        |
+| Build      | tsc, esbuild, vite                       | Allowlist        |
+| Test       | jest, vitest, playwright                 | Allowlist        |
+| Process    | echo, which, ps, lsof, sleep, pkill      | pkill: args      |
+
+#### 6.3.2 Argument Validation
+
+Commands with `args` validation require additional checks:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  Argument Validation Rules                   │
+├─────────────────────────────────────────────────────────────┤
+│  chmod                                                       │
+│  ├── Allowed: +x, u+x, g+x, o+x, a+x, ug+x, ...             │
+│  ├── Blocked: -R (recursive), numeric modes (755, 777)      │
+│  └── Required: mode + target file(s)                        │
+├─────────────────────────────────────────────────────────────┤
+│  pkill                                                       │
+│  ├── Allowed targets: node, npm, npx, vite, next            │
+│  ├── Blocked: all other process names                       │
+│  └── Required: process name argument                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 6.3.3 Validation Flow
+
+```
+Command Input
+     │
+     ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ Parse Chain │────▶│ Extract Cmd │────▶│ Check Allow │
+│ (&&,||,|,;) │     │ (basename)  │     │    List     │
+└─────────────┘     └─────────────┘     └──────┬──────┘
+                                               │
+                    ┌──────────────────────────┼──────────────────────────┐
+                    ▼                          ▼                          ▼
+             ┌─────────────┐            ┌─────────────┐            ┌─────────────┐
+             │   ALLOW     │            │    DENY     │            │ Needs Args  │
+             │  (simple)   │            │  (blocked)  │            │ Validation  │
+             └─────────────┘            └─────────────┘            └──────┬──────┘
+                                                                          │
+                                                                          ▼
+                                                                   ┌─────────────┐
+                                                                   │  Validate   │
+                                                                   │  Arguments  │
+                                                                   └──────┬──────┘
+                                                                          │
+                                                           ┌──────────────┴──────────────┐
+                                                           ▼                             ▼
+                                                    ┌─────────────┐               ┌─────────────┐
+                                                    │   ALLOW     │               │    DENY     │
+                                                    └─────────────┘               └─────────────┘
+```
+
+#### 6.3.4 Command Chain Handling
+
+- Operators: `&&`, `||`, `|`, `;`
+- Rule: If ANY command in chain is blocked, ENTIRE chain is denied
+- Parse: Use shell-aware tokenizer (handle quotes, escapes)
 
 ---
 
@@ -765,11 +824,16 @@ Tools available to the Coding Agent (configured by Autonoe):
 
 ### 8.2 Bash Security
 
-| ID      | Input                    | Expected Output       |
-| ------- | ------------------------ | --------------------- |
-| SC-X001 | Allowed: `npm install`   | Command executed      |
-| SC-X002 | Blocked: `rm -rf /`      | Command denied        |
-| SC-X004 | Chained with blocked cmd | Entire command denied |
+| ID      | Input                       | Expected Output                 |
+| ------- | --------------------------- | ------------------------------- |
+| SC-X001 | Allowed: `npm install`      | Command executed                |
+| SC-X002 | Blocked: `rm -rf /`         | Command denied                  |
+| SC-X004 | Chained with blocked cmd    | Entire command denied           |
+| SC-X008 | `chmod +x script.sh`        | Allowed (executable permission) |
+| SC-X009 | `chmod 777 file`            | Denied (numeric mode blocked)   |
+| SC-X010 | `pkill node`                | Allowed (dev process)           |
+| SC-X011 | `pkill postgres`            | Denied (non-dev process)        |
+| SC-X012 | `chmod -R +x dir/`          | Denied (-R flag blocked)        |
 
 ### 8.3 Status Tools (autonoe-status)
 
@@ -821,6 +885,18 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-AC012 | toAgentMessage       | Result with total_cost_usd | totalCostUsd (camelCase)           |
 | SC-AC013 | detectClaudeCodePath | claude found               | Path string                        |
 | SC-AC014 | detectClaudeCodePath | claude not found           | undefined                          |
+
+### 8.7 Autonoe Protection
+
+| ID       | Input                              | Expected Output |
+| -------- | ---------------------------------- | --------------- |
+| SC-AP001 | file_path: `.autonoe/status.json`  | Block           |
+| SC-AP002 | file_path: `src/index.ts`          | Approve         |
+| SC-AP003 | file_path: `/abs/.autonoe/file`    | Block           |
+| SC-AP004 | file_path: `./project/.autonoe/x`  | Block           |
+| SC-AP005 | file_path: undefined               | Approve         |
+| SC-AP006 | filePath (camelCase): `.autonoe/x` | Block           |
+| SC-AP007 | Windows path: `.autonoe\\file`     | Block           |
 
 ---
 
