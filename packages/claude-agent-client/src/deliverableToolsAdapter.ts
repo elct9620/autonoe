@@ -1,7 +1,58 @@
 import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
-import type { DeliverableRepository } from '@autonoe/core'
+import type {
+  DeliverableRepository,
+  CreateDeliverableInput,
+  UpdateDeliverableInput,
+} from '@autonoe/core'
 import { createDeliverable, updateDeliverable } from '@autonoe/core'
+
+/**
+ * Tool result format for MCP tools
+ */
+export interface ToolResult {
+  content: Array<{ type: 'text'; text: string }>
+}
+
+/**
+ * Handler for create_deliverable tool
+ * Extracted for testability
+ */
+export async function handleCreateDeliverable(
+  repository: DeliverableRepository,
+  input: CreateDeliverableInput,
+): Promise<ToolResult> {
+  const status = await repository.load()
+  const { status: newStatus, result } = createDeliverable(status, input)
+
+  if (result.success) {
+    await repository.save(newStatus)
+  }
+
+  return {
+    content: [{ type: 'text' as const, text: JSON.stringify(result) }],
+  }
+}
+
+/**
+ * Handler for update_deliverable tool
+ * Extracted for testability
+ */
+export async function handleUpdateDeliverable(
+  repository: DeliverableRepository,
+  input: UpdateDeliverableInput,
+): Promise<ToolResult> {
+  const status = await repository.load()
+  const { status: newStatus, result } = updateDeliverable(status, input)
+
+  if (result.success) {
+    await repository.save(newStatus)
+  }
+
+  return {
+    content: [{ type: 'text' as const, text: JSON.stringify(result) }],
+  }
+}
 
 /**
  * Create an SDK MCP server with deliverable tools
@@ -19,18 +70,7 @@ export function createDeliverableMcpServer(repository: DeliverableRepository) {
         .array(z.string())
         .describe('List of verifiable completion conditions'),
     },
-    async (input) => {
-      const status = await repository.load()
-      const { status: newStatus, result } = createDeliverable(status, input)
-
-      if (result.success) {
-        await repository.save(newStatus)
-      }
-
-      return {
-        content: [{ type: 'text' as const, text: JSON.stringify(result) }],
-      }
-    },
+    (input) => handleCreateDeliverable(repository, input),
   )
 
   const updateDeliverableTool = tool(
@@ -40,18 +80,7 @@ export function createDeliverableMcpServer(repository: DeliverableRepository) {
       deliverableId: z.string().describe('Deliverable ID to update'),
       passed: z.boolean().describe('Whether deliverable passed verification'),
     },
-    async (input) => {
-      const status = await repository.load()
-      const { status: newStatus, result } = updateDeliverable(status, input)
-
-      if (result.success) {
-        await repository.save(newStatus)
-      }
-
-      return {
-        content: [{ type: 'text' as const, text: JSON.stringify(result) }],
-      }
-    },
+    (input) => handleUpdateDeliverable(repository, input),
   )
 
   return createSdkMcpServer({
