@@ -1,7 +1,13 @@
 import type { AgentClient } from './agentClient'
+import type { DeliverableStatusReader } from './deliverableStatus'
 import type { Logger } from './logger'
 import { silentLogger } from './logger'
 import { Session } from './session'
+import {
+  allDeliverablesPassed,
+  countPassedDeliverables,
+  emptyDeliverableStatus,
+} from './deliverableStatus'
 
 /**
  * SessionRunner configuration options
@@ -32,50 +38,91 @@ export interface SessionRunnerResult {
  */
 export class SessionRunner {
   private readonly delayBetweenSessions: number
+  private readonly maxIterations: number | undefined
 
   constructor(private options: SessionRunnerOptions) {
     this.delayBetweenSessions = options.delayBetweenSessions ?? 3000
+    this.maxIterations = options.maxIterations
   }
 
   /**
    * Run the session loop with an injected AgentClient and Logger
-   * @see SPEC.md Section 3.8.4
+   * Loop continues until all deliverables pass or max iterations reached
+   * @see SPEC.md Section 3.8.4, 3.9
    */
   async run(
     client: AgentClient,
     logger: Logger = silentLogger,
+    statusReader?: DeliverableStatusReader,
   ): Promise<SessionRunnerResult> {
     const startTime = Date.now()
     let iterations = 0
     let deliverablesPassedCount = 0
     let deliverablesTotalCount = 0
 
-    const session = new Session({
-      projectDir: this.options.projectDir,
-      model: this.options.model,
-    })
+    // Fixed test instruction (instruction selection not in scope)
+    const instruction =
+      'Process the next deliverable. Create deliverables if none exist, then verify and mark them as passed.'
 
-    // For now, run single iteration
-    // TODO: Implement loop with instruction selection
-    iterations = 1
-    logger.info(`Session ${iterations} started`)
+    while (true) {
+      iterations++
+      logger.info(`Session ${iterations} started`)
 
-    const instruction = 'Hello, what is 1 + 1?' // Placeholder
-    const result = await session.run(client, instruction, logger)
+      const session = new Session({
+        projectDir: this.options.projectDir,
+        model: this.options.model,
+      })
 
-    deliverablesPassedCount = result.deliverablesPassedCount
-    deliverablesTotalCount = result.deliverablesTotalCount
+      const result = await session.run(client, instruction, logger)
 
-    logger.info(
-      `Session ${iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${result.duration}ms`,
-    )
+      logger.info(
+        `Session ${iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${result.duration}ms`,
+      )
 
-    return {
-      success: true,
-      iterations,
-      deliverablesPassedCount,
-      deliverablesTotalCount,
-      totalDuration: Date.now() - startTime,
+      // Read deliverable status after session
+      const status = statusReader
+        ? await statusReader.load()
+        : emptyDeliverableStatus()
+
+      deliverablesPassedCount = countPassedDeliverables(status)
+      deliverablesTotalCount = status.deliverables.length
+
+      // Termination condition 1: All deliverables passed
+      if (
+        statusReader &&
+        deliverablesTotalCount > 0 &&
+        allDeliverablesPassed(status)
+      ) {
+        logger.info(`All ${deliverablesTotalCount} deliverables passed`)
+        return {
+          success: true,
+          iterations,
+          deliverablesPassedCount,
+          deliverablesTotalCount,
+          totalDuration: Date.now() - startTime,
+        }
+      }
+
+      // Termination condition 2: Max iterations reached
+      if (this.maxIterations !== undefined && iterations >= this.maxIterations) {
+        logger.info(`Max iterations (${this.maxIterations}) reached`)
+        return {
+          success: false,
+          iterations,
+          deliverablesPassedCount,
+          deliverablesTotalCount,
+          totalDuration: Date.now() - startTime,
+        }
+      }
+
+      // Delay before next session
+      if (this.delayBetweenSessions > 0) {
+        await this.delay(this.delayBetweenSessions)
+      }
     }
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 }

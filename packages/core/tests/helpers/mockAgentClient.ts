@@ -6,14 +6,26 @@ import type { AgentMessage, MessageStream } from '../../src/types'
  * @see SPEC.md Section 3.2
  */
 export class MockAgentClient implements AgentClient {
-  private responses: AgentMessage[] = []
+  private responseSets: AgentMessage[][] = []
+  private callIndex = 0
   private lastMessage: string | null = null
 
   /**
    * Set the responses that will be yielded by query()
+   * For single-session tests
    */
   setResponses(responses: AgentMessage[]): void {
-    this.responses = [...responses]
+    this.responseSets = [responses]
+    this.callIndex = 0
+  }
+
+  /**
+   * Set responses for multiple sessions
+   * Each call to query() will return the next set of responses
+   */
+  setResponsesPerSession(responseSets: AgentMessage[][]): void {
+    this.responseSets = responseSets
+    this.callIndex = 0
   }
 
   /**
@@ -23,9 +35,27 @@ export class MockAgentClient implements AgentClient {
     return this.lastMessage
   }
 
+  /**
+   * Get the number of times query() has been called
+   */
+  getQueryCount(): number {
+    return this.callIndex
+  }
+
+  /**
+   * Reset the call index for reuse in tests
+   */
+  reset(): void {
+    this.callIndex = 0
+  }
+
   query(message: string): MessageStream {
     this.lastMessage = message
-    const responses = this.responses
+    const responses =
+      this.responseSets[
+        Math.min(this.callIndex, this.responseSets.length - 1)
+      ] ?? []
+    this.callIndex++
 
     const generator = (async function* () {
       for (const response of responses) {

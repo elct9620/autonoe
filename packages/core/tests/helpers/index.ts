@@ -1,3 +1,4 @@
 export * from './mockAgentClient'
+export * from './mockDeliverableStatusReader'
 export * from './testLogger'
 export * from './fixtures'

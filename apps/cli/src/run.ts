@@ -100,7 +100,7 @@ export async function handleRunCommand(
     })
 
     const runner = new SessionRunner(runnerOptions)
-    const result = await runner.run(client, logger)
+    const result = await runner.run(client, logger, deliverableRepo)
 
     logger.info('')
     if (result.success) {
