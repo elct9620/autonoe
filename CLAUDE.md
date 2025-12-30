@@ -18,11 +18,12 @@ bun apps/cli/bin/autonoe.ts run
 
 ```bash
 bun run test                                       # Run all tests
-bun run test --project core                        # Run tests for a specific package
+bun run test --project core                        # Run core package tests
+bun run test --project claude-agent-client         # Run claude-agent-client tests
 bun run test packages/core/tests/session.test.ts   # Run a single test file
 ```
 
-Project names are defined in each package's `vitest.config.ts` (e.g., `name: 'core'`).
+Project names: `core`, `claude-agent-client` (defined in each package's `vitest.config.ts`).
 
 ## Architecture
 
@@ -89,9 +90,11 @@ Core functionality implemented:
 - AutonoeProtection hook
 - Configuration loading and merging
 - ClaudeAgentClient with SDK converters
+- DeliverableStatus domain model + repository interface
+- DeliverableTool (autonoe-deliverable SDK MCP server)
+- FileDeliverableRepository (persistence to .autonoe/status.json)
 
 Pending:
-- DeliverableTool (autonoe-deliverable MCP server)
 - Prompt system (initializer.md, coding.md)
 
 ## Specification
