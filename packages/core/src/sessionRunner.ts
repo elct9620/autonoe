@@ -1,4 +1,4 @@
-import type { AgentClient } from './agentClient'
+import type { AgentClientFactory } from './agentClient'
 import type { DeliverableStatusReader } from './deliverableStatus'
 import type { Logger } from './logger'
 import { silentLogger } from './logger'
@@ -46,12 +46,12 @@ export class SessionRunner {
   }
 
   /**
-   * Run the session loop with an injected AgentClient and Logger
+   * Run the session loop with an injected AgentClientFactory and Logger
    * Loop continues until all deliverables pass or max iterations reached
-   * @see SPEC.md Section 3.8.4, 3.9
+   * @see SPEC.md Section 3.8.3, 3.8.4, 3.9
    */
   async run(
-    client: AgentClient,
+    clientFactory: AgentClientFactory,
     logger: Logger = silentLogger,
     statusReader?: DeliverableStatusReader,
   ): Promise<SessionRunnerResult> {
@@ -67,6 +67,9 @@ export class SessionRunner {
     while (true) {
       iterations++
       logger.info(`Session ${iterations} started`)
+
+      // Create fresh client per session to avoid SDK child process accumulation
+      const client = clientFactory.create()
 
       const session = new Session({
         projectDir: this.options.projectDir,

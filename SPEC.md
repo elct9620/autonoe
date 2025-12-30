@@ -310,6 +310,10 @@ interface AgentClient {
   query(instruction: string): MessageStream
 }
 
+interface AgentClientFactory {
+  create(): AgentClient
+}
+
 // Constructor options for AgentClient implementations
 interface AgentClientOptions {
   cwd: string
@@ -538,19 +542,38 @@ const silentLogger: Logger
 | Session Loop     | SessionRunner    | --max-iterations | Run multiple agent sessions      |
 | Agent Turn Loop  | Claude Agent SDK | SDK internal     | Process messages within session  |
 
-#### 3.8.3 Client Reuse
+#### 3.8.3 Client Lifecycle
 
-| Per Session                | Shared                    |
-| -------------------------- | ------------------------- |
-| instruction                | cwd, permissionMode       |
-|                            | mcpServers, hooks         |
+```
+SessionRunner
+    │
+    ├─ Iteration 1
+    │   ├─ client = factory.create()
+    │   ├─ session.run(client, instruction)
+    │   └─ client disposed
+    │
+    ├─ delay(3000ms)
+    │
+    └─ Iteration 2
+        ├─ client = factory.create()
+        ├─ session.run(client, instruction)
+        └─ client disposed
+```
+
+| Scope        | Resource            |
+| ------------ | ------------------- |
+| Per Session  | ClaudeAgentClient   |
+| Per Session  | SDK child process   |
+| Per Session  | instruction         |
+| Shared       | AgentClientFactory  |
+| Shared       | Client configuration|
 
 #### 3.8.4 SessionRunner Interface
 
 ```typescript
 // packages/core/src/sessionRunner.ts
 interface SessionRunner {
-  run(client: AgentClient, logger: Logger): Promise<SessionRunnerResult>
+  run(clientFactory: AgentClientFactory, logger: Logger): Promise<SessionRunnerResult>
 }
 
 interface SessionRunnerOptions {

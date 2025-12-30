@@ -1,4 +1,4 @@
-import type { AgentClient } from '../../src/agentClient'
+import type { AgentClient, AgentClientFactory } from '../../src/agentClient'
 import type { AgentMessage, MessageStream } from '../../src/types'
 
 /**
@@ -70,5 +70,17 @@ export class MockAgentClient implements AgentClient {
     }
 
     return stream
+  }
+}
+
+/**
+ * Create a factory that returns the same MockAgentClient instance
+ * Useful for tests that need to track calls across multiple sessions
+ */
+export function createMockClientFactory(
+  client: MockAgentClient,
+): AgentClientFactory {
+  return {
+    create: () => client,
   }
 }

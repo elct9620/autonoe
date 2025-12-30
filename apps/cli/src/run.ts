@@ -7,6 +7,7 @@ import {
   createBashSecurityHook,
   createAutonoeProtectionHook,
   type SessionRunnerOptions,
+  type AgentClientFactory,
 } from '@autonoe/core'
 import {
   ClaudeAgentClient,
@@ -90,17 +91,21 @@ export async function handleRunCommand(
     )
     const deliverableMcpServer = createDeliverableMcpServer(deliverableRepo)
 
-    const client = new ClaudeAgentClient({
-      cwd: runnerOptions.projectDir,
-      permissionLevel: 'default',
-      sandbox: config.sandbox,
-      mcpServers: config.mcpServers,
-      preToolUseHooks,
-      sdkMcpServers: [deliverableMcpServer],
-    })
+    // Create factory for fresh client per session (avoids SDK child process accumulation)
+    const clientFactory: AgentClientFactory = {
+      create: () =>
+        new ClaudeAgentClient({
+          cwd: runnerOptions.projectDir,
+          permissionLevel: 'default',
+          sandbox: config.sandbox,
+          mcpServers: config.mcpServers,
+          preToolUseHooks,
+          sdkMcpServers: [deliverableMcpServer],
+        }),
+    }
 
     const runner = new SessionRunner(runnerOptions)
-    const result = await runner.run(client, logger, deliverableRepo)
+    const result = await runner.run(clientFactory, logger, deliverableRepo)
 
     logger.info('')
     if (result.success) {

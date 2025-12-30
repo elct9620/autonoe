@@ -7,6 +7,7 @@ import {
   createMockTextMessage,
   createMockResultMessage,
   createMockStatusJson,
+  createMockClientFactory,
   TestLogger,
 } from './helpers'
 
@@ -15,12 +16,13 @@ describe('SessionRunner', () => {
     it('returns a SessionRunnerResult', async () => {
       const client = new MockAgentClient()
       client.setResponses([createMockTextMessage('done')])
+      const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
         maxIterations: 1,
       })
-      const result = await runner.run(client)
+      const result = await runner.run(factory)
 
       expect(result).toHaveProperty('success')
       expect(result).toHaveProperty('iterations')
@@ -32,12 +34,13 @@ describe('SessionRunner', () => {
     it('runs at least one session', async () => {
       const client = new MockAgentClient()
       client.setResponses([createMockResultMessage('done', 0.01)])
+      const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
         maxIterations: 1,
       })
-      const result = await runner.run(client)
+      const result = await runner.run(factory)
 
       expect(result.iterations).toBeGreaterThanOrEqual(1)
     })
@@ -45,6 +48,7 @@ describe('SessionRunner', () => {
     it('accepts runner options', async () => {
       const client = new MockAgentClient()
       client.setResponses([createMockTextMessage('done')])
+      const factory = createMockClientFactory(client)
 
       // When statusReader is not provided and maxIterations is set,
       // runner will stop at maxIterations with success=false
@@ -54,7 +58,7 @@ describe('SessionRunner', () => {
         delayBetweenSessions: 0,
         model: 'claude-3',
       })
-      const result = await runner.run(client)
+      const result = await runner.run(factory)
 
       // Without statusReader, success is false (max iterations reached without deliverables)
       expect(result.iterations).toBe(1)
@@ -63,13 +67,14 @@ describe('SessionRunner', () => {
     it('SC-L004: uses injected logger for session status', async () => {
       const client = new MockAgentClient()
       client.setResponses([createMockResultMessage('done', 0.0123)])
+      const factory = createMockClientFactory(client)
       const logger = new TestLogger()
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
         maxIterations: 1,
       })
-      await runner.run(client, logger)
+      await runner.run(factory, logger)
 
       expect(logger.hasMessage('Session 1 started')).toBe(true)
       expect(logger.hasMessage('Session 1:')).toBe(true)
@@ -78,12 +83,13 @@ describe('SessionRunner', () => {
     it('tracks total duration across sessions', async () => {
       const client = new MockAgentClient()
       client.setResponses([createMockTextMessage('done')])
+      const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
         maxIterations: 1,
       })
-      const result = await runner.run(client)
+      const result = await runner.run(factory)
 
       expect(result.totalDuration).toBeGreaterThanOrEqual(0)
     })
@@ -97,6 +103,7 @@ describe('SessionRunner', () => {
         [createMockResultMessage('session 2', 0.01)],
         [createMockResultMessage('session 3', 0.01)],
       ])
+      const factory = createMockClientFactory(client)
 
       // Status reader that never returns all passed
       const statusReader = new MockDeliverableStatusReader()
@@ -132,7 +139,7 @@ describe('SessionRunner', () => {
         maxIterations: 2,
         delayBetweenSessions: 0,
       })
-      const result = await runner.run(client, silentLogger, statusReader)
+      const result = await runner.run(factory, silentLogger, statusReader)
 
       expect(result.iterations).toBe(2)
       expect(result.success).toBe(false)
@@ -144,6 +151,7 @@ describe('SessionRunner', () => {
     it('exits immediately when all deliverables pass', async () => {
       const client = new MockAgentClient()
       client.setResponses([createMockResultMessage('done', 0.01)])
+      const factory = createMockClientFactory(client)
 
       // Status with all passed deliverables after first session
       const statusReader = new MockDeliverableStatusReader()
@@ -163,7 +171,7 @@ describe('SessionRunner', () => {
         maxIterations: 5,
         delayBetweenSessions: 0,
       })
-      const result = await runner.run(client, silentLogger, statusReader)
+      const result = await runner.run(factory, silentLogger, statusReader)
 
       expect(result.iterations).toBe(1)
       expect(result.success).toBe(true)
@@ -180,6 +188,7 @@ describe('SessionRunner', () => {
         [createMockResultMessage('session 2', 0.01)],
         [createMockResultMessage('session 3', 0.01)],
       ])
+      const factory = createMockClientFactory(client)
 
       // Progress from 0/2 passed -> 1/2 passed -> 2/2 passed
       const statusReader = new MockDeliverableStatusReader()
@@ -233,7 +242,7 @@ describe('SessionRunner', () => {
         // No maxIterations - run until done
         delayBetweenSessions: 0,
       })
-      const result = await runner.run(client, silentLogger, statusReader)
+      const result = await runner.run(factory, silentLogger, statusReader)
 
       expect(result.iterations).toBe(3)
       expect(result.success).toBe(true)
@@ -249,6 +258,7 @@ describe('SessionRunner', () => {
         [createMockResultMessage('session 1', 0.01)],
         [createMockResultMessage('session 2', 0.01)],
       ])
+      const factory = createMockClientFactory(client)
 
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
@@ -277,7 +287,7 @@ describe('SessionRunner', () => {
       })
 
       const startTime = Date.now()
-      await runner.run(client, silentLogger, statusReader)
+      await runner.run(factory, silentLogger, statusReader)
       const elapsed = Date.now() - startTime
 
       // Should have at least one delay (between session 1 and 2)

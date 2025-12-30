@@ -11,6 +11,7 @@ export { AgentMessageType, ResultSubtype } from './types'
 // AgentClient exports (interface only)
 export type {
   AgentClient,
+  AgentClientFactory,
   AgentClientOptions,
   PreToolUseHook,
   PreToolUseInput,

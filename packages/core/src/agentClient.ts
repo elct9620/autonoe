@@ -10,6 +10,14 @@ export interface AgentClient {
 }
 
 /**
+ * Factory for creating fresh AgentClient instances per session
+ * @see SPEC.md Section 3.8.3
+ */
+export interface AgentClientFactory {
+  create(): AgentClient
+}
+
+/**
  * Input for PreToolUse hook callback
  */
 export interface PreToolUseInput {
