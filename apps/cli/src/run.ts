@@ -29,6 +29,7 @@ export interface RunCommandOptions {
   maxIterations?: string
   model?: string
   debug?: boolean
+  sandbox?: boolean
 }
 
 /**
@@ -91,16 +92,23 @@ export async function handleRunCommand(
     )
     const deliverableMcpServer = createDeliverableMcpServer(deliverableRepo)
 
-    // Create factory for fresh client per session (avoids SDK child process accumulation)
+    // Deliverable MCP tool names
+    const deliverableTools = [
+      'mcp__autonoe-deliverable__create_deliverable',
+      'mcp__autonoe-deliverable__update_deliverable',
+    ]
+
+    // Create factory for fresh client per session
     const clientFactory: AgentClientFactory = {
       create: () =>
         new ClaudeAgentClient({
           cwd: runnerOptions.projectDir,
-          permissionLevel: 'default',
-          sandbox: config.sandbox,
+          permissionLevel: 'acceptEdits',
+          sandbox: options.sandbox !== false ? config.sandbox : undefined,
           mcpServers: config.mcpServers,
           preToolUseHooks,
           sdkMcpServers: [deliverableMcpServer],
+          allowedTools: [...config.allowedTools, ...deliverableTools],
         }),
     }
 
@@ -114,8 +122,8 @@ export async function handleRunCommand(
       logger.error('Session completed with errors')
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    logger.error(`Error: ${message}`)
+    const err = error instanceof Error ? error : new Error(String(error))
+    logger.error(`Error: ${err.message}`, err)
     process.exit(1)
   }
 }

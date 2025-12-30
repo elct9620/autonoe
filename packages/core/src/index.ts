@@ -16,6 +16,7 @@ export type {
   PreToolUseHook,
   PreToolUseInput,
   HookResult,
+  SettingSource,
 } from './agentClient'
 
 // Logger exports
@@ -40,6 +41,7 @@ export { DefaultBashSecurity, createBashSecurityHook } from './bashSecurity'
 export type {
   SandboxConfig,
   HookConfig,
+  PermissionsConfig,
   AgentConfig,
   UserConfig,
 } from './configuration'

@@ -27,8 +27,11 @@ export class TestLogger implements Logger {
     this.entries.push({ level: 'warning', message })
   }
 
-  error(message: string): void {
+  error(message: string, error?: Error): void {
     this.entries.push({ level: 'error', message })
+    if (error?.stack) {
+      this.entries.push({ level: 'error', message: error.stack })
+    }
   }
 
   /**

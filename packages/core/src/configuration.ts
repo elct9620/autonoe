@@ -24,11 +24,19 @@ export interface HookConfig {
 }
 
 /**
+ * Permissions configuration
+ */
+export interface PermissionsConfig {
+  allow: readonly string[]
+}
+
+/**
  * Full agent configuration
  */
 export interface AgentConfig {
   sandbox: SandboxConfig
-  permissions: string[]
+  permissions: PermissionsConfig
+  allowedTools: readonly string[]
   hooks: HookConfig
   mcpServers: Record<string, McpServer>
 }
@@ -38,7 +46,8 @@ export interface AgentConfig {
  */
 export interface UserConfig {
   sandbox?: Partial<SandboxConfig>
-  permissions?: string[]
+  permissions?: { allow?: string[] }
+  allowedTools?: string[]
   hooks?: Partial<HookConfig>
   mcpServers?: Record<string, McpServer>
 }
@@ -52,7 +61,24 @@ export const SECURITY_BASELINE: Readonly<AgentConfig> = Object.freeze({
     enabled: true,
     autoAllowBashIfSandboxed: true,
   }),
-  permissions: ['./**'],
+  permissions: Object.freeze({
+    allow: Object.freeze([
+      'Read(./**)',
+      'Write(./**)',
+      'Edit(./**)',
+      'Glob(./**)',
+      'Grep(./**)',
+      'Bash(*)',
+    ]),
+  }),
+  allowedTools: Object.freeze([
+    'Read',
+    'Write',
+    'Edit',
+    'Glob',
+    'Grep',
+    'Bash',
+  ]),
   hooks: Object.freeze({
     PreToolUse: ['bash-security', 'autonoe-protection'],
   }),
@@ -101,7 +127,8 @@ export async function loadConfig(projectDir: string): Promise<AgentConfig> {
  *
  * Rules:
  * - sandbox: Always use baseline (user attempts to disable are ignored)
- * - permissions: Merge user permissions with baseline
+ * - permissions.allow: Merge user with baseline
+ * - allowedTools: Merge user with baseline
  * - hooks: Merge user hooks, baseline hooks always present
  * - mcpServers: Merge built-in and user servers
  *
@@ -120,8 +147,18 @@ export function mergeConfig(
   }
 
   // Permissions: Merge (unique values)
-  const permissions = [
-    ...new Set([...baseline.permissions, ...(user.permissions ?? [])]),
+  const permissions: PermissionsConfig = {
+    allow: [
+      ...new Set([
+        ...baseline.permissions.allow,
+        ...(user.permissions?.allow ?? []),
+      ]),
+    ],
+  }
+
+  // AllowedTools: Merge (unique values)
+  const allowedTools = [
+    ...new Set([...baseline.allowedTools, ...(user.allowedTools ?? [])]),
   ]
 
   // Hooks: Merge, baseline hooks always first
@@ -146,6 +183,7 @@ export function mergeConfig(
   return {
     sandbox,
     permissions,
+    allowedTools,
     hooks,
     mcpServers,
   }

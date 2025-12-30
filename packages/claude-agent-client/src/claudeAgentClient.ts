@@ -138,6 +138,11 @@ export class ClaudeAgentClient implements AgentClient {
       }
     }
 
+    // Add setting sources to load filesystem settings
+    if (options.settingSources && options.settingSources.length > 0) {
+      sdkOptions.settingSources = options.settingSources
+    }
+
     const sdkQueryResult: SDKQuery = sdkQuery({
       prompt: message,
       options: sdkOptions,

@@ -14,12 +14,14 @@ cli
   .option('-n, --max-iterations <count>', 'Maximum coding sessions')
   .option('-m, --model <model>', 'Claude model to use')
   .option('-d, --debug', 'Show debug output')
+  .option('--no-sandbox', 'Disable SDK sandbox')
   .action(async (options) => {
     await handleRunCommand({
       projectDir: options.projectDir,
       maxIterations: options.maxIterations,
       model: options.model,
       debug: options.debug,
+      sandbox: options.sandbox,
     })
   })
 

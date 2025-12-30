@@ -30,8 +30,9 @@ export interface Logger {
   /**
    * Log error message (always shown)
    * Used for: failures, critical errors
+   * @param error - Optional Error object for stack trace logging
    */
-  error(message: string): void
+  error(message: string, error?: Error): void
 }
 
 /**

@@ -481,7 +481,7 @@ interface Logger {
   info(message: string): void
   debug(message: string): void
   warn(message: string): void
-  error(message: string): void
+  error(message: string, error?: Error): void
 }
 
 const silentLogger: Logger
@@ -500,6 +500,31 @@ const silentLogger: Logger
 | Application  | Use injected Logger for messages       |
 | Domain       | No direct logging (pure functions)     |
 | Tests        | TestLogger to capture and verify       |
+
+#### 3.7.1 Debug Message Format
+
+| Event              | Format                                        |
+| ------------------ | --------------------------------------------- |
+| Send instruction   | `[Send] {instruction (truncated to 200)}`     |
+| Receive message    | `[Recv] {type}: {content (truncated to 200)}` |
+| Error with stack   | `{message}\n{stack}` (debug only)             |
+
+#### 3.7.2 Error Handling
+
+```
+Session.run()
+  └─ try
+       └─ for await (message of query)
+            └─ process message
+  └─ catch (error)
+       └─ logger.error(message, error)
+       └─ throw error
+```
+
+| Layer          | Error Handling                               |
+| -------------- | -------------------------------------------- |
+| Session        | Catch async iterator errors, log and rethrow |
+| CLI            | Catch all errors, log stack with --debug     |
 
 ### 3.8 Session Loop
 
@@ -685,41 +710,54 @@ project/
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Configuration Sources                         │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
 │  Hardcoded (packages/core)                                       │
 │  ├── sandbox: { enabled: true }                                  │
 │  └── mcpServers: { playwright: {...} }                           │
 │                                                                  │
 │  Security Baseline (packages/core, always enforced)              │
-│  ├── permissions: ["./**"]                                       │
+│  ├── permissions.allow: [Read(./**), Write(./**), ...]           │
+│  ├── allowedTools: [Read, Write, Edit, Glob, Grep, Bash]         │
 │  └── hooks: [BashSecurity, .autonoe Protection]                  │
 │                                                                  │
 │  User Config (.autonoe/agent.json)                               │
-│  ├── permissions: { ... }  # Merged with baseline                │
-│  ├── hooks: { ... }        # Merged with baseline                │
-│  └── mcpServers: { ... }   # Merged with built-in                │
-│                                                                  │
+│  ├── permissions.allow: [...]  # Merged with baseline            │
+│  ├── allowedTools: [...]       # Merged with baseline            │
+│  └── mcpServers: { ... }       # Merged with built-in            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-| Setting               | Source     | Customizable | Note                               |
-| --------------------- | ---------- | ------------ | ---------------------------------- |
-| sandbox               | Hardcoded  | NO           | Always enabled                     |
-| permissions           | agent.json | YES          | Autonoe enforces security baseline |
-| hooks                 | agent.json | YES          | Autonoe enforces security baseline |
-| mcpServers (built-in) | Hardcoded  | NO           |                                    |
-| mcpServers (custom)   | agent.json | YES          |                                    |
+| Setting         | Source            | Customizable   |
+| --------------- | ----------------- | -------------- |
+| sandbox         | Hardcoded         | --no-sandbox   |
+| permissions     | baseline + user   | Merge          |
+| allowedTools    | baseline + user   | Merge          |
+| hooks           | baseline + user   | Merge          |
+| mcpServers      | Hardcoded + user  | Merge          |
+
+**Permission Rule Format:**
+
+| Pattern | Description |
+|---------|-------------|
+| `Read(./**)` | File read access |
+| `Write(./**)` | File write access |
+| `Edit(./**)` | File edit access |
+| `Bash(*)` | Any bash command |
+| `Bash(npm run *)` | Specific command pattern |
+| `WebFetch(*)` | Network access |
+| `Glob(./**)` | Glob search |
+| `Grep(./**)` | Content search |
 
 **agent.json Structure:**
 
 ```json
 {
   "permissions": {
-    "allow": ["Read(./docs/**)"]
+    "allow": [
+      "Bash(docker *)",
+      "WebFetch(https://api.example.com/*)"
+    ]
   },
-  "hooks": {
-    "PreToolUse": ["custom-validator"]
-  },
+  "allowedTools": ["Task", "WebSearch"],
   "mcpServers": {
     "custom-tool": {
       "command": "npx",
@@ -729,25 +767,40 @@ project/
 }
 ```
 
-**Runtime Merge Flow:**
+**SDK Settings Bridge:**
 
 ```
-Load hardcoded ──▶ Load security baseline ──▶ Read agent.json ──▶ Merge (enforce baseline) ──▶ Pass to SDK
+┌─────────────────────────────────────┐
+│ .autonoe/agent.json                 │
+│   permissions.allow: [user rules]   │
+└─────────────────┬───────────────────┘
+                  │ loadConfig()
+                  ▼
+┌─────────────────────────────────────┐
+│ SECURITY_BASELINE + user config     │
+│   permissions.allow: [merged]       │
+└─────────────────┬───────────────────┘
+                  │ ClaudeAgentClient
+                  ▼
+┌─────────────────────────────────────┐
+│ SDK extraArgs.settings (JSON)       │
+│   { permissions: { allow: [...] } } │
+└─────────────────────────────────────┘
 ```
 
 ### 5.5 SDK Sandbox Configuration
 
-**SandboxSettings (Hardcoded, NOT customizable):**
+**SandboxSettings:**
 
-| Setting                  | Value | Purpose                      |
-| ------------------------ | ----- | ---------------------------- |
-| enabled                  | true  | Enable OS-level isolation    |
-| autoAllowBashIfSandboxed | true  | Auto-approve bash in sandbox |
+| Setting                  | Default | CLI Override   |
+| ------------------------ | ------- | -------------- |
+| enabled                  | true    | --no-sandbox   |
+| autoAllowBashIfSandboxed | true    | -              |
 
 ```typescript
 // Passed to SDK query() options
 const sandboxSettings: SandboxSettings = {
-  enabled: true,
+  enabled: !options.noSandbox,  // --no-sandbox disables
   autoAllowBashIfSandboxed: true,
 }
 ```
@@ -1159,6 +1212,7 @@ Options:
   --max-iterations, -n    Maximum coding sessions
   --model, -m             Claude model to use
   --debug, -d             Show debug output
+  --no-sandbox            Disable SDK sandbox
 ```
 
 ### 11.2 Behavior
@@ -1200,6 +1254,7 @@ cli
   .option('-n, --max-iterations <count>', 'Maximum coding sessions')
   .option('-m, --model <model>', 'Claude model to use')
   .option('-d, --debug', 'Show debug output')
+  .option('--no-sandbox', 'Disable SDK sandbox')
   .action((options) => {
     // Run session with options
   })

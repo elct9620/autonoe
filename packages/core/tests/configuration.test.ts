@@ -29,7 +29,7 @@ describe('Configuration', () => {
 
       expect(config.sandbox.enabled).toBe(true)
       expect(config.sandbox.autoAllowBashIfSandboxed).toBe(true)
-      expect(config.permissions).toContain('./**')
+      expect(config.permissions.allow).toContain('Read(./**)')
       expect(config.hooks.PreToolUse).toContain('bash-security')
       expect(config.hooks.PreToolUse).toContain('autonoe-protection')
     })
@@ -111,32 +111,34 @@ describe('Configuration', () => {
       writeFileSync(
         join(testDir, '.autonoe', 'agent.json'),
         JSON.stringify({
-          permissions: ['./docs/**', './scripts/**'],
+          permissions: { allow: ['./docs/**', './scripts/**'] },
         }),
       )
 
       const config = await loadConfig(testDir)
 
-      expect(config.permissions).toContain('./**')
-      expect(config.permissions).toContain('./docs/**')
-      expect(config.permissions).toContain('./scripts/**')
+      expect(config.permissions.allow).toContain('Read(./**)')
+      expect(config.permissions.allow).toContain('./docs/**')
+      expect(config.permissions.allow).toContain('./scripts/**')
     })
 
     it('allows extending permissions', async () => {
       const result = mergeConfig(SECURITY_BASELINE, {
-        permissions: ['./extra/**'],
+        permissions: { allow: ['./extra/**'] },
       })
 
-      expect(result.permissions).toContain('./**')
-      expect(result.permissions).toContain('./extra/**')
+      expect(result.permissions.allow).toContain('Read(./**)')
+      expect(result.permissions.allow).toContain('./extra/**')
     })
 
     it('deduplicates permissions', async () => {
       const result = mergeConfig(SECURITY_BASELINE, {
-        permissions: ['./**', './new/**'],
+        permissions: { allow: ['Read(./**)', './new/**'] },
       })
 
-      const occurrences = result.permissions.filter((p) => p === './**').length
+      const occurrences = result.permissions.allow.filter(
+        (p) => p === 'Read(./**)',
+      ).length
       expect(occurrences).toBe(1)
     })
   })
@@ -286,13 +288,13 @@ describe('Configuration', () => {
       writeFileSync(
         join(testDir, '.autonoe', 'agent.json'),
         JSON.stringify({
-          permissions: ['./custom/**'],
+          permissions: { allow: ['./custom/**'] },
         }),
       )
 
       const config = await loadConfig(testDir)
 
-      expect(config.permissions).toContain('./custom/**')
+      expect(config.permissions.allow).toContain('./custom/**')
     })
 
     it('handles malformed agent.json gracefully', async () => {
@@ -310,7 +312,7 @@ describe('Configuration', () => {
       const config = await loadConfig(testDir)
 
       expect(config.sandbox.enabled).toBe(true)
-      expect(config.permissions).toContain('./**')
+      expect(config.permissions.allow).toContain('Read(./**)')
     })
   })
 })

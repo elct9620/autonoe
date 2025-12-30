@@ -46,7 +46,10 @@ export class ConsoleLogger implements Logger {
     console.log(`${colors.yellow}${message}${colors.reset}`)
   }
 
-  error(message: string): void {
+  error(message: string, error?: Error): void {
     console.log(`${colors.red}${message}${colors.reset}`)
+    if (this.showDebug && error?.stack) {
+      console.log(`${colors.gray}${error.stack}${colors.reset}`)
+    }
   }
 }

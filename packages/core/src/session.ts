@@ -1,7 +1,7 @@
 import type { AgentClient } from './agentClient'
 import { silentLogger, type Logger } from './logger'
 import { AgentMessageType, ResultSubtype } from './types'
-import type { ResultMessage } from './types'
+import type { AgentMessage, ResultMessage } from './types'
 
 /**
  * Session configuration options
@@ -25,6 +25,13 @@ export interface SessionResult {
 }
 
 /**
+ * Truncate string to specified length with ellipsis
+ */
+function truncate(str: string, maxLen: number): string {
+  return str.length > maxLen ? `${str.slice(0, maxLen)}...` : str
+}
+
+/**
  * Session handles a single agent query execution
  * @see SPEC.md Section 3.3
  */
@@ -33,7 +40,7 @@ export class Session {
 
   /**
    * Run the session with an injected AgentClient, instruction, and Logger
-   * @see SPEC.md Section 3.3
+   * @see SPEC.md Section 3.3, 3.7.2
    */
   async run(
     client: AgentClient,
@@ -43,20 +50,25 @@ export class Session {
     const startTime = Date.now()
     let costUsd = 0
 
-    logger.debug(`Sending instruction`)
+    logger.debug(`[Send] ${truncate(instruction, 200)}`)
 
     const query = client.query(instruction)
 
-    for await (const message of query) {
-      logger.debug(`Received: ${message.type}`)
+    try {
+      for await (const message of query) {
+        logger.debug(`[Recv] ${message.type}: ${truncate(this.formatMessageContent(message), 200)}`)
 
-      if (message.type === AgentMessageType.Result) {
-        const resultMessage = message as ResultMessage
-        if (resultMessage.totalCostUsd !== undefined) {
-          costUsd = resultMessage.totalCostUsd
+        if (message.type === AgentMessageType.Result) {
+          const resultMessage = message as ResultMessage
+          if (resultMessage.totalCostUsd !== undefined) {
+            costUsd = resultMessage.totalCostUsd
+          }
+          this.handleResultMessage(resultMessage, logger)
         }
-        this.handleResultMessage(resultMessage, logger)
       }
+    } catch (error) {
+      logger.error('Session query failed', error instanceof Error ? error : undefined)
+      throw error
     }
 
     return {
@@ -66,6 +78,65 @@ export class Session {
       deliverablesPassedCount: 0,
       deliverablesTotalCount: 0,
     }
+  }
+
+  /**
+   * Format message content for debug logging
+   * @see SPEC.md Section 3.7.1
+   */
+  private formatMessageContent(message: AgentMessage): string {
+    if (message.type === AgentMessageType.Result) {
+      const resultMessage = message as ResultMessage
+      if (resultMessage.result) {
+        return resultMessage.result
+      }
+      if (resultMessage.errors?.length) {
+        return resultMessage.errors.join(', ')
+      }
+      return resultMessage.subtype
+    }
+    // SDK messages have nested structure: message.message.content[]
+    const sdkMessage = message as {
+      message?: {
+        content?: Array<{
+          type: string
+          text?: string
+          name?: string
+          input?: Record<string, unknown>
+          content?: string | Array<{ type: string; text?: string }>
+          tool_use_id?: string
+          is_error?: boolean
+        }>
+      }
+    }
+    if (sdkMessage.message?.content) {
+      return sdkMessage.message.content
+        .map((block) => {
+          if (block.type === 'text') return block.text ?? ''
+          if (block.type === 'tool_use') {
+            const input = block.input
+              ? JSON.stringify(block.input).slice(0, 100)
+              : ''
+            return `[tool_use: ${block.name}] ${input}`
+          }
+          if (block.type === 'tool_result') {
+            const error = block.is_error ? ' ERROR' : ''
+            let content = ''
+            if (typeof block.content === 'string') {
+              content = block.content.slice(0, 100)
+            } else if (Array.isArray(block.content)) {
+              content = block.content
+                .map((c) => c.text ?? '')
+                .join('')
+                .slice(0, 100)
+            }
+            return `[tool_result${error}] ${content}`
+          }
+          return `[${block.type}]`
+        })
+        .join(' ')
+    }
+    return ''
   }
 
   /**

@@ -87,8 +87,8 @@ describe('Session', () => {
       const session = new Session({ projectDir: '/test/project' })
       await session.run(client, 'test', logger)
 
-      expect(logger.hasMessage('Sending instruction')).toBe(true)
-      expect(logger.hasMessage('Received:')).toBe(true)
+      expect(logger.hasMessage('[Send]')).toBe(true)
+      expect(logger.hasMessage('[Recv]')).toBe(true)
 
       const debugEntries = logger.getEntriesByLevel('debug')
       expect(debugEntries.length).toBeGreaterThan(0)
