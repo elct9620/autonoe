@@ -19,7 +19,7 @@ import type {
   HookResult,
 } from '@autonoe/core'
 import { detectClaudeCodePath } from './claudeCodePath'
-import { toSdkMcpServers, toAgentMessage } from './converters'
+import { toSdkMcpServers, toStreamEvents } from './converters'
 
 /**
  * Extended options for ClaudeAgentClient
@@ -153,12 +153,16 @@ export class ClaudeAgentClient implements AgentClient {
   }
 
   /**
-   * Wrap SDK Query to convert SDK messages to domain AgentMessages
+   * Wrap SDK Query to convert SDK messages to domain StreamEvents
+   * Flattens batched SDK messages into individual events
    */
   private wrapSdkQuery(sdkQuery: SDKQuery): MessageStream {
     const generator = (async function* () {
       for await (const sdkMessage of sdkQuery) {
-        yield toAgentMessage(sdkMessage)
+        // Flatten SDK message into multiple StreamEvents
+        for (const event of toStreamEvents(sdkMessage)) {
+          yield event
+        }
       }
     })()
 

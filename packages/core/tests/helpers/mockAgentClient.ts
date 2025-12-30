@@ -1,12 +1,12 @@
 import type { AgentClient, AgentClientFactory } from '../../src/agentClient'
-import type { AgentMessage, MessageStream } from '../../src/types'
+import type { StreamEvent, MessageStream } from '../../src/types'
 
 /**
  * Mock implementation of AgentClient for unit testing
  * @see SPEC.md Section 3.2
  */
 export class MockAgentClient implements AgentClient {
-  private responseSets: AgentMessage[][] = []
+  private responseSets: StreamEvent[][] = []
   private callIndex = 0
   private lastMessage: string | null = null
 
@@ -14,7 +14,7 @@ export class MockAgentClient implements AgentClient {
    * Set the responses that will be yielded by query()
    * For single-session tests
    */
-  setResponses(responses: AgentMessage[]): void {
+  setResponses(responses: StreamEvent[]): void {
     this.responseSets = [responses]
     this.callIndex = 0
   }
@@ -23,7 +23,7 @@ export class MockAgentClient implements AgentClient {
    * Set responses for multiple sessions
    * Each call to query() will return the next set of responses
    */
-  setResponsesPerSession(responseSets: AgentMessage[][]): void {
+  setResponsesPerSession(responseSets: StreamEvent[][]): void {
     this.responseSets = responseSets
     this.callIndex = 0
   }

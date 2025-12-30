@@ -1,12 +1,18 @@
 // Domain types exports
 export type {
-  AgentMessage,
-  ResultMessage,
+  StreamEvent,
+  AgentText,
+  ToolInvocation,
+  ToolResponse,
+  SessionEnd,
   MessageStream,
   McpServer,
   PermissionLevel,
 } from './types'
-export { AgentMessageType, ResultSubtype } from './types'
+export { ResultSubtype } from './types'
+
+// Event formatter exports
+export { formatStreamEvent } from './eventFormatter'
 
 // AgentClient exports (interface only)
 export type {

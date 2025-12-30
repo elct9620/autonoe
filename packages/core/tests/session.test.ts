@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { Session } from '../src/session'
 import {
   MockAgentClient,
-  createMockTextMessage,
-  createMockResultMessage,
-  createMockErrorResultMessage,
+  createMockAgentText,
+  createMockSessionEnd,
+  createMockErrorSessionEnd,
   TestLogger,
 } from './helpers'
 
@@ -12,7 +12,7 @@ describe('Session', () => {
   describe('run()', () => {
     it('returns a SessionResult', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockTextMessage('2')])
+      client.setResponses([createMockAgentText('2')])
 
       const session = new Session({ projectDir: '/test/project' })
       const result = await session.run(client, 'test instruction')
@@ -47,9 +47,9 @@ describe('Session', () => {
       expect(result.success).toBe(true)
     })
 
-    it('returns costUsd from result message', async () => {
+    it('returns costUsd from session end event', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockResultMessage('Result', 0.0567)])
+      client.setResponses([createMockSessionEnd('Result', 0.0567)])
 
       const session = new Session({ projectDir: '/test/project' })
       const result = await session.run(client, 'test')
@@ -59,7 +59,7 @@ describe('Session', () => {
 
     it('returns zero costUsd when no cost in result', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockResultMessage('Result')])
+      client.setResponses([createMockSessionEnd('Result')])
 
       const session = new Session({ projectDir: '/test/project' })
       const result = await session.run(client, 'test')
@@ -69,7 +69,7 @@ describe('Session', () => {
 
     it('tracks execution duration', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockTextMessage('done')])
+      client.setResponses([createMockAgentText('done')])
 
       const session = new Session({ projectDir: '/test/project' })
       const result = await session.run(client, 'test')
@@ -81,7 +81,7 @@ describe('Session', () => {
   describe('SC-L004: Debug logging', () => {
     it('logs debug messages with injected logger', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockTextMessage('done')])
+      client.setResponses([createMockAgentText('done')])
       const logger = new TestLogger()
 
       const session = new Session({ projectDir: '/test/project' })
@@ -95,10 +95,10 @@ describe('Session', () => {
     })
   })
 
-  describe('SC-S006: Result event (success)', () => {
+  describe('SC-S006: Session end event (success)', () => {
     it('displays result text via logger.info', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockResultMessage('The answer is 2', 0.0123)])
+      client.setResponses([createMockSessionEnd('The answer is 2', 0.0123)])
       const logger = new TestLogger()
 
       const session = new Session({ projectDir: '/test/project' })
@@ -113,7 +113,7 @@ describe('Session', () => {
 
     it('handles result without text gracefully', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockResultMessage(undefined as any)])
+      client.setResponses([createMockSessionEnd(undefined as any)])
       const logger = new TestLogger()
 
       const session = new Session({ projectDir: '/test/project' })
@@ -125,11 +125,11 @@ describe('Session', () => {
     })
   })
 
-  describe('SC-S007: Result event (error)', () => {
+  describe('SC-S007: Session end event (error)', () => {
     it('displays error messages via logger.error', async () => {
       const client = new MockAgentClient()
       client.setResponses([
-        createMockErrorResultMessage(['Error 1', 'Error 2']),
+        createMockErrorSessionEnd(['Error 1', 'Error 2']),
       ])
       const logger = new TestLogger()
 

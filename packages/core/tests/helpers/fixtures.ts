@@ -1,11 +1,15 @@
 import type {
   SessionOptions,
   SessionResult,
-  AgentMessage,
+  StreamEvent,
+  AgentText,
+  ToolInvocation,
+  ToolResponse,
+  SessionEnd,
   Deliverable,
   DeliverableStatus,
 } from '../../src/index'
-import { AgentMessageType, ResultSubtype } from '../../src/index'
+import { ResultSubtype } from '../../src/index'
 
 /**
  * Create a minimal valid SessionOptions for testing
@@ -71,40 +75,77 @@ export const mockDeliverables: Deliverable[] = [
 ]
 
 /**
- * Create a mock text message for testing AgentClient
+ * Create a mock AgentText event for testing
  */
-export function createMockTextMessage(text: string): AgentMessage {
+export function createMockAgentText(text: string): AgentText {
   return {
-    type: AgentMessageType.Text,
+    type: 'agent_text',
     text,
-  } as AgentMessage
+  }
 }
 
 /**
- * Create a mock result message with success subtype
+ * Create a mock ToolInvocation event for testing
  */
-export function createMockResultMessage(
+export function createMockToolInvocation(
+  name: string,
+  input: Record<string, unknown> = {},
+): ToolInvocation {
+  return {
+    type: 'tool_invocation',
+    name,
+    input,
+  }
+}
+
+/**
+ * Create a mock ToolResponse event for testing
+ */
+export function createMockToolResponse(
+  content: string,
+  isError = false,
+  toolUseId = 'test-id',
+): ToolResponse {
+  return {
+    type: 'tool_response',
+    toolUseId,
+    content,
+    isError,
+  }
+}
+
+/**
+ * Create a mock SessionEnd event with success subtype
+ */
+export function createMockSessionEnd(
   result: string,
   totalCostUsd?: number,
-): AgentMessage {
+): SessionEnd {
   return {
-    type: AgentMessageType.Result,
+    type: 'session_end',
     subtype: ResultSubtype.Success,
     result,
     totalCostUsd,
-  } as AgentMessage
+  }
 }
 
 /**
- * Create a mock result message with error subtype
+ * Create a mock SessionEnd event with error subtype
  */
-export function createMockErrorResultMessage(
+export function createMockErrorSessionEnd(
   errors: string[],
   subtype: ResultSubtype = ResultSubtype.ErrorDuringExecution,
-): AgentMessage {
+): SessionEnd {
   return {
-    type: AgentMessageType.Result,
+    type: 'session_end',
     subtype,
     errors,
-  } as AgentMessage
+  }
+}
+
+/**
+ * Helper to cast StreamEvent types for tests
+ */
+export function asStreamEvent(event: StreamEvent): StreamEvent {
+  return event
 }

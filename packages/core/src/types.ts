@@ -3,18 +3,7 @@
  * @see SPEC.md Section 2.3 Domain Model
  */
 
-// AgentMessageType - enum for message types
-export enum AgentMessageType {
-  Text = 'text',
-  Result = 'result',
-}
-
-// AgentMessage - base message type
-export interface AgentMessage {
-  type: AgentMessageType
-}
-
-// ResultSubtype - enum for result outcomes
+// ResultSubtype - enum for session result outcomes
 export enum ResultSubtype {
   Success = 'success',
   ErrorMaxTurns = 'error_max_turns',
@@ -22,17 +11,41 @@ export enum ResultSubtype {
   ErrorMaxBudgetUsd = 'error_max_budget_usd',
 }
 
-// ResultMessage - execution result (extends AgentMessage)
-export interface ResultMessage extends AgentMessage {
-  type: AgentMessageType.Result
+// AgentText - Agent's text response
+export interface AgentText {
+  type: 'agent_text'
+  text: string
+}
+
+// ToolInvocation - Agent's tool call request
+export interface ToolInvocation {
+  type: 'tool_invocation'
+  name: string
+  input: Record<string, unknown>
+}
+
+// ToolResponse - Tool execution result (returned to Agent)
+export interface ToolResponse {
+  type: 'tool_response'
+  toolUseId: string
+  content: string
+  isError: boolean
+}
+
+// SessionEnd - Session termination state
+export interface SessionEnd {
+  type: 'session_end'
   subtype: ResultSubtype
   result?: string
   errors?: string[]
   totalCostUsd?: number
 }
 
-// MessageStream - async generator with interrupt
-export interface MessageStream extends AsyncGenerator<AgentMessage, void> {
+// StreamEvent - discriminated union of all event types
+export type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
+
+// MessageStream - async generator yielding StreamEvents with interrupt capability
+export interface MessageStream extends AsyncGenerator<StreamEvent, void> {
   interrupt(): Promise<void>
 }
 

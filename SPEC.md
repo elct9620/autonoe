@@ -180,23 +180,49 @@ autonoe/
 
 ### 2.3 Domain Model
 
-#### Value Objects
+#### Stream Events
 
-**AgentMessage** - Base message from coding agent
+**StreamEvent** - Discriminated union of all event types
+
+```typescript
+type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
+```
+
+**AgentText** - Agent's text response
 
 | Field | Type | Description |
 |-------|------|-------------|
-| type | AgentMessageType | Message type discriminator |
+| type | 'agent_text' | Event type discriminator |
+| text | string | Text content |
 
-**ResultMessage** - Execution result (extends AgentMessage)
+**ToolInvocation** - Agent's tool call request
 
 | Field | Type | Description |
 |-------|------|-------------|
-| type | AgentMessageType.Result | Fixed to Result |
+| type | 'tool_invocation' | Event type discriminator |
+| name | string | Tool name |
+| input | Record\<string, unknown\> | Tool parameters |
+
+**ToolResponse** - Tool execution result (returned to Agent)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| type | 'tool_response' | Event type discriminator |
+| toolUseId | string | Corresponding tool use ID |
+| content | string | Result content |
+| isError | boolean | Whether the tool execution failed |
+
+**SessionEnd** - Session termination state
+
+| Field | Type | Description |
+|-------|------|-------------|
+| type | 'session_end' | Event type discriminator |
 | subtype | ResultSubtype | Execution outcome |
 | result | string? | Output text (on success) |
 | errors | string[]? | Error messages (on failure) |
 | totalCostUsd | number? | API cost in USD |
+
+#### Value Objects
 
 **McpServer** - External tool server configuration
 
@@ -266,13 +292,6 @@ Persistence: `.autonoe/status.json`
 
 #### Enums
 
-**AgentMessageType** - Message type discriminator
-
-| Value | Description |
-|-------|-------------|
-| Text | Text content message |
-| Result | Execution result message |
-
 **ResultSubtype** - Execution outcome
 
 | Value | Description |
@@ -294,7 +313,7 @@ Persistence: `.autonoe/status.json`
 
 | Alias | Definition | Description |
 |-------|------------|-------------|
-| MessageStream | AsyncIterable\<AgentMessage\> | Async stream of agent messages |
+| MessageStream | AsyncIterable\<StreamEvent\> | Async stream of agent events |
 
 **Type Definitions:** See `packages/core/src/types.ts`
 

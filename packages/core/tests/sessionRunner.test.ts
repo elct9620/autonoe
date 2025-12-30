@@ -4,8 +4,8 @@ import { silentLogger } from '../src/logger'
 import {
   MockAgentClient,
   MockDeliverableStatusReader,
-  createMockTextMessage,
-  createMockResultMessage,
+  createMockAgentText,
+  createMockSessionEnd,
   createMockStatusJson,
   createMockClientFactory,
   TestLogger,
@@ -15,7 +15,7 @@ describe('SessionRunner', () => {
   describe('run()', () => {
     it('returns a SessionRunnerResult', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockTextMessage('done')])
+      client.setResponses([createMockAgentText('done')])
       const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
@@ -33,7 +33,7 @@ describe('SessionRunner', () => {
 
     it('runs at least one session', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockResultMessage('done', 0.01)])
+      client.setResponses([createMockSessionEnd('done', 0.01)])
       const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
@@ -47,7 +47,7 @@ describe('SessionRunner', () => {
 
     it('accepts runner options', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockTextMessage('done')])
+      client.setResponses([createMockAgentText('done')])
       const factory = createMockClientFactory(client)
 
       // When statusReader is not provided and maxIterations is set,
@@ -66,7 +66,7 @@ describe('SessionRunner', () => {
 
     it('SC-L004: uses injected logger for session status', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockResultMessage('done', 0.0123)])
+      client.setResponses([createMockSessionEnd('done', 0.0123)])
       const factory = createMockClientFactory(client)
       const logger = new TestLogger()
 
@@ -82,7 +82,7 @@ describe('SessionRunner', () => {
 
     it('tracks total duration across sessions', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockTextMessage('done')])
+      client.setResponses([createMockAgentText('done')])
       const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
@@ -99,9 +99,9 @@ describe('SessionRunner', () => {
     it('stops after maxIterations sessions', async () => {
       const client = new MockAgentClient()
       client.setResponsesPerSession([
-        [createMockResultMessage('session 1', 0.01)],
-        [createMockResultMessage('session 2', 0.01)],
-        [createMockResultMessage('session 3', 0.01)],
+        [createMockSessionEnd('session 1', 0.01)],
+        [createMockSessionEnd('session 2', 0.01)],
+        [createMockSessionEnd('session 3', 0.01)],
       ])
       const factory = createMockClientFactory(client)
 
@@ -150,7 +150,7 @@ describe('SessionRunner', () => {
   describe('SC-S008: Early exit on all deliverables pass', () => {
     it('exits immediately when all deliverables pass', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockResultMessage('done', 0.01)])
+      client.setResponses([createMockSessionEnd('done', 0.01)])
       const factory = createMockClientFactory(client)
 
       // Status with all passed deliverables after first session
@@ -184,9 +184,9 @@ describe('SessionRunner', () => {
     it('continues until all deliverables pass when no maxIterations', async () => {
       const client = new MockAgentClient()
       client.setResponsesPerSession([
-        [createMockResultMessage('session 1', 0.01)],
-        [createMockResultMessage('session 2', 0.01)],
-        [createMockResultMessage('session 3', 0.01)],
+        [createMockSessionEnd('session 1', 0.01)],
+        [createMockSessionEnd('session 2', 0.01)],
+        [createMockSessionEnd('session 3', 0.01)],
       ])
       const factory = createMockClientFactory(client)
 
@@ -255,8 +255,8 @@ describe('SessionRunner', () => {
     it('waits delayBetweenSessions before next session', async () => {
       const client = new MockAgentClient()
       client.setResponsesPerSession([
-        [createMockResultMessage('session 1', 0.01)],
-        [createMockResultMessage('session 2', 0.01)],
+        [createMockSessionEnd('session 1', 0.01)],
+        [createMockSessionEnd('session 2', 0.01)],
       ])
       const factory = createMockClientFactory(client)
 

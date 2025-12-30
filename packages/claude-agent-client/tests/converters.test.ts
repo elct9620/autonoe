@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
   toSdkMcpServers,
-  toAgentMessageType,
   toResultSubtype,
-  toAgentMessage,
+  toStreamEvent,
+  toSessionEnd,
+  toStreamEvents,
 } from '../src/converters'
-import { AgentMessageType, ResultSubtype } from '@autonoe/core'
+import { ResultSubtype } from '@autonoe/core'
 
 describe('converters', () => {
   describe('toSdkMcpServers', () => {
@@ -46,21 +47,6 @@ describe('converters', () => {
     })
   })
 
-  describe('toAgentMessageType', () => {
-    it('SC-AC003: converts "text" to AgentMessageType.Text', () => {
-      expect(toAgentMessageType('text')).toBe(AgentMessageType.Text)
-    })
-
-    it('SC-AC004: converts "result" to AgentMessageType.Result', () => {
-      expect(toAgentMessageType('result')).toBe(AgentMessageType.Result)
-    })
-
-    it('SC-AC005: defaults unknown types to AgentMessageType.Text', () => {
-      expect(toAgentMessageType('unknown')).toBe(AgentMessageType.Text)
-      expect(toAgentMessageType('')).toBe(AgentMessageType.Text)
-    })
-  })
-
   describe('toResultSubtype', () => {
     it('SC-AC006: converts "success" to ResultSubtype.Success', () => {
       expect(toResultSubtype('success')).toBe(ResultSubtype.Success)
@@ -92,59 +78,213 @@ describe('converters', () => {
     })
   })
 
-  describe('toAgentMessage', () => {
-    it('SC-AC011: converts text message', () => {
-      const sdkMessage = { type: 'text', content: 'Hello' }
-      const result = toAgentMessage(sdkMessage)
-      expect(result.type).toBe(AgentMessageType.Text)
-      expect(result).toHaveProperty('content', 'Hello')
+  describe('toStreamEvent', () => {
+    it('converts text block to AgentText', () => {
+      const block = { type: 'text', text: 'Hello' }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'agent_text',
+        text: 'Hello',
+      })
     })
 
-    it('SC-AC012: converts snake_case to camelCase for cost', () => {
-      const sdkMessage = {
-        type: 'result',
-        subtype: 'success',
-        total_cost_usd: 0.05,
+    it('handles empty text', () => {
+      const block = { type: 'text' }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'agent_text',
+        text: '',
+      })
+    })
+
+    it('converts tool_use block to ToolInvocation', () => {
+      const block = {
+        type: 'tool_use',
+        name: 'bash',
+        input: { command: 'ls' },
       }
-      const result = toAgentMessage(sdkMessage)
-      expect(result).toHaveProperty('totalCostUsd', 0.05)
-      expect(result).not.toHaveProperty('total_cost_usd')
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'tool_invocation',
+        name: 'bash',
+        input: { command: 'ls' },
+      })
     })
 
-    it('converts result message with success', () => {
+    it('handles tool_use with missing fields', () => {
+      const block = { type: 'tool_use' }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'tool_invocation',
+        name: '',
+        input: {},
+      })
+    })
+
+    it('converts tool_result block with string content', () => {
+      const block = {
+        type: 'tool_result',
+        tool_use_id: 'id-123',
+        content: 'output',
+        is_error: false,
+      }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'tool_response',
+        toolUseId: 'id-123',
+        content: 'output',
+        isError: false,
+      })
+    })
+
+    it('converts tool_result block with array content', () => {
+      const block = {
+        type: 'tool_result',
+        tool_use_id: 'id-123',
+        content: [{ type: 'text', text: 'part1' }, { type: 'text', text: 'part2' }],
+        is_error: false,
+      }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'tool_response',
+        toolUseId: 'id-123',
+        content: 'part1part2',
+        isError: false,
+      })
+    })
+
+    it('converts tool_result with is_error true', () => {
+      const block = {
+        type: 'tool_result',
+        tool_use_id: 'id-123',
+        content: 'error message',
+        is_error: true,
+      }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'tool_response',
+        toolUseId: 'id-123',
+        content: 'error message',
+        isError: true,
+      })
+    })
+
+    it('returns null for unknown block type', () => {
+      const block = { type: 'unknown' }
+      const result = toStreamEvent(block)
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('toSessionEnd', () => {
+    it('converts SDK result message to SessionEnd', () => {
       const sdkMessage = {
         type: 'result',
         subtype: 'success',
         result: 'Done',
+        total_cost_usd: 0.05,
       }
-      const result = toAgentMessage(sdkMessage)
-      expect(result.type).toBe(AgentMessageType.Result)
-      expect(result).toHaveProperty('subtype', ResultSubtype.Success)
-      expect(result).toHaveProperty('result', 'Done')
+      const result = toSessionEnd(sdkMessage)
+      expect(result).toEqual({
+        type: 'session_end',
+        subtype: ResultSubtype.Success,
+        result: 'Done',
+        errors: undefined,
+        totalCostUsd: 0.05,
+      })
     })
 
-    it('converts result message with errors', () => {
+    it('converts error result message', () => {
       const sdkMessage = {
         type: 'result',
         subtype: 'error_during_execution',
         errors: ['Error 1', 'Error 2'],
       }
-      const result = toAgentMessage(sdkMessage)
-      expect(result).toHaveProperty('errors', ['Error 1', 'Error 2'])
+      const result = toSessionEnd(sdkMessage)
+      expect(result).toEqual({
+        type: 'session_end',
+        subtype: ResultSubtype.ErrorDuringExecution,
+        result: undefined,
+        errors: ['Error 1', 'Error 2'],
+        totalCostUsd: undefined,
+      })
     })
 
     it('handles missing optional fields', () => {
       const sdkMessage = { type: 'result', subtype: 'success' }
-      const result = toAgentMessage(sdkMessage)
-      expect(result).toHaveProperty('result', undefined)
-      expect(result).toHaveProperty('errors', undefined)
-      expect(result).toHaveProperty('totalCostUsd', undefined)
+      const result = toSessionEnd(sdkMessage)
+      expect(result.result).toBeUndefined()
+      expect(result.errors).toBeUndefined()
+      expect(result.totalCostUsd).toBeUndefined()
+    })
+  })
+
+  describe('toStreamEvents', () => {
+    it('yields SessionEnd for result message', () => {
+      const sdkMessage = {
+        type: 'result',
+        subtype: 'success',
+        result: 'Done',
+      }
+      const events = [...toStreamEvents(sdkMessage)]
+      expect(events).toHaveLength(1)
+      expect(events[0]).toEqual({
+        type: 'session_end',
+        subtype: ResultSubtype.Success,
+        result: 'Done',
+        errors: undefined,
+        totalCostUsd: undefined,
+      })
     })
 
-    it('preserves extra SDK fields for text messages', () => {
-      const sdkMessage = { type: 'text', custom_field: 'value' }
-      const result = toAgentMessage(sdkMessage)
-      expect(result).toHaveProperty('custom_field', 'value')
+    it('yields multiple events for text message with content blocks', () => {
+      const sdkMessage = {
+        type: 'text',
+        message: {
+          content: [
+            { type: 'text', text: 'Hello' },
+            { type: 'tool_use', name: 'bash', input: { cmd: 'ls' } },
+          ],
+        },
+      }
+      const events = [...toStreamEvents(sdkMessage)]
+      expect(events).toHaveLength(2)
+      expect(events[0]).toEqual({ type: 'agent_text', text: 'Hello' })
+      expect(events[1]).toEqual({
+        type: 'tool_invocation',
+        name: 'bash',
+        input: { cmd: 'ls' },
+      })
+    })
+
+    it('filters out unknown block types', () => {
+      const sdkMessage = {
+        type: 'text',
+        message: {
+          content: [
+            { type: 'text', text: 'Hello' },
+            { type: 'unknown', data: 'ignored' },
+            { type: 'tool_use', name: 'bash', input: {} },
+          ],
+        },
+      }
+      const events = [...toStreamEvents(sdkMessage)]
+      expect(events).toHaveLength(2)
+    })
+
+    it('yields nothing for message without content', () => {
+      const sdkMessage = { type: 'text' }
+      const events = [...toStreamEvents(sdkMessage)]
+      expect(events).toHaveLength(0)
+    })
+
+    it('yields nothing for message with empty content', () => {
+      const sdkMessage = {
+        type: 'text',
+        message: { content: [] },
+      }
+      const events = [...toStreamEvents(sdkMessage)]
+      expect(events).toHaveLength(0)
     })
   })
 })

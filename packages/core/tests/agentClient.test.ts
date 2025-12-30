@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { MockAgentClient, createMockTextMessage } from './helpers'
+import { MockAgentClient, createMockAgentText } from './helpers'
 
 describe('MockAgentClient', () => {
   let client: MockAgentClient
@@ -9,18 +9,18 @@ describe('MockAgentClient', () => {
   })
 
   it('yields pre-set responses in order', async () => {
-    const messages = [
-      createMockTextMessage('Hello'),
-      createMockTextMessage('World'),
+    const events = [
+      createMockAgentText('Hello'),
+      createMockAgentText('World'),
     ]
-    client.setResponses(messages)
+    client.setResponses(events)
 
     const results: unknown[] = []
     for await (const msg of client.query('test')) {
       results.push(msg)
     }
 
-    expect(results).toEqual(messages)
+    expect(results).toEqual(events)
   })
 
   it('supports empty response list', async () => {
@@ -45,21 +45,21 @@ describe('MockAgentClient', () => {
   })
 
   it('can be reset with new responses', async () => {
-    const firstMessages = [createMockTextMessage('First')]
-    const secondMessages = [createMockTextMessage('Second')]
+    const firstEvents = [createMockAgentText('First')]
+    const secondEvents = [createMockAgentText('Second')]
 
-    client.setResponses(firstMessages)
+    client.setResponses(firstEvents)
     let results: unknown[] = []
     for await (const msg of client.query('first query')) {
       results.push(msg)
     }
-    expect(results).toEqual(firstMessages)
+    expect(results).toEqual(firstEvents)
 
-    client.setResponses(secondMessages)
+    client.setResponses(secondEvents)
     results = []
     for await (const msg of client.query('second query')) {
       results.push(msg)
     }
-    expect(results).toEqual(secondMessages)
+    expect(results).toEqual(secondEvents)
   })
 })
