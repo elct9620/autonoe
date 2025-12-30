@@ -21,8 +21,8 @@ export interface SessionRunnerOptions {
 export interface SessionRunnerResult {
   success: boolean
   iterations: number
-  scenariosPassedCount: number
-  scenariosTotalCount: number
+  deliverablesPassedCount: number
+  deliverablesTotalCount: number
   totalDuration: number
 }
 
@@ -47,8 +47,8 @@ export class SessionRunner {
   ): Promise<SessionRunnerResult> {
     const startTime = Date.now()
     let iterations = 0
-    let scenariosPassedCount = 0
-    let scenariosTotalCount = 0
+    let deliverablesPassedCount = 0
+    let deliverablesTotalCount = 0
 
     const session = new Session({
       projectDir: this.options.projectDir,
@@ -63,8 +63,8 @@ export class SessionRunner {
     const instruction = 'Hello, what is 1 + 1?' // Placeholder
     const result = await session.run(client, instruction, logger)
 
-    scenariosPassedCount = result.scenariosPassedCount
-    scenariosTotalCount = result.scenariosTotalCount
+    deliverablesPassedCount = result.deliverablesPassedCount
+    deliverablesTotalCount = result.deliverablesTotalCount
 
     logger.info(
       `Session ${iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${result.duration}ms`,
@@ -73,8 +73,8 @@ export class SessionRunner {
     return {
       success: true,
       iterations,
-      scenariosPassedCount,
-      scenariosTotalCount,
+      deliverablesPassedCount,
+      deliverablesTotalCount,
       totalDuration: Date.now() - startTime,
     }
   }

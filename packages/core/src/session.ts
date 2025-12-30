@@ -20,8 +20,8 @@ export interface SessionResult {
   success: boolean
   costUsd: number
   duration: number
-  scenariosPassedCount: number
-  scenariosTotalCount: number
+  deliverablesPassedCount: number
+  deliverablesTotalCount: number
 }
 
 /**
@@ -63,8 +63,8 @@ export class Session {
       success: true,
       costUsd,
       duration: Date.now() - startTime,
-      scenariosPassedCount: 0,
-      scenariosTotalCount: 0,
+      deliverablesPassedCount: 0,
+      deliverablesTotalCount: 0,
     }
   }
 

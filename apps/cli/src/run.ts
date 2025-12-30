@@ -8,7 +8,11 @@ import {
   createAutonoeProtectionHook,
   type SessionRunnerOptions,
 } from '@autonoe/core'
-import { ClaudeAgentClient } from '@autonoe/claude-agent-client'
+import {
+  ClaudeAgentClient,
+  FileDeliverableRepository,
+  createDeliverableMcpServer,
+} from '@autonoe/claude-agent-client'
 import { ConsoleLogger } from './consoleLogger'
 
 /**
@@ -80,12 +84,19 @@ export async function handleRunCommand(
       createAutonoeProtectionHook(),
     ]
 
+    // Create deliverable tools (for tracking work units)
+    const deliverableRepo = new FileDeliverableRepository(
+      runnerOptions.projectDir,
+    )
+    const deliverableMcpServer = createDeliverableMcpServer(deliverableRepo)
+
     const client = new ClaudeAgentClient({
       cwd: runnerOptions.projectDir,
       permissionLevel: 'default',
       sandbox: config.sandbox,
       mcpServers: config.mcpServers,
       preToolUseHooks,
+      sdkMcpServers: [deliverableMcpServer],
     })
 
     const runner = new SessionRunner(runnerOptions)

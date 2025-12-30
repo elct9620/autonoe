@@ -51,3 +51,21 @@ export {
 
 // Autonoe Protection exports
 export { createAutonoeProtectionHook } from './autonoeProtection'
+
+// DeliverableStatus exports
+export type {
+  Deliverable,
+  DeliverableStatus,
+  CreateDeliverableInput,
+  UpdateDeliverableInput,
+  ToolResult,
+  DeliverableStatusReader,
+  DeliverableRepository,
+} from './deliverableStatus'
+export {
+  createDeliverable,
+  updateDeliverable,
+  allDeliverablesPassed,
+  countPassedDeliverables,
+  emptyDeliverableStatus,
+} from './deliverableStatus'

@@ -18,8 +18,8 @@ describe('SessionRunner', () => {
 
       expect(result).toHaveProperty('success')
       expect(result).toHaveProperty('iterations')
-      expect(result).toHaveProperty('scenariosPassedCount')
-      expect(result).toHaveProperty('scenariosTotalCount')
+      expect(result).toHaveProperty('deliverablesPassedCount')
+      expect(result).toHaveProperty('deliverablesTotalCount')
       expect(result).toHaveProperty('totalDuration')
     })
 
@@ -80,16 +80,16 @@ describe('SessionRunner', () => {
     })
   })
 
-  describe('SC-S008: Early exit on all scenarios pass', () => {
-    it.skip('exits immediately when all scenarios pass', async () => {
+  describe('SC-S008: Early exit on all deliverables pass', () => {
+    it.skip('exits immediately when all deliverables pass', async () => {
       // TODO: Implement when status.json reading is complete
-      // - Create mock status with all passed scenarios
+      // - Create mock status with all passed deliverables
       // - Verify runner exits with success on first iteration
     })
   })
 
   describe('SC-S009: Continue without maxIterations', () => {
-    it.skip('continues until all scenarios pass when no maxIterations', async () => {
+    it.skip('continues until all deliverables pass when no maxIterations', async () => {
       // TODO: Implement when loop logic is complete
       // - Create runner without maxIterations
       // - Mock partial progress responses

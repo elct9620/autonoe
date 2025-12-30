@@ -20,8 +20,8 @@ describe('Session', () => {
       expect(result).toHaveProperty('success')
       expect(result).toHaveProperty('costUsd')
       expect(result).toHaveProperty('duration')
-      expect(result).toHaveProperty('scenariosPassedCount')
-      expect(result).toHaveProperty('scenariosTotalCount')
+      expect(result).toHaveProperty('deliverablesPassedCount')
+      expect(result).toHaveProperty('deliverablesTotalCount')
     })
 
     it('queries the agent with the provided instruction', async () => {

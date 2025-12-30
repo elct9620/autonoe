@@ -8,6 +8,7 @@ import type {
   HookCallback,
   HookInput,
   SyncHookJSONOutput,
+  McpSdkServerConfigWithInstance,
 } from '@anthropic-ai/claude-agent-sdk'
 import type {
   AgentClient,
@@ -19,6 +20,18 @@ import type {
 } from '@autonoe/core'
 import { detectClaudeCodePath } from './claudeCodePath'
 import { toSdkMcpServers, toAgentMessage } from './converters'
+
+/**
+ * Extended options for ClaudeAgentClient
+ * Includes SDK-specific MCP server support
+ */
+export interface ClaudeAgentClientOptions extends AgentClientOptions {
+  /**
+   * SDK MCP servers created with createSdkMcpServer
+   * These run in-process and are merged with external mcpServers
+   */
+  sdkMcpServers?: McpSdkServerConfigWithInstance[]
+}
 
 /**
  * Convert domain PreToolUseHook to SDK HookCallbackMatcher format
@@ -71,7 +84,7 @@ function wrapHookCallback(
 export class ClaudeAgentClient implements AgentClient {
   private abortController: AbortController | null = null
 
-  constructor(private options: AgentClientOptions) {}
+  constructor(private options: ClaudeAgentClientOptions) {}
 
   query(message: string): MessageStream {
     this.abortController = new AbortController()
@@ -84,8 +97,21 @@ export class ClaudeAgentClient implements AgentClient {
       pathToClaudeCodeExecutable: detectClaudeCodePath(),
     }
 
-    if (options.mcpServers) {
-      sdkOptions.mcpServers = toSdkMcpServers(options.mcpServers)
+    // Merge external MCP servers and SDK MCP servers
+    const externalMcpServers = options.mcpServers
+      ? toSdkMcpServers(options.mcpServers)
+      : {}
+
+    const sdkMcpServers = options.sdkMcpServers
+      ? Object.fromEntries(
+          options.sdkMcpServers.map((server) => [server.name, server]),
+        )
+      : {}
+
+    const mergedMcpServers = { ...externalMcpServers, ...sdkMcpServers }
+
+    if (Object.keys(mergedMcpServers).length > 0) {
+      sdkOptions.mcpServers = mergedMcpServers
     }
 
     if (options.permissionLevel) {

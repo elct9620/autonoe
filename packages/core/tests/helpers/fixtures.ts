@@ -2,6 +2,8 @@ import type {
   SessionOptions,
   SessionResult,
   AgentMessage,
+  Deliverable,
+  DeliverableStatus,
 } from '../../src/index'
 import { AgentMessageType, ResultSubtype } from '../../src/index'
 
@@ -27,47 +29,43 @@ export function createSessionResult(
     success: true,
     costUsd: 0,
     duration: 0,
-    scenariosPassedCount: 0,
-    scenariosTotalCount: 0,
+    deliverablesPassedCount: 0,
+    deliverablesTotalCount: 0,
     ...overrides,
   }
 }
 
 /**
- * Status JSON scenario structure
- */
-export interface StatusScenario {
-  id: string
-  feature: string
-  name: string
-  passed: boolean
-}
-
-/**
  * Create mock status.json content
  */
-export function createMockStatusJson(scenarios: StatusScenario[] = []): {
-  scenarios: StatusScenario[]
-} {
+export function createMockStatusJson(
+  deliverables: Deliverable[] = [],
+): DeliverableStatus {
   return {
-    scenarios,
+    deliverables,
   }
 }
 
 /**
- * Default mock scenarios for testing
+ * Default mock deliverables for testing
  */
-export const mockScenarios: StatusScenario[] = [
+export const mockDeliverables: Deliverable[] = [
   {
-    id: 'SC-F001',
-    feature: 'authentication.feature',
-    name: 'Successful login',
+    id: 'DL-001',
+    name: 'User Authentication',
+    acceptanceCriteria: [
+      'User can login with email and password',
+      'Invalid credentials show error message',
+    ],
     passed: false,
   },
   {
-    id: 'SC-F002',
-    feature: 'authentication.feature',
-    name: 'Failed login with wrong password',
+    id: 'DL-002',
+    name: 'Dashboard',
+    acceptanceCriteria: [
+      'Dashboard loads within 2 seconds',
+      'All widgets display correctly',
+    ],
     passed: false,
   },
 ]
