@@ -239,21 +239,11 @@ autonoe/
 | acceptanceCriteria | string[] | Verifiable conditions for completion |
 | passed | boolean | Verification status |
 
-```
-Deliverable Types:
-┌──────────────────┬─────────────────────────────────────────────┐
-│ Type             │ acceptanceCriteria Examples                 │
-├──────────────────┼─────────────────────────────────────────────┤
-│ Feature          │ "User can login via OAuth"                  │
-│                  │ "Error message shown on invalid credentials"│
-├──────────────────┼─────────────────────────────────────────────┤
-│ Refactor         │ "API response time reduced by 50%"          │
-│                  │ "Code coverage maintained above 80%"        │
-├──────────────────┼─────────────────────────────────────────────┤
-│ Technical Rewrite│ "New and old API behavior identical"        │
-│                  │ "No breaking changes"                       │
-└──────────────────┴─────────────────────────────────────────────┘
-```
+| Type | acceptanceCriteria Examples |
+|------|----------------------------|
+| Feature | "User can login via OAuth", "Error message shown on invalid credentials" |
+| Refactor | "API response time reduced by 50%", "Code coverage maintained above 80%" |
+| Technical Rewrite | "New and old API behavior identical", "No breaking changes" |
 
 #### Aggregates
 
@@ -800,21 +790,10 @@ The Coding Agent operates under these constraints:
 
 Commands with `args` validation require additional checks:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  Argument Validation Rules                   │
-├─────────────────────────────────────────────────────────────┤
-│  chmod                                                       │
-│  ├── Allowed: +x, u+x, g+x, o+x, a+x, ug+x, ...             │
-│  ├── Blocked: -R (recursive), numeric modes (755, 777)      │
-│  └── Required: mode + target file(s)                        │
-├─────────────────────────────────────────────────────────────┤
-│  pkill                                                       │
-│  ├── Allowed targets: node, npm, npx, vite, next            │
-│  ├── Blocked: all other process names                       │
-│  └── Required: process name argument                        │
-└─────────────────────────────────────────────────────────────┘
-```
+| Command | Allowed | Blocked | Required |
+|---------|---------|---------|----------|
+| chmod | +x, u+x, g+x, o+x, a+x, ug+x, etc. | -R (recursive), numeric modes (755, 777) | mode + target file(s) |
+| pkill | node, npm, npx, vite, next | all other process names | process name argument |
 
 #### 6.3.3 Validation Flow
 

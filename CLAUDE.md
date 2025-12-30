@@ -43,7 +43,7 @@ Autonoe is a Bun/TypeScript monorepo that orchestrates an autonomous coding agen
 └─────────────────────────────────┘  └─────────────────────────────────┘
 ```
 
-**Key flow**: CLI parses args → `SessionRunner.run(client, logger)` → `Session.run()` → `client.query()` → Agent reads SPEC.md → executes scenarios → updates `.autonoe/status.json` via StatusTool
+**Key flow**: CLI parses args → `SessionRunner.run(client, logger)` → `Session.run()` → `client.query()` → Agent reads SPEC.md → executes deliverables → updates `.autonoe/status.json` via DeliverableTool
 
 ### Packages
 
@@ -91,7 +91,7 @@ Core functionality implemented:
 - ClaudeAgentClient with SDK converters
 
 Pending:
-- StatusTool (autonoe-status MCP server)
+- DeliverableTool (autonoe-deliverable MCP server)
 - Prompt system (initializer.md, coding.md)
 
 ## Specification

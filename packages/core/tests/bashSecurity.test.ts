@@ -298,7 +298,9 @@ describe('BashSecurity', () => {
 
     it('SC-X014: allows escaped characters in quoted arguments', () => {
       const security = new DefaultBashSecurity()
-      expect(security.isCommandAllowed('echo "test\\nvalue"').allowed).toBe(true)
+      expect(security.isCommandAllowed('echo "test\\nvalue"').allowed).toBe(
+        true,
+      )
     })
   })
 
