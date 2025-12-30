@@ -90,7 +90,7 @@ autonoe/
 │   │   │   ├── session.ts          # Single execution
 │   │   │   ├── sessionRunner.ts    # Loop orchestration
 │   │   │   ├── logger.ts
-│   │   │   ├── statusTools.ts
+│   │   │   ├── deliverableStatus.ts # Deliverable domain model + repository interface
 │   │   │   ├── bashSecurity.ts
 │   │   │   ├── instructions.ts
 │   │   │   └── instructions/
@@ -111,7 +111,8 @@ autonoe/
 │           ├── index.ts
 │           ├── claudeAgentClient.ts
 │           ├── claudeCodePath.ts
-│           └── converters.ts
+│           ├── converters.ts
+│           └── deliverableToolsAdapter.ts  # SDK MCP Server implementation
 └── apps/
     └── cli/
         ├── package.json
@@ -204,6 +205,75 @@ autonoe/
 | command | string | Server executable command |
 | args | string[]? | Command arguments |
 
+**CreateDeliverableInput** - Input for create_deliverable tool
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | Unique deliverable identifier |
+| name | string | Deliverable name |
+| acceptanceCriteria | string[] | List of acceptance criteria |
+
+**UpdateDeliverableInput** - Input for update_deliverable tool
+
+| Field | Type | Description |
+|-------|------|-------------|
+| deliverableId | string | Deliverable ID to update |
+| passed | boolean | New verification status |
+
+**ToolResult** - Result returned by tool handlers
+
+| Field | Type | Description |
+|-------|------|-------------|
+| success | boolean | Whether operation succeeded |
+| message | string | Human-readable result message |
+| error | string? | Error code (if failed) |
+
+#### Entities
+
+**Deliverable** - Verifiable work unit with acceptance criteria
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | Unique identifier (e.g., DL-001) |
+| name | string | Deliverable name |
+| acceptanceCriteria | string[] | Verifiable conditions for completion |
+| passed | boolean | Verification status |
+
+```
+Deliverable Types:
+┌──────────────────┬─────────────────────────────────────────────┐
+│ Type             │ acceptanceCriteria Examples                 │
+├──────────────────┼─────────────────────────────────────────────┤
+│ Feature          │ "User can login via OAuth"                  │
+│                  │ "Error message shown on invalid credentials"│
+├──────────────────┼─────────────────────────────────────────────┤
+│ Refactor         │ "API response time reduced by 50%"          │
+│                  │ "Code coverage maintained above 80%"        │
+├──────────────────┼─────────────────────────────────────────────┤
+│ Technical Rewrite│ "New and old API behavior identical"        │
+│                  │ "No breaking changes"                       │
+└──────────────────┴─────────────────────────────────────────────┘
+```
+
+#### Aggregates
+
+**DeliverableStatus** - Root aggregate for deliverable tracking
+
+| Field | Type | Description |
+|-------|------|-------------|
+| deliverables | Deliverable[] | All tracked deliverables |
+
+Persistence: `.autonoe/status.json`
+
+#### Repository
+
+**DeliverableRepository** - Interface (Core), Implementation (Infrastructure)
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| load | `() => Promise<DeliverableStatus>` | Load or return empty |
+| save | `(status: DeliverableStatus) => Promise<void>` | Persist to storage |
+
 #### Enums
 
 **AgentMessageType** - Message type discriminator
@@ -288,8 +358,8 @@ interface SessionResult {
   success: boolean
   costUsd: number
   duration: number
-  scenariosPassedCount: number
-  scenariosTotalCount: number
+  deliverablesPassedCount: number
+  deliverablesTotalCount: number
 }
 ```
 
@@ -318,67 +388,88 @@ interface ValidationResult {
 }
 ```
 
-### 3.5 Status Management Tools (SDK Custom Tools)
+### 3.5 Deliverable Management Tools (SDK Custom Tools)
 
-#### 3.5.1 Tool Registration
+#### 3.5.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ packages/core (Domain + Application)                            │
+├─────────────────────────────────────────────────────────────────┤
+│ DeliverableRepository          │ Interface                      │
+│ createDeliverable()            │ Application service            │
+│ updateDeliverable()            │ Application service            │
+│ Deliverable, DeliverableStatus │ Domain types                   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ packages/claude-agent-client (Infrastructure)                   │
+├─────────────────────────────────────────────────────────────────┤
+│ FileDeliverableRepository      │ Implements DeliverableRepository│
+│ createDeliverableMcpServer()   │ SDK MCP Server factory          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.5.2 Tool Registration
 
 ```typescript
-// packages/core/src/statusTools.ts
+// packages/claude-agent-client/src/deliverableToolsAdapter.ts
 import { tool, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 
-const statusServer = createSdkMcpServer({
-  name: 'autonoe-status',
+const deliverableServer = createSdkMcpServer({
+  name: 'autonoe-deliverable',
   version: '1.0.0',
-  tools: [createScenarioTool, updateStatusTool]
+  tools: [createDeliverableTool, updateDeliverableTool]
 })
 ```
 
-#### 3.5.2 createScenario Tool
+#### 3.5.3 createDeliverable Tool
 
 ```typescript
-const createScenarioTool = tool(
-  'create_scenario',
-  'Create a new scenario in status.json',
+const createDeliverableTool = tool(
+  'create_deliverable',
+  'Create a new deliverable in status.json',
   {
     id: z.string(),
-    feature: z.string(),
-    name: z.string()
+    name: z.string(),
+    acceptanceCriteria: z.array(z.string())
   },
-  async ({ id, feature, name }) => { /* ... */ }
+  async ({ id, name, acceptanceCriteria }) => { /* ... */ }
 )
 ```
 
-#### 3.5.3 updateStatus Tool
+#### 3.5.4 updateDeliverable Tool
 
 ```typescript
-const updateStatusTool = tool(
-  'update_status',
-  'Update scenario passed status',
+const updateDeliverableTool = tool(
+  'update_deliverable',
+  'Update deliverable verification status',
   {
-    scenarioId: z.string(),
+    deliverableId: z.string(),
     passed: z.boolean()
   },
-  async ({ scenarioId, passed }) => { /* ... */ }
+  async ({ deliverableId, passed }) => { /* ... */ }
 )
 ```
 
-#### 3.5.4 Tool Usage
+#### 3.5.5 Tool Usage
 
-| Tool            | Phase          | Operation       |
-| --------------- | -------------- | --------------- |
-| create_scenario | Initialization | Create scenario |
-| update_status   | Coding         | Mark passed     |
+| Tool               | Phase          | Operation                              |
+| ------------------ | -------------- | -------------------------------------- |
+| create_deliverable | Initialization | Create deliverable with acceptance criteria |
+| update_deliverable | Coding         | Mark deliverable as verified           |
 
 ### 3.6 Dependency Injection
 
-| Component       | Injected Via              | Purpose                   |
-| --------------- | ------------------------- | ------------------------- |
-| AgentClient     | SessionRunner.run()       | Enable testing with mocks |
-| BashSecurity    | PreToolUse hook           | Validate bash commands    |
-| create_scenario | SDK createSdkMcpServer    | Create scenarios          |
-| update_status   | SDK createSdkMcpServer    | Update scenario status    |
-| Logger          | SessionRunner.run()       | Enable output capture     |
+| Component          | Injected Via              | Purpose                      |
+| ------------------ | ------------------------- | ---------------------------- |
+| AgentClient        | SessionRunner.run()       | Enable testing with mocks    |
+| BashSecurity       | PreToolUse hook           | Validate bash commands       |
+| create_deliverable | SDK createSdkMcpServer    | Create deliverables          |
+| update_deliverable | SDK createSdkMcpServer    | Update deliverable status    |
+| Logger             | SessionRunner.run()       | Enable output capture        |
 
 ```
 SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ──▶ client.query()
@@ -432,7 +523,7 @@ const silentLogger: Logger
 │  │   │  while (not terminated):                 │              │  │
 │  │   │    session = new Session(options)        │              │  │
 │  │   │    result = session.run(client, prompt)  │              │  │
-│  │   │    if (allScenariosPassed) break         │              │  │
+│  │   │    if (allDeliverablesPassed) break       │              │  │
 │  │   │    if (maxIterations reached) break      │              │  │
 │  │   │    delay(delayBetweenSessions)           │              │  │
 │  │   └──────────────────────────────────────────┘              │  │
@@ -482,21 +573,21 @@ interface SessionRunnerOptions {
 interface SessionRunnerResult {
   success: boolean
   iterations: number
-  scenariosPassedCount: number
-  scenariosTotalCount: number
+  deliverablesPassedCount: number
+  deliverablesTotalCount: number
   totalDuration: number
 }
 ```
 
 ### 3.9 Termination Conditions
 
-| Priority | Condition              | Check                          | Result        |
-| -------- | ---------------------- | ------------------------------ | ------------- |
-| 1        | All scenarios passed   | status.json: all passed=true   | success=true  |
-| 2        | Max iterations reached | iteration >= maxIterations     | success=false |
-| 3        | User interrupt         | SIGINT received                | success=false |
+| Priority | Condition                | Check                          | Result        |
+| -------- | ------------------------ | ------------------------------ | ------------- |
+| 1        | All deliverables passed  | status.json: all passed=true   | success=true  |
+| 2        | Max iterations reached   | iteration >= maxIterations     | success=false |
+| 3        | User interrupt           | SIGINT received                | success=false |
 
-> Default: When --max-iterations not specified, loop continues until all scenarios pass.
+> Default: When --max-iterations not specified, loop continues until all deliverables pass.
 
 ---
 
@@ -550,11 +641,15 @@ project/
 
 ```json
 {
-  "scenarios": [
+  "deliverables": [
     {
-      "id": "SC-F001",
-      "feature": "authentication.feature",
-      "name": "Successful login",
+      "id": "DL-001",
+      "name": "User Authentication",
+      "acceptanceCriteria": [
+        "User can login with email and password",
+        "Invalid credentials show error message",
+        "Session persists across page refresh"
+      ],
       "passed": false
     }
   ]
@@ -563,11 +658,11 @@ project/
 
 ### 5.3 State Persistence
 
-| State                | Writer                               | Reader |
-| -------------------- | ------------------------------------ | ------ |
-| Project Files        | Coding Agent (Direct)                | Both   |
-| .autonoe/status.json | create_scenario / update_status Tool | Both   |
-| Git History          | Coding Agent (Direct)                | Both   |
+| State                | Writer                                          | Reader |
+| -------------------- | ----------------------------------------------- | ------ |
+| Project Files        | Coding Agent (Direct)                           | Both   |
+| .autonoe/status.json | create_deliverable / update_deliverable Tool    | Both   |
+| Git History          | Coding Agent (Direct)                           | Both   |
 
 ### 5.4 Configuration
 
@@ -764,27 +859,27 @@ Command Input
 
 ### 7.1 Session Loop Behavior
 
-| .autonoe/status.json | --max-iterations | Action                              |
-| -------------------- | ---------------- | ----------------------------------- |
-| NOT EXISTS           | any              | Use initializerInstruction, continue |
-| EXISTS (none passed) | any              | Run all scenarios                   |
-| EXISTS (partial)     | any              | Run scenarios with passed=false     |
-| EXISTS (all passed)  | any              | Exit loop, success                  |
-| any                  | reached limit    | Exit loop, partial                  |
-| any                  | undefined        | Continue until all pass             |
+| .autonoe/status.json | --max-iterations | Action                                  |
+| -------------------- | ---------------- | --------------------------------------- |
+| NOT EXISTS           | any              | Use initializerInstruction, continue    |
+| EXISTS (none passed) | any              | Run all deliverables                    |
+| EXISTS (partial)     | any              | Run deliverables with passed=false      |
+| EXISTS (all passed)  | any              | Exit loop, success                      |
+| any                  | reached limit    | Exit loop, partial                      |
+| any                  | undefined        | Continue until all pass                 |
 
 ### 7.2 Coding Agent Tool Availability
 
 Tools available to the Coding Agent (configured by Autonoe):
 
-| Tool Category   | Available |
-| --------------- | --------- |
-| File Read       | YES       |
-| File Write      | YES       |
-| Bash (safe)     | YES       |
-| Git             | YES       |
-| Playwright      | YES       |
-| autonoe-status  | YES       |
+| Tool Category        | Available |
+| -------------------- | --------- |
+| File Read            | YES       |
+| File Write           | YES       |
+| Bash (safe)          | YES       |
+| Git                  | YES       |
+| Playwright           | YES       |
+| autonoe-deliverable  | YES       |
 
 ### 7.3 Instruction Selection
 
@@ -813,12 +908,12 @@ Tools available to the Coding Agent (configured by Autonoe):
 | ------- | ---------------------------------- | --------------------------------------- |
 | SC-S001 | Project with SPEC.md               | Session starts successfully             |
 | SC-S002 | No .autonoe/status.json            | Use initializerInstruction              |
-| SC-S003 | All scenarios passed               | Session completes with success          |
+| SC-S003 | All deliverables passed            | Session completes with success          |
 | SC-S004 | maxIterations: 2, not all pass     | Loop stops after 2 sessions             |
 | SC-S005 | Agent interruption                 | Session stops cleanly                   |
 | SC-S006 | Result event (success)             | Result text + cost displayed via logger |
 | SC-S007 | Result event (error)               | Error messages displayed via logger     |
-| SC-S008 | All scenarios pass on iteration 1  | Loop exits immediately with success     |
+| SC-S008 | All deliverables pass on iter 1    | Loop exits immediately with success     |
 | SC-S009 | No maxIterations, partial progress | Loop continues to next session          |
 | SC-S010 | delayBetweenSessions: 5000         | 5s delay observed between sessions      |
 
@@ -839,14 +934,14 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-X015 | `""`                        | Allowed (empty command)         |
 | SC-X016 | Hook with no command        | Approved (continue=true)        |
 
-### 8.3 Status Tools (autonoe-status)
+### 8.3 Deliverable Tools (autonoe-deliverable)
 
-| ID      | Tool            | Input                      | Expected Output           |
-| ------- | --------------- | -------------------------- | ------------------------- |
-| SC-T001 | create_scenario | Valid scenario input       | Scenario added to status  |
-| SC-T002 | create_scenario | Duplicate scenario ID      | Error: already exists     |
-| SC-T003 | update_status   | Valid ID, passed=true      | status.json updated       |
-| SC-T004 | update_status   | Invalid scenario ID        | Error: scenario not found |
+| ID      | Tool               | Input                         | Expected Output              |
+| ------- | ------------------ | ----------------------------- | ---------------------------- |
+| DL-T001 | create_deliverable | Valid deliverable input       | Deliverable added to status  |
+| DL-T002 | create_deliverable | Duplicate deliverable ID      | Error: already exists        |
+| DL-T003 | update_deliverable | Valid ID, passed=true         | status.json updated          |
+| DL-T004 | update_deliverable | Invalid deliverable ID        | Error: deliverable not found |
 
 ### 8.4 Configuration
 
@@ -913,7 +1008,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-X003 | File read outside project          | Permission denied              |
 | SC-X005 | Direct write to .autonoe/          | Permission denied (PreToolUse) |
 | SC-X006 | Direct edit .autonoe/status.json   | Permission denied (PreToolUse) |
-| SC-X007 | update_status tool write status    | Allowed                        |
+| SC-X007 | update_deliverable tool write      | Allowed                        |
 
 ### 9.2 Browser
 
