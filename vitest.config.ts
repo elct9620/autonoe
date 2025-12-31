@@ -3,6 +3,8 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     projects: ['packages/*'],
+    reporters: ['default', 'junit'],
+    outputFile: './test-report.junit.xml',
     coverage: {
       enabled: true,
       provider: 'v8',
