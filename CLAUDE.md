@@ -25,6 +25,16 @@ bun run test packages/core/tests/session.test.ts   # Run a single test file
 
 Project names: `core`, `claude-agent-client` (defined in each package's `vitest.config.ts`).
 
+### Docker
+
+```bash
+docker compose build                               # Build CLI image (node target)
+docker compose run --rm cli autonoe run            # Run CLI in container
+
+# Dockerfile verification (build targets: base, node, python, golang, ruby)
+docker build --target python -f apps/cli/Dockerfile .
+```
+
 ## Architecture
 
 Autonoe is a Bun/TypeScript monorepo that orchestrates an autonomous coding agent via Claude's Agent SDK.
