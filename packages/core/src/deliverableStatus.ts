@@ -57,7 +57,7 @@ export interface DeliverableStatusReader {
 
 /**
  * Full repository interface for deliverable persistence
- * Implementation lives in infrastructure layer (claude-agent-client)
+ * Implementation lives in infrastructure layer (agent)
  */
 export interface DeliverableRepository extends DeliverableStatusReader {
   save(status: DeliverableStatus): Promise<void>
