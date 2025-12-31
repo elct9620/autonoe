@@ -3,6 +3,7 @@ import {
   DefaultBashSecurity,
   createBashSecurityHook,
   type BashSecurity,
+  type BashSecurityOptions,
 } from '../src/bashSecurity'
 import type { PreToolUseInput } from '../src/agentClient'
 
@@ -410,5 +411,198 @@ describe('SC-X016: createBashSecurityHook', () => {
       toolInput: { command: 'some-command' },
     } as PreToolUseInput)
     expect(result.reason).toBe('Command not allowed')
+  })
+
+  it('accepts BashSecurityOptions', async () => {
+    const options: BashSecurityOptions = {
+      activeProfiles: ['node'],
+      allowCommands: ['docker'],
+    }
+    const hook = createBashSecurityHook(options)
+    const result = await hook.callback({
+      toolName: 'Bash',
+      toolInput: { command: 'docker run hello' },
+    } as PreToolUseInput)
+    expect(result.decision).toBe('approve')
+  })
+})
+
+describe('Language Profiles', () => {
+  describe('PR-X001 to PR-X003: Default (all profiles enabled)', () => {
+    it('PR-X001: allows npm install with default config', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('npm install').allowed).toBe(true)
+    })
+
+    it('PR-X002: allows pip install with default config', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('pip install requests').allowed).toBe(
+        true,
+      )
+    })
+
+    it('PR-X003: allows go build with default config', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('go build').allowed).toBe(true)
+    })
+  })
+
+  describe('PR-X004 to PR-X007: Single profile selection', () => {
+    it('PR-X004: node profile allows npm install', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['node'] })
+      expect(security.isCommandAllowed('npm install').allowed).toBe(true)
+    })
+
+    it('PR-X005: node profile denies pip install', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['node'] })
+      const result = security.isCommandAllowed('pip install requests')
+      expect(result.allowed).toBe(false)
+    })
+
+    it('PR-X006: python profile allows pip install', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['python'] })
+      expect(security.isCommandAllowed('pip install requests').allowed).toBe(
+        true,
+      )
+    })
+
+    it('PR-X007: python profile denies npm install', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['python'] })
+      const result = security.isCommandAllowed('npm install')
+      expect(result.allowed).toBe(false)
+    })
+  })
+
+  describe('PR-X008 to PR-X010: Multiple profile selection', () => {
+    it('PR-X008: node+python profile allows npm install', () => {
+      const security = new DefaultBashSecurity({
+        activeProfiles: ['node', 'python'],
+      })
+      expect(security.isCommandAllowed('npm install').allowed).toBe(true)
+    })
+
+    it('PR-X009: node+python profile allows pip install', () => {
+      const security = new DefaultBashSecurity({
+        activeProfiles: ['node', 'python'],
+      })
+      expect(security.isCommandAllowed('pip install requests').allowed).toBe(
+        true,
+      )
+    })
+
+    it('PR-X010: node+python profile denies go build', () => {
+      const security = new DefaultBashSecurity({
+        activeProfiles: ['node', 'python'],
+      })
+      const result = security.isCommandAllowed('go build')
+      expect(result.allowed).toBe(false)
+    })
+  })
+
+  describe('PR-X011: User extensions (allowCommands)', () => {
+    it('allows custom command via allowCommands', () => {
+      const security = new DefaultBashSecurity({
+        allowCommands: ['custom-cli'],
+      })
+      expect(security.isCommandAllowed('custom-cli arg').allowed).toBe(true)
+    })
+
+    it('allows docker with allowCommands extension', () => {
+      const security = new DefaultBashSecurity({
+        activeProfiles: ['node'],
+        allowCommands: ['docker'],
+      })
+      expect(security.isCommandAllowed('docker build .').allowed).toBe(true)
+    })
+  })
+
+  describe('PR-X012 to PR-X014: pkill targets per profile', () => {
+    it('PR-X012: default allows pkill uvicorn (python targets)', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('pkill uvicorn').allowed).toBe(true)
+    })
+
+    it('PR-X013: node profile denies pkill uvicorn', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['node'] })
+      const result = security.isCommandAllowed('pkill uvicorn')
+      expect(result.allowed).toBe(false)
+    })
+
+    it('PR-X014: custom pkill targets via allowPkillTargets', () => {
+      const security = new DefaultBashSecurity({
+        allowPkillTargets: ['custom-server'],
+      })
+      expect(security.isCommandAllowed('pkill custom-server').allowed).toBe(
+        true,
+      )
+    })
+
+    it('python profile allows pkill gunicorn', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['python'] })
+      expect(security.isCommandAllowed('pkill gunicorn').allowed).toBe(true)
+    })
+
+    it('ruby profile allows pkill puma', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['ruby'] })
+      expect(security.isCommandAllowed('pkill puma').allowed).toBe(true)
+    })
+
+    it('go profile allows pkill go', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['go'] })
+      expect(security.isCommandAllowed('pkill go').allowed).toBe(true)
+    })
+  })
+
+  describe('Base profile always included', () => {
+    it('node profile includes base commands', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['node'] })
+      expect(security.isCommandAllowed('ls -la').allowed).toBe(true)
+      expect(security.isCommandAllowed('git status').allowed).toBe(true)
+      expect(security.isCommandAllowed('pwd').allowed).toBe(true)
+    })
+
+    it('python profile includes base commands', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['python'] })
+      expect(security.isCommandAllowed('cat file.txt').allowed).toBe(true)
+      expect(security.isCommandAllowed('mkdir dir').allowed).toBe(true)
+    })
+
+    it('ruby profile includes base commands', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['ruby'] })
+      expect(security.isCommandAllowed('grep pattern file').allowed).toBe(true)
+      expect(security.isCommandAllowed('echo hello').allowed).toBe(true)
+    })
+
+    it('go profile includes base commands', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['go'] })
+      expect(security.isCommandAllowed('find .').allowed).toBe(true)
+      expect(security.isCommandAllowed('cp src dest').allowed).toBe(true)
+    })
+  })
+
+  describe('Profile-specific commands', () => {
+    it('node profile allows yarn and pnpm', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['node'] })
+      expect(security.isCommandAllowed('yarn install').allowed).toBe(true)
+      expect(security.isCommandAllowed('pnpm add lodash').allowed).toBe(true)
+    })
+
+    it('python profile allows poetry and pytest', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['python'] })
+      expect(security.isCommandAllowed('poetry install').allowed).toBe(true)
+      expect(security.isCommandAllowed('pytest tests/').allowed).toBe(true)
+    })
+
+    it('ruby profile allows bundle and rspec', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['ruby'] })
+      expect(security.isCommandAllowed('bundle install').allowed).toBe(true)
+      expect(security.isCommandAllowed('rspec spec/').allowed).toBe(true)
+    })
+
+    it('go profile allows gofmt and golangci-lint', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['go'] })
+      expect(security.isCommandAllowed('gofmt -w .').allowed).toBe(true)
+      expect(security.isCommandAllowed('golangci-lint run').allowed).toBe(true)
+    })
   })
 })

@@ -40,8 +40,17 @@ export {
 } from './sessionRunner'
 
 // BashSecurity exports
-export type { BashSecurity, ValidationResult } from './bashSecurity'
-export { DefaultBashSecurity, createBashSecurityHook } from './bashSecurity'
+export type {
+  BashSecurity,
+  ValidationResult,
+  BashSecurityOptions,
+  ProfileName,
+} from './bashSecurity'
+export {
+  DefaultBashSecurity,
+  createBashSecurityHook,
+  ALL_PROFILES,
+} from './bashSecurity'
 
 // Configuration exports
 export type {

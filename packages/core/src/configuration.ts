@@ -7,6 +7,7 @@ import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { McpServer } from './types'
+import type { BashSecurityOptions, ProfileName } from './bashSecurity'
 
 /**
  * Sandbox configuration
@@ -39,6 +40,7 @@ export interface AgentConfig {
   allowedTools: readonly string[]
   hooks: HookConfig
   mcpServers: Record<string, McpServer>
+  bashSecurity: BashSecurityOptions
 }
 
 /**
@@ -50,6 +52,21 @@ export interface UserConfig {
   allowedTools?: string[]
   hooks?: Partial<HookConfig>
   mcpServers?: Record<string, McpServer>
+  /**
+   * Language profile selection
+   * - Single profile: "node"
+   * - Multiple profiles: ["node", "python"]
+   * - Default (undefined): ALL profiles enabled
+   */
+  profile?: ProfileName | ProfileName[]
+  /**
+   * Additional bash commands to allow
+   */
+  allowCommands?: string[]
+  /**
+   * Additional pkill target processes
+   */
+  allowPkillTargets?: string[]
 }
 
 /**
@@ -83,6 +100,12 @@ export const SECURITY_BASELINE: Readonly<AgentConfig> = Object.freeze({
     PreToolUse: ['bash-security', 'autonoe-protection'],
   }),
   mcpServers: {},
+  bashSecurity: Object.freeze({
+    // undefined = all profiles enabled by default
+    activeProfiles: undefined,
+    allowCommands: undefined,
+    allowPkillTargets: undefined,
+  }),
 })
 
 /**
@@ -123,6 +146,21 @@ export async function loadConfig(projectDir: string): Promise<AgentConfig> {
 }
 
 /**
+ * Normalize profile configuration to array form
+ */
+function normalizeProfiles(
+  profile?: ProfileName | ProfileName[],
+): ProfileName[] | undefined {
+  if (profile === undefined) {
+    return undefined // All profiles enabled
+  }
+  if (typeof profile === 'string') {
+    return [profile]
+  }
+  return profile
+}
+
+/**
  * Merge user configuration with security baseline
  *
  * Rules:
@@ -131,6 +169,7 @@ export async function loadConfig(projectDir: string): Promise<AgentConfig> {
  * - allowedTools: Merge user with baseline
  * - hooks: Merge user hooks, baseline hooks always present
  * - mcpServers: Merge built-in and user servers
+ * - bashSecurity: Build from user profile + extensions
  *
  * @param baseline - Security baseline configuration
  * @param user - User configuration (partial)
@@ -180,11 +219,19 @@ export function mergeConfig(
     ),
   }
 
+  // Bash Security: Build from user profile + extensions
+  const bashSecurity: BashSecurityOptions = {
+    activeProfiles: normalizeProfiles(user.profile),
+    allowCommands: user.allowCommands,
+    allowPkillTargets: user.allowPkillTargets,
+  }
+
   return {
     sandbox,
     permissions,
     allowedTools,
     hooks,
     mcpServers,
+    bashSecurity,
   }
 }

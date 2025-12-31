@@ -127,7 +127,9 @@ export function toSessionEnd(sdkMessage: SDKMessage): SessionEnd {
  * Flatten a single SDK message into multiple StreamEvents
  * SDK messages may contain multiple content blocks; this generator yields each as a separate event
  */
-export function* toStreamEvents(sdkMessage: SDKMessage): Generator<StreamEvent> {
+export function* toStreamEvents(
+  sdkMessage: SDKMessage,
+): Generator<StreamEvent> {
   // Handle result messages
   if (sdkMessage.type === 'result') {
     yield toSessionEnd(sdkMessage)

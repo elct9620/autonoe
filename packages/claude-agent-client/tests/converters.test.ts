@@ -141,7 +141,10 @@ describe('converters', () => {
       const block = {
         type: 'tool_result',
         tool_use_id: 'id-123',
-        content: [{ type: 'text', text: 'part1' }, { type: 'text', text: 'part2' }],
+        content: [
+          { type: 'text', text: 'part1' },
+          { type: 'text', text: 'part2' },
+        ],
         is_error: false,
       }
       const result = toStreamEvent(block)

@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import type {
-  DeliverableRepository,
-  DeliverableStatus,
-} from '@autonoe/core'
+import type { DeliverableRepository, DeliverableStatus } from '@autonoe/core'
 import {
   handleCreateDeliverable,
   handleUpdateDeliverable,

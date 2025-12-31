@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { formatStreamEvent } from '../src/eventFormatter'
 import { ResultSubtype } from '../src/types'
-import type { AgentText, ToolInvocation, ToolResponse, SessionEnd } from '../src/types'
+import type {
+  AgentText,
+  ToolInvocation,
+  ToolResponse,
+  SessionEnd,
+} from '../src/types'
 
 describe('formatStreamEvent', () => {
   describe('AgentText', () => {

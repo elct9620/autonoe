@@ -128,9 +128,7 @@ describe('Session', () => {
   describe('SC-S007: Session end event (error)', () => {
     it('displays error messages via logger.error', async () => {
       const client = new MockAgentClient()
-      client.setResponses([
-        createMockErrorSessionEnd(['Error 1', 'Error 2']),
-      ])
+      client.setResponses([createMockErrorSessionEnd(['Error 1', 'Error 2'])])
       const logger = new TestLogger()
 
       const session = new Session({ projectDir: '/test/project' })

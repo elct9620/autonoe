@@ -107,7 +107,10 @@ export class SessionRunner {
       }
 
       // Termination condition 2: Max iterations reached
-      if (this.maxIterations !== undefined && iterations >= this.maxIterations) {
+      if (
+        this.maxIterations !== undefined &&
+        iterations >= this.maxIterations
+      ) {
         logger.info(`Max iterations (${this.maxIterations}) reached`)
         return {
           success: false,

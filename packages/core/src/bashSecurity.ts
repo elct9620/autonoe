@@ -14,17 +14,66 @@ export interface BashSecurity {
   isCommandAllowed(command: string): ValidationResult
 }
 
-type CommandValidator = (args: string[]) => ValidationResult
+/**
+ * Available language profiles for bash command filtering
+ * @see SPEC.md Section 6.3.1
+ */
+export type ProfileName = 'base' | 'node' | 'python' | 'ruby' | 'go'
+
+/**
+ * All available profiles
+ */
+export const ALL_PROFILES: readonly ProfileName[] = Object.freeze([
+  'base',
+  'node',
+  'python',
+  'ruby',
+  'go',
+])
+
+/**
+ * Options for configuring BashSecurity
+ */
+export interface BashSecurityOptions {
+  /**
+   * Active profiles. If undefined or empty, ALL profiles are enabled.
+   * The 'base' profile is always implicitly included.
+   */
+  activeProfiles?: ProfileName[]
+
+  /**
+   * Additional commands to allow (user extensions via agent.json)
+   */
+  allowCommands?: string[]
+
+  /**
+   * Additional pkill targets to allow (user extensions via agent.json)
+   */
+  allowPkillTargets?: string[]
+}
+
+/**
+ * Type guard to check if value is a BashSecurity instance
+ */
+function isBashSecurity(
+  value: BashSecurity | BashSecurityOptions | undefined,
+): value is BashSecurity {
+  return value !== undefined && 'isCommandAllowed' in value
+}
 
 /**
  * Create a PreToolUse hook for bash command security
  *
- * @param security - BashSecurity instance to use for validation
+ * @param securityOrOptions - BashSecurity instance or options to create one
  * @returns PreToolUseHook that validates bash commands
  */
 export function createBashSecurityHook(
-  security: BashSecurity = new DefaultBashSecurity(),
+  securityOrOptions?: BashSecurity | BashSecurityOptions,
 ): PreToolUseHook {
+  const security = isBashSecurity(securityOrOptions)
+    ? securityOrOptions
+    : new DefaultBashSecurity(securityOrOptions ?? {})
+
   return {
     name: 'bash-security',
     matcher: 'Bash',
@@ -51,9 +100,10 @@ export function createBashSecurityHook(
 }
 
 /**
- * Commands allowed without argument validation
+ * Base profile commands (always included)
+ * @see SPEC.md Section 6.3.2
  */
-const SIMPLE_ALLOWLIST = new Set([
+const BASE_COMMANDS = new Set([
   // Navigation
   'ls',
   'pwd',
@@ -68,18 +118,6 @@ const SIMPLE_ALLOWLIST = new Set([
   'cp',
   // Git
   'git',
-  // Node.js
-  'node',
-  'npm',
-  'npx',
-  // Build
-  'tsc',
-  'esbuild',
-  'vite',
-  // Test
-  'jest',
-  'vitest',
-  'playwright',
   // Process
   'echo',
   'which',
@@ -89,17 +127,169 @@ const SIMPLE_ALLOWLIST = new Set([
 ])
 
 /**
- * Commands requiring argument validation
+ * Node.js profile commands
+ * @see SPEC.md Section 6.3.2
  */
-const VALIDATED_COMMANDS: Record<string, CommandValidator> = {
-  chmod: validateChmod,
-  pkill: validatePkill,
+const NODE_COMMANDS = new Set([
+  // Runtime
+  'node',
+  'bun',
+  'deno',
+  // Package
+  'npm',
+  'npx',
+  'yarn',
+  'pnpm',
+  // Build
+  'tsc',
+  'esbuild',
+  'vite',
+  'webpack',
+  'rollup',
+  // Test
+  'jest',
+  'vitest',
+  'playwright',
+  'mocha',
+  // Lint
+  'eslint',
+  'prettier',
+  'biome',
+  // Framework
+  'next',
+  'nuxt',
+  'astro',
+  'remix',
+])
+
+/**
+ * Python profile commands
+ * @see SPEC.md Section 6.3.2
+ */
+const PYTHON_COMMANDS = new Set([
+  // Runtime
+  'python',
+  'python3',
+  // Package
+  'pip',
+  'pip3',
+  'pipx',
+  'uv',
+  // Venv
+  'venv',
+  'virtualenv',
+  'conda',
+  // Build
+  'poetry',
+  'pdm',
+  'hatch',
+  'flit',
+  // Test
+  'pytest',
+  'tox',
+  'nox',
+  // Lint
+  'ruff',
+  'black',
+  'mypy',
+  'flake8',
+  'pylint',
+  // Framework
+  'django-admin',
+  'flask',
+  'uvicorn',
+  'gunicorn',
+])
+
+/**
+ * Ruby profile commands
+ * @see SPEC.md Section 6.3.2
+ */
+const RUBY_COMMANDS = new Set([
+  // Runtime
+  'ruby',
+  'irb',
+  // Package
+  'gem',
+  'bundle',
+  'bundler',
+  // Build
+  'rake',
+  'thor',
+  // Test
+  'rspec',
+  'minitest',
+  'cucumber',
+  // Lint
+  'rubocop',
+  'standard',
+  // Framework
+  'rails',
+  'hanami',
+  'puma',
+  'unicorn',
+])
+
+/**
+ * Go profile commands
+ * @see SPEC.md Section 6.3.2
+ */
+const GO_COMMANDS = new Set([
+  // Runtime
+  'go',
+  // Format
+  'gofmt',
+  'goimports',
+  // Lint
+  'golint',
+  'golangci-lint',
+  'staticcheck',
+  // Tools
+  'gopls',
+  'dlv',
+  'goreleaser',
+])
+
+/**
+ * Profile to commands mapping
+ */
+const PROFILE_COMMANDS: Record<ProfileName, Set<string>> = {
+  base: BASE_COMMANDS,
+  node: NODE_COMMANDS,
+  python: PYTHON_COMMANDS,
+  ruby: RUBY_COMMANDS,
+  go: GO_COMMANDS,
 }
 
 /**
- * Allowed pkill targets (dev-related processes only)
+ * Commands requiring argument validation (always enabled)
  */
-const ALLOWED_PKILL_TARGETS = new Set(['node', 'npm', 'npx', 'vite', 'next'])
+const VALIDATED_COMMANDS = new Set(['chmod', 'pkill'])
+
+/**
+ * pkill targets per profile
+ * @see SPEC.md Section 6.3.3
+ */
+const NODE_PKILL_TARGETS = new Set(['node', 'npm', 'npx', 'vite', 'next'])
+const PYTHON_PKILL_TARGETS = new Set([
+  'python',
+  'python3',
+  'uvicorn',
+  'gunicorn',
+])
+const RUBY_PKILL_TARGETS = new Set(['ruby', 'puma', 'unicorn', 'rails'])
+const GO_PKILL_TARGETS = new Set(['go'])
+
+/**
+ * Profile to pkill targets mapping
+ */
+const PROFILE_PKILL_TARGETS: Record<ProfileName, Set<string>> = {
+  base: new Set(),
+  node: NODE_PKILL_TARGETS,
+  python: PYTHON_PKILL_TARGETS,
+  ruby: RUBY_PKILL_TARGETS,
+  go: GO_PKILL_TARGETS,
+}
 
 /**
  * Pattern for allowed chmod modes (+x variants)
@@ -133,32 +323,6 @@ function validateChmod(args: string[]): ValidationResult {
     return {
       allowed: false,
       reason: `chmod mode '${mode}' is not allowed, only +x variants permitted`,
-    }
-  }
-
-  return { allowed: true }
-}
-
-/**
- * Validate pkill command arguments
- * - Only allows dev-related process names: node, npm, npx, vite, next
- */
-function validatePkill(args: string[]): ValidationResult {
-  if (args.length === 0) {
-    return { allowed: false, reason: 'pkill requires a process name' }
-  }
-
-  // Find the process name (skip flags like -f, -9)
-  const processName = args.find((arg) => !arg.startsWith('-'))
-
-  if (!processName) {
-    return { allowed: false, reason: 'pkill requires a process name' }
-  }
-
-  if (!ALLOWED_PKILL_TARGETS.has(processName)) {
-    return {
-      allowed: false,
-      reason: `pkill target '${processName}' is not allowed, only dev processes permitted`,
     }
   }
 
@@ -309,6 +473,86 @@ function parseCommand(command: string): { base: string; args: string[] } {
  * Default implementation of BashSecurity
  */
 export class DefaultBashSecurity implements BashSecurity {
+  private readonly allowedCommands: Set<string>
+  private readonly allowedPkillTargets: Set<string>
+
+  constructor(options: BashSecurityOptions = {}) {
+    const profiles = this.resolveActiveProfiles(options.activeProfiles)
+    this.allowedCommands = this.buildAllowedCommands(profiles, options)
+    this.allowedPkillTargets = this.buildAllowedPkillTargets(profiles, options)
+  }
+
+  /**
+   * Resolve active profiles
+   * - undefined/empty: ALL profiles
+   * - specified: base + specified profiles
+   */
+  private resolveActiveProfiles(activeProfiles?: ProfileName[]): ProfileName[] {
+    if (!activeProfiles || activeProfiles.length === 0) {
+      return [...ALL_PROFILES]
+    }
+
+    // Always include base profile
+    const profiles = new Set<ProfileName>(['base'])
+    for (const profile of activeProfiles) {
+      profiles.add(profile)
+    }
+    return [...profiles]
+  }
+
+  /**
+   * Build the effective command allowlist from active profiles + extensions
+   */
+  private buildAllowedCommands(
+    profiles: ProfileName[],
+    options: BashSecurityOptions,
+  ): Set<string> {
+    const commands = new Set<string>()
+
+    // Add commands from each active profile
+    for (const profile of profiles) {
+      const profileCommands = PROFILE_COMMANDS[profile]
+      for (const cmd of profileCommands) {
+        commands.add(cmd)
+      }
+    }
+
+    // Add user extensions
+    if (options.allowCommands) {
+      for (const cmd of options.allowCommands) {
+        commands.add(cmd)
+      }
+    }
+
+    return commands
+  }
+
+  /**
+   * Build the effective pkill targets from active profiles + extensions
+   */
+  private buildAllowedPkillTargets(
+    profiles: ProfileName[],
+    options: BashSecurityOptions,
+  ): Set<string> {
+    const targets = new Set<string>()
+
+    for (const profile of profiles) {
+      const profileTargets = PROFILE_PKILL_TARGETS[profile]
+      for (const target of profileTargets) {
+        targets.add(target)
+      }
+    }
+
+    // Add user extensions
+    if (options.allowPkillTargets) {
+      for (const target of options.allowPkillTargets) {
+        targets.add(target)
+      }
+    }
+
+    return targets
+  }
+
   isCommandAllowed(command: string): ValidationResult {
     // Handle empty command
     if (!command || !command.trim()) {
@@ -337,13 +581,17 @@ export class DefaultBashSecurity implements BashSecurity {
     }
 
     // Check if command requires argument validation
-    const validator = VALIDATED_COMMANDS[base]
-    if (validator) {
-      return validator(args)
+    if (VALIDATED_COMMANDS.has(base)) {
+      if (base === 'chmod') {
+        return validateChmod(args)
+      }
+      if (base === 'pkill') {
+        return this.validatePkill(args)
+      }
     }
 
-    // Check simple allowlist
-    if (SIMPLE_ALLOWLIST.has(base)) {
+    // Check computed allowlist
+    if (this.allowedCommands.has(base)) {
       return { allowed: true }
     }
 
@@ -352,5 +600,30 @@ export class DefaultBashSecurity implements BashSecurity {
       allowed: false,
       reason: `Command '${base}' is not in the allowlist`,
     }
+  }
+
+  /**
+   * Validate pkill command arguments with profile-aware targets
+   */
+  private validatePkill(args: string[]): ValidationResult {
+    if (args.length === 0) {
+      return { allowed: false, reason: 'pkill requires a process name' }
+    }
+
+    // Find the process name (skip flags like -f, -9)
+    const processName = args.find((arg) => !arg.startsWith('-'))
+
+    if (!processName) {
+      return { allowed: false, reason: 'pkill requires a process name' }
+    }
+
+    if (!this.allowedPkillTargets.has(processName)) {
+      return {
+        allowed: false,
+        reason: `pkill target '${processName}' is not allowed, only dev processes permitted`,
+      }
+    }
+
+    return { allowed: true }
   }
 }

@@ -9,10 +9,7 @@ describe('MockAgentClient', () => {
   })
 
   it('yields pre-set responses in order', async () => {
-    const events = [
-      createMockAgentText('Hello'),
-      createMockAgentText('World'),
-    ]
+    const events = [createMockAgentText('Hello'), createMockAgentText('World')]
     client.setResponses(events)
 
     const results: unknown[] = []

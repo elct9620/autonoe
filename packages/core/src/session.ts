@@ -57,7 +57,9 @@ export class Session {
 
     try {
       for await (const event of query) {
-        logger.debug(`[Recv] ${event.type}: ${truncate(formatStreamEvent(event), 200)}`)
+        logger.debug(
+          `[Recv] ${event.type}: ${truncate(formatStreamEvent(event), 200)}`,
+        )
 
         if (event.type === 'session_end') {
           if (event.totalCostUsd !== undefined) {
@@ -67,7 +69,10 @@ export class Session {
         }
       }
     } catch (error) {
-      logger.error('Session query failed', error instanceof Error ? error : undefined)
+      logger.error(
+        'Session query failed',
+        error instanceof Error ? error : undefined,
+      )
       throw error
     }
 
