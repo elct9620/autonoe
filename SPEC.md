@@ -1069,10 +1069,12 @@ Tools available to the Coding Agent (configured by Autonoe):
 
 ### 7.3 Instruction Selection
 
-| Condition                   | Instruction              |
-| --------------------------- | ------------------------ |
-| No .autonoe/status.json     | initializerInstruction   |
-| .autonoe/status.json exists | codingInstruction        |
+| Condition                   | Instruction                                      |
+| --------------------------- | ------------------------------------------------ |
+| No .autonoe/status.json     | .autonoe/initializer.md → initializerInstruction |
+| .autonoe/status.json exists | .autonoe/coding.md → codingInstruction           |
+
+Resolution order: project override (`.autonoe/{name}.md`) → default (`packages/core`).
 
 ### 7.4 Configuration Merge
 
@@ -1534,3 +1536,18 @@ declare module '*.md' {
 | ---------------------- | --------------------------- |
 | initializerInstruction | No .autonoe/status.json     |
 | codingInstruction      | .autonoe/status.json exists |
+
+### A.4 Instruction Override
+
+```
+Instruction Resolution
+┌──────────────────────────────────────────────────────┐
+│  .autonoe/{name}.md  →  packages/core instruction    │
+│                         (fallback if not exists)     │
+└──────────────────────────────────────────────────────┘
+```
+
+| Override File           | Fallback               | Purpose                    |
+| ----------------------- | ---------------------- | -------------------------- |
+| .autonoe/initializer.md | initializerInstruction | Custom initialization flow |
+| .autonoe/coding.md      | codingInstruction      | Custom implementation flow |
