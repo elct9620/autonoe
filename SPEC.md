@@ -1142,16 +1142,16 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | -------- | -------------------- | -------------------------- | ---------------------------------- |
 | SC-AC001 | toSdkMcpServers      | Empty record               | Empty record                       |
 | SC-AC002 | toSdkMcpServers      | Server with args           | SDK format preserved               |
-| SC-AC003 | toAgentMessageType   | 'text'                     | AgentMessageType.Text              |
-| SC-AC004 | toAgentMessageType   | 'result'                   | AgentMessageType.Result            |
-| SC-AC005 | toAgentMessageType   | unknown                    | AgentMessageType.Text              |
+| SC-AC003 | toStreamEvent        | text block                 | AgentText                          |
+| SC-AC004 | toStreamEvent        | tool_use block             | ToolInvocation                     |
+| SC-AC005 | toStreamEvent        | tool_result block          | ToolResponse                       |
 | SC-AC006 | toResultSubtype      | 'success'                  | ResultSubtype.Success              |
 | SC-AC007 | toResultSubtype      | 'error_max_turns'          | ResultSubtype.ErrorMaxTurns        |
 | SC-AC008 | toResultSubtype      | 'error_during_execution'   | ResultSubtype.ErrorDuringExecution |
 | SC-AC009 | toResultSubtype      | 'error_max_budget_usd'     | ResultSubtype.ErrorMaxBudgetUsd    |
 | SC-AC010 | toResultSubtype      | unknown                    | ResultSubtype.ErrorDuringExecution |
-| SC-AC011 | toAgentMessage       | Text message               | Domain AgentMessage                |
-| SC-AC012 | toAgentMessage       | Result with total_cost_usd | totalCostUsd (camelCase)           |
+| SC-AC011 | toStreamEvents       | SDK message with content   | Generator\<StreamEvent\>             |
+| SC-AC012 | toSessionEnd         | Result with total_cost_usd | SessionEnd with totalCostUsd       |
 | SC-AC013 | detectClaudeCodePath | claude found               | Path string                        |
 | SC-AC014 | detectClaudeCodePath | claude not found           | undefined                          |
 
