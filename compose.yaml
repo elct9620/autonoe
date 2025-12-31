@@ -1,0 +1,12 @@
+services:
+  cli:
+    build:
+      context: .
+      dockerfile: apps/cli/Dockerfile
+      target: node
+    volumes:
+      - ./tmp:/workspace
+    working_dir: /workspace
+    environment:
+      - ANTHROPIC_API_KEY
+      - CLAUDE_CODE_OAUTH_TOKEN
