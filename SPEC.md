@@ -1343,28 +1343,29 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 ├─────────────────────────────────────────────────────────┤
 │  builder ──▶ Compile autonoe binary                     │
 │      │                                                  │
-│      ▼                                                  │
-│   base ────┬──▶ node ────┬──▶ node-python              │
-│            │             ├──▶ node-golang              │
-│            │             └──▶ node-ruby                │
-│            ├──▶ python                                  │
-│            ├──▶ golang                                  │
-│            └──▶ ruby                                    │
+│      ├──▶ base (debian:bookworm-slim)                   │
+│      │                                                  │
+│      ├──▶ node (node:XX-bookworm-slim)                  │
+│      │                                                  │
+│      ├──▶ python (python:X.XX-slim-bookworm)            │
+│      │                                                  │
+│      ├──▶ golang (golang:X.XX-bookworm)                 │
+│      │                                                  │
+│      └──▶ ruby (ruby:X.X-slim-bookworm)                 │
 └─────────────────────────────────────────────────────────┘
 ```
 
+> Each language target uses its official Docker image as base. All language targets include Node.js for Playwright MCP support.
+
 **Target Definition**:
 
-| Target      | Inherits | Tools Included                  |
-|-------------|----------|---------------------------------|
-| base        | -        | git, curl, ca-certificates      |
-| node        | base     | + Node.js, npm, Playwright deps |
-| python      | base     | + Python, pip, venv             |
-| golang      | base     | + Go                            |
-| ruby        | base     | + Ruby, Bundler                 |
-| node-python | node     | + Python                        |
-| node-golang | node     | + Go                            |
-| node-ruby   | node     | + Ruby                          |
+| Target | Base Image                  | Tools Included                                    |
+|--------|-----------------------------|-------------------------------------------------|
+| base   | debian:bookworm-slim        | git, curl, ca-certificates                        |
+| node   | node:XX-bookworm-slim       | git, curl, npm, Playwright deps                   |
+| python | python:X.XX-slim-bookworm   | git, curl, Node.js, npm, Playwright deps, pip, venv |
+| golang | golang:X.XX-bookworm        | git, curl, Node.js, npm, Playwright deps          |
+| ruby   | ruby:X.X-slim-bookworm      | git, curl, Node.js, npm, Playwright deps, Bundler |
 
 **Build Args**:
 
@@ -1387,9 +1388,8 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 
 | Pattern | Example | Description |
 |---------|---------|-------------|
-| `:base` | `:base` | Minimal runtime |
-| `:<lang>` | `:node`, `:python` | Single language (LTS) |
-| `:<lang>-<lang>` | `:node-python` | Multi-language |
+| `:base` | `:base` | Minimal runtime (no language tools) |
+| `:<lang>` | `:node`, `:python` | Language runtime with Node.js + Playwright |
 | `:X.Y.Z-<variant>` | `:1.0.0-node` | Versioned tag |
 
 ### 10.8 Default Publish Matrix
@@ -1397,13 +1397,10 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 | Tag | Tools | Use Case |
 |-----|-------|----------|
 | `:latest`, `:base` | git, curl | Minimal runtime |
-| `:node` | Node.js, Playwright deps | Frontend development |
-| `:python` | Python, pip | Backend / Data science |
-| `:golang` | Go | System programming |
-| `:ruby` | Ruby, Bundler | Web development |
-| `:node-python` | Node + Python | Full-stack Web |
-| `:node-golang` | Node + Go | Microservices |
-| `:node-ruby` | Node + Ruby | Rails projects |
+| `:node` | Node.js, Playwright | Frontend development |
+| `:python` | Python, pip, Node.js, Playwright | Backend / Data science |
+| `:golang` | Go, Node.js, Playwright | System programming |
+| `:ruby` | Ruby, Bundler, Node.js, Playwright | Web development |
 
 ### 10.9 Version Support Policy
 

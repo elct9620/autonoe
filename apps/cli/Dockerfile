@@ -59,14 +59,17 @@ CMD ["autonoe"]
 # =============================================================================
 # Node.js Stage
 # =============================================================================
-FROM base AS node
+FROM node:${NODE_VERSION}-bookworm-slim AS node
 
-ARG NODE_VERSION
-
-# Install Node.js
-RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs \
+# Install essential tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Copy compiled binary
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
@@ -74,102 +77,94 @@ RUN npm install -g @anthropic-ai/claude-code
 # Install Playwright dependencies
 RUN npx playwright install-deps chromium
 
+WORKDIR /workspace
+
 CMD ["autonoe"]
 
 # =============================================================================
 # Python Stage
 # =============================================================================
-FROM base AS python
+FROM python:${PYTHON_VERSION}-slim-bookworm AS python
 
-ARG PYTHON_VERSION
+ARG NODE_VERSION
 
-# Install Python
+# Install essential tools and Node.js
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -sf /usr/bin/python3 /usr/bin/python
+    git \
+    curl \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy compiled binary
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
+
+# Install claude-code CLI (required by claude-agent-sdk)
+RUN npm install -g @anthropic-ai/claude-code
+
+# Install Playwright dependencies
+RUN npx playwright install-deps chromium
+
+WORKDIR /workspace
 
 CMD ["autonoe"]
 
 # =============================================================================
 # Golang Stage
 # =============================================================================
-FROM base AS golang
+FROM golang:${GOLANG_VERSION}-bookworm AS golang
 
-ARG GOLANG_VERSION
+ARG NODE_VERSION
 
-# Install Go
-RUN curl -fsSL https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz | tar -C /usr/local -xzf - \
-    && ln -sf /usr/local/go/bin/go /usr/local/bin/go \
-    && ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
+# Install essential tools and Node.js
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
-ENV GOPATH=/go
-ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+# Copy compiled binary
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
+
+# Install claude-code CLI (required by claude-agent-sdk)
+RUN npm install -g @anthropic-ai/claude-code
+
+# Install Playwright dependencies
+RUN npx playwright install-deps chromium
+
+WORKDIR /workspace
 
 CMD ["autonoe"]
 
 # =============================================================================
 # Ruby Stage
 # =============================================================================
-FROM base AS ruby
+FROM ruby:${RUBY_VERSION}-slim-bookworm AS ruby
 
-ARG RUBY_VERSION
+ARG NODE_VERSION
 
-# Install Ruby and Bundler
+# Install essential tools and Node.js
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ruby \
-    ruby-bundler \
+    git \
+    curl \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-CMD ["autonoe"]
+# Copy compiled binary
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 
-# =============================================================================
-# Node + Python Stage
-# =============================================================================
-FROM node AS node-python
+# Install claude-code CLI (required by claude-agent-sdk)
+RUN npm install -g @anthropic-ai/claude-code
 
-ARG PYTHON_VERSION
+# Install Playwright dependencies
+RUN npx playwright install-deps chromium
 
-# Install Python
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -sf /usr/bin/python3 /usr/bin/python
+WORKDIR /workspace
 
 CMD ["autonoe"]
 
-# =============================================================================
-# Node + Golang Stage
-# =============================================================================
-FROM node AS node-golang
-
-ARG GOLANG_VERSION
-
-# Install Go
-RUN curl -fsSL https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz | tar -C /usr/local -xzf - \
-    && ln -sf /usr/local/go/bin/go /usr/local/bin/go \
-    && ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
-
-ENV GOPATH=/go
-ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
-
-CMD ["autonoe"]
-
-# =============================================================================
-# Node + Ruby Stage
-# =============================================================================
-FROM node AS node-ruby
-
-ARG RUBY_VERSION
-
-# Install Ruby and Bundler
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ruby \
-    ruby-bundler \
-    && rm -rf /var/lib/apt/lists/*
-
-CMD ["autonoe"]
