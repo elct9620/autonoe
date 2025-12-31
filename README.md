@@ -117,11 +117,13 @@ Autonoe operates in two phases:
 ```
 
 **Phase 1: Initialization**
+
 - Reads your `SPEC.md` file
 - Creates deliverables with acceptance criteria
 - Stores status in `.autonoe/status.json`
 
 **Phase 2: Coding**
+
 - Implements each deliverable
 - Runs tests and verification
 - Marks deliverables as passed/failed
@@ -137,9 +139,7 @@ Create `.autonoe/agent.json` to customize behavior:
   "allowCommands": ["docker", "custom-cli"],
   "allowPkillTargets": ["custom-server"],
   "permissions": {
-    "allow": [
-      "WebFetch(https://api.example.com/*)"
-    ]
+    "allow": ["WebFetch(https://api.example.com/*)"]
   },
   "allowedTools": ["Task", "WebSearch"],
   "mcpServers": {
@@ -153,23 +153,23 @@ Create `.autonoe/agent.json` to customize behavior:
 
 ### Configuration Options
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `profile` | `string \| string[]` | Language profiles to enable (default: all) |
-| `allowCommands` | `string[]` | Additional bash commands to allow |
-| `allowPkillTargets` | `string[]` | Additional processes that can be killed |
-| `permissions.allow` | `string[]` | SDK permission rules |
-| `allowedTools` | `string[]` | Additional SDK tools to enable |
-| `mcpServers` | `object` | Custom MCP servers |
+| Field               | Type                 | Description                                |
+| ------------------- | -------------------- | ------------------------------------------ |
+| `profile`           | `string \| string[]` | Language profiles to enable (default: all) |
+| `allowCommands`     | `string[]`           | Additional bash commands to allow          |
+| `allowPkillTargets` | `string[]`           | Additional processes that can be killed    |
+| `permissions.allow` | `string[]`           | SDK permission rules                       |
+| `allowedTools`      | `string[]`           | Additional SDK tools to enable             |
+| `mcpServers`        | `object`             | Custom MCP servers                         |
 
 ### Language Profiles
 
-| Profile | Includes |
-|---------|----------|
-| `node` | node, npm, bun, yarn, pnpm, vite, next, etc. |
+| Profile  | Includes                                     |
+| -------- | -------------------------------------------- |
+| `node`   | node, npm, bun, yarn, pnpm, vite, next, etc. |
 | `python` | python, pip, uv, pytest, django, flask, etc. |
-| `ruby` | ruby, gem, bundle, rails, rspec, etc. |
-| `go` | go, gofmt, golangci-lint, etc. |
+| `ruby`   | ruby, gem, bundle, rails, rspec, etc.        |
+| `go`     | go, gofmt, golangci-lint, etc.               |
 
 ## Security Model
 
@@ -209,11 +209,11 @@ Autonoe implements three layers of security:
 └─────────────────────────────────┘  └─────────────────────────────────┘
 ```
 
-| Package | Description |
-|---------|-------------|
-| `@autonoe/cli` | Entry point, CLI argument parsing |
-| `@autonoe/core` | Domain types, session orchestration (zero external dependencies) |
-| `@autonoe/agent` | Claude Agent SDK wrapper |
+| Package          | Description                                                      |
+| ---------------- | ---------------------------------------------------------------- |
+| `@autonoe/cli`   | Entry point, CLI argument parsing                                |
+| `@autonoe/core`  | Domain types, session orchestration (zero external dependencies) |
+| `@autonoe/agent` | Claude Agent SDK wrapper                                         |
 
 ## Development
 
