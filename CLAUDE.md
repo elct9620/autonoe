@@ -91,6 +91,40 @@ apps/cli
 - **TypeScript**: Strict mode, ESNext target/module
 - **Prompts**: Markdown files imported via `with { type: 'text' }` (requires `markdown.d.ts`)
 
+## Commit Scopes & Release Please
+
+Conventional commits 的 scope 會決定 Release Please 觸發哪個套件的版本更新：
+
+| Scope | Package | Path |
+|-------|---------|------|
+| `core` | @autonoe/core | packages/core |
+| `agent` | @autonoe/agent | packages/agent |
+| `cli` | @autonoe/cli | apps/cli |
+
+### Examples
+
+```bash
+# Triggers @autonoe/core release
+feat(core): add new session state machine
+
+# Triggers @autonoe/agent release
+fix(agent): handle SDK timeout errors
+
+# Triggers @autonoe/cli release
+feat(cli): add --verbose flag
+
+# No package release (docs, CI, etc.)
+docs: update README
+ci: add release workflow
+```
+
+### Rules
+
+1. **Always use scope** for changes affecting specific packages
+2. **Use package name as scope** (core, agent, cli)
+3. **Omit scope** for cross-cutting changes (docs, ci, chore)
+4. **Breaking changes** use `!` suffix: `feat(core)!: redesign API`
+
 ## Security Model (Three-Layer Architecture)
 
 ```
