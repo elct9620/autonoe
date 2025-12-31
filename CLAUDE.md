@@ -44,11 +44,11 @@ Autonoe is a Bun/TypeScript monorepo that orchestrates an autonomous coding agen
 └─────────────────────────────────┘  └─────────────────────────────────┘
 ```
 
-**Key flow**: CLI parses args → `SessionRunner.run(client, logger)` → `Session.run()` → `client.query()` → Agent reads SPEC.md → executes deliverables → updates `.autonoe/status.json` via DeliverableTool
+**Key flow**: CLI → `SessionRunner.run(factory, logger)` → loop creates `Session` → `client.query()` returns `MessageStream` → process `StreamEvent` discriminated union → terminates when all deliverables pass
 
 ### Packages
 
-- `@autonoe/cli` - Entry point, argument parsing with CAC (`apps/cli/bin/autonoe.ts`)
+- `@autonoe/cli` - Entry point, argument parsing with CAC
 - `@autonoe/core` - Session orchestration, domain types, security hooks (NO external deps)
 - `@autonoe/claude-agent-client` - SDK wrapper implementing `AgentClient` interface
 
@@ -62,6 +62,16 @@ apps/cli
 ```
 
 `packages/core` has NO external dependencies - pure domain + application logic.
+
+### Domain Model
+
+**StreamEvent** - Discriminated union processed by Session:
+- `AgentText` - Text output from agent
+- `ToolInvocation` - Agent requesting tool execution
+- `ToolResponse` - Result returned to agent
+- `SessionEnd` - Terminal state with result/errors/cost
+
+**DeliverableStatus** - Aggregate tracking work completion (persisted to `.autonoe/status.json`)
 
 ## Conventions
 
@@ -82,20 +92,9 @@ Layer 3: PreToolUse Hooks
 
 See `SPEC.md` Section 6 for bash command allowlist and validation rules.
 
-## Implementation Status
+## Pending Implementation
 
-Core functionality implemented:
-- Session / SessionRunner with logger injection
-- BashSecurity (PreToolUse hook with command chain parsing)
-- AutonoeProtection hook
-- Configuration loading and merging
-- ClaudeAgentClient with SDK converters
-- DeliverableStatus domain model + repository interface
-- DeliverableTool (autonoe-deliverable SDK MCP server)
-- FileDeliverableRepository (persistence to .autonoe/status.json)
-
-Pending:
-- Prompt system (initializer.md, coding.md)
+- **Prompt System** - `packages/core/src/instructions.ts` and `instructions/*.md` (see SPEC.md Appendix A)
 
 ## Specification
 
