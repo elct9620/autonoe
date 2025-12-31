@@ -1,6 +1,7 @@
 import type { AgentClientFactory } from './agentClient'
 import type { DeliverableStatusReader } from './deliverableStatus'
 import type { Logger } from './logger'
+import type { InstructionResolver } from './instructions'
 import { silentLogger } from './logger'
 import { Session } from './session'
 import {
@@ -8,6 +9,7 @@ import {
   countPassedDeliverables,
   emptyDeliverableStatus,
 } from './deliverableStatus'
+import { initializerInstruction, codingInstruction } from './instructions'
 
 /**
  * SessionRunner configuration options
@@ -54,17 +56,24 @@ export class SessionRunner {
     clientFactory: AgentClientFactory,
     logger: Logger = silentLogger,
     statusReader?: DeliverableStatusReader,
+    instructionResolver?: InstructionResolver,
   ): Promise<SessionRunnerResult> {
     const startTime = Date.now()
     let iterations = 0
     let deliverablesPassedCount = 0
     let deliverablesTotalCount = 0
 
-    // Fixed test instruction (instruction selection not in scope)
-    const instruction =
-      'Process the next deliverable. Create deliverables if none exist, then verify and mark them as passed.'
-
     while (true) {
+      // Select instruction based on status existence
+      // @see SPEC.md Section 7.2
+      const statusExists = statusReader ? await statusReader.exists() : false
+      const instructionName = statusExists ? 'coding' : 'initializer'
+      const instruction = instructionResolver
+        ? await instructionResolver.resolve(instructionName)
+        : statusExists
+          ? codingInstruction
+          : initializerInstruction
+
       iterations++
       logger.info(`Session ${iterations} started`)
 

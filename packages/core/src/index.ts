@@ -87,3 +87,12 @@ export {
   countPassedDeliverables,
   emptyDeliverableStatus,
 } from './deliverableStatus'
+
+// Instruction exports
+export type { InstructionName, InstructionResolver } from './instructions'
+export {
+  initializerInstruction,
+  codingInstruction,
+  createDefaultInstructionResolver,
+  selectInstruction,
+} from './instructions'

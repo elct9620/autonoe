@@ -1,13 +1,18 @@
-import { resolve } from 'node:path'
+import { resolve, join } from 'node:path'
 import { existsSync, statSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import {
   SessionRunner,
   loadConfig,
   DefaultBashSecurity,
   createBashSecurityHook,
   createAutonoeProtectionHook,
+  initializerInstruction,
+  codingInstruction,
   type SessionRunnerOptions,
   type AgentClientFactory,
+  type InstructionResolver,
+  type InstructionName,
 } from '@autonoe/core'
 import {
   ClaudeAgentClient,
@@ -20,6 +25,29 @@ import { ConsoleLogger } from './consoleLogger'
  * Version constant - should match package.json
  */
 export const VERSION = '0.1.0'
+
+/**
+ * Create an instruction resolver with override support
+ * Checks for .autonoe/{name}.md override files before falling back to defaults
+ * @see SPEC.md Section A.4
+ */
+function createInstructionResolver(projectDir: string): InstructionResolver {
+  return {
+    async resolve(name: InstructionName): Promise<string> {
+      const overridePath = join(projectDir, '.autonoe', `${name}.md`)
+
+      try {
+        // Try to read override file
+        return await readFile(overridePath, 'utf-8')
+      } catch {
+        // Fallback to default instruction
+        return name === 'initializer'
+          ? initializerInstruction
+          : codingInstruction
+      }
+    },
+  }
+}
 
 /**
  * Options passed from CLI argument parsing
@@ -112,8 +140,18 @@ export async function handleRunCommand(
         }),
     }
 
+    // Create instruction resolver with override support
+    const instructionResolver = createInstructionResolver(
+      runnerOptions.projectDir,
+    )
+
     const runner = new SessionRunner(runnerOptions)
-    const result = await runner.run(clientFactory, logger, deliverableRepo)
+    const result = await runner.run(
+      clientFactory,
+      logger,
+      deliverableRepo,
+      instructionResolver,
+    )
 
     logger.info('')
     if (result.success) {
