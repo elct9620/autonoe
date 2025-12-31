@@ -1220,16 +1220,204 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 
 ## 9. Integration Test Scenarios
 
-### 9.1 Security (SDK)
+Integration tests require real SDK, Docker, and external services. They are separated from unit tests due to execution time and API costs.
 
-| ID      | Input                              | Expected Output                |
-| ------- | ---------------------------------- | ------------------------------ |
-| SC-X003 | File read outside project          | Permission denied              |
-| SC-X005 | Direct write to .autonoe/          | Permission denied (PreToolUse) |
-| SC-X006 | Direct edit .autonoe/status.json   | Permission denied (PreToolUse) |
-| SC-X007 | update_deliverable tool write      | Allowed                        |
+### 9.1 Test Architecture
 
-### 9.2 Browser
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Integration Test Stack                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌────────────────┐                                              │
+│  │    Makefile    │  make test-integration                       │
+│  └───────┬────────┘                                              │
+│          │                                                       │
+│          ▼                                                       │
+│  ┌────────────────┐                                              │
+│  │ Docker Compose │  Isolated container environment              │
+│  └───────┬────────┘                                              │
+│          │                                                       │
+│          ▼                                                       │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐     │
+│  │   ./tmp/       │  │   autonoe      │  │   Artifacts    │     │
+│  │   (workspace)  │◀─│   (CLI)        │─▶│   (output)     │     │
+│  └────────────────┘  └────────────────┘  └────────────────┘     │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 9.4 Test Execution Flow
+
+```
+┌──────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────┐
+│  Setup   │───▶│   Execute    │───▶│    Verify    │───▶│  Report  │
+└──────────┘    └──────────────┘    └──────────────┘    └──────────┘
+     │                 │                   │                  │
+     ▼                 ▼                   ▼                  ▼
+- Clean ./tmp/    - docker compose    - Check files       - Exit code
+- Copy fixtures     run --rm cli      - Validate JSON     - Summary
+- Reset state     - autonoe run       - Content match
+```
+
+**Workspace Management:**
+
+```bash
+# Clean workspace (keep only .gitkeep)
+find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
+
+# Copy fixture for test
+cp -r tests/integration/fixtures/hello-world/* ./tmp/
+```
+
+The `./tmp/` directory serves as the Docker volume mount point. Only `.gitkeep` is preserved to ensure the directory exists in version control.
+
+### 9.3 Test Separation Strategy
+
+| Test Type   | Location              | Command                 | CI Trigger      |
+| ----------- | --------------------- | ----------------------- | --------------- |
+| Unit        | `packages/*/tests/`   | `bun run test`          | Every commit    |
+| Integration | `tests/integration/`  | `make test-integration` | Manual / Nightly |
+
+**Rationale:**
+
+- Unit tests: Fast (< 10s), no external dependencies, run on every commit
+- Integration tests: Slow (API calls), requires Docker, incurs API costs
+
+### 9.4 Test Categories
+
+| Category       | Scenarios       | Description                              |
+| -------------- | --------------- | ---------------------------------------- |
+| End-to-End     | IT-001 ~ IT-005 | Full workflow with CLI and deliverables  |
+| SDK Sandbox    | SC-X003         | Filesystem boundary enforcement          |
+| Browser        | SC-B001 ~ SC-B004 | Playwright MCP server integration      |
+
+### 9.5 End-to-End Test Cases
+
+#### IT-001: Basic Workflow
+
+| Field            | Value                                       |
+| ---------------- | ------------------------------------------- |
+| **Scenario**     | End-to-end session with simple deliverable  |
+| **Fixture**      | `tests/integration/fixtures/hello-world/`   |
+| **Expected**     | `hello.txt` exists, content matches         |
+
+```bash
+# Setup
+find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
+cp -r tests/integration/fixtures/hello-world/* ./tmp/
+
+# Execute
+docker compose run --rm cli autonoe run -n 3
+
+# Verify
+test -f ./tmp/hello.txt
+grep -q "Hello, World!" ./tmp/hello.txt
+```
+
+#### IT-002: Technology Stack Recognition
+
+| Field            | Value                                       |
+| ---------------- | ------------------------------------------- |
+| **Scenario**     | Node.js technology stack handling           |
+| **Fixture**      | `tests/integration/fixtures/nodejs/`        |
+| **Expected**     | `hello.js` exists, executes correctly       |
+
+```bash
+# Setup
+find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
+cp -r tests/integration/fixtures/nodejs/* ./tmp/
+
+# Execute
+docker compose run --rm cli autonoe run -n 3
+
+# Verify
+test -f ./tmp/hello.js
+docker compose run --rm cli node /workspace/hello.js | grep -q "Hello, World!"
+```
+
+#### IT-003: Instruction Override
+
+| Field            | Value                                            |
+| ---------------- | ------------------------------------------------ |
+| **Scenario**     | Custom instruction loading                       |
+| **Fixture**      | `tests/integration/fixtures/custom-instruction/` |
+| **Expected**     | Agent outputs custom marker text                 |
+
+```bash
+# Setup
+find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
+cp -r tests/integration/fixtures/custom-instruction/* ./tmp/
+
+# Execute & Capture output
+OUTPUT=$(docker compose run --rm cli autonoe run -d -n 2 2>&1)
+
+# Verify
+echo "$OUTPUT" | grep -q "=== CUSTOM MARKER ==="
+```
+
+#### IT-004: Deliverable Status Persistence
+
+| Field            | Value                                       |
+| ---------------- | ------------------------------------------- |
+| **Scenario**     | Status file creation and update             |
+| **Fixture**      | `tests/integration/fixtures/hello-world/`   |
+| **Expected**     | Valid JSON with deliverable marked passed   |
+
+```bash
+# Setup
+find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
+cp -r tests/integration/fixtures/hello-world/* ./tmp/
+
+# Execute
+docker compose run --rm cli autonoe run -n 3
+
+# Verify
+test -f ./tmp/.autonoe/status.json
+jq -e '.deliverables[0].passed == true' ./tmp/.autonoe/status.json
+```
+
+#### IT-005: Session Iteration Limit
+
+| Field            | Value                                       |
+| ---------------- | ------------------------------------------- |
+| **Scenario**     | Max iterations respected                    |
+| **Fixture**      | `tests/integration/fixtures/hello-world/`   |
+| **Expected**     | Exits after N iterations                    |
+
+```bash
+# Setup
+find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
+cp -r tests/integration/fixtures/hello-world/* ./tmp/
+
+# Execute with limit
+docker compose run --rm cli autonoe run -n 1
+
+# Verify (exits cleanly regardless of completion)
+test $? -eq 0 || test $? -eq 1
+```
+
+### 9.6 SDK Sandbox Test Cases
+
+| ID      | Input                     | Expected Output   |
+| ------- | ------------------------- | ----------------- |
+| SC-X003 | File read outside project | Permission denied |
+
+> Note: SC-X005, SC-X006, SC-X007 are covered by unit tests in Section 8.8 (Autonoe Protection).
+
+```bash
+# Setup - Create SPEC that requests reading /etc/passwd
+find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
+cp -r tests/integration/fixtures/sandbox-test/* ./tmp/
+
+# Execute
+OUTPUT=$(docker compose run --rm cli autonoe run -d -n 2 2>&1)
+
+# Verify - Agent should be blocked from reading outside project
+echo "$OUTPUT" | grep -qi "permission denied\|not allowed\|blocked"
+```
+
+### 9.7 Browser Test Cases
 
 | ID      | Input                  | Expected Output          |
 | ------- | ---------------------- | ------------------------ |
@@ -1237,6 +1425,61 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | SC-B002 | Click without snapshot | Error: snapshot required |
 | SC-B003 | Form submission        | Form submitted, verified |
 | SC-B004 | Text verification      | Assertion passes/fails   |
+
+> Note: Browser tests require a local web server. See fixture `tests/integration/fixtures/browser-test/`.
+
+```bash
+# Setup - Start local web server and prepare fixture
+find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
+cp -r tests/integration/fixtures/browser-test/* ./tmp/
+
+# Execute (web server runs inside container)
+docker compose run --rm cli autonoe run -n 5
+
+# Verify - Check browser interaction artifacts
+test -f ./tmp/.autonoe/status.json
+jq -e '.deliverables[] | select(.name | contains("Browser"))' ./tmp/.autonoe/status.json
+```
+
+### 9.8 Makefile Integration
+
+```makefile
+.PHONY: test test-unit test-integration test-all
+
+test: test-unit
+
+test-unit:
+	bun run test
+
+test-integration:
+	@echo "Running integration tests..."
+	./tests/integration/run.sh
+
+test-all: test-unit test-integration
+```
+
+### 9.9 Integration Test Directory Structure
+
+```
+tests/
+└── integration/
+    ├── run.sh              # Main test runner script
+    ├── fixtures/
+    │   ├── hello-world/    # IT-001, IT-004, IT-005
+    │   │   └── SPEC.md
+    │   ├── nodejs/         # IT-002
+    │   │   └── SPEC.md
+    │   ├── custom-instruction/  # IT-003
+    │   │   ├── SPEC.md
+    │   │   └── .autonoe/
+    │   │       └── initializer.md
+    │   ├── sandbox-test/   # SC-X003
+    │   │   └── SPEC.md
+    │   └── browser-test/   # SC-B001 ~ SC-B004
+    │       ├── SPEC.md
+    │       └── server/     # Local web server for testing
+    └── README.md
+```
 
 ---
 
