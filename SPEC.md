@@ -1173,38 +1173,109 @@ bun build apps/cli/bin/autonoe.ts --compile --outfile dist/autonoe
 bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dist/autonoe-linux
 ```
 
-### 10.6 Docker
+### 10.6 Docker Image Architecture
 
-```dockerfile
-FROM oven/bun:1.3 AS builder
-WORKDIR /app
-COPY . .
-RUN bun install
-RUN bun build apps/cli/bin/autonoe.ts --compile --outfile autonoe
+**Monorepo Docker Strategy**:
 
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    # Playwright dependencies
-    libnss3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libasound2 \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/autonoe /usr/local/bin/autonoe
-ENTRYPOINT ["autonoe"]
+```
+┌─────────────────────────────────────────────────────────┐
+│                  ghcr.io/[org]/autonoe/                  │
+├─────────────────────────────────────────────────────────┤
+│  cli ─────────▶ apps/cli (Coding Agent CLI)              │
+│  (future) ────▶ Other packages as needed                 │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### 10.7 Release Management
+| Package | Image Path | Description |
+|---------|------------|-------------|
+| apps/cli | `ghcr.io/[org]/autonoe/cli` | Coding Agent CLI |
+
+> Each publishable package in the monorepo may have its own Docker image under the `autonoe/` namespace.
+
+**Build Architecture (apps/cli)**:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Dockerfile                          │
+├─────────────────────────────────────────────────────────┤
+│  builder ──▶ Compile autonoe binary                     │
+│      │                                                  │
+│      ▼                                                  │
+│   base ────┬──▶ node ────┬──▶ node-python              │
+│            │             ├──▶ node-golang              │
+│            │             └──▶ node-ruby                │
+│            ├──▶ python                                  │
+│            ├──▶ golang                                  │
+│            └──▶ ruby                                    │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Target Definition**:
+
+| Target | Inherits | Tools Included |
+|--------|----------|----------------|
+| base | - | git, curl, ca-certificates |
+| node | base | + Node.js, npm, Playwright deps |
+| python | base | + Python, pip, venv |
+| golang | base | + Go |
+| ruby | base | + Ruby, Bundler |
+| node-python | node | + Python |
+| node-golang | node | + Go |
+| node-ruby | node | + Ruby |
+
+**Build Args**:
+
+| Arg | Default | Description |
+|-----|---------|-------------|
+| `NODE_VERSION` | 22 | Node.js LTS |
+| `PYTHON_VERSION` | 3.12 | Python stable |
+| `GOLANG_VERSION` | 1.23 | Go stable |
+| `RUBY_VERSION` | 3.3 | Ruby stable |
+
+### 10.7 Container Registry
+
+| Setting | Value |
+|---------|-------|
+| Registry | GitHub Container Registry |
+| Path | `ghcr.io/[org]/autonoe/cli` |
+| Default | `:latest` = `:base` |
+
+**Tag Naming Convention**:
+
+| Pattern | Example | Description |
+|---------|---------|-------------|
+| `:base` | `:base` | Minimal runtime |
+| `:<lang>` | `:node`, `:python` | Single language (LTS) |
+| `:<lang>-<lang>` | `:node-python` | Multi-language |
+| `:X.Y.Z-<variant>` | `:1.0.0-node` | Versioned tag |
+
+### 10.8 Default Publish Matrix
+
+| Tag | Tools | Use Case |
+|-----|-------|----------|
+| `:latest`, `:base` | git, curl | Minimal runtime |
+| `:node` | Node.js, Playwright deps | Frontend development |
+| `:python` | Python, pip | Backend / Data science |
+| `:golang` | Go | System programming |
+| `:ruby` | Ruby, Bundler | Web development |
+| `:node-python` | Node + Python | Full-stack Web |
+| `:node-golang` | Node + Go | Microservices |
+| `:node-ruby` | Node + Ruby | Rails projects |
+
+### 10.9 Version Support Policy
+
+| Language | Policy |
+|----------|--------|
+| Node.js | Current LTS |
+| Python | Current stable |
+| Golang | Current stable |
+| Ruby | Current stable |
+
+**Version Updates**:
+- Default versions follow official LTS/stable releases
+- Users can specify versions via Build Args for custom builds
+
+### 10.10 Release Management
 
 | Tool           | Purpose                            |
 | -------------- | ---------------------------------- |
