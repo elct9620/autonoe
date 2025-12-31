@@ -739,19 +739,25 @@ project/
 │  └── hooks: [BashSecurity, .autonoe Protection]                  │
 │                                                                  │
 │  User Config (.autonoe/agent.json)                               │
-│  ├── permissions.allow: [...]  # Merged with baseline            │
+│  ├── profile: "node" | ["node", "python"]  # Language profiles   │
+│  ├── allowCommands: [...]      # Hook layer extensions           │
+│  ├── allowPkillTargets: [...]  # Hook layer extensions           │
+│  ├── permissions.allow: [...]  # SDK layer (Merged with baseline)│
 │  ├── allowedTools: [...]       # Merged with baseline            │
 │  └── mcpServers: { ... }       # Merged with built-in            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-| Setting         | Source            | Customizable   |
-| --------------- | ----------------- | -------------- |
-| sandbox         | Hardcoded         | --no-sandbox   |
-| permissions     | baseline + user   | Merge          |
-| allowedTools    | baseline + user   | Merge          |
-| hooks           | baseline + user   | Merge          |
-| mcpServers      | Hardcoded + user  | Merge          |
+| Setting          | Source            | Layer | Customizable   |
+| ---------------- | ----------------- | ----- | -------------- |
+| sandbox          | Hardcoded         | SDK   | --no-sandbox   |
+| profile          | ALL by default    | Hook  | Restrict       |
+| allowCommands    | (none)            | Hook  | User-defined   |
+| allowPkillTargets| (none)            | Hook  | User-defined   |
+| permissions      | baseline + user   | SDK   | Merge          |
+| allowedTools     | baseline + user   | SDK   | Merge          |
+| hooks            | baseline + user   | Hook  | Merge          |
+| mcpServers       | Hardcoded + user  | SDK   | Merge          |
 
 **Permission Rule Format:**
 
@@ -770,9 +776,11 @@ project/
 
 ```json
 {
+  "profile": ["node", "python"],
+  "allowCommands": ["docker", "custom-cli"],
+  "allowPkillTargets": ["custom-server"],
   "permissions": {
     "allow": [
-      "Bash(docker *)",
       "WebFetch(https://api.example.com/*)"
     ]
   },
@@ -785,6 +793,15 @@ project/
   }
 }
 ```
+
+| Field             | Type                        | Layer | Description                             |
+| ----------------- | --------------------------- | ----- | --------------------------------------- |
+| profile           | `string \| string[]`        | Hook  | Restrict to specific language profiles  |
+| allowCommands     | `string[]`                  | Hook  | Additional bash commands to allow       |
+| allowPkillTargets | `string[]`                  | Hook  | Additional pkill target processes       |
+| permissions.allow | `string[]`                  | SDK   | SDK permission rules (e.g., WebFetch)   |
+| allowedTools      | `string[]`                  | SDK   | Additional SDK tools to enable          |
+| mcpServers        | `Record<string, McpServer>` | SDK   | Additional MCP servers                  |
 
 **SDK Settings Bridge:**
 
@@ -869,28 +886,123 @@ The Coding Agent operates under these constraints:
 
 ### 6.3 Bash Command Security
 
-#### 6.3.1 Command Allowlist
+#### 6.3.1 Language Profile Architecture
 
-| Category   | Commands                                 | Validation       |
-| ---------- | ---------------------------------------- | ---------------- |
-| Navigation | ls, pwd, cat, head, tail, wc, find, grep | Allowlist        |
-| File Ops   | mkdir, cp, chmod                         | chmod: args      |
-| Git        | git                                      | Allowlist        |
-| Node.js    | node, npm, npx                           | Allowlist        |
-| Build      | tsc, esbuild, vite                       | Allowlist        |
-| Test       | jest, vitest, playwright                 | Allowlist        |
-| Process    | echo, which, ps, lsof, sleep, pkill      | pkill: args      |
+Bash command allowlist is organized by language profiles. By default, ALL profiles are enabled.
 
-#### 6.3.2 Argument Validation
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    DEFAULT (All Profiles)                        │
+│  ┌─────────┬─────────┬─────────┬─────────┬─────────┐           │
+│  │  BASE   │  NODE   │ PYTHON  │  RUBY   │   GO    │           │
+│  └─────────┴─────────┴─────────┴─────────┴─────────┘           │
+│                           │                                      │
+│                           ▼                                      │
+│              USER EXTENSIONS (agent.json)                        │
+│              allowCommands: [...]                                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Users may restrict to specific profiles via `agent.json`:
+
+| agent.json profile     | Active Profiles                       |
+| ---------------------- | ------------------------------------- |
+| (not set)              | ALL (base + node + python + ruby + go)|
+| `"node"`               | base + node                           |
+| `"python"`             | base + python                         |
+| `["node", "python"]`   | base + node + python                  |
+
+#### 6.3.2 Command Allowlists
+
+**Base Profile** (always included):
+
+| Category   | Commands                                 | Validation  |
+| ---------- | ---------------------------------------- | ----------- |
+| Navigation | ls, pwd, cat, head, tail, wc, find, grep | Allowlist   |
+| File Ops   | mkdir, cp, chmod                         | chmod: args |
+| Git        | git                                      | Allowlist   |
+| Process    | echo, which, ps, lsof, sleep, pkill      | pkill: args |
+
+**Node.js Profile**:
+
+| Category  | Commands                            |
+| --------- | ----------------------------------- |
+| Runtime   | node, bun, deno                     |
+| Package   | npm, npx, yarn, pnpm                |
+| Build     | tsc, esbuild, vite, webpack, rollup |
+| Test      | jest, vitest, playwright, mocha     |
+| Lint      | eslint, prettier, biome             |
+| Framework | next, nuxt, astro, remix            |
+
+**Python Profile**:
+
+| Category  | Commands                               |
+| --------- | -------------------------------------- |
+| Runtime   | python, python3                        |
+| Package   | pip, pip3, pipx, uv                    |
+| Venv      | venv, virtualenv, conda                |
+| Build     | poetry, pdm, hatch, flit               |
+| Test      | pytest, tox, nox                       |
+| Lint      | ruff, black, mypy, flake8, pylint      |
+| Framework | django-admin, flask, uvicorn, gunicorn |
+
+**Ruby Profile**:
+
+| Category  | Commands                     |
+| --------- | ---------------------------- |
+| Runtime   | ruby, irb                    |
+| Package   | gem, bundle, bundler         |
+| Build     | rake, thor                   |
+| Test      | rspec, minitest, cucumber    |
+| Lint      | rubocop, standard            |
+| Framework | rails, hanami, puma, unicorn |
+
+**Go Profile**:
+
+| Category | Commands                           |
+| -------- | ---------------------------------- |
+| Runtime  | go                                 |
+| Format   | gofmt, goimports                   |
+| Lint     | golint, golangci-lint, staticcheck |
+| Tools    | gopls, dlv, goreleaser             |
+
+#### 6.3.3 Argument Validation
 
 Commands with `args` validation require additional checks:
 
-| Command | Allowed | Blocked | Required |
-|---------|---------|---------|----------|
-| chmod | +x, u+x, g+x, o+x, a+x, ug+x, etc. | -R (recursive), numeric modes (755, 777) | mode + target file(s) |
-| pkill | node, npm, npx, vite, next | all other process names | process name argument |
+**chmod validation**:
 
-#### 6.3.3 Validation Flow
+| Allowed                           | Blocked                               | Required           |
+| --------------------------------- | ------------------------------------- | ------------------ |
+| +x, u+x, g+x, o+x, a+x, ug+x, etc | -R (recursive), numeric modes (755)   | mode + target file |
+
+**pkill validation** (per profile):
+
+| Profile | Allowed Targets                    |
+| ------- | ---------------------------------- |
+| Base    | (none)                             |
+| Node.js | node, npm, npx, vite, next         |
+| Python  | python, python3, uvicorn, gunicorn |
+| Ruby    | ruby, puma, unicorn, rails         |
+| Go      | go                                 |
+
+#### 6.3.4 User Extensions
+
+Users may add custom commands via `agent.json`:
+
+```json
+{
+  "allowCommands": ["docker", "custom-cli"],
+  "allowPkillTargets": ["custom-server"]
+}
+```
+
+| Field             | Type       | Description                       |
+| ----------------- | ---------- | --------------------------------- |
+| allowCommands     | `string[]` | Additional commands to allowlist  |
+| allowPkillTargets | `string[]` | Additional pkill target processes |
+
+#### 6.3.5 Validation Flow
 
 ```
 Command Input
@@ -921,7 +1033,7 @@ Command Input
                                                     └─────────────┘               └─────────────┘
 ```
 
-#### 6.3.4 Command Chain Handling
+#### 6.3.6 Command Chain Handling
 
 - Operators: `&&`, `||`, `|`, `;`
 - Rule: If ANY command in chain is blocked, ENTIRE chain is denied
@@ -969,8 +1081,20 @@ Tools available to the Coding Agent (configured by Autonoe):
 | Custom permissions          | Merge with security baseline |
 | Custom hooks                | Merge with security baseline |
 | Custom mcpServers           | Merge with built-in servers  |
+| Custom allowCommands        | Merge with profile commands  |
 | Disable sandbox             | Ignored, always enabled      |
 | Remove .autonoe/ protection | Re-apply security baseline   |
+
+### 7.5 Profile Selection
+
+| agent.json profile     | Active Profiles                        | Use Case                |
+| ---------------------- | -------------------------------------- | ----------------------- |
+| (not set)              | ALL (base + node + python + ruby + go) | Default, all languages  |
+| `"node"`               | base + node                            | Node.js only            |
+| `"python"`             | base + python                          | Python only             |
+| `"ruby"`               | base + ruby                            | Ruby only               |
+| `"go"`                 | base + go                              | Go only                 |
+| `["node", "python"]`   | base + node + python                   | Specific combination    |
 
 ---
 
@@ -1029,7 +1153,26 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-C006 | User tries to remove .autonoe protection | Security baseline re-applied       |
 | SC-C007 | Verify sandbox configuration             | enabled=true, autoAllow=true       |
 
-### 8.5 Logger
+### 8.5 Language Profiles
+
+| ID      | Profile Config         | Command         | Expected Output                    |
+| ------- | ---------------------- | --------------- | ---------------------------------- |
+| PR-X001 | (default)              | `npm install`   | Allowed (all profiles enabled)     |
+| PR-X002 | (default)              | `pip install`   | Allowed (all profiles enabled)     |
+| PR-X003 | (default)              | `go build`      | Allowed (all profiles enabled)     |
+| PR-X004 | `"node"`               | `npm install`   | Allowed (node profile active)      |
+| PR-X005 | `"node"`               | `pip install`   | Denied (python profile inactive)   |
+| PR-X006 | `"python"`             | `pip install`   | Allowed (python profile active)    |
+| PR-X007 | `"python"`             | `npm install`   | Denied (node profile inactive)     |
+| PR-X008 | `["node", "python"]`   | `npm install`   | Allowed (node profile active)      |
+| PR-X009 | `["node", "python"]`   | `pip install`   | Allowed (python profile active)    |
+| PR-X010 | `["node", "python"]`   | `go build`      | Denied (go profile inactive)       |
+| PR-X011 | (default) + custom     | `custom-cli`    | Allowed (allowCommands)            |
+| PR-X012 | (default)              | `pkill uvicorn` | Allowed (python pkill targets)     |
+| PR-X013 | `"node"`               | `pkill uvicorn` | Denied (python pkill targets only) |
+| PR-X014 | (default) + custom     | `pkill custom`  | Allowed (allowPkillTargets)        |
+
+### 8.6 Logger
 
 | ID      | Input                        | Expected Output                 |
 | ------- | ---------------------------- | ------------------------------- |
@@ -1040,7 +1183,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-L005 | TestLogger captures warning  | Message in entries with level   |
 | SC-L006 | TestLogger captures error    | Message in entries with level   |
 
-### 8.6 Claude Agent Client
+### 8.7 Claude Agent Client
 
 | ID       | Function             | Input                      | Expected Output                    |
 | -------- | -------------------- | -------------------------- | ---------------------------------- |
@@ -1059,7 +1202,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | SC-AC013 | detectClaudeCodePath | claude found               | Path string                        |
 | SC-AC014 | detectClaudeCodePath | claude not found           | undefined                          |
 
-### 8.7 Autonoe Protection
+### 8.8 Autonoe Protection
 
 | ID       | Input                              | Expected Output |
 | -------- | ---------------------------------- | --------------- |
@@ -1212,16 +1355,16 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 
 **Target Definition**:
 
-| Target | Inherits | Tools Included |
-|--------|----------|----------------|
-| base | - | git, curl, ca-certificates |
-| node | base | + Node.js, npm, Playwright deps |
-| python | base | + Python, pip, venv |
-| golang | base | + Go |
-| ruby | base | + Ruby, Bundler |
-| node-python | node | + Python |
-| node-golang | node | + Go |
-| node-ruby | node | + Ruby |
+| Target      | Inherits | Tools Included                  |
+|-------------|----------|---------------------------------|
+| base        | -        | git, curl, ca-certificates      |
+| node        | base     | + Node.js, npm, Playwright deps |
+| python      | base     | + Python, pip, venv             |
+| golang      | base     | + Go                            |
+| ruby        | base     | + Ruby, Bundler                 |
+| node-python | node     | + Python                        |
+| node-golang | node     | + Go                            |
+| node-ruby   | node     | + Ruby                          |
 
 **Build Args**:
 
