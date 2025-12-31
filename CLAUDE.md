@@ -21,9 +21,10 @@ bun run test                                       # Run all tests
 bun run test --project core                        # Run core package tests
 bun run test --project claude-agent-client         # Run claude-agent-client tests
 bun run test packages/core/tests/session.test.ts   # Run a single test file
+bun run test --coverage                            # Run with coverage report
 ```
 
-Project names: `core`, `claude-agent-client` (defined in each package's `vitest.config.ts`).
+Project names: `core`, `claude-agent-client` (defined in each package's `vitest.config.ts`). Coverage reports are generated in `./coverage/`.
 
 ### Docker
 
@@ -101,10 +102,6 @@ Layer 3: PreToolUse Hooks
 ```
 
 See `SPEC.md` Section 6 for bash command allowlist and validation rules.
-
-## Pending Implementation
-
-- **Prompt System** - `packages/core/src/instructions.ts` and `instructions/*.md` (see SPEC.md Appendix A)
 
 ## Specification
 
