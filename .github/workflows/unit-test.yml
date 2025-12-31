@@ -33,4 +33,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./test-report.junit.xml
-          report-type: test_results
+          report_type: test_results
