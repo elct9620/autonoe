@@ -18,17 +18,30 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Change to project root
 cd "$PROJECT_ROOT"
 
+# Clean workspace using Docker (handles root-owned files in CI)
+cleanup_workspace() {
+  docker compose run --rm --entrypoint "" cli find /workspace -mindepth 1 ! -name '.gitkeep' -exec rm -rf {} + 2>/dev/null || true
+}
+
 # Setup: Clean workspace and copy fixture
 setup() {
   local fixture="$1"
   echo "  Setting up fixture: $fixture"
-  find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
+  cleanup_workspace
   cp -r "tests/integration/fixtures/$fixture"/* ./tmp/
+}
+
+# Fix permissions on workspace files (for CI where Docker runs as root)
+fix_permissions() {
+  docker compose run --rm --entrypoint "" cli find /workspace -mindepth 1 ! -name '.gitkeep' -exec chmod 777 {} + 2>/dev/null || true
 }
 
 # Run autonoe in Docker
 run_autonoe() {
   docker compose run --rm cli autonoe run "$@"
+  local exit_code=$?
+  fix_permissions
+  return $exit_code
 }
 
 # Record test result
@@ -95,6 +108,7 @@ test_it003() {
   # Capture output with debug flag
   local output
   output=$(docker compose run --rm cli autonoe run -d -n 2 2>&1) || true
+  fix_permissions
 
   if echo "$output" | grep -q "=== CUSTOM MARKER ==="; then
     pass
