@@ -24,7 +24,7 @@ function markdownPlugin(): Plugin {
 export default defineProject({
   plugins: [markdownPlugin()],
   test: {
-    name: 'claude-agent-client',
+    name: 'agent',
     environment: 'node',
   },
 })

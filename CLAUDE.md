@@ -19,12 +19,12 @@ bun apps/cli/bin/autonoe.ts run
 ```bash
 bun run test                                       # Run all tests
 bun run test --project core                        # Run core package tests
-bun run test --project claude-agent-client         # Run claude-agent-client tests
+bun run test --project agent                        # Run agent package tests
 bun run test packages/core/tests/session.test.ts   # Run a single test file
 bun run test --coverage                            # Run with coverage report
 ```
 
-Project names: `core`, `claude-agent-client` (defined in each package's `vitest.config.ts`). Coverage reports are generated in `./coverage/`.
+Project names: `core`, `agent` (defined in each package's `vitest.config.ts`). Coverage reports are generated in `./coverage/`.
 
 ### Docker
 
@@ -48,7 +48,7 @@ Autonoe is a Bun/TypeScript monorepo that orchestrates an autonomous coding agen
               │                                       │
               ▼                                       ▼
 ┌─────────────────────────────────┐  ┌─────────────────────────────────┐
-│       packages/core             │  │  packages/claude-agent-client   │
+│       packages/core             │  │  packages/agent                 │
 │  SessionRunner, Session         │  │  ClaudeAgentClient (SDK wrapper)│
 │  BashSecurity, Configuration    │  │  Converters (SDK ↔ Domain)      │
 │  Types (NO external deps)       │  │  Depends on @autonoe/core       │
@@ -61,14 +61,14 @@ Autonoe is a Bun/TypeScript monorepo that orchestrates an autonomous coding agen
 
 - `@autonoe/cli` - Entry point, argument parsing with CAC
 - `@autonoe/core` - Session orchestration, domain types, security hooks (NO external deps)
-- `@autonoe/claude-agent-client` - SDK wrapper implementing `AgentClient` interface
+- `@autonoe/agent` - SDK wrapper implementing `AgentClient` interface
 
 ### Dependency Rule
 
 ```
 apps/cli
     ├── @autonoe/core (types, SessionRunner)
-    └── @autonoe/claude-agent-client (ClaudeAgentClient)
+    └── @autonoe/agent (ClaudeAgentClient)
             └── @autonoe/core (types only)
 ```
 

@@ -9,9 +9,9 @@
 │                              Autonoe                                     │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  ┌────────────────┐    ┌────────────────┐   ┌────────────────────────┐  │
-│  │    apps/cli    │───▶│ packages/core  │   │ packages/               │  │
-│  │  (Entry Point) │    │ (Orchestrator) │◀──│ claude-agent-client    │  │
-│  └───────┬────────┘    └───────┬────────┘   │ (SDK Wrapper)          │  │
+│  │    apps/cli    │───▶│ packages/core  │   │ packages/agent         │  │
+│  │  (Entry Point) │    │ (Orchestrator) │◀──│ (SDK Wrapper)          │  │
+│  └───────┬────────┘    └───────┬────────┘   │                        │  │
 │          │                     │            └───────────┬────────────┘  │
 │          │ Injects             │ Uses                   │               │
 │          └─────────────────────┼───────────────────────▶│               │
@@ -103,7 +103,7 @@ autonoe/
 │   │           ├── mockAgentClient.ts
 │   │           ├── testLogger.ts
 │   │           └── fixtures.ts
-│   └── claude-agent-client/
+│   └── agent/
 │       ├── package.json
 │       ├── tsconfig.json
 │       ├── vitest.config.ts
@@ -149,7 +149,7 @@ autonoe/
           ┌───────────────────┼───────────────────┐
           ▼                                       ▼
 ┌─────────────────────────────────┐  ┌─────────────────────────────────┐
-│       packages/core             │  │  packages/claude-agent-client   │
+│       packages/core             │  │  packages/agent                 │
 │  ┌───────────────────────────┐  │  │  ┌───────────────────────────┐  │
 │  │    Application Layer      │  │  │  │   Infrastructure Layer    │  │
 │  │  SessionRunner            │  │  │  │  ClaudeAgentClient        │  │
@@ -171,11 +171,11 @@ autonoe/
               ┌────────────┴────────────┐
               ▼                         ▼
     Application + Domain    ←    Infrastructure
-     (packages/core)         (packages/claude-agent-client)
+     (packages/core)              (packages/agent)
 ```
 
 - `packages/core` has NO external dependencies (pure domain + application)
-- `packages/claude-agent-client` depends on `@autonoe/core` for types
+- `packages/agent` depends on `@autonoe/core` for types
 - `apps/cli` creates infrastructure and injects into application layer
 
 ### 2.3 Domain Model
@@ -406,7 +406,7 @@ interface ValidationResult {
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ packages/claude-agent-client (Infrastructure)                   │
+│ packages/agent (Infrastructure)                                  │
 ├─────────────────────────────────────────────────────────────────┤
 │ FileDeliverableRepository      │ Implements DeliverableRepository│
 │ createDeliverableMcpServer()   │ SDK MCP Server factory          │
@@ -416,7 +416,7 @@ interface ValidationResult {
 #### 3.5.2 Tool Registration
 
 ```typescript
-// packages/claude-agent-client/src/deliverableToolsAdapter.ts
+// packages/agent/src/deliverableToolsAdapter.ts
 import { tool, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 
@@ -1433,7 +1433,7 @@ tests/
 |---------|-------------|
 | root | Manages npm dependencies; child packages use `*` to inherit versions |
 | @autonoe/core | Domain types and application logic (NO external dependencies) |
-| @autonoe/claude-agent-client | Wraps SDK, implements `AgentClient` interface from core |
+| @autonoe/agent | Wraps SDK, implements `AgentClient` interface from core |
 | @autonoe/cli | Creates `ClaudeAgentClient`, injects into `SessionRunner` |
 
 ### 10.1 Workspace Configuration
@@ -1466,11 +1466,11 @@ tests/
 }
 ```
 
-### 10.3 Package: claude-agent-client
+### 10.3 Package: agent
 
 ```json
 {
-  "name": "@autonoe/claude-agent-client",
+  "name": "@autonoe/agent",
   "version": "0.1.0",
   "main": "src/index.ts",
   "dependencies": {
@@ -1491,7 +1491,7 @@ tests/
   },
   "dependencies": {
     "@autonoe/core": "workspace:*",
-    "@autonoe/claude-agent-client": "workspace:*",
+    "@autonoe/agent": "workspace:*",
     "cac": "^6.7.14"
   }
 }

@@ -18,7 +18,7 @@ import {
   ClaudeAgentClient,
   FileDeliverableRepository,
   createDeliverableMcpServer,
-} from '@autonoe/claude-agent-client'
+} from '@autonoe/agent'
 import { ConsoleLogger } from './consoleLogger'
 
 /**
