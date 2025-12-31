@@ -376,17 +376,6 @@ interface SessionResult {
 }
 ```
 
-**Responsibilities:**
-
-| Responsibility           | Description                              |
-| ------------------------ | ---------------------------------------- |
-| Single execution         | One agent query cycle                    |
-| Cost tracking            | Track API cost for this session          |
-| Duration tracking        | Measure execution time                   |
-| Debug logging            | Log message sending/receiving (debug)    |
-| Result display           | Display result text via logger.info      |
-| Error display            | Display error messages via logger.error  |
-
 ### 3.4 BashSecurity
 
 ```typescript
@@ -528,23 +517,6 @@ const silentLogger: Logger
 | Receive message    | `[Recv] {type}: {content (truncated to 200)}` |
 | Error with stack   | `{message}\n{stack}` (debug only)             |
 
-#### 3.7.2 Error Handling
-
-```
-Session.run()
-  └─ try
-       └─ for await (message of query)
-            └─ process message
-  └─ catch (error)
-       └─ logger.error(message, error)
-       └─ throw error
-```
-
-| Layer          | Error Handling                               |
-| -------------- | -------------------------------------------- |
-| Session        | Catch async iterator errors, log and rethrow |
-| CLI            | Catch all errors, log stack with --debug     |
-
 ### 3.8 Session Loop
 
 #### 3.8.1 Architecture
@@ -644,13 +616,9 @@ interface SessionRunnerResult {
 | 2        | Max iterations reached   | iteration >= maxIterations     | success=false |
 | 3        | User interrupt           | SIGINT received                | success=false |
 
-> Default: When --max-iterations not specified, loop continues until all deliverables pass.
-
 ---
 
 ## 4. Browser Automation (Coding Agent)
-
-> Tools available to the Coding Agent via Playwright MCP server.
 
 ### 4.1 Playwright MCP Tools
 
@@ -806,22 +774,7 @@ project/
 **SDK Settings Bridge:**
 
 ```
-┌─────────────────────────────────────┐
-│ .autonoe/agent.json                 │
-│   permissions.allow: [user rules]   │
-└─────────────────┬───────────────────┘
-                  │ loadConfig()
-                  ▼
-┌─────────────────────────────────────┐
-│ SECURITY_BASELINE + user config     │
-│   permissions.allow: [merged]       │
-└─────────────────┬───────────────────┘
-                  │ ClaudeAgentClient
-                  ▼
-┌─────────────────────────────────────┐
-│ SDK extraArgs.settings (JSON)       │
-│   { permissions: { allow: [...] } } │
-└─────────────────────────────────────┘
+.autonoe/agent.json → loadConfig() → SECURITY_BASELINE + user config → SDK settings
 ```
 
 ### 5.5 SDK Sandbox Configuration
@@ -875,8 +828,6 @@ const sandboxSettings: SandboxSettings = {
 | .autonoe/ Protection | PreToolUse hook             | PreToolUse      |
 
 ### 6.2 Coding Agent Restrictions
-
-The Coding Agent operates under these constraints:
 
 | Resource      | Direct Access | Tool Access            | Enforcement                       |
 | ------------- | ------------- | ---------------------- | --------------------------------- |
@@ -1247,7 +1198,7 @@ Integration tests require real SDK, Docker, and external services. They are sepa
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 9.4 Test Execution Flow
+### 9.2 Test Execution Flow
 
 ```
 ┌──────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────┐
@@ -1278,11 +1229,6 @@ The `./tmp/` directory serves as the Docker volume mount point. Only `.gitkeep` 
 | ----------- | --------------------- | ----------------------- | --------------- |
 | Unit        | `packages/*/tests/`   | `bun run test`          | Every commit    |
 | Integration | `tests/integration/`  | `make test-integration` | Manual / Nightly |
-
-**Rationale:**
-
-- Unit tests: Fast (< 10s), no external dependencies, run on every commit
-- Integration tests: Slow (API calls), requires Docker, incurs API costs
 
 ### 9.4 Test Categories
 
@@ -1403,8 +1349,6 @@ test $? -eq 0 || test $? -eq 1
 | ------- | ------------------------- | ----------------- |
 | SC-X003 | File read outside project | Permission denied |
 
-> Note: SC-X005, SC-X006, SC-X007 are covered by unit tests in Section 8.8 (Autonoe Protection).
-
 ```bash
 # Setup - Create SPEC that requests reading /etc/passwd
 find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
@@ -1425,8 +1369,6 @@ echo "$OUTPUT" | grep -qi "permission denied\|not allowed\|blocked"
 | SC-B002 | Click without snapshot | Error: snapshot required |
 | SC-B003 | Form submission        | Form submitted, verified |
 | SC-B004 | Text verification      | Assertion passes/fails   |
-
-> Note: Browser tests require a local web server. See fixture `tests/integration/fixtures/browser-test/`.
 
 ```bash
 # Setup - Start local web server and prepare fixture
@@ -1485,6 +1427,15 @@ tests/
 
 ## 10. Build & Distribution
 
+**Package Overview:**
+
+| Package | Description |
+|---------|-------------|
+| root | Manages npm dependencies; child packages use `*` to inherit versions |
+| @autonoe/core | Domain types and application logic (NO external dependencies) |
+| @autonoe/claude-agent-client | Wraps SDK, implements `AgentClient` interface from core |
+| @autonoe/cli | Creates `ClaudeAgentClient`, injects into `SessionRunner` |
+
 ### 10.1 Workspace Configuration
 
 ```json
@@ -1505,8 +1456,6 @@ tests/
 }
 ```
 
-> Note: External npm dependencies are managed in root package.json. Child packages use `*` to inherit the resolved version.
-
 ### 10.2 Package: core
 
 ```json
@@ -1516,8 +1465,6 @@ tests/
   "main": "src/index.ts"
 }
 ```
-
-> Note: `packages/core` has NO external dependencies. Domain types and application logic only.
 
 ### 10.3 Package: claude-agent-client
 
@@ -1532,8 +1479,6 @@ tests/
   }
 }
 ```
-
-> Wraps `@anthropic-ai/claude-agent-sdk` and implements `AgentClient` interface from `@autonoe/core`.
 
 ### 10.4 Package: cli
 
@@ -1551,8 +1496,6 @@ tests/
   }
 }
 ```
-
-> CLI creates `ClaudeAgentClient` and injects it into `SessionRunner` from core.
 
 ### 10.5 Single Executable
 
@@ -1578,8 +1521,6 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 |---------|------------|-------------|
 | apps/cli | `ghcr.io/[org]/autonoe/cli` | Coding Agent CLI |
 
-> Each publishable package in the monorepo may have its own Docker image under the `autonoe/` namespace.
-
 **Build Architecture (apps/cli)**:
 
 ```
@@ -1599,8 +1540,6 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 │      └──▶ ruby (ruby:X.X-slim-bookworm)                 │
 └─────────────────────────────────────────────────────────┘
 ```
-
-> Each language target uses its official Docker image as base. All language targets include Node.js for Playwright MCP support.
 
 **Target Definition**:
 
@@ -1709,13 +1648,6 @@ Options:
 | any path          | NO               | Exit with error    |
 
 ### 11.3 Implementation
-
-Uses CAC for argument parsing. CAC was chosen for:
-
-- Zero nested dependencies (single file)
-- TypeScript-first design
-- Minimal API (4 methods)
-- Automatic help/version generation
 
 ```typescript
 // apps/cli/bin/autonoe.ts
