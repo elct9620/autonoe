@@ -1370,10 +1370,10 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 
 | Arg | Default | Description |
 |-----|---------|-------------|
-| `NODE_VERSION` | 22 | Node.js LTS |
-| `PYTHON_VERSION` | 3.12 | Python stable |
-| `GOLANG_VERSION` | 1.23 | Go stable |
-| `RUBY_VERSION` | 3.3 | Ruby stable |
+| `NODE_VERSION` | 24 | Node.js LTS |
+| `PYTHON_VERSION` | 3.14 | Python stable |
+| `GOLANG_VERSION` | 1.25 | Go stable |
+| `RUBY_VERSION` | 4.0 | Ruby stable |
 
 ### 10.7 Container Registry
 

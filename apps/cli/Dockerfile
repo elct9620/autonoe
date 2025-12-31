@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
 
 # Build arguments
-ARG NODE_VERSION=22
-ARG PYTHON_VERSION=3.12
-ARG GOLANG_VERSION=1.23
-ARG RUBY_VERSION=3.3
+ARG NODE_VERSION=24
+ARG PYTHON_VERSION=3.14
+ARG GOLANG_VERSION=1.25
+ARG RUBY_VERSION=4.0
 
 # =============================================================================
 # Builder Stage: Compile autonoe binary
