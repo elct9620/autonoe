@@ -94,7 +94,7 @@ Focus on `SPEC.md` requirements and best practices for the chosen technology sta
 
 If time permits, you may start implementing the highest priority deliverable from the list you created. Remember:
 
-- Work on ONE deliverable at a time
+- Work on ONE deliverable at a time, commit before moving to the next
 - Test thoroughly before marking it as passed
 - Commit your progress before session ends
 

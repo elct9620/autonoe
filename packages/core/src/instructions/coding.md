@@ -133,6 +133,8 @@ git commit -m "feat: make user login form functional with validation and tests
 - Wrote unit tests to cover login functionality"
 ```
 
+Each deliverable should have its own commit.
+
 ## STEP 9: Update Notes
 
 Update `.autonoe-note.txt` with:
