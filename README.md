@@ -22,32 +22,51 @@ Autonoe builds on these concepts by adding:
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) >= 1.3
-
-### Authentication
-
-**Default (Recommended):** Uses your Claude Code subscription. Requires [Claude Code](https://claude.ai/code) to be installed.
+**Default (Recommended):** Uses your Claude Code subscription. Requires [Claude Code](https://claude.ai/code) to be installed and authenticated.
 
 **Alternative:** Use an API key by setting `ANTHROPIC_API_KEY` environment variable. See [Claude Agent SDK documentation](https://github.com/anthropics/claude-agent-sdk) for details.
 
-### macOS Users
-
-The SDK sandbox has known issues on macOS. **We recommend using Docker** for a reliable experience.
-
 ### Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/anthropics/autonoe.git
-cd autonoe
+#### Option 1: Pre-built Binary
 
-# Install dependencies
-bun install
+Download the latest release from [GitHub Releases](https://github.com/elct9620/autonoe/releases):
+
+| Platform    | File                          |
+| ----------- | ----------------------------- |
+| Linux x64   | `autonoe-linux-x64.tar.gz`    |
+| Linux ARM64 | `autonoe-linux-arm64.tar.gz`  |
+| macOS x64   | `autonoe-darwin-x64.tar.gz`   |
+| macOS ARM64 | `autonoe-darwin-arm64.tar.gz` |
+| Windows x64 | `autonoe-windows-x64.zip`     |
+
+```bash
+# Example for macOS ARM64
+curl -LO https://github.com/elct9620/autonoe/releases/latest/download/autonoe-darwin-arm64.tar.gz
+tar -xzf autonoe-darwin-arm64.tar.gz
+sudo mv autonoe-darwin-arm64 /usr/local/bin/autonoe
+```
+
+#### Option 2: Docker (Recommended for macOS)
+
+The SDK sandbox has known issues on macOS. Docker provides a reliable experience.
+
+Create a `compose.yml` in your project:
+
+```yaml
+services:
+  autonoe:
+    image: ghcr.io/elct9620/autonoe/cli:node
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
 ```
 
 ### Usage
 
-1. Create a `SPEC.md` file in your project directory describing what you want to build:
+1. Create a `SPEC.md` file in your project directory:
 
 ```markdown
 # My Project
@@ -58,11 +77,51 @@ Build a simple CLI tool that prints "Hello, World!"
 2. Run Autonoe:
 
 ```bash
-# Run directly
-bun apps/cli/bin/autonoe.ts run -p /path/to/your/project
+# Using binary
+autonoe run -p /path/to/your/project
 
-# Or using Docker (recommended for macOS)
-docker compose run --rm cli autonoe run
+# Using Docker
+docker compose run --rm autonoe autonoe run
+```
+
+## Docker Options
+
+### Language Profiles
+
+Choose the image tag that matches your project's language:
+
+| Tag      | Description                          |
+| -------- | ------------------------------------ |
+| `base`   | Minimal runtime (git, curl only)     |
+| `node`   | Node.js with npm and Playwright      |
+| `python` | Python with pip and Playwright       |
+| `golang` | Go toolchain with Playwright         |
+| `ruby`   | Ruby with gem/bundler and Playwright |
+
+Example for a Python project:
+
+```yaml
+services:
+  autonoe:
+    image: ghcr.io/elct9620/autonoe/cli:python
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+```
+
+### Authentication
+
+| Variable                  | Description                                   |
+| ------------------------- | --------------------------------------------- |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code subscription token (recommended)  |
+| `ANTHROPIC_API_KEY`       | API key for direct billing                    |
+
+Create a `.env` file (Docker Compose loads it automatically):
+
+```bash
+CLAUDE_CODE_OAUTH_TOKEN=your-oauth-token
 ```
 
 ## CLI Reference
