@@ -31,27 +31,29 @@ jobs:
       version-tag: ${{ needs.release-please.outputs.cli_tag }}
     secrets: inherit
 
-  binary-release:
+  binary-build:
     needs: release-please
+    if: needs.release-please.outputs.cli_released == 'true'
+    uses: ./.github/workflows/build-binaries.yml
+    with:
+      tag-strategy: release
+      version-tag: ${{ needs.release-please.outputs.cli_tag }}
+
+  binary-release:
+    needs: [release-please, binary-build]
     if: needs.release-please.outputs.cli_released == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
-
-      - name: Build binaries
-        uses: ./.github/actions/build-binaries
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          entrypoint: bin/autonoe.ts
-          output-name: autonoe
-
-      - name: Generate checksums
-        working-directory: apps/cli/dist
-        run: sha256sum * > checksums.txt
+          name: binaries-${{ needs.release-please.outputs.cli_tag }}
+          path: dist
 
       - name: Upload to GitHub Release
-        working-directory: apps/cli/dist
+        working-directory: dist
         run: gh release upload ${{ needs.release-please.outputs.cli_tag }} *
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

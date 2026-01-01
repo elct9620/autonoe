@@ -16,19 +16,6 @@ jobs:
     secrets: inherit
 
   build-snapshot:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Build binaries
-        uses: ./.github/actions/build-binaries
-        with:
-          entrypoint: bin/autonoe.ts
-          output-name: autonoe
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: binaries
-          path: apps/cli/dist/*
-          retention-days: 7
+    uses: ./.github/workflows/build-binaries.yml
+    with:
+      tag-strategy: snapshot
