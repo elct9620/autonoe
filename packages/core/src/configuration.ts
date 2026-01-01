@@ -70,6 +70,47 @@ export interface UserConfig {
 }
 
 /**
+ * Built-in MCP servers (hardcoded)
+ * Uses Microsoft Playwright MCP with headless mode for browser automation
+ * @see https://github.com/microsoft/playwright-mcp
+ */
+export const BUILTIN_MCP_SERVERS: Readonly<Record<string, McpServer>> =
+  Object.freeze({
+    playwright: Object.freeze({
+      command: 'npx',
+      args: ['@playwright/mcp@latest', '--headless'],
+    }),
+  })
+
+/**
+ * Playwright MCP tools that should be allowed
+ * These are the tools provided by the Microsoft Playwright MCP server
+ */
+export const PLAYWRIGHT_MCP_TOOLS = [
+  'mcp__playwright__browser_navigate',
+  'mcp__playwright__browser_snapshot',
+  'mcp__playwright__browser_click',
+  'mcp__playwright__browser_close',
+  'mcp__playwright__browser_console_messages',
+  'mcp__playwright__browser_drag',
+  'mcp__playwright__browser_evaluate',
+  'mcp__playwright__browser_file_upload',
+  'mcp__playwright__browser_fill_form',
+  'mcp__playwright__browser_handle_dialog',
+  'mcp__playwright__browser_hover',
+  'mcp__playwright__browser_navigate_back',
+  'mcp__playwright__browser_network_requests',
+  'mcp__playwright__browser_press_key',
+  'mcp__playwright__browser_resize',
+  'mcp__playwright__browser_run_code',
+  'mcp__playwright__browser_select_option',
+  'mcp__playwright__browser_tabs',
+  'mcp__playwright__browser_take_screenshot',
+  'mcp__playwright__browser_type',
+  'mcp__playwright__browser_wait_for',
+] as const
+
+/**
  * Security baseline - always enforced, cannot be overridden
  * @see SPEC.md Section 5.4, 7.4
  */
@@ -95,6 +136,7 @@ export const SECURITY_BASELINE: Readonly<AgentConfig> = Object.freeze({
     'Glob',
     'Grep',
     'Bash',
+    ...PLAYWRIGHT_MCP_TOOLS,
   ]),
   hooks: Object.freeze({
     PreToolUse: ['bash-security', 'autonoe-protection'],
@@ -107,17 +149,6 @@ export const SECURITY_BASELINE: Readonly<AgentConfig> = Object.freeze({
     allowPkillTargets: undefined,
   }),
 })
-
-/**
- * Built-in MCP servers (hardcoded)
- */
-export const BUILTIN_MCP_SERVERS: Readonly<Record<string, McpServer>> =
-  Object.freeze({
-    playwright: Object.freeze({
-      command: 'npx',
-      args: ['@anthropic-ai/mcp-server-playwright'],
-    }),
-  })
 
 /**
  * Load configuration from project directory
@@ -161,6 +192,31 @@ function normalizeProfiles(
 }
 
 /**
+ * Resolve MCP servers based on user configuration
+ *
+ * Rules:
+ * - undefined: Use built-in servers (default Playwright)
+ * - {}: No servers (user explicitly disabled all)
+ * - { ...servers }: Merge built-in + user, user takes precedence for same names
+ */
+function resolveMcpServers(
+  userMcpServers: Record<string, McpServer> | undefined,
+): Record<string, McpServer> {
+  // Case 1: Not specified → use built-in defaults
+  if (userMcpServers === undefined) {
+    return { ...BUILTIN_MCP_SERVERS }
+  }
+
+  // Case 2: Explicitly empty {} → no servers
+  if (Object.keys(userMcpServers).length === 0) {
+    return {}
+  }
+
+  // Case 3: Has servers → merge, user takes precedence
+  return { ...BUILTIN_MCP_SERVERS, ...userMcpServers }
+}
+
+/**
  * Merge user configuration with security baseline
  *
  * Rules:
@@ -168,7 +224,7 @@ function normalizeProfiles(
  * - permissions.allow: Merge user with baseline
  * - allowedTools: Merge user with baseline
  * - hooks: Merge user hooks, baseline hooks always present
- * - mcpServers: Merge built-in and user servers
+ * - mcpServers: User priority (undefined=built-in, {}=none, {...}=merge with user priority)
  * - bashSecurity: Build from user profile + extensions
  *
  * @param baseline - Security baseline configuration
@@ -209,15 +265,8 @@ export function mergeConfig(
     PreToolUse: [...baseline.hooks.PreToolUse, ...filteredUserHooks],
   }
 
-  // MCP Servers: Merge built-in and user (built-in cannot be overridden)
-  const mcpServers: Record<string, McpServer> = {
-    ...BUILTIN_MCP_SERVERS,
-    ...Object.fromEntries(
-      Object.entries(user.mcpServers ?? {}).filter(
-        ([name]) => !(name in BUILTIN_MCP_SERVERS),
-      ),
-    ),
-  }
+  // MCP Servers: User priority
+  const mcpServers = resolveMcpServers(user.mcpServers)
 
   // Bash Security: Build from user profile + extensions
   const bashSecurity: BashSecurityOptions = {

@@ -665,23 +665,11 @@ interface SessionRunnerResult {
 
 ### 4.1 Playwright MCP Tools
 
-| Tool                                            | Description            |
-| ----------------------------------------------- | ---------------------- |
-| mcp**playwright**browser_navigate               | Navigate to URL        |
-| mcp**playwright**browser_snapshot               | Get accessibility tree |
-| mcp**playwright**browser_click                  | Click element by ref   |
-| mcp**playwright**browser_fill_form              | Fill form fields       |
-| mcp**playwright**browser_select_option          | Select dropdown option |
-| mcp**playwright**browser_hover                  | Hover over element     |
-| mcp**playwright**browser_type                   | Type text              |
-| mcp**playwright**browser_press_key              | Press keyboard key     |
-| mcp**playwright**browser_wait_for               | Wait for condition     |
-| mcp**playwright**browser_verify_element_visible | Assert element visible |
-| mcp**playwright**browser_verify_text_visible    | Assert text visible    |
-| mcp**playwright**browser_handle_dialog          | Handle dialog          |
-| mcp**playwright**browser_console_messages       | Get console logs       |
-| mcp**playwright**browser_evaluate               | Execute JavaScript     |
-| mcp**playwright**browser_close                  | Close browser          |
+Uses Microsoft Playwright MCP server (`@playwright/mcp@latest`) with `--headless` mode by default.
+
+- Server: https://github.com/microsoft/playwright-mcp
+- Tool prefix: `mcp__playwright__*`
+- Allowed tools defined in `PLAYWRIGHT_MCP_TOOLS` constant (`packages/core/src/configuration.ts`)
 
 ### 4.2 Verification Flow
 
@@ -744,11 +732,11 @@ project/
 ├─────────────────────────────────────────────────────────────────┤
 │  Hardcoded (packages/core)                                       │
 │  ├── sandbox: { enabled: true }                                  │
-│  └── mcpServers: { playwright: {...} }                           │
+│  └── mcpServers: { playwright: @playwright/mcp@latest --headless}│
 │                                                                  │
 │  Security Baseline (packages/core, always enforced)              │
 │  ├── permissions.allow: [Read(./**), Write(./**), ...]           │
-│  ├── allowedTools: [Read, Write, Edit, Glob, Grep, Bash]         │
+│  ├── allowedTools: [Read, Write, Edit, ..., mcp__playwright__*]  │
 │  └── hooks: [BashSecurity, .autonoe Protection]                  │
 │                                                                  │
 │  User Config (.autonoe/agent.json)                               │
@@ -757,7 +745,7 @@ project/
 │  ├── allowPkillTargets: [...]  # Hook layer extensions           │
 │  ├── permissions.allow: [...]  # SDK layer (Merged with baseline)│
 │  ├── allowedTools: [...]       # Merged with baseline            │
-│  └── mcpServers: { ... }       # Merged with built-in            │
+│  └── mcpServers: { ... }       # User priority (see below)       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -770,7 +758,16 @@ project/
 | permissions      | baseline + user   | SDK   | Merge          |
 | allowedTools     | baseline + user   | SDK   | Merge          |
 | hooks            | baseline + user   | Hook  | Merge          |
-| mcpServers       | Hardcoded + user  | SDK   | Merge          |
+| mcpServers       | Hardcoded + user  | SDK   | User priority  |
+
+**MCP Servers User Priority:**
+
+| agent.json mcpServers | Result                           |
+| --------------------- | -------------------------------- |
+| (undefined)           | Built-in Playwright loaded       |
+| `{}`                  | No servers (disabled all)        |
+| `{ "playwright": {} }`| User config overrides built-in   |
+| `{ "custom": {} }`    | Built-in + custom (merged)       |
 
 **Permission Rule Format:**
 
@@ -1081,14 +1078,14 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 
 ### 7.4 Configuration Merge
 
-| User Config (agent.json)    | Autonoe Behavior             |
-| --------------------------- | ---------------------------- |
-| Custom permissions          | Merge with security baseline |
-| Custom hooks                | Merge with security baseline |
-| Custom mcpServers           | Merge with built-in servers  |
-| Custom allowCommands        | Merge with profile commands  |
-| Disable sandbox             | Ignored, always enabled      |
-| Remove .autonoe/ protection | Re-apply security baseline   |
+| User Config (agent.json)    | Autonoe Behavior                            |
+| --------------------------- | ------------------------------------------- |
+| Custom permissions          | Merge with security baseline                |
+| Custom hooks                | Merge with security baseline                |
+| Custom mcpServers           | User priority (see Section 5.4)             |
+| Custom allowCommands        | Merge with profile commands                 |
+| Disable sandbox             | Ignored, always enabled                     |
+| Remove .autonoe/ protection | Re-apply security baseline                  |
 
 ### 7.5 Profile Selection
 
@@ -1156,7 +1153,7 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | ID      | Input                                    | Expected Output                    |
 | ------- | ---------------------------------------- | ---------------------------------- |
 | SC-C001 | No agent.json                            | Use hardcoded settings only        |
-| SC-C002 | User adds custom MCP server              | Merged with hardcoded mcpServers   |
+| SC-C002 | User configures mcpServers               | User priority (see Section 5.4)    |
 | SC-C003 | User adds custom permissions             | Merged, security baseline enforced |
 | SC-C004 | User adds custom hooks                   | Merged, security baseline enforced |
 | SC-C005 | User tries to disable sandbox            | Ignored, sandbox always enabled    |

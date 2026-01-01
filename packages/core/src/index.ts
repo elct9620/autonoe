@@ -65,6 +65,7 @@ export {
   mergeConfig,
   SECURITY_BASELINE,
   BUILTIN_MCP_SERVERS,
+  PLAYWRIGHT_MCP_TOOLS,
 } from './configuration'
 
 // Autonoe Protection exports
