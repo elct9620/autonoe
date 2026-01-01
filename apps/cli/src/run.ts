@@ -124,6 +124,7 @@ export async function handleRunCommand(
     const deliverableTools = [
       'mcp__autonoe-deliverable__create_deliverable',
       'mcp__autonoe-deliverable__set_deliverable_status',
+      'mcp__autonoe-deliverable__block_deliverable',
     ]
 
     // Create factory for fresh client per session
@@ -145,16 +146,27 @@ export async function handleRunCommand(
       runnerOptions.projectDir,
     )
 
+    // Setup SIGINT handler for graceful shutdown
+    const abortController = new AbortController()
+    process.on('SIGINT', () => {
+      logger.info('')
+      logger.info('Received SIGINT, stopping...')
+      abortController.abort()
+    })
+
     const runner = new SessionRunner(runnerOptions)
     const result = await runner.run(
       clientFactory,
       logger,
       deliverableRepo,
       instructionResolver,
+      abortController.signal,
     )
 
     logger.info('')
-    if (result.success) {
+    if (result.interrupted) {
+      logger.info('Session interrupted by user')
+    } else if (result.success) {
       logger.info('Session completed successfully')
     } else {
       logger.error('Session completed with errors')

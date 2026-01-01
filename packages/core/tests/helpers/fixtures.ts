@@ -62,6 +62,7 @@ export const mockDeliverables: Deliverable[] = [
       'Invalid credentials show error message',
     ],
     passed: false,
+    blocked: false,
   },
   {
     id: 'DL-002',
@@ -71,6 +72,7 @@ export const mockDeliverables: Deliverable[] = [
       'All widgets display correctly',
     ],
     passed: false,
+    blocked: false,
   },
 ]
 

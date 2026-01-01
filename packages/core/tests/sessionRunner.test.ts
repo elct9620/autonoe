@@ -114,6 +114,7 @@ describe('SessionRunner', () => {
             name: 'Test',
             acceptanceCriteria: ['AC1'],
             passed: false,
+            blocked: false,
           },
         ]),
         createMockStatusJson([
@@ -122,6 +123,7 @@ describe('SessionRunner', () => {
             name: 'Test',
             acceptanceCriteria: ['AC1'],
             passed: false,
+            blocked: false,
           },
         ]),
         createMockStatusJson([
@@ -130,6 +132,7 @@ describe('SessionRunner', () => {
             name: 'Test',
             acceptanceCriteria: ['AC1'],
             passed: false,
+            blocked: false,
           },
         ]),
       ])
@@ -162,6 +165,7 @@ describe('SessionRunner', () => {
             name: 'Test',
             acceptanceCriteria: ['AC1'],
             passed: true,
+            blocked: false,
           },
         ]),
       ])
@@ -199,12 +203,14 @@ describe('SessionRunner', () => {
             name: 'Test1',
             acceptanceCriteria: ['AC1'],
             passed: false,
+            blocked: false,
           },
           {
             id: 'DL-002',
             name: 'Test2',
             acceptanceCriteria: ['AC2'],
             passed: false,
+            blocked: false,
           },
         ]),
         createMockStatusJson([
@@ -213,12 +219,14 @@ describe('SessionRunner', () => {
             name: 'Test1',
             acceptanceCriteria: ['AC1'],
             passed: true,
+            blocked: false,
           },
           {
             id: 'DL-002',
             name: 'Test2',
             acceptanceCriteria: ['AC2'],
             passed: false,
+            blocked: false,
           },
         ]),
         createMockStatusJson([
@@ -227,12 +235,14 @@ describe('SessionRunner', () => {
             name: 'Test1',
             acceptanceCriteria: ['AC1'],
             passed: true,
+            blocked: false,
           },
           {
             id: 'DL-002',
             name: 'Test2',
             acceptanceCriteria: ['AC2'],
             passed: true,
+            blocked: false,
           },
         ]),
       ])
@@ -268,6 +278,7 @@ describe('SessionRunner', () => {
             name: 'Test',
             acceptanceCriteria: ['AC'],
             passed: false,
+            blocked: false,
           },
         ]),
         createMockStatusJson([
@@ -276,6 +287,7 @@ describe('SessionRunner', () => {
             name: 'Test',
             acceptanceCriteria: ['AC'],
             passed: true,
+            blocked: false,
           },
         ]),
       ])
@@ -293,6 +305,127 @@ describe('SessionRunner', () => {
       // Should have at least one delay (between session 1 and 2)
       // Give some tolerance for test execution overhead
       expect(elapsed).toBeGreaterThanOrEqual(delayMs - 10)
+    })
+  })
+
+  describe('SC-S020: All achievable passed (some blocked)', () => {
+    it('exits with success when all non-blocked deliverables pass', async () => {
+      const client = new MockAgentClient()
+      client.setResponsesPerSession([
+        [createMockSessionEnd('done', 0.01)],
+      ])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            name: 'Passed',
+            acceptanceCriteria: ['AC'],
+            passed: true,
+            blocked: false,
+          },
+          {
+            id: 'DL-002',
+            name: 'Blocked',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: true,
+          },
+        ]),
+      ])
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, silentLogger, statusReader)
+
+      expect(result.success).toBe(true)
+      expect(result.blockedCount).toBe(1)
+      expect(result.deliverablesPassedCount).toBe(1)
+    })
+  })
+
+  describe('SC-S021: All deliverables blocked', () => {
+    it('exits with failure when all deliverables are blocked', async () => {
+      const client = new MockAgentClient()
+      client.setResponsesPerSession([
+        [createMockSessionEnd('blocked', 0.01)],
+      ])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            name: 'Blocked',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: true,
+          },
+        ]),
+      ])
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, silentLogger, statusReader)
+
+      expect(result.success).toBe(false)
+      expect(result.blockedCount).toBe(1)
+    })
+  })
+
+  describe('SC-S023: blockedCount in result', () => {
+    it('includes correct blockedCount in result', async () => {
+      const client = new MockAgentClient()
+      client.setResponsesPerSession([
+        [createMockSessionEnd('done', 0.01)],
+      ])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            name: 'Passed',
+            acceptanceCriteria: ['AC'],
+            passed: true,
+            blocked: false,
+          },
+          {
+            id: 'DL-002',
+            name: 'Blocked1',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: true,
+          },
+          {
+            id: 'DL-003',
+            name: 'Blocked2',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: true,
+          },
+        ]),
+      ])
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, silentLogger, statusReader)
+
+      expect(result.blockedCount).toBe(2)
+      expect(result.deliverablesTotalCount).toBe(3)
     })
   })
 })

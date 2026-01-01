@@ -75,6 +75,7 @@ describe('deliverableToolsAdapter', () => {
           name: 'User Authentication',
           acceptanceCriteria: ['User can login', 'User can logout'],
           passed: false,
+            blocked: false,
         })
 
         // Verify result format
@@ -125,6 +126,7 @@ describe('deliverableToolsAdapter', () => {
               name: 'Existing',
               acceptanceCriteria: ['AC1'],
               passed: false,
+            blocked: false,
             },
           ],
         })
@@ -190,6 +192,7 @@ describe('deliverableToolsAdapter', () => {
               name: 'Feature',
               acceptanceCriteria: ['AC1'],
               passed: false,
+            blocked: false,
             },
           ],
         })
@@ -197,6 +200,7 @@ describe('deliverableToolsAdapter', () => {
         const input = {
           deliverableId: 'DL-001',
           passed: true,
+            blocked: false,
         }
 
         const result = await handleSetDeliverableStatus(repository, input)
@@ -224,6 +228,7 @@ describe('deliverableToolsAdapter', () => {
         const input = {
           deliverableId: 'DL-999',
           passed: true,
+            blocked: false,
         }
 
         const result = await handleSetDeliverableStatus(repository, input)

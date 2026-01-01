@@ -251,6 +251,12 @@ type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
 | deliverableId | string | Deliverable ID to update |
 | passed | boolean | New verification status |
 
+**BlockDeliverableInput** - Input for block_deliverable tool
+
+| Field | Type | Description |
+|-------|------|-------------|
+| deliverableId | string | Deliverable ID to block |
+
 **ToolResult** - Result returned by tool handlers
 
 | Field | Type | Description |
@@ -269,6 +275,7 @@ type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
 | name | string | Deliverable name |
 | acceptanceCriteria | string[] | Verifiable conditions for completion |
 | passed | boolean | Verification status |
+| blocked | boolean | When true, deliverable is blocked due to environment limitations (mutually exclusive with passed=true) |
 
 | Type | acceptanceCriteria Examples |
 |------|----------------------------|
@@ -463,12 +470,28 @@ const setDeliverableStatusTool = tool(
 )
 ```
 
-#### 3.5.5 Tool Usage
+#### 3.5.5 blockDeliverable Tool
 
-| Tool                   | Phase          | Operation                                   |
-| ---------------------- | -------------- | ------------------------------------------- |
-| create_deliverable     | Initialization | Create deliverables with acceptance criteria |
-| set_deliverable_status | Coding         | Set deliverable verification status         |
+```typescript
+const blockDeliverableTool = tool(
+  'block_deliverable',
+  'Mark a deliverable as blocked due to current environment limitations. Only works when passed=false.',
+  {
+    deliverableId: z.string()
+  },
+  async ({ deliverableId }) => { /* ... */ }
+)
+```
+
+**Mutual Exclusion Rule:** Cannot block a deliverable that has already passed.
+
+#### 3.5.6 Tool Usage
+
+| Tool                   | Phase          | Operation                                            |
+| ---------------------- | -------------- | ---------------------------------------------------- |
+| create_deliverable     | Initialization | Create deliverables with acceptance criteria         |
+| set_deliverable_status | Coding         | Set deliverable verification status                  |
+| block_deliverable      | Coding         | Mark deliverable as blocked due to environment limits |
 
 ### 3.6 Dependency Injection
 
@@ -596,7 +619,13 @@ SessionRunner
 ```typescript
 // packages/core/src/sessionRunner.ts
 interface SessionRunner {
-  run(clientFactory: AgentClientFactory, logger: Logger): Promise<SessionRunnerResult>
+  run(
+    clientFactory: AgentClientFactory,
+    logger: Logger,
+    statusReader?: DeliverableStatusReader,
+    instructionResolver?: InstructionResolver,
+    signal?: AbortSignal
+  ): Promise<SessionRunnerResult>
 }
 
 interface SessionRunnerOptions {
@@ -611,17 +640,26 @@ interface SessionRunnerResult {
   iterations: number
   deliverablesPassedCount: number
   deliverablesTotalCount: number
+  blockedCount: number
   totalDuration: number
+  interrupted?: boolean
 }
 ```
 
 ### 3.9 Termination Conditions
 
-| Priority | Condition                | Check                          | Result        |
-| -------- | ------------------------ | ------------------------------ | ------------- |
-| 1        | All deliverables passed  | status.json: all passed=true   | success=true  |
-| 2        | Max iterations reached   | iteration >= maxIterations     | success=false |
-| 3        | User interrupt           | SIGINT received                | success=false |
+| Priority | Condition                    | Check                                         | Result              |
+| -------- | ---------------------------- | --------------------------------------------- | ------------------- |
+| 1        | All achievable passed        | All non-blocked deliverables have passed=true | success=true        |
+| 2        | All blocked                  | All deliverables have blocked=true            | success=false       |
+| 3        | Max iterations reached       | iteration >= maxIterations                    | success=false       |
+| 4        | User interrupt               | SIGINT received                               | success=false, interrupted=true |
+
+**Blocked Deliverable Rules:**
+- A deliverable can only be blocked when `passed=false` (mutual exclusion)
+- When all non-blocked deliverables pass, the session succeeds even if some are blocked
+- When all deliverables are blocked, the session fails
+- Reasons for blocking should be documented in `.autonoe-note.txt`
 
 ---
 
@@ -1111,6 +1149,9 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | DL-T002 | create_deliverable     | Array with duplicate ID        | Error: ID already exists      |
 | DL-T003 | set_deliverable_status | Valid ID, passed=true          | status.json updated           |
 | DL-T004 | set_deliverable_status | Invalid deliverable ID         | Error: deliverable not found  |
+| DL-T010 | block_deliverable      | Valid ID, passed=false         | blocked=true                  |
+| DL-T011 | block_deliverable      | Invalid ID                     | Error: NOT_FOUND              |
+| DL-T012 | block_deliverable      | Valid ID, passed=true          | Error: MUTUAL_EXCLUSION       |
 
 ### 8.4 Configuration
 

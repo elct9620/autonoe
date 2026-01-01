@@ -54,6 +54,7 @@ describe('FileDeliverableRepository', () => {
             name: 'Test Deliverable',
             acceptanceCriteria: ['Criterion 1', 'Criterion 2'],
             passed: true,
+            blocked: false,
           },
         ],
       }
@@ -108,6 +109,7 @@ describe('FileDeliverableRepository', () => {
             name: 'Test',
             acceptanceCriteria: ['Criterion'],
             passed: false,
+            blocked: false,
           },
         ],
       }
@@ -130,6 +132,7 @@ describe('FileDeliverableRepository', () => {
             name: 'Initial',
             acceptanceCriteria: ['Criterion'],
             passed: false,
+            blocked: false,
           },
         ],
       }
@@ -140,6 +143,7 @@ describe('FileDeliverableRepository', () => {
             name: 'Initial',
             acceptanceCriteria: ['Criterion'],
             passed: true,
+            blocked: false,
           },
         ],
       }
@@ -177,12 +181,14 @@ describe('FileDeliverableRepository', () => {
             name: 'First',
             acceptanceCriteria: ['Criterion 1', 'Criterion 2'],
             passed: false,
+            blocked: false,
           },
           {
             id: 'DL-002',
             name: 'Second',
             acceptanceCriteria: ['Criterion 3'],
             passed: true,
+            blocked: false,
           },
         ],
       }

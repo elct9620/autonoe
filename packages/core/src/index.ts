@@ -77,6 +77,7 @@ export type {
   DeliverableInput,
   CreateDeliverableInput,
   SetDeliverableStatusInput,
+  BlockDeliverableInput,
   ToolResult,
   DeliverableStatusReader,
   DeliverableRepository,
@@ -84,9 +85,14 @@ export type {
 export {
   createDeliverables,
   setDeliverableStatus,
+  blockDeliverable,
   allDeliverablesPassed,
   countPassedDeliverables,
   emptyDeliverableStatus,
+  allAchievableDeliverablesPassed,
+  hasBlockedDeliverables,
+  countBlockedDeliverables,
+  allDeliverablesBlocked,
 } from './deliverableStatus'
 
 // Instruction exports

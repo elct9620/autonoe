@@ -5,8 +5,10 @@ import type { InstructionResolver } from './instructions'
 import { silentLogger } from './logger'
 import { Session } from './session'
 import {
-  allDeliverablesPassed,
+  allAchievableDeliverablesPassed,
+  allDeliverablesBlocked,
   countPassedDeliverables,
+  countBlockedDeliverables,
   emptyDeliverableStatus,
 } from './deliverableStatus'
 import { initializerInstruction, codingInstruction } from './instructions'
@@ -31,7 +33,9 @@ export interface SessionRunnerResult {
   iterations: number
   deliverablesPassedCount: number
   deliverablesTotalCount: number
+  blockedCount: number
   totalDuration: number
+  interrupted?: boolean
 }
 
 /**
@@ -57,13 +61,28 @@ export class SessionRunner {
     logger: Logger = silentLogger,
     statusReader?: DeliverableStatusReader,
     instructionResolver?: InstructionResolver,
+    signal?: AbortSignal,
   ): Promise<SessionRunnerResult> {
     const startTime = Date.now()
     let iterations = 0
     let deliverablesPassedCount = 0
     let deliverablesTotalCount = 0
+    let blockedCount = 0
 
     while (true) {
+      // Termination condition 0: User interrupt (SIGINT)
+      if (signal?.aborted) {
+        logger.info('User interrupted')
+        return {
+          success: false,
+          iterations,
+          deliverablesPassedCount,
+          deliverablesTotalCount,
+          blockedCount,
+          totalDuration: Date.now() - startTime,
+          interrupted: true,
+        }
+      }
       // Select instruction based on status existence
       // @see SPEC.md Section 7.2
       const statusExists = statusReader ? await statusReader.exists() : false
@@ -98,24 +117,47 @@ export class SessionRunner {
 
       deliverablesPassedCount = countPassedDeliverables(status)
       deliverablesTotalCount = status.deliverables.length
+      blockedCount = countBlockedDeliverables(status)
 
-      // Termination condition 1: All deliverables passed
+      // Termination condition 1: All achievable deliverables passed
       if (
         statusReader &&
         deliverablesTotalCount > 0 &&
-        allDeliverablesPassed(status)
+        allAchievableDeliverablesPassed(status)
       ) {
-        logger.info(`All ${deliverablesTotalCount} deliverables passed`)
+        const blockedMsg =
+          blockedCount > 0 ? ` (${blockedCount} blocked)` : ''
+        logger.info(
+          `All achievable deliverables passed${blockedMsg}`,
+        )
         return {
           success: true,
           iterations,
           deliverablesPassedCount,
           deliverablesTotalCount,
+          blockedCount,
           totalDuration: Date.now() - startTime,
         }
       }
 
-      // Termination condition 2: Max iterations reached
+      // Termination condition 2: All deliverables blocked
+      if (
+        statusReader &&
+        deliverablesTotalCount > 0 &&
+        allDeliverablesBlocked(status)
+      ) {
+        logger.info(`All ${deliverablesTotalCount} deliverables are blocked`)
+        return {
+          success: false,
+          iterations,
+          deliverablesPassedCount,
+          deliverablesTotalCount,
+          blockedCount,
+          totalDuration: Date.now() - startTime,
+        }
+      }
+
+      // Termination condition 3: Max iterations reached
       if (
         this.maxIterations !== undefined &&
         iterations >= this.maxIterations
@@ -126,6 +168,7 @@ export class SessionRunner {
           iterations,
           deliverablesPassedCount,
           deliverablesTotalCount,
+          blockedCount,
           totalDuration: Date.now() - startTime,
         }
       }
