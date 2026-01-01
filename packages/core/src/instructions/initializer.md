@@ -53,7 +53,7 @@ The "fine-grained" means each deliverable should represent a small, testable uni
 - Order deliverables by priority, the foundational tasks should come first, followed by features that depend on them
 - Cover every deliverable in specification exhaustively, ensuring no part is left unaddressed
 
-**CRITICAL INSTRUCTION:** IT IS CATASTROPHIC TO REMOVE OR EDIT IN FUTURE SESSIONS. Deliverables can ONLY be marked as passed. Never modify or delete them. This ensure no founctionality is missed.
+**CRITICAL INSTRUCTION:** IT IS CATASTROPHIC TO REMOVE OR EDIT IN FUTURE SESSIONS. Deliverables can ONLY be marked as passed. Never modify or delete them. This ensures no functionality is missed.
 
 ## STEP 3: Create dev script
 
@@ -76,7 +76,7 @@ Create a git repository commit with the following:
 
 Commit message: "chore: initialize project with deliverables and dev setup"
 
-## STPE 5: Setup Project Structure
+## STEP 5: Setup Project Structure
 
 Setup the basic project structure based on `SPEC.md` mentions. This may include:
 

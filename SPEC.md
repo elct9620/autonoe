@@ -665,8 +665,9 @@ project/
 │   ├── authentication.feature
 │   ├── dashboard.feature
 │   └── settings.feature
-└── .autonoe/
-    └── status.json
+├── .autonoe/
+│   └── status.json
+└── .autonoe-note.txt
 ```
 
 ### 5.2 Status Tracking (.autonoe/status.json)
@@ -690,11 +691,12 @@ project/
 
 ### 5.3 State Persistence
 
-| State                | Writer                                          | Reader |
-| -------------------- | ----------------------------------------------- | ------ |
-| Project Files        | Coding Agent (Direct)                           | Both   |
-| .autonoe/status.json | create_deliverable / update_deliverable Tool    | Both   |
-| Git History          | Coding Agent (Direct)                           | Both   |
+| State                | Writer                       | Reader | Description                        |
+| -------------------- | ---------------------------- | ------ | ---------------------------------- |
+| Project Files        | Coding Agent (Direct)        | Both   | Application source code            |
+| .autonoe/status.json | Deliverable Tools            | Both   | Deliverable tracking               |
+| .autonoe-note.txt    | Coding Agent (Direct)        | Both   | Session handoff notes (agent-maintained) |
+| Git History          | Coding Agent (Direct)        | Both   | Version control history            |
 
 ### 5.4 Configuration
 
