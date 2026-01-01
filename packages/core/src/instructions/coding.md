@@ -133,7 +133,7 @@ git commit -m "feat: make user login form functional with validation and tests
 - Wrote unit tests to cover login functionality"
 ```
 
-## STEP 9:  Update Notes
+## STEP 9: Update Notes
 
 Update `.autonoe-note.txt` with:
 
