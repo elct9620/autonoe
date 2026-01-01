@@ -13,6 +13,7 @@ import {
   type AgentClientFactory,
   type InstructionResolver,
   type InstructionName,
+  type DeliverableStatusCallback,
 } from '@autonoe/core'
 import {
   ClaudeAgentClient,
@@ -118,7 +119,24 @@ export async function handleRunCommand(
     const deliverableRepo = new FileDeliverableRepository(
       runnerOptions.projectDir,
     )
-    const deliverableMcpServer = createDeliverableMcpServer(deliverableRepo)
+
+    // Callback to display deliverable status changes
+    const onStatusChange: DeliverableStatusCallback = (notification) => {
+      const icon =
+        notification.newStatus === 'passed'
+          ? '[PASS]'
+          : notification.newStatus === 'blocked'
+            ? '[BLOCKED]'
+            : '[PENDING]'
+      logger.info(
+        `${icon} ${notification.deliverableName} (${notification.deliverableId})`,
+      )
+    }
+
+    const deliverableMcpServer = createDeliverableMcpServer(
+      deliverableRepo,
+      onStatusChange,
+    )
 
     // Deliverable MCP tool names
     const deliverableTools = [

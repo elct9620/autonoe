@@ -1,5 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import type { DeliverableRepository, DeliverableStatus } from '@autonoe/core'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import type {
+  DeliverableRepository,
+  DeliverableStatus,
+  DeliverableStatusNotification,
+} from '@autonoe/core'
 import {
   handleCreateDeliverables,
   handleSetDeliverableStatus,
@@ -332,6 +336,83 @@ describe('deliverableToolsAdapter', () => {
 
         const parsedResult = JSON.parse(result.content[0]?.text ?? '')
         expect(parsedResult.success).toBe(true)
+      })
+    })
+
+    describe('DL-T008: Callback invoked on successful status change', () => {
+      it('invokes callback with correct notification data', async () => {
+        repository.setStatus({
+          deliverables: [
+            {
+              id: 'DL-001',
+              name: 'User Authentication',
+              acceptanceCriteria: ['AC1'],
+              passed: false,
+              blocked: false,
+            },
+          ],
+        })
+
+        const callback = vi.fn()
+        const input = {
+          deliverableId: 'DL-001',
+          status: 'passed' as const,
+        }
+
+        await handleSetDeliverableStatus(repository, input, callback)
+
+        expect(callback).toHaveBeenCalledTimes(1)
+        expect(callback).toHaveBeenCalledWith({
+          deliverableId: 'DL-001',
+          deliverableName: 'User Authentication',
+          previousStatus: 'pending',
+          newStatus: 'passed',
+        } satisfies DeliverableStatusNotification)
+      })
+
+      it('reports correct previous status when blocked', async () => {
+        repository.setStatus({
+          deliverables: [
+            {
+              id: 'DL-001',
+              name: 'Feature',
+              acceptanceCriteria: ['AC1'],
+              passed: false,
+              blocked: true,
+            },
+          ],
+        })
+
+        const callback = vi.fn()
+        const input = {
+          deliverableId: 'DL-001',
+          status: 'pending' as const,
+        }
+
+        await handleSetDeliverableStatus(repository, input, callback)
+
+        expect(callback).toHaveBeenCalledWith(
+          expect.objectContaining({
+            previousStatus: 'blocked',
+            newStatus: 'pending',
+          }),
+        )
+      })
+    })
+
+    describe('DL-T009: Callback not invoked on failure', () => {
+      it('does not invoke callback when deliverable not found', async () => {
+        repository.setStatus({ deliverables: [] })
+
+        const callback = vi.fn()
+        const input = {
+          deliverableId: 'DL-999',
+          status: 'passed' as const,
+        }
+
+        await handleSetDeliverableStatus(repository, input, callback)
+
+        expect(callback).not.toHaveBeenCalled()
       })
     })
   })

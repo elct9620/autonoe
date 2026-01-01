@@ -4,6 +4,8 @@ import type {
   DeliverableRepository,
   CreateDeliverableInput,
   SetDeliverableStatusInput,
+  DeliverableStatusCallback,
+  DeliverableStatusValue,
 } from '@autonoe/core'
 import { createDeliverables, setDeliverableStatus } from '@autonoe/core'
 
@@ -35,18 +37,50 @@ export async function handleCreateDeliverables(
 }
 
 /**
+ * Get deliverable status value from passed/blocked flags
+ */
+function getStatusValue(
+  passed: boolean,
+  blocked: boolean,
+): DeliverableStatusValue {
+  if (passed) return 'passed'
+  if (blocked) return 'blocked'
+  return 'pending'
+}
+
+/**
  * Handler for set_deliverable_status tool
  * Extracted for testability
  */
 export async function handleSetDeliverableStatus(
   repository: DeliverableRepository,
   input: SetDeliverableStatusInput,
+  onStatusChange?: DeliverableStatusCallback,
 ): Promise<ToolResult> {
   const status = await repository.load()
+
+  // Find deliverable to get previous status
+  const existingDeliverable = status.deliverables.find(
+    (d) => d.id === input.deliverableId,
+  )
+  const previousStatus = existingDeliverable
+    ? getStatusValue(existingDeliverable.passed, existingDeliverable.blocked)
+    : null
+
   const { status: newStatus, result } = setDeliverableStatus(status, input)
 
   if (result.success) {
     await repository.save(newStatus)
+
+    // Notify callback if provided
+    if (onStatusChange && existingDeliverable) {
+      onStatusChange({
+        deliverableId: input.deliverableId,
+        deliverableName: existingDeliverable.name,
+        previousStatus,
+        newStatus: input.status,
+      })
+    }
   }
 
   return {
@@ -57,9 +91,13 @@ export async function handleSetDeliverableStatus(
 /**
  * Create an SDK MCP server with deliverable tools
  * @param repository - Repository for persisting deliverable status
+ * @param onStatusChange - Optional callback for status change notifications
  * @returns SDK MCP server configuration with instance
  */
-export function createDeliverableMcpServer(repository: DeliverableRepository) {
+export function createDeliverableMcpServer(
+  repository: DeliverableRepository,
+  onStatusChange?: DeliverableStatusCallback,
+) {
   const createDeliverableTool = tool(
     'create_deliverable',
     'Create one or more deliverables in status.json. Use this in the initialization phase to define work units.',
@@ -90,7 +128,7 @@ export function createDeliverableMcpServer(repository: DeliverableRepository) {
           'Status: pending=reset, passed=completed, blocked=external constraints',
         ),
     },
-    (input) => handleSetDeliverableStatus(repository, input),
+    (input) => handleSetDeliverableStatus(repository, input, onStatusChange),
   )
 
   return createSdkMcpServer({

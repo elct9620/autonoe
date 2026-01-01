@@ -490,6 +490,31 @@ const setDeliverableStatusTool = tool(
 | create_deliverable     | Initialization | Create deliverables with acceptance criteria             |
 | set_deliverable_status | Coding         | Set status: pending (reset), passed, or blocked          |
 
+#### 3.5.6 Status Change Notification
+
+**DeliverableStatusNotification** - Notification payload
+
+| Field | Type | Description |
+|-------|------|-------------|
+| deliverableId | string | Deliverable ID |
+| deliverableName | string | Deliverable name |
+| previousStatus | DeliverableStatusValue \| null | Previous status |
+| newStatus | DeliverableStatusValue | New status |
+
+**DeliverableStatusCallback** - Callback type
+
+```typescript
+type DeliverableStatusCallback = (notification: DeliverableStatusNotification) => void
+```
+
+**Output Format:**
+
+| Status | Icon | Example |
+|--------|------|---------|
+| passed | [PASS] | `[PASS] User Auth (DL-001)` |
+| blocked | [BLOCKED] | `[BLOCKED] Payment (DL-002)` |
+| pending | [PENDING] | `[PENDING] Dashboard (DL-003)` |
+
 ### 3.6 Dependency Injection
 
 | Component              | Injected Via              | Purpose                         |
@@ -1147,6 +1172,8 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | DL-T005 | set_deliverable_status | Valid ID, status=blocked       | passed=false, blocked=true    |
 | DL-T006 | set_deliverable_status | Valid ID, status=pending       | passed=false, blocked=false   |
 | DL-T007 | set_deliverable_status | Blocked ID, status=pending     | Reset: blocked=false          |
+| DL-T008 | set_deliverable_status | Valid ID, callback provided    | Callback invoked with notification |
+| DL-T009 | set_deliverable_status | Invalid ID, callback provided  | Callback not invoked          |
 
 ### 8.4 Configuration
 

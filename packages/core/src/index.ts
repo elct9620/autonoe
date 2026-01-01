@@ -79,6 +79,8 @@ export type {
   CreateDeliverableInput,
   SetDeliverableStatusInput,
   DeliverableStatusValue,
+  DeliverableStatusNotification,
+  DeliverableStatusCallback,
   ToolResult,
   DeliverableStatusReader,
   DeliverableRepository,

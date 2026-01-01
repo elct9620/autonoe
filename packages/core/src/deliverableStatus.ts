@@ -46,6 +46,23 @@ export interface CreateDeliverableInput {
 export type DeliverableStatusValue = 'pending' | 'passed' | 'blocked'
 
 /**
+ * Notification payload for deliverable status changes
+ */
+export interface DeliverableStatusNotification {
+  deliverableId: string
+  deliverableName: string
+  previousStatus: DeliverableStatusValue | null
+  newStatus: DeliverableStatusValue
+}
+
+/**
+ * Callback type for status change notifications
+ */
+export type DeliverableStatusCallback = (
+  notification: DeliverableStatusNotification,
+) => void
+
+/**
  * Input for set_deliverable_status tool
  */
 export interface SetDeliverableStatusInput {
