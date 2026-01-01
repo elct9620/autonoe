@@ -99,7 +99,7 @@ If time permits, you may start implementing the highest priority deliverable fro
 Before context fills up, ensure you have:
 
 - Commit all works with conventional commit messages with why you did it
-- Create `autonoe-note.txt` summarizing what you accomplished
+- Create `.autonoe-note.txt` summarizing what you accomplished
 - The `.autonoe/status.json` file is up to date with deliverables and their statuses with `set_deliverable_status` tool
 - Leave environment in a clean and working state
 
