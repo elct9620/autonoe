@@ -230,7 +230,7 @@ type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
 | command | string | Server executable command |
 | args | string[]? | Command arguments |
 
-**CreateDeliverableInput** - Input for create_deliverable tool
+**DeliverableInput** - Single deliverable definition
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -238,7 +238,13 @@ type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
 | name | string | Deliverable name |
 | acceptanceCriteria | string[] | List of acceptance criteria |
 
-**UpdateDeliverableInput** - Input for update_deliverable tool
+**CreateDeliverableInput** - Input for create_deliverable tool
+
+| Field | Type | Description |
+|-------|------|-------------|
+| deliverables | DeliverableInput[] | Array of deliverables to create |
+
+**SetDeliverableStatusInput** - Input for set_deliverable_status tool
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -399,7 +405,7 @@ interface ValidationResult {
 ├─────────────────────────────────────────────────────────────────┤
 │ DeliverableRepository          │ Interface                      │
 │ createDeliverable()            │ Application service            │
-│ updateDeliverable()            │ Application service            │
+│ setDeliverableStatus()         │ Application service            │
 │ Deliverable, DeliverableStatus │ Domain types                   │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -422,7 +428,7 @@ import { z } from 'zod'
 const deliverableServer = createSdkMcpServer({
   name: 'autonoe-deliverable',
   version: '1.0.0',
-  tools: [createDeliverableTool, updateDeliverableTool]
+  tools: [createDeliverableTool, setDeliverableStatusTool]
 })
 ```
 
@@ -431,22 +437,24 @@ const deliverableServer = createSdkMcpServer({
 ```typescript
 const createDeliverableTool = tool(
   'create_deliverable',
-  'Create a new deliverable in status.json',
+  'Create one or more deliverables in status.json',
   {
-    id: z.string(),
-    name: z.string(),
-    acceptanceCriteria: z.array(z.string())
+    deliverables: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      acceptanceCriteria: z.array(z.string())
+    }))
   },
-  async ({ id, name, acceptanceCriteria }) => { /* ... */ }
+  async ({ deliverables }) => { /* ... */ }
 )
 ```
 
-#### 3.5.4 updateDeliverable Tool
+#### 3.5.4 setDeliverableStatus Tool
 
 ```typescript
-const updateDeliverableTool = tool(
-  'update_deliverable',
-  'Update deliverable verification status',
+const setDeliverableStatusTool = tool(
+  'set_deliverable_status',
+  'Set deliverable verification status',
   {
     deliverableId: z.string(),
     passed: z.boolean()
@@ -457,20 +465,20 @@ const updateDeliverableTool = tool(
 
 #### 3.5.5 Tool Usage
 
-| Tool               | Phase          | Operation                              |
-| ------------------ | -------------- | -------------------------------------- |
-| create_deliverable | Initialization | Create deliverable with acceptance criteria |
-| update_deliverable | Coding         | Mark deliverable as verified           |
+| Tool                   | Phase          | Operation                                   |
+| ---------------------- | -------------- | ------------------------------------------- |
+| create_deliverable     | Initialization | Create deliverables with acceptance criteria |
+| set_deliverable_status | Coding         | Set deliverable verification status         |
 
 ### 3.6 Dependency Injection
 
-| Component          | Injected Via              | Purpose                      |
-| ------------------ | ------------------------- | ---------------------------- |
-| AgentClient        | SessionRunner.run()       | Enable testing with mocks    |
-| BashSecurity       | PreToolUse hook           | Validate bash commands       |
-| create_deliverable | SDK createSdkMcpServer    | Create deliverables          |
-| update_deliverable | SDK createSdkMcpServer    | Update deliverable status    |
-| Logger             | SessionRunner.run()       | Enable output capture        |
+| Component              | Injected Via              | Purpose                         |
+| ---------------------- | ------------------------- | ------------------------------- |
+| AgentClient            | SessionRunner.run()       | Enable testing with mocks       |
+| BashSecurity           | PreToolUse hook           | Validate bash commands          |
+| create_deliverable     | SDK createSdkMcpServer    | Create deliverables             |
+| set_deliverable_status | SDK createSdkMcpServer    | Set deliverable status          |
+| Logger                 | SessionRunner.run()       | Enable output capture           |
 
 ```
 SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ──▶ client.query()
@@ -1086,12 +1094,12 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 
 ### 8.3 Deliverable Tools (autonoe-deliverable)
 
-| ID      | Tool               | Input                         | Expected Output              |
-| ------- | ------------------ | ----------------------------- | ---------------------------- |
-| DL-T001 | create_deliverable | Valid deliverable input       | Deliverable added to status  |
-| DL-T002 | create_deliverable | Duplicate deliverable ID      | Error: already exists        |
-| DL-T003 | update_deliverable | Valid ID, passed=true         | status.json updated          |
-| DL-T004 | update_deliverable | Invalid deliverable ID        | Error: deliverable not found |
+| ID      | Tool                   | Input                          | Expected Output               |
+| ------- | ---------------------- | ------------------------------ | ----------------------------- |
+| DL-T001 | create_deliverable     | Array with valid deliverables  | All deliverables added        |
+| DL-T002 | create_deliverable     | Array with duplicate ID        | Error: ID already exists      |
+| DL-T003 | set_deliverable_status | Valid ID, passed=true          | status.json updated           |
+| DL-T004 | set_deliverable_status | Invalid deliverable ID         | Error: deliverable not found  |
 
 ### 8.4 Configuration
 
