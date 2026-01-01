@@ -78,7 +78,7 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.target }}
 
-  goreleaser-release:
+  binary-release:
     needs: release-please
     if: needs.release-please.outputs.cli_released == 'true'
     runs-on: ubuntu-latest
@@ -86,8 +86,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -95,11 +93,29 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: "~> v2"
-          args: release --clean
-          workdir: apps/cli
+      - name: Build binaries
+        working-directory: apps/cli
+        run: |
+          mkdir -p dist
+          bun build bin/autonoe.ts --compile --minify --target=bun-linux-x64 --outfile=dist/autonoe-linux-x64
+          bun build bin/autonoe.ts --compile --minify --target=bun-linux-arm64 --outfile=dist/autonoe-linux-arm64
+          bun build bin/autonoe.ts --compile --minify --target=bun-darwin-x64 --outfile=dist/autonoe-darwin-x64
+          bun build bin/autonoe.ts --compile --minify --target=bun-darwin-arm64 --outfile=dist/autonoe-darwin-arm64
+          bun build bin/autonoe.ts --compile --minify --target=bun-windows-x64 --outfile=dist/autonoe-windows-x64.exe
+
+      - name: Create archives
+        working-directory: apps/cli/dist
+        run: |
+          for f in autonoe-linux-* autonoe-darwin-*; do
+            tar -czvf "${f}.tar.gz" "$f"
+            rm "$f"
+          done
+          zip autonoe-windows-x64.zip autonoe-windows-x64.exe
+          rm autonoe-windows-x64.exe
+          sha256sum * > checksums.txt
+
+      - name: Upload to GitHub Release
+        working-directory: apps/cli/dist
+        run: gh release upload ${{ needs.release-please.outputs.cli_tag }} *
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

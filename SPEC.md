@@ -77,7 +77,6 @@ autonoe/
 ├── tsconfig.json
 ├── .prettierrc
 ├── Dockerfile
-├── .goreleaser.yaml
 ├── packages/
 │   ├── core/
 │   │   ├── package.json
@@ -1604,7 +1603,7 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 | Tool                     | Purpose                            |
 | ------------------------ | ---------------------------------- |
 | Release Please           | Version management, CHANGELOG      |
-| GoReleaser               | Multi-platform binary distribution |
+| Bun cross-compile        | Multi-platform binary distribution |
 | docker/build-push-action | Multi-platform Docker images       |
 
 **Release Flow:**
@@ -1619,10 +1618,10 @@ Push to main ──────────────────────�
 │  docker-latest:                          │            │  release-please:            │
 │    Build :latest Docker images           │            │    Create/update release PR │
 │                                          │            │                             │
-│  goreleaser-snapshot:                    │            │         ▼ (on CLI release)  │
-│    Build snapshot binaries               │            │  ┌──────┴──────┐            │
+│  build-snapshot:                         │            │         ▼ (on CLI release)  │
+│    Bun cross-compile binaries            │            │  ┌──────┴──────┐            │
 │    Upload as workflow artifacts          │            │  ▼             ▼            │
-└─────────────────────────────────────────┘            │  docker-    goreleaser-     │
+└─────────────────────────────────────────┘            │  docker-    binary-         │
        │                                                │  release    release         │
        ▼                                                └─────────────────────────────┘
 ┌─────────────────────────────────────────┐                   │             │
@@ -1644,20 +1643,20 @@ Push to main ──────────────────────�
 
 | Workflow             | Trigger      | Purpose                                              |
 | -------------------- | ------------ | ---------------------------------------------------- |
-| `ci.yml`             | Push to main | Docker latest + GoReleaser snapshot                  |
-| `release-please.yml` | Push to main | Release Please + versioned Docker + GoReleaser release |
+| `ci.yml`             | Push to main | Docker latest + Bun snapshot binaries                |
+| `release-please.yml` | Push to main | Release Please + versioned Docker + binary release   |
 
 ```yaml
 # .github/workflows/ci.yml
 jobs:
-  docker-latest:          # Build :latest Docker images
-  goreleaser-snapshot:    # Build snapshot binaries (workdir: apps/cli)
+  docker-latest:    # Build :latest Docker images
+  build-snapshot:   # Bun cross-compile snapshot binaries
 
 # .github/workflows/release-please.yml
 jobs:
-  release-please:         # Create release PR
-  docker-release:         # Build versioned Docker (if CLI released)
-  goreleaser-release:     # Upload binaries (if CLI released, workdir: apps/cli)
+  release-please:   # Create release PR
+  docker-release:   # Build versioned Docker (if CLI released)
+  binary-release:   # Upload binaries via gh (if CLI released)
 ```
 
 ---
