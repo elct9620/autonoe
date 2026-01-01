@@ -56,6 +56,11 @@ The "fine-grained" means each deliverable should represent a small, testable uni
 - Cover every deliverable in specification exhaustively, ensuring no part is left unaddressed
 - Do not create deliverables not directly related to `SPEC.md` requirements
 
+**Not Deliverable Examples:**
+
+- Setup tasks not defined in `SPEC.md` as features
+- Non-functional tasks unless explicitly mentioned in `SPEC.md` as outcomes
+
 **CRITICAL INSTRUCTION:** IT IS CATASTROPHIC TO REMOVE OR EDIT IN FUTURE SESSIONS. Deliverables can ONLY be marked as passed. Never modify or delete them. This ensures no functionality is missed.
 
 ## STEP 3: Create dev script
@@ -76,6 +81,7 @@ Create a git repository commit with the following:
 - `.autonoe/` directory containing `status.json` with deliverables
 - `bin/dev.sh` script for setting up the development environment
 - `README.md` with project overview and setup instructions
+- `.gitignore` file to exclude unnecessary files from version control, e.g. sensitive files, build artifacts, etc.
 - Use `main` as the default branch name
 
 Commit message: "chore: initialize project with deliverables and dev setup"
