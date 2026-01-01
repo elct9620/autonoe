@@ -1601,15 +1601,63 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 
 ### 10.10 Release Management
 
-| Tool           | Purpose                            |
-| -------------- | ---------------------------------- |
-| Release Please | Version management, CHANGELOG      |
-| GoReleaser     | Multi-platform binary distribution |
+| Tool                     | Purpose                            |
+| ------------------------ | ---------------------------------- |
+| Release Please           | Version management, CHANGELOG      |
+| GoReleaser               | Multi-platform binary distribution |
+| docker/build-push-action | Multi-platform Docker images       |
+
+**Release Flow:**
+
+```
+Push to main ─────────────────────────────────────────────────────┐
+       │                                                          │
+       ▼                                                          ▼
+┌─────────────────────────────────────────┐            ┌─────────────────────────────┐
+│              ci.yml                      │            │      release-please.yml     │
+├─────────────────────────────────────────┤            ├─────────────────────────────┤
+│  docker-latest:                          │            │  release-please:            │
+│    Build :latest Docker images           │            │    Create/update release PR │
+│                                          │            │                             │
+│  goreleaser-snapshot:                    │            │         ▼ (on CLI release)  │
+│    Build snapshot binaries               │            │  ┌──────┴──────┐            │
+│    Upload as workflow artifacts          │            │  ▼             ▼            │
+└─────────────────────────────────────────┘            │  docker-    goreleaser-     │
+       │                                                │  release    release         │
+       ▼                                                └─────────────────────────────┘
+┌─────────────────────────────────────────┐                   │             │
+│  ghcr.io/.../cli:latest                  │                   ▼             ▼
+│  ghcr.io/.../cli:base                    │            ┌─────────────────────────────┐
+│  ghcr.io/.../cli:node                    │            │  ghcr.io/.../cli:X.Y.Z      │
+│  ghcr.io/.../cli:python                  │            │  ghcr.io/.../cli:X.Y-node   │
+│  ghcr.io/.../cli:golang                  │            │  ghcr.io/.../cli:X-python   │
+│  ghcr.io/.../cli:ruby                    │            │  ...                        │
+│                                          │            ├─────────────────────────────┤
+│  GitHub Actions Artifacts (7 days)       │            │  GitHub Release Assets      │
+│    └── binaries (snapshot)               │            │    ├── autonoe-linux-x64    │
+└─────────────────────────────────────────┘            │    ├── autonoe-darwin-arm64 │
+                                                        │    └── checksums.txt        │
+                                                        └─────────────────────────────┘
+```
+
+**Workflow Structure:**
+
+| Workflow             | Trigger      | Purpose                                              |
+| -------------------- | ------------ | ---------------------------------------------------- |
+| `ci.yml`             | Push to main | Docker latest + GoReleaser snapshot                  |
+| `release-please.yml` | Push to main | Release Please + versioned Docker + GoReleaser release |
 
 ```yaml
-# .github/workflows/release.yml
-- uses: googleapis/release-please-action@v4
-- uses: goreleaser/goreleaser-action@v6
+# .github/workflows/ci.yml
+jobs:
+  docker-latest:          # Build :latest Docker images
+  goreleaser-snapshot:    # Build snapshot binaries (workdir: apps/cli)
+
+# .github/workflows/release-please.yml
+jobs:
+  release-please:         # Create release PR
+  docker-release:         # Build versioned Docker (if CLI released)
+  goreleaser-release:     # Upload binaries (if CLI released, workdir: apps/cli)
 ```
 
 ---

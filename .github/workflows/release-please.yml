@@ -8,10 +8,98 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  packages: write
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      cli_released: ${{ steps.release.outputs['apps/cli--release_created'] }}
+      cli_tag: ${{ steps.release.outputs['apps/cli--tag_name'] }}
+      cli_version: ${{ steps.release.outputs['apps/cli--version'] }}
     steps:
       - name: Run Release Please
+        id: release
         uses: googleapis/release-please-action@v4
+
+  docker-release:
+    needs: release-please
+    if: needs.release-please.outputs.cli_released == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        target: [base, node, python, golang, ruby]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/autonoe/cli
+          tags: |
+            # Full version: 1.0.0-node
+            type=semver,pattern={{version}}-${{ matrix.target }},value=${{ needs.release-please.outputs.cli_tag }}
+            # Minor version: 1.0-node
+            type=semver,pattern={{major}}.{{minor}}-${{ matrix.target }},value=${{ needs.release-please.outputs.cli_tag }}
+            # Major version: 1-node
+            type=semver,pattern={{major}}-${{ matrix.target }},value=${{ needs.release-please.outputs.cli_tag }}
+            # Base-only tags (without variant suffix)
+            type=semver,pattern={{version}},value=${{ needs.release-please.outputs.cli_tag }},enable=${{ matrix.target == 'base' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release-please.outputs.cli_tag }},enable=${{ matrix.target == 'base' }}
+            type=semver,pattern={{major}},value=${{ needs.release-please.outputs.cli_tag }},enable=${{ matrix.target == 'base' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/cli/Dockerfile
+          target: ${{ matrix.target }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
+
+  goreleaser-release:
+    needs: release-please
+    if: needs.release-please.outputs.cli_released == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+          workdir: apps/cli
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
