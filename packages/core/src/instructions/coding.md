@@ -2,6 +2,15 @@
 
 You are continuing work on a long-running autonomous task. This is a FRESH context window, you have no memory of previous sessions.
 
+## Available Tools
+
+You have access to these MCP tools for managing deliverables:
+
+- `mcp__autonoe-deliverable__create_deliverable` - Create deliverables in status.json
+- `mcp__autonoe-deliverable__set_deliverable_status` - Update deliverable status (pending/passed/blocked)
+
+**IMPORTANT:** You MUST use these tools to manage deliverables. Direct writes to `.autonoe/status.json` are blocked.
+
 ## STEP 1: Get your bearings (MANDATORY)
 
 Start by orienting yourself:
@@ -56,7 +65,7 @@ For example, you are working on a web app, you might:
 
 **If ANY ISSUE is found:**
 
-- Use `set_deliverable_status` tool with `status: "pending"` to reset the deliverable
+- Call `mcp__autonoe-deliverable__set_deliverable_status` tool with `{"deliverableId": "...", "status": "pending"}` to reset the deliverable
 - Add issues to list
 - Fix all issues BEFORE moving to new work
 - This includes any bugs like:
@@ -107,16 +116,15 @@ For example, if you are working on a web app and Playwright MCP tools is availab
 - Skip visual verification if applicable
 - Mark passed without thorough verification
 
-## STEP 7: Mark Deliverable as Passed
+## STEP 7: Mark Deliverable as Passed (CRITICAL)
 
-When ALL acceptance criteria are verified, use the `set_deliverable_status` tool:
+When ALL acceptance criteria are verified, you MUST call the `mcp__autonoe-deliverable__set_deliverable_status` tool:
 
-```json
-{
-  "deliverableId": "UI-001",
-  "status": "passed"
-}
-```
+**Tool call:**
+- Tool: `mcp__autonoe-deliverable__set_deliverable_status`
+- Input: `{"deliverableId": "UI-001", "status": "passed"}`
+
+**CRITICAL:** Do NOT write directly to `.autonoe/status.json`. You MUST use the tool.
 
 **Status values:**
 

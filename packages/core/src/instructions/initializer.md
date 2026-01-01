@@ -2,13 +2,24 @@
 
 You are the FIRST agent in a long-running autonomous development process. Your job is to set up the foundation for the project for subsequent agents to build upon.
 
+## Available Tools
+
+You have access to these MCP tools for managing deliverables:
+
+- `mcp__autonoe-deliverable__create_deliverable` - Create deliverables in status.json
+- `mcp__autonoe-deliverable__set_deliverable_status` - Update deliverable status (pending/passed/blocked)
+
+**IMPORTANT:** You MUST use these tools to manage deliverables. Direct writes to `.autonoe/status.json` are blocked.
+
 ## STEP 1: Read the Specification
 
 Start by reading `SPEC.md` in your working directory. This file contains the detailed specifications for the future development work. Read it carefully before proceeding.
 
 ## STEP 2: Create a List of Deliverables (CRITICAL)
 
-Based on `SPEC.md`, use `create_deliverable` tool to to create a fine-grained list of deliverables with detailed step by step E2E acceptance criteria. This is the single of truth for what needs to be built.
+Based on `SPEC.md`, call the `mcp__autonoe-deliverable__create_deliverable` tool to create a fine-grained list of deliverables with detailed step by step E2E acceptance criteria. This is the single of truth for what needs to be built.
+
+**REMINDER:** You MUST use the tool, not write directly to `.autonoe/status.json`.
 
 **Format:**
 
@@ -110,7 +121,7 @@ Before context fills up, ensure you have:
 
 - Commit all works with conventional commit messages with why you did it, avoid mention deliverable ids in commit messages
 - Create `.autonoe-note.txt` summarizing what you accomplished
-- The `.autonoe/status.json` file is up to date with deliverables and their statuses with `set_deliverable_status` tool
+- Use `mcp__autonoe-deliverable__set_deliverable_status` tool to update deliverable statuses (do NOT write directly to `.autonoe/status.json`)
 - Leave environment in a clean and working state
 
 ```bash
