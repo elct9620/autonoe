@@ -6,50 +6,10 @@ on:
 
 jobs:
   docker-latest:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      matrix:
-        target: [base, node, python, golang, ruby]
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/autonoe/cli
-          tags: |
-            type=raw,value=${{ matrix.target }}
-            type=raw,value=latest,enable=${{ matrix.target == 'base' }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/cli/Dockerfile
-          target: ${{ matrix.target }}
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.target }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
+    uses: ./.github/workflows/build-docker.yml
+    with:
+      tag-strategy: latest
+    secrets: inherit
 
   build-snapshot:
     runs-on: ubuntu-latest
@@ -58,31 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
       - name: Build binaries
-        working-directory: apps/cli
-        run: |
-          mkdir -p dist
-          bun build bin/autonoe.ts --compile --minify --target=bun-linux-x64 --outfile=dist/autonoe-linux-x64
-          bun build bin/autonoe.ts --compile --minify --target=bun-linux-arm64 --outfile=dist/autonoe-linux-arm64
-          bun build bin/autonoe.ts --compile --minify --target=bun-darwin-x64 --outfile=dist/autonoe-darwin-x64
-          bun build bin/autonoe.ts --compile --minify --target=bun-darwin-arm64 --outfile=dist/autonoe-darwin-arm64
-          bun build bin/autonoe.ts --compile --minify --target=bun-windows-x64 --outfile=dist/autonoe-windows-x64.exe
-
-      - name: Create archives
-        working-directory: apps/cli/dist
-        run: |
-          for f in autonoe-linux-* autonoe-darwin-*; do
-            tar -czvf "${f}.tar.gz" "$f"
-            rm "$f"
-          done
-          zip autonoe-windows-x64.zip autonoe-windows-x64.exe
-          rm autonoe-windows-x64.exe
+        uses: ./.github/actions/build-binaries
+        with:
+          entrypoint: bin/autonoe.ts
+          output-name: autonoe
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

@@ -1649,15 +1649,69 @@ Push to main ──────────────────────�
 ```yaml
 # .github/workflows/ci.yml
 jobs:
-  docker-latest:    # Build :latest Docker images
-  build-snapshot:   # Bun cross-compile snapshot binaries
+  docker-latest:    # Uses build-docker.yml reusable workflow
+  build-snapshot:   # Uses build-binaries composite action
 
 # .github/workflows/release-please.yml
 jobs:
   release-please:   # Create release PR
-  docker-release:   # Build versioned Docker (if CLI released)
-  binary-release:   # Upload binaries via gh (if CLI released)
+  docker-release:   # Uses build-docker.yml reusable workflow
+  binary-release:   # Uses build-binaries composite action
 ```
+
+### 10.10.1 Reusable Actions Architecture
+
+**Hybrid Approach:**
+
+| Component | Type | Location | Purpose |
+|-----------|------|----------|---------|
+| Docker builds | Reusable Workflow | `.github/workflows/build-docker.yml` | Job-level reuse with matrix strategy |
+| Binary builds | Composite Action | `.github/actions/build-binaries/action.yml` | Step-level reuse for flexibility |
+
+**Selection Criteria:**
+
+| Scenario | Approach | Reason |
+|----------|----------|--------|
+| Docker build | Reusable Workflow | Built-in matrix strategy (5 targets), independent job |
+| Binary build | Composite Action | Need pre/post steps (checksum, upload), step-level flexibility |
+
+**Architecture:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Hybrid Reuse Architecture                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Caller Workflows          Reusable Workflow    Composite Action │
+│  ┌──────────────────┐     ┌────────────────┐   ┌──────────────┐ │
+│  │  ci.yml          │     │ build-docker   │   │ build-       │ │
+│  │    docker-latest │────▶│   .yml         │   │ binaries/    │ │
+│  │    build-snapshot│─────┼────────────────┼──▶│ action.yml   │ │
+│  └──────────────────┘     │ (job level)    │   │ (step level) │ │
+│                           │ matrix: 5x     │   └──────────────┘ │
+│  ┌──────────────────┐     └────────────────┘                    │
+│  │  release-please  │            │                    │         │
+│  │    docker-release│────────────┘                    │         │
+│  │    binary-release│─────────────────────────────────┘         │
+│  └──────────────────┘                                           │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**build-docker.yml Inputs:**
+
+| Input | Type | Required | Description |
+|-------|------|----------|-------------|
+| `tag-strategy` | string | Yes | `latest` or `semver` |
+| `version-tag` | string | No | Version tag for semver (e.g., `v1.0.0`) |
+
+**build-binaries/action.yml Inputs:**
+
+| Input | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `entrypoint` | string | Yes | - | Entry point file |
+| `output-name` | string | Yes | - | Output binary name |
+| `working-directory` | string | No | `apps/cli` | Working directory |
 
 ---
 

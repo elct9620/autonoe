@@ -1,0 +1,51 @@
+name: Build Binaries
+description: Compile Bun binaries for all platforms
+
+inputs:
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: 'apps/cli'
+  entrypoint:
+    description: 'Entry point file (relative to working-directory)'
+    required: true
+  output-name:
+    description: 'Output binary name (without extension)'
+    required: true
+
+outputs:
+  dist-path:
+    description: 'Path to built artifacts'
+    value: ${{ inputs.working-directory }}/dist
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+
+    - name: Install dependencies
+      shell: bash
+      run: bun install --frozen-lockfile
+
+    - name: Build binaries
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        mkdir -p dist
+        bun build ${{ inputs.entrypoint }} --compile --minify --target=bun-linux-x64 --outfile=dist/${{ inputs.output-name }}-linux-x64
+        bun build ${{ inputs.entrypoint }} --compile --minify --target=bun-linux-arm64 --outfile=dist/${{ inputs.output-name }}-linux-arm64
+        bun build ${{ inputs.entrypoint }} --compile --minify --target=bun-darwin-x64 --outfile=dist/${{ inputs.output-name }}-darwin-x64
+        bun build ${{ inputs.entrypoint }} --compile --minify --target=bun-darwin-arm64 --outfile=dist/${{ inputs.output-name }}-darwin-arm64
+        bun build ${{ inputs.entrypoint }} --compile --minify --target=bun-windows-x64 --outfile=dist/${{ inputs.output-name }}-windows-x64.exe
+
+    - name: Create archives
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}/dist
+      run: |
+        for f in ${{ inputs.output-name }}-linux-* ${{ inputs.output-name }}-darwin-*; do
+          tar -czvf "${f}.tar.gz" "$f"
+          rm "$f"
+        done
+        zip ${{ inputs.output-name }}-windows-x64.zip ${{ inputs.output-name }}-windows-x64.exe
+        rm ${{ inputs.output-name }}-windows-x64.exe

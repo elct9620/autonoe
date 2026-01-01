@@ -1,0 +1,75 @@
+name: Build Docker Images
+
+on:
+  workflow_call:
+    inputs:
+      tag-strategy:
+        required: true
+        type: string
+        description: 'latest or semver'
+      version-tag:
+        required: false
+        type: string
+        description: 'Version tag for semver (e.g., v1.0.0)'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        target: [base, node, python, golang, ruby]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata (latest)
+        if: inputs.tag-strategy == 'latest'
+        id: meta-latest
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/autonoe/cli
+          tags: |
+            type=raw,value=${{ matrix.target }}
+            type=raw,value=latest,enable=${{ matrix.target == 'base' }}
+
+      - name: Docker metadata (semver)
+        if: inputs.tag-strategy == 'semver'
+        id: meta-semver
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/autonoe/cli
+          tags: |
+            type=semver,pattern={{version}}-${{ matrix.target }},value=${{ inputs.version-tag }}
+            type=semver,pattern={{major}}.{{minor}}-${{ matrix.target }},value=${{ inputs.version-tag }}
+            type=semver,pattern={{major}}-${{ matrix.target }},value=${{ inputs.version-tag }}
+            type=semver,pattern={{version}},value=${{ inputs.version-tag }},enable=${{ matrix.target == 'base' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version-tag }},enable=${{ matrix.target == 'base' }}
+            type=semver,pattern={{major}},value=${{ inputs.version-tag }},enable=${{ matrix.target == 'base' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/cli/Dockerfile
+          target: ${{ matrix.target }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-latest.outputs.tags || steps.meta-semver.outputs.tags }}
+          labels: ${{ steps.meta-latest.outputs.labels || steps.meta-semver.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
