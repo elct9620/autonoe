@@ -122,7 +122,7 @@ When ALL acceptance criteria are verified, use the `set_deliverable_status` tool
 
 ## STEP 8: Commit Work
 
-Make a conventional commit to explain why you did the work:
+Make a conventional commit to explain why you did the work, avoid mentioning deliverable ids in commit messages. For example:
 
 ```bash
 git add .
@@ -178,7 +178,7 @@ Search available MCP tools for testing like a real user. Examples:
 - All features works end-to-end
 - Fast, responsive, professional
 
-**You have unlimited time.** Take as long as needed to get it right. The most important thing is leave the codebase in a clean state before ending the session. (see STEP 10)
+**You have unlimited time.** Take as long as needed to get it right. The most important thing is leave the codebase in a clean state before ending the session. (see STEP 10) Less is more. Focus on quality over speed.
 
 ---
 

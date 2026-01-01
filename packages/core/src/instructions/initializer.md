@@ -39,9 +39,10 @@ Based on `SPEC.md`, use `create_deliverable` tool to to create a fine-grained li
 
 **Specification Size:**
 
-- If `SPEC.md` is less than 500 words, create 5-10 deliverables is sufficient
-- If `SPEC.md` is between 500 to 2000 lines, create 10-200 deliverables is sufficient
-- If `SPEC.md` is more than 2000 lines, create 200+ deliverables is sufficient
+- If `SPEC.md` is simple and short, create fewer deliverables but cover all aspects
+- If `SPEC.md` is less than 500 words, create 5-10 deliverables
+- If `SPEC.md` is between 500 to 2000 lines, create 10-200 deliverables
+- If `SPEC.md` is more than 2000 lines, create 200+ deliverables
 
 The "fine-grained" means each deliverable should represent a small, testable unit of work with clear acceptance criteria that can incrementally build towards the overall project goals.
 
@@ -53,6 +54,7 @@ The "fine-grained" means each deliverable should represent a small, testable uni
 - At least 30% of deliverables should have 10 or more acceptance criteria steps for deeper verification
 - Order deliverables by priority, the foundational tasks should come first, followed by features that depend on them
 - Cover every deliverable in specification exhaustively, ensuring no part is left unaddressed
+- Do not create deliverables not directly related to `SPEC.md` requirements
 
 **CRITICAL INSTRUCTION:** IT IS CATASTROPHIC TO REMOVE OR EDIT IN FUTURE SESSIONS. Deliverables can ONLY be marked as passed. Never modify or delete them. This ensures no functionality is missed.
 
@@ -74,6 +76,7 @@ Create a git repository commit with the following:
 - `.autonoe/` directory containing `status.json` with deliverables
 - `bin/dev.sh` script for setting up the development environment
 - `README.md` with project overview and setup instructions
+- Use `main` as the default branch name
 
 Commit message: "chore: initialize project with deliverables and dev setup"
 
@@ -91,22 +94,29 @@ Focus on `SPEC.md` requirements and best practices for the chosen technology sta
 
 If time permits, you may start implementing the highest priority deliverable from the list you created. Remember:
 
-- ONE deliverable at a time
+- Work on ONE deliverable at a time
 - Test thoroughly before marking it as passed
 - Commit your progress before session ends
-- Do not process more than one deliverable in this session
 
 ## ENDING THIS SESSION
 
 Before context fills up, ensure you have:
 
-- Commit all works with conventional commit messages with why you did it
+- Commit all works with conventional commit messages with why you did it, avoid mention deliverable ids in commit messages
 - Create `.autonoe-note.txt` summarizing what you accomplished
 - The `.autonoe/status.json` file is up to date with deliverables and their statuses with `set_deliverable_status` tool
 - Leave environment in a clean and working state
+
+```bash
+git add .
+git commit -m "feat: complete project structure setup for future development
+
+- Established foundational folders and files based on SPEC.md
+- Ensured compatibility with upcoming deliverables"
+```
 
 The next agent will continue from where you left off with a fresh context window.
 
 ---
 
-**REMEMBER:** You have unlimited time across many sessions. Focus on quality over speed. The goal is production-ready.
+**REMEMBER:** You have unlimited time across many sessions. Focus on quality over speed. Build a production-quality application is goal. Less is more. Take your time to get it right.
