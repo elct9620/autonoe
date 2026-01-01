@@ -289,6 +289,34 @@ describe('BashSecurity', () => {
     })
   })
 
+  describe('SC-X017: bin/dev.sh allowed', () => {
+    it('allows ./bin/dev.sh', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('./bin/dev.sh').allowed).toBe(true)
+    })
+
+    it('allows bin/dev.sh', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('bin/dev.sh').allowed).toBe(true)
+    })
+  })
+
+  describe('SC-X018: bin/dev.sh with arguments blocked', () => {
+    it('blocks bin/dev.sh with arguments', () => {
+      const security = new DefaultBashSecurity()
+      const result = security.isCommandAllowed('bin/dev.sh --flag')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('does not accept arguments')
+    })
+
+    it('blocks ./bin/dev.sh with arguments', () => {
+      const security = new DefaultBashSecurity()
+      const result = security.isCommandAllowed('./bin/dev.sh arg1 arg2')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('does not accept arguments')
+    })
+  })
+
   describe('SC-X013/SC-X014: Escape character handling', () => {
     it('SC-X013: backslash does not bypass security check', () => {
       const security = new DefaultBashSecurity()

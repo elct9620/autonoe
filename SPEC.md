@@ -876,12 +876,13 @@ Users may restrict to specific profiles via `agent.json`:
 
 **Base Profile** (always included):
 
-| Category   | Commands                                 | Validation  |
-| ---------- | ---------------------------------------- | ----------- |
-| Navigation | ls, pwd, cat, head, tail, wc, find, grep | Allowlist   |
-| File Ops   | mkdir, cp, chmod                         | chmod: args |
-| Git        | git                                      | Allowlist   |
-| Process    | echo, which, ps, lsof, sleep, pkill      | pkill: args |
+| Category   | Commands                                 | Validation       |
+| ---------- | ---------------------------------------- | ---------------- |
+| Navigation | ls, pwd, cat, head, tail, wc, find, grep | Allowlist        |
+| File Ops   | mkdir, cp, chmod                         | chmod: args      |
+| Git        | git                                      | Allowlist        |
+| Process    | echo, which, ps, lsof, sleep, pkill      | pkill: args      |
+| Script     | bin/dev.sh                               | bin/dev.sh: args |
 
 **Node.js Profile**:
 
@@ -945,6 +946,12 @@ Commands with `args` validation require additional checks:
 | Python  | python, python3, uvicorn, gunicorn |
 | Ruby    | ruby, puma, unicorn, rails         |
 | Go      | go                                 |
+
+**bin/dev.sh validation**:
+
+| Allowed                     | Blocked                          |
+| --------------------------- | -------------------------------- |
+| `./bin/dev.sh`, `bin/dev.sh`| Any arguments (prevent injection)|
 
 #### 6.3.4 User Extensions
 
@@ -1093,6 +1100,8 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | SC-X014 | `echo "test\nvalue"`        | Allowed (escaped in quotes)     |
 | SC-X015 | `""`                        | Allowed (empty command)         |
 | SC-X016 | Hook with no command        | Approved (continue=true)        |
+| SC-X017 | `./bin/dev.sh`              | Allowed (dev script)            |
+| SC-X018 | `bin/dev.sh --flag`         | Denied (no args allowed)        |
 
 ### 8.3 Deliverable Tools (autonoe-deliverable)
 

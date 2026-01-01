@@ -330,6 +330,21 @@ function validateChmod(args: string[]): ValidationResult {
 }
 
 /**
+ * Validate bin/dev.sh script execution
+ * - Allows: ./bin/dev.sh, bin/dev.sh (without arguments)
+ * - Blocks: Any arguments (prevent injection)
+ */
+function validateDevScript(args: string[]): ValidationResult {
+  if (args.length > 0) {
+    return {
+      allowed: false,
+      reason: 'bin/dev.sh does not accept arguments',
+    }
+  }
+  return { allowed: true }
+}
+
+/**
  * Split command string into individual commands by chain operators
  * Handles: &&, ||, |, ;
  */
@@ -410,9 +425,13 @@ function splitCommandChain(command: string): string[] {
 }
 
 /**
- * Parse a single command into base command and arguments
+ * Parse a single command into base command, full command path, and arguments
  */
-function parseCommand(command: string): { base: string; args: string[] } {
+function parseCommand(command: string): {
+  base: string
+  fullCommand: string
+  args: string[]
+} {
   const tokens: string[] = []
   let current = ''
   let inSingleQuote = false
@@ -457,7 +476,7 @@ function parseCommand(command: string): { base: string; args: string[] } {
   }
 
   if (tokens.length === 0) {
-    return { base: '', args: [] }
+    return { base: '', fullCommand: '', args: [] }
   }
 
   // Extract base command name (handle paths like /usr/bin/git)
@@ -466,7 +485,7 @@ function parseCommand(command: string): { base: string; args: string[] } {
     ? (fullCommand.split('/').pop() ?? fullCommand)
     : fullCommand
 
-  return { base, args: tokens.slice(1) }
+  return { base, fullCommand, args: tokens.slice(1) }
 }
 
 /**
@@ -574,10 +593,15 @@ export class DefaultBashSecurity implements BashSecurity {
   }
 
   private validateSingleCommand(command: string): ValidationResult {
-    const { base, args } = parseCommand(command)
+    const { base, fullCommand, args } = parseCommand(command)
 
     if (!base) {
       return { allowed: true }
+    }
+
+    // Special handling for bin/dev.sh script execution
+    if (fullCommand === './bin/dev.sh' || fullCommand === 'bin/dev.sh') {
+      return validateDevScript(args)
     }
 
     // Check if command requires argument validation
