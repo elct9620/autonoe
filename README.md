@@ -113,10 +113,10 @@ services:
 
 ### Authentication
 
-| Variable                  | Description                                   |
-| ------------------------- | --------------------------------------------- |
-| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code subscription token (recommended)  |
-| `ANTHROPIC_API_KEY`       | API key for direct billing                    |
+| Variable                  | Description                                  |
+| ------------------------- | -------------------------------------------- |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code subscription token (recommended) |
+| `ANTHROPIC_API_KEY`       | API key for direct billing                   |
 
 Create a `.env` file (Docker Compose loads it automatically):
 

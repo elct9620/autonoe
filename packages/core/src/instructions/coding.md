@@ -42,7 +42,7 @@ Test your implementation against ALL acceptance criteria:
 
 ### Step 5: Mark Complete
 
-When ALL acceptance criteria are verified, use the `update_deliverable` tool:
+When ALL acceptance criteria are verified, use the `set_deliverable_status` tool:
 
 ```json
 {

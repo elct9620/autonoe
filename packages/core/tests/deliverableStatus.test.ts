@@ -1,32 +1,36 @@
 import { describe, it, expect } from 'vitest'
 import {
-  createDeliverable,
-  updateDeliverable,
+  createDeliverables,
+  setDeliverableStatus,
   allDeliverablesPassed,
   countPassedDeliverables,
   emptyDeliverableStatus,
   type DeliverableStatus,
   type CreateDeliverableInput,
-  type UpdateDeliverableInput,
+  type SetDeliverableStatusInput,
 } from '../src/deliverableStatus'
 
-describe('createDeliverable', () => {
+describe('createDeliverables', () => {
   describe('DL-T001: Valid input', () => {
     it('creates deliverable with acceptance criteria', () => {
       const status = emptyDeliverableStatus()
       const input: CreateDeliverableInput = {
-        id: 'DL-001',
-        name: 'User Authentication',
-        acceptanceCriteria: [
-          'User can login with email and password',
-          'Invalid credentials show error message',
+        deliverables: [
+          {
+            id: 'DL-001',
+            name: 'User Authentication',
+            acceptanceCriteria: [
+              'User can login with email and password',
+              'Invalid credentials show error message',
+            ],
+          },
         ],
       }
 
-      const result = createDeliverable(status, input)
+      const result = createDeliverables(status, input)
 
       expect(result.result.success).toBe(true)
-      expect(result.result.message).toContain('DL-001')
+      expect(result.result.message).toContain('1 deliverable')
       expect(result.status.deliverables).toHaveLength(1)
       expect(result.status.deliverables[0]).toEqual({
         id: 'DL-001',
@@ -37,6 +41,32 @@ describe('createDeliverable', () => {
         ],
         passed: false,
       })
+    })
+
+    it('creates multiple deliverables in batch', () => {
+      const status = emptyDeliverableStatus()
+      const input: CreateDeliverableInput = {
+        deliverables: [
+          {
+            id: 'DL-001',
+            name: 'First',
+            acceptanceCriteria: ['Criterion 1'],
+          },
+          {
+            id: 'DL-002',
+            name: 'Second',
+            acceptanceCriteria: ['Criterion 2'],
+          },
+        ],
+      }
+
+      const result = createDeliverables(status, input)
+
+      expect(result.result.success).toBe(true)
+      expect(result.result.message).toContain('2 deliverable')
+      expect(result.status.deliverables).toHaveLength(2)
+      expect(result.status.deliverables[0]!.id).toBe('DL-001')
+      expect(result.status.deliverables[1]!.id).toBe('DL-002')
     })
 
     it('appends to existing deliverables', () => {
@@ -51,12 +81,16 @@ describe('createDeliverable', () => {
         ],
       }
       const input: CreateDeliverableInput = {
-        id: 'DL-002',
-        name: 'Second',
-        acceptanceCriteria: ['Criterion 2'],
+        deliverables: [
+          {
+            id: 'DL-002',
+            name: 'Second',
+            acceptanceCriteria: ['Criterion 2'],
+          },
+        ],
       }
 
-      const result = createDeliverable(status, input)
+      const result = createDeliverables(status, input)
 
       expect(result.status.deliverables).toHaveLength(2)
       expect(result.status.deliverables[1]!.id).toBe('DL-002')
@@ -64,7 +98,7 @@ describe('createDeliverable', () => {
   })
 
   describe('DL-T002: Duplicate ID', () => {
-    it('returns error for duplicate deliverable ID', () => {
+    it('returns error for duplicate deliverable ID in existing status', () => {
       const status: DeliverableStatus = {
         deliverables: [
           {
@@ -76,30 +110,75 @@ describe('createDeliverable', () => {
         ],
       }
       const input: CreateDeliverableInput = {
-        id: 'DL-001',
-        name: 'Duplicate',
-        acceptanceCriteria: ['Another criterion'],
+        deliverables: [
+          {
+            id: 'DL-001',
+            name: 'Duplicate',
+            acceptanceCriteria: ['Another criterion'],
+          },
+        ],
       }
 
-      const result = createDeliverable(status, input)
+      const result = createDeliverables(status, input)
 
       expect(result.result.success).toBe(false)
       expect(result.result.error).toBe('DUPLICATE_ID')
       expect(result.result.message).toContain('already exists')
       expect(result.status).toBe(status) // Status unchanged
     })
+
+    it('returns error for duplicate ID within batch', () => {
+      const status = emptyDeliverableStatus()
+      const input: CreateDeliverableInput = {
+        deliverables: [
+          {
+            id: 'DL-001',
+            name: 'First',
+            acceptanceCriteria: ['Criterion 1'],
+          },
+          {
+            id: 'DL-001',
+            name: 'Duplicate',
+            acceptanceCriteria: ['Criterion 2'],
+          },
+        ],
+      }
+
+      const result = createDeliverables(status, input)
+
+      expect(result.result.success).toBe(false)
+      expect(result.result.error).toBe('DUPLICATE_ID')
+      expect(result.result.message).toContain('Duplicate ID')
+    })
   })
 
   describe('Validation errors', () => {
+    it('returns error for empty deliverables array', () => {
+      const status = emptyDeliverableStatus()
+      const input: CreateDeliverableInput = {
+        deliverables: [],
+      }
+
+      const result = createDeliverables(status, input)
+
+      expect(result.result.success).toBe(false)
+      expect(result.result.error).toBe('VALIDATION_ERROR')
+      expect(result.result.message).toContain('At least one deliverable')
+    })
+
     it('returns error for empty ID', () => {
       const status = emptyDeliverableStatus()
       const input: CreateDeliverableInput = {
-        id: '',
-        name: 'Name',
-        acceptanceCriteria: ['Criterion'],
+        deliverables: [
+          {
+            id: '',
+            name: 'Name',
+            acceptanceCriteria: ['Criterion'],
+          },
+        ],
       }
 
-      const result = createDeliverable(status, input)
+      const result = createDeliverables(status, input)
 
       expect(result.result.success).toBe(false)
       expect(result.result.error).toBe('VALIDATION_ERROR')
@@ -108,12 +187,16 @@ describe('createDeliverable', () => {
     it('returns error for empty name', () => {
       const status = emptyDeliverableStatus()
       const input: CreateDeliverableInput = {
-        id: 'DL-001',
-        name: '',
-        acceptanceCriteria: ['Criterion'],
+        deliverables: [
+          {
+            id: 'DL-001',
+            name: '',
+            acceptanceCriteria: ['Criterion'],
+          },
+        ],
       }
 
-      const result = createDeliverable(status, input)
+      const result = createDeliverables(status, input)
 
       expect(result.result.success).toBe(false)
       expect(result.result.error).toBe('VALIDATION_ERROR')
@@ -122,12 +205,16 @@ describe('createDeliverable', () => {
     it('returns error for empty acceptance criteria array', () => {
       const status = emptyDeliverableStatus()
       const input: CreateDeliverableInput = {
-        id: 'DL-001',
-        name: 'Name',
-        acceptanceCriteria: [],
+        deliverables: [
+          {
+            id: 'DL-001',
+            name: 'Name',
+            acceptanceCriteria: [],
+          },
+        ],
       }
 
-      const result = createDeliverable(status, input)
+      const result = createDeliverables(status, input)
 
       expect(result.result.success).toBe(false)
       expect(result.result.error).toBe('VALIDATION_ERROR')
@@ -136,12 +223,16 @@ describe('createDeliverable', () => {
     it('returns error for empty acceptance criterion string', () => {
       const status = emptyDeliverableStatus()
       const input: CreateDeliverableInput = {
-        id: 'DL-001',
-        name: 'Name',
-        acceptanceCriteria: ['Valid', '', 'Also valid'],
+        deliverables: [
+          {
+            id: 'DL-001',
+            name: 'Name',
+            acceptanceCriteria: ['Valid', '', 'Also valid'],
+          },
+        ],
       }
 
-      const result = createDeliverable(status, input)
+      const result = createDeliverables(status, input)
 
       expect(result.result.success).toBe(false)
       expect(result.result.error).toBe('VALIDATION_ERROR')
@@ -149,7 +240,7 @@ describe('createDeliverable', () => {
   })
 })
 
-describe('updateDeliverable', () => {
+describe('setDeliverableStatus', () => {
   describe('DL-T003: Valid update', () => {
     it('updates deliverable status to passed', () => {
       const status: DeliverableStatus = {
@@ -162,12 +253,12 @@ describe('updateDeliverable', () => {
           },
         ],
       }
-      const input: UpdateDeliverableInput = {
+      const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-001',
         passed: true,
       }
 
-      const result = updateDeliverable(status, input)
+      const result = setDeliverableStatus(status, input)
 
       expect(result.result.success).toBe(true)
       expect(result.result.message).toContain('passed')
@@ -185,12 +276,12 @@ describe('updateDeliverable', () => {
           },
         ],
       }
-      const input: UpdateDeliverableInput = {
+      const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-001',
         passed: false,
       }
 
-      const result = updateDeliverable(status, input)
+      const result = setDeliverableStatus(status, input)
 
       expect(result.result.success).toBe(true)
       expect(result.result.message).toContain('failed')
@@ -214,12 +305,12 @@ describe('updateDeliverable', () => {
           },
         ],
       }
-      const input: UpdateDeliverableInput = {
+      const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-001',
         passed: true,
       }
 
-      const result = updateDeliverable(status, input)
+      const result = setDeliverableStatus(status, input)
 
       expect(result.status.deliverables[0]!.passed).toBe(true)
       expect(result.status.deliverables[1]!.passed).toBe(false)
@@ -238,12 +329,12 @@ describe('updateDeliverable', () => {
           },
         ],
       }
-      const input: UpdateDeliverableInput = {
+      const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-999',
         passed: true,
       }
 
-      const result = updateDeliverable(status, input)
+      const result = setDeliverableStatus(status, input)
 
       expect(result.result.success).toBe(false)
       expect(result.result.error).toBe('NOT_FOUND')
@@ -253,12 +344,12 @@ describe('updateDeliverable', () => {
 
     it('handles empty status', () => {
       const status = emptyDeliverableStatus()
-      const input: UpdateDeliverableInput = {
+      const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-001',
         passed: true,
       }
 
-      const result = updateDeliverable(status, input)
+      const result = setDeliverableStatus(status, input)
 
       expect(result.result.success).toBe(false)
       expect(result.result.error).toBe('NOT_FOUND')
@@ -277,12 +368,12 @@ describe('updateDeliverable', () => {
           },
         ],
       }
-      const input: UpdateDeliverableInput = {
+      const input: SetDeliverableStatusInput = {
         deliverableId: '',
         passed: true,
       }
 
-      const result = updateDeliverable(status, input)
+      const result = setDeliverableStatus(status, input)
 
       expect(result.result.success).toBe(false)
       expect(result.result.error).toBe('VALIDATION_ERROR')

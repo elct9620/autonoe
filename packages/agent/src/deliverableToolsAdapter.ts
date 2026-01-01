@@ -3,9 +3,9 @@ import { z } from 'zod'
 import type {
   DeliverableRepository,
   CreateDeliverableInput,
-  UpdateDeliverableInput,
+  SetDeliverableStatusInput,
 } from '@autonoe/core'
-import { createDeliverable, updateDeliverable } from '@autonoe/core'
+import { createDeliverables, setDeliverableStatus } from '@autonoe/core'
 
 /**
  * Tool result format for MCP tools
@@ -15,15 +15,15 @@ export interface ToolResult {
 }
 
 /**
- * Handler for create_deliverable tool
+ * Handler for create_deliverable tool (batch)
  * Extracted for testability
  */
-export async function handleCreateDeliverable(
+export async function handleCreateDeliverables(
   repository: DeliverableRepository,
   input: CreateDeliverableInput,
 ): Promise<ToolResult> {
   const status = await repository.load()
-  const { status: newStatus, result } = createDeliverable(status, input)
+  const { status: newStatus, result } = createDeliverables(status, input)
 
   if (result.success) {
     await repository.save(newStatus)
@@ -35,15 +35,15 @@ export async function handleCreateDeliverable(
 }
 
 /**
- * Handler for update_deliverable tool
+ * Handler for set_deliverable_status tool
  * Extracted for testability
  */
-export async function handleUpdateDeliverable(
+export async function handleSetDeliverableStatus(
   repository: DeliverableRepository,
-  input: UpdateDeliverableInput,
+  input: SetDeliverableStatusInput,
 ): Promise<ToolResult> {
   const status = await repository.load()
-  const { status: newStatus, result } = updateDeliverable(status, input)
+  const { status: newStatus, result } = setDeliverableStatus(status, input)
 
   if (result.success) {
     await repository.save(newStatus)
@@ -62,30 +62,36 @@ export async function handleUpdateDeliverable(
 export function createDeliverableMcpServer(repository: DeliverableRepository) {
   const createDeliverableTool = tool(
     'create_deliverable',
-    'Create a new deliverable with acceptance criteria. Use this in the initialization phase to define work units.',
+    'Create one or more deliverables in status.json. Use this in the initialization phase to define work units.',
     {
-      id: z.string().describe('Unique deliverable ID (e.g., DL-001)'),
-      name: z.string().describe('Human-readable deliverable name'),
-      acceptanceCriteria: z
-        .array(z.string())
-        .describe('List of verifiable completion conditions'),
+      deliverables: z
+        .array(
+          z.object({
+            id: z.string().describe('Unique deliverable ID (e.g., DL-001)'),
+            name: z.string().describe('Human-readable deliverable name'),
+            acceptanceCriteria: z
+              .array(z.string())
+              .describe('List of verifiable completion conditions'),
+          }),
+        )
+        .describe('Array of deliverables to create'),
     },
-    (input) => handleCreateDeliverable(repository, input),
+    (input) => handleCreateDeliverables(repository, input),
   )
 
-  const updateDeliverableTool = tool(
-    'update_deliverable',
-    'Update deliverable verification status. Use this after implementing and verifying a deliverable.',
+  const setDeliverableStatusTool = tool(
+    'set_deliverable_status',
+    'Set deliverable verification status. Use this after implementing and verifying a deliverable.',
     {
       deliverableId: z.string().describe('Deliverable ID to update'),
       passed: z.boolean().describe('Whether deliverable passed verification'),
     },
-    (input) => handleUpdateDeliverable(repository, input),
+    (input) => handleSetDeliverableStatus(repository, input),
   )
 
   return createSdkMcpServer({
     name: 'autonoe-deliverable',
     version: '1.0.0',
-    tools: [createDeliverableTool, updateDeliverableTool],
+    tools: [createDeliverableTool, setDeliverableStatusTool],
   })
 }

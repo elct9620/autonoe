@@ -27,7 +27,7 @@ describe('instructions', () => {
     })
 
     it('codingInstruction contains expected content', () => {
-      expect(codingInstruction).toContain('update_deliverable')
+      expect(codingInstruction).toContain('set_deliverable_status')
       expect(codingInstruction).toContain('passed')
     })
   })

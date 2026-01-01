@@ -123,7 +123,7 @@ export async function handleRunCommand(
     // Deliverable MCP tool names
     const deliverableTools = [
       'mcp__autonoe-deliverable__create_deliverable',
-      'mcp__autonoe-deliverable__update_deliverable',
+      'mcp__autonoe-deliverable__set_deliverable_status',
     ]
 
     // Create factory for fresh client per session

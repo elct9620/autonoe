@@ -21,18 +21,25 @@ export interface DeliverableStatus {
 }
 
 /**
- * Input for create_deliverable tool
+ * Single deliverable input for batch creation
  */
-export interface CreateDeliverableInput {
+export interface DeliverableInput {
   id: string
   name: string
   acceptanceCriteria: string[]
 }
 
 /**
- * Input for update_deliverable tool
+ * Input for create_deliverable tool (batch creation)
  */
-export interface UpdateDeliverableInput {
+export interface CreateDeliverableInput {
+  deliverables: DeliverableInput[]
+}
+
+/**
+ * Input for set_deliverable_status tool
+ */
+export interface SetDeliverableStatusInput {
   deliverableId: string
   passed: boolean
 }
@@ -64,12 +71,12 @@ export interface DeliverableRepository extends DeliverableStatusReader {
 }
 
 /**
- * Create a new deliverable in the status
+ * Create a single deliverable in the status (internal helper)
  * @returns Updated status and tool result
  */
-export function createDeliverable(
+function createSingleDeliverable(
   status: DeliverableStatus,
-  input: CreateDeliverableInput,
+  input: DeliverableInput,
 ): { status: DeliverableStatus; result: ToolResult } {
   // Validate input
   if (!input.id || input.id.trim() === '') {
@@ -149,12 +156,70 @@ export function createDeliverable(
 }
 
 /**
- * Update deliverable verification status
+ * Create one or more deliverables in the status (batch)
  * @returns Updated status and tool result
  */
-export function updateDeliverable(
+export function createDeliverables(
   status: DeliverableStatus,
-  input: UpdateDeliverableInput,
+  input: CreateDeliverableInput,
+): { status: DeliverableStatus; result: ToolResult } {
+  // Validate batch is not empty
+  if (!input.deliverables || input.deliverables.length === 0) {
+    return {
+      status,
+      result: {
+        success: false,
+        message: 'At least one deliverable is required',
+        error: 'VALIDATION_ERROR',
+      },
+    }
+  }
+
+  // Check for duplicate IDs within batch
+  const batchIds = new Set<string>()
+  for (const d of input.deliverables) {
+    if (batchIds.has(d.id)) {
+      return {
+        status,
+        result: {
+          success: false,
+          message: `Duplicate ID "${d.id}" in batch`,
+          error: 'DUPLICATE_ID',
+        },
+      }
+    }
+    batchIds.add(d.id)
+  }
+
+  // Process each deliverable
+  let currentStatus = status
+  for (const deliverableInput of input.deliverables) {
+    const singleResult = createSingleDeliverable(
+      currentStatus,
+      deliverableInput,
+    )
+    if (!singleResult.result.success) {
+      return singleResult // Fail fast on first error
+    }
+    currentStatus = singleResult.status
+  }
+
+  return {
+    status: currentStatus,
+    result: {
+      success: true,
+      message: `Created ${input.deliverables.length} deliverable(s) successfully`,
+    },
+  }
+}
+
+/**
+ * Set deliverable verification status
+ * @returns Updated status and tool result
+ */
+export function setDeliverableStatus(
+  status: DeliverableStatus,
+  input: SetDeliverableStatusInput,
 ): { status: DeliverableStatus; result: ToolResult } {
   // Validate input
   if (!input.deliverableId || input.deliverableId.trim() === '') {

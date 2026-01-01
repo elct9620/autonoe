@@ -74,15 +74,16 @@ export { createAutonoeProtectionHook } from './autonoeProtection'
 export type {
   Deliverable,
   DeliverableStatus,
+  DeliverableInput,
   CreateDeliverableInput,
-  UpdateDeliverableInput,
+  SetDeliverableStatusInput,
   ToolResult,
   DeliverableStatusReader,
   DeliverableRepository,
 } from './deliverableStatus'
 export {
-  createDeliverable,
-  updateDeliverable,
+  createDeliverables,
+  setDeliverableStatus,
   allDeliverablesPassed,
   countPassedDeliverables,
   emptyDeliverableStatus,

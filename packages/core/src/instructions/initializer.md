@@ -28,15 +28,24 @@ For each feature or requirement, identify:
 
 ### Step 3: Create Deliverables
 
-Use the `create_deliverable` tool to register each deliverable:
+Use the `create_deliverable` tool to register all deliverables:
 
 ```json
 {
-  "id": "DL-001",
-  "name": "Feature Name",
-  "acceptanceCriteria": [
-    "Criterion 1 that can be verified",
-    "Criterion 2 that can be verified"
+  "deliverables": [
+    {
+      "id": "DL-001",
+      "name": "Feature Name",
+      "acceptanceCriteria": [
+        "Criterion 1 that can be verified",
+        "Criterion 2 that can be verified"
+      ]
+    },
+    {
+      "id": "DL-002",
+      "name": "Another Feature",
+      "acceptanceCriteria": ["Another criterion"]
+    }
   ]
 }
 ```

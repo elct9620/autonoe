@@ -4,7 +4,7 @@ export { detectClaudeCodePath } from './claudeCodePath'
 export { FileDeliverableRepository } from './fileDeliverableRepository'
 export {
   createDeliverableMcpServer,
-  handleCreateDeliverable,
-  handleUpdateDeliverable,
+  handleCreateDeliverables,
+  handleSetDeliverableStatus,
 } from './deliverableToolsAdapter'
 export type { ToolResult } from './deliverableToolsAdapter'

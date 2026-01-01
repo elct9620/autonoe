@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import type { DeliverableRepository, DeliverableStatus } from '@autonoe/core'
 import {
-  handleCreateDeliverable,
-  handleUpdateDeliverable,
+  handleCreateDeliverables,
+  handleSetDeliverableStatus,
 } from '../src/deliverableToolsAdapter'
 
 /**
@@ -48,16 +48,20 @@ describe('deliverableToolsAdapter', () => {
     repository = new MockDeliverableRepository()
   })
 
-  describe('handleCreateDeliverable', () => {
+  describe('handleCreateDeliverables', () => {
     describe('DL-T001: Valid deliverable input', () => {
-      it('adds deliverable to status and saves', async () => {
+      it('adds single deliverable to status and saves', async () => {
         const input = {
-          id: 'DL-001',
-          name: 'User Authentication',
-          acceptanceCriteria: ['User can login', 'User can logout'],
+          deliverables: [
+            {
+              id: 'DL-001',
+              name: 'User Authentication',
+              acceptanceCriteria: ['User can login', 'User can logout'],
+            },
+          ],
         }
 
-        const result = await handleCreateDeliverable(repository, input)
+        const result = await handleCreateDeliverables(repository, input)
 
         // Verify repository interactions
         expect(repository.loadCalls).toBe(1)
@@ -79,11 +83,40 @@ describe('deliverableToolsAdapter', () => {
 
         const parsedResult = JSON.parse(result.content[0]?.text ?? '')
         expect(parsedResult.success).toBe(true)
+        expect(parsedResult.message).toContain('1 deliverable')
+      })
+
+      it('adds multiple deliverables in batch', async () => {
+        const input = {
+          deliverables: [
+            {
+              id: 'DL-001',
+              name: 'First Feature',
+              acceptanceCriteria: ['AC1'],
+            },
+            {
+              id: 'DL-002',
+              name: 'Second Feature',
+              acceptanceCriteria: ['AC2'],
+            },
+          ],
+        }
+
+        const result = await handleCreateDeliverables(repository, input)
+
+        // Verify saved status
+        expect(repository.savedStatus!.deliverables).toHaveLength(2)
+        expect(repository.savedStatus!.deliverables[0]!.id).toBe('DL-001')
+        expect(repository.savedStatus!.deliverables[1]!.id).toBe('DL-002')
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(true)
+        expect(parsedResult.message).toContain('2 deliverable')
       })
     })
 
     describe('DL-T002: Duplicate deliverable ID', () => {
-      it('returns error and does not save', async () => {
+      it('returns error for duplicate in existing status and does not save', async () => {
         // Setup existing deliverable
         repository.setStatus({
           deliverables: [
@@ -97,12 +130,16 @@ describe('deliverableToolsAdapter', () => {
         })
 
         const input = {
-          id: 'DL-001',
-          name: 'Duplicate',
-          acceptanceCriteria: ['AC2'],
+          deliverables: [
+            {
+              id: 'DL-001',
+              name: 'Duplicate',
+              acceptanceCriteria: ['AC2'],
+            },
+          ],
         }
 
-        const result = await handleCreateDeliverable(repository, input)
+        const result = await handleCreateDeliverables(repository, input)
 
         // Verify repository interactions
         expect(repository.loadCalls).toBe(1)
@@ -113,10 +150,36 @@ describe('deliverableToolsAdapter', () => {
         expect(parsedResult.success).toBe(false)
         expect(parsedResult.message).toContain('already exists')
       })
+
+      it('returns error for duplicate within batch', async () => {
+        const input = {
+          deliverables: [
+            {
+              id: 'DL-001',
+              name: 'First',
+              acceptanceCriteria: ['AC1'],
+            },
+            {
+              id: 'DL-001',
+              name: 'Duplicate',
+              acceptanceCriteria: ['AC2'],
+            },
+          ],
+        }
+
+        const result = await handleCreateDeliverables(repository, input)
+
+        // Should NOT save on error
+        expect(repository.saveCalls).toBe(0)
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(false)
+        expect(parsedResult.message).toContain('Duplicate ID')
+      })
     })
   })
 
-  describe('handleUpdateDeliverable', () => {
+  describe('handleSetDeliverableStatus', () => {
     describe('DL-T003: Valid ID, passed=true', () => {
       it('updates status.json with passed=true', async () => {
         // Setup existing deliverable
@@ -136,7 +199,7 @@ describe('deliverableToolsAdapter', () => {
           passed: true,
         }
 
-        const result = await handleUpdateDeliverable(repository, input)
+        const result = await handleSetDeliverableStatus(repository, input)
 
         // Verify repository interactions
         expect(repository.loadCalls).toBe(1)
@@ -163,7 +226,7 @@ describe('deliverableToolsAdapter', () => {
           passed: true,
         }
 
-        const result = await handleUpdateDeliverable(repository, input)
+        const result = await handleSetDeliverableStatus(repository, input)
 
         // Verify repository interactions
         expect(repository.loadCalls).toBe(1)
@@ -180,12 +243,16 @@ describe('deliverableToolsAdapter', () => {
   describe('Tool result format', () => {
     it('returns MCP-compatible content structure', async () => {
       const input = {
-        id: 'DL-001',
-        name: 'Test',
-        acceptanceCriteria: ['AC1'],
+        deliverables: [
+          {
+            id: 'DL-001',
+            name: 'Test',
+            acceptanceCriteria: ['AC1'],
+          },
+        ],
       }
 
-      const result = await handleCreateDeliverable(repository, input)
+      const result = await handleCreateDeliverables(repository, input)
 
       // Verify MCP content structure
       expect(result).toHaveProperty('content')

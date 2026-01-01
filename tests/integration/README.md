@@ -20,13 +20,13 @@ make test-integration
 
 ## Test Cases
 
-| ID     | Scenario                      | Fixture              |
-| ------ | ----------------------------- | -------------------- |
-| IT-001 | Basic Workflow                | hello-world          |
-| IT-002 | Technology Stack Recognition  | nodejs               |
-| IT-003 | Instruction Override          | custom-instruction   |
-| IT-004 | Deliverable Status Persistence| hello-world          |
-| IT-005 | Session Iteration Limit       | hello-world          |
+| ID     | Scenario                       | Fixture            |
+| ------ | ------------------------------ | ------------------ |
+| IT-001 | Basic Workflow                 | hello-world        |
+| IT-002 | Technology Stack Recognition   | nodejs             |
+| IT-003 | Instruction Override           | custom-instruction |
+| IT-004 | Deliverable Status Persistence | hello-world        |
+| IT-005 | Session Iteration Limit        | hello-world        |
 
 ## Adding New Tests
 
