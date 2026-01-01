@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   docker-latest:
     uses: ./.github/workflows/build-docker.yml
@@ -13,8 +17,6 @@ jobs:
 
   build-snapshot:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v6
 
