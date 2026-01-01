@@ -142,7 +142,6 @@ export async function handleRunCommand(
     const deliverableTools = [
       'mcp__autonoe-deliverable__create_deliverable',
       'mcp__autonoe-deliverable__set_deliverable_status',
-      'mcp__autonoe-deliverable__block_deliverable',
     ]
 
     // Create factory for fresh client per session

@@ -1247,6 +1247,7 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | SC-AP005 | file_path: undefined               | Approve         |
 | SC-AP006 | filePath (camelCase): `.autonoe/x` | Block           |
 | SC-AP007 | Windows path: `.autonoe\\file`     | Block           |
+| SC-AP008 | file_path: `.autonoe-note.txt`     | Approve         |
 
 ---
 

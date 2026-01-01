@@ -157,6 +157,28 @@ describe('Autonoe Protection', () => {
     })
   })
 
+  describe('SC-AP008: Approve .autonoe-note.txt', () => {
+    it('approves .autonoe-note.txt (hyphenated filename at root)', async () => {
+      const hook = createAutonoeProtectionHook()
+      const result = await hook.callback({
+        toolName: 'Write',
+        toolInput: { file_path: '/workspace/.autonoe-note.txt' },
+      })
+
+      expect(result.decision).toBe('approve')
+    })
+
+    it('approves relative .autonoe-note.txt', async () => {
+      const hook = createAutonoeProtectionHook()
+      const result = await hook.callback({
+        toolName: 'Write',
+        toolInput: { file_path: '.autonoe-note.txt' },
+      })
+
+      expect(result.decision).toBe('approve')
+    })
+  })
+
   describe('Edge cases', () => {
     it('blocks .autonoe without trailing slash', async () => {
       const hook = createAutonoeProtectionHook()

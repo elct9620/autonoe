@@ -51,7 +51,7 @@ function isAutonoeProtectedPath(filePath: string): boolean {
   // Check various patterns that indicate .autonoe/ directory
   return (
     normalizedPath.includes('.autonoe/') ||
-    normalizedPath.includes('/.autonoe') ||
+    normalizedPath.endsWith('/.autonoe') ||
     normalizedPath.startsWith('.autonoe/') ||
     normalizedPath === '.autonoe'
   )
