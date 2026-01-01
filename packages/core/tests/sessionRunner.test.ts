@@ -311,9 +311,7 @@ describe('SessionRunner', () => {
   describe('SC-S020: All achievable passed (some blocked)', () => {
     it('exits with success when all non-blocked deliverables pass', async () => {
       const client = new MockAgentClient()
-      client.setResponsesPerSession([
-        [createMockSessionEnd('done', 0.01)],
-      ])
+      client.setResponsesPerSession([[createMockSessionEnd('done', 0.01)]])
       const factory = createMockClientFactory(client)
 
       const statusReader = new MockDeliverableStatusReader()
@@ -352,9 +350,7 @@ describe('SessionRunner', () => {
   describe('SC-S021: All deliverables blocked', () => {
     it('exits with failure when all deliverables are blocked', async () => {
       const client = new MockAgentClient()
-      client.setResponsesPerSession([
-        [createMockSessionEnd('blocked', 0.01)],
-      ])
+      client.setResponsesPerSession([[createMockSessionEnd('blocked', 0.01)]])
       const factory = createMockClientFactory(client)
 
       const statusReader = new MockDeliverableStatusReader()
@@ -385,9 +381,7 @@ describe('SessionRunner', () => {
   describe('SC-S023: blockedCount in result', () => {
     it('includes correct blockedCount in result', async () => {
       const client = new MockAgentClient()
-      client.setResponsesPerSession([
-        [createMockSessionEnd('done', 0.01)],
-      ])
+      client.setResponsesPerSession([[createMockSessionEnd('done', 0.01)]])
       const factory = createMockClientFactory(client)
 
       const statusReader = new MockDeliverableStatusReader()

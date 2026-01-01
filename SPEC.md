@@ -249,13 +249,7 @@ type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
 | Field | Type | Description |
 |-------|------|-------------|
 | deliverableId | string | Deliverable ID to update |
-| passed | boolean | New verification status |
-
-**BlockDeliverableInput** - Input for block_deliverable tool
-
-| Field | Type | Description |
-|-------|------|-------------|
-| deliverableId | string | Deliverable ID to block |
+| status | 'pending' \| 'passed' \| 'blocked' | New status (pending=reset, passed=completed, blocked=external constraints) |
 
 **ToolResult** - Result returned by tool handlers
 
@@ -275,7 +269,7 @@ type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
 | name | string | Deliverable name |
 | acceptanceCriteria | string[] | Verifiable conditions for completion |
 | passed | boolean | Verification status |
-| blocked | boolean | When true, deliverable is blocked due to environment limitations (mutually exclusive with passed=true) |
+| blocked | boolean | When true, deliverable is blocked due to external constraints (mutually exclusive with passed=true) |
 
 | Type | acceptanceCriteria Examples |
 |------|----------------------------|
@@ -435,7 +429,7 @@ import { z } from 'zod'
 const deliverableServer = createSdkMcpServer({
   name: 'autonoe-deliverable',
   version: '1.0.0',
-  tools: [createDeliverableTool, setDeliverableStatusTool]
+  tools: [createDeliverableTool, setDeliverableStatusTool]  // 2 tools only
 })
 ```
 
@@ -461,37 +455,40 @@ const createDeliverableTool = tool(
 ```typescript
 const setDeliverableStatusTool = tool(
   'set_deliverable_status',
-  'Set deliverable verification status',
+  'Set deliverable status: pending (reset), passed (completed), or blocked (external constraints)',
   {
     deliverableId: z.string(),
-    passed: z.boolean()
+    status: z.enum(['pending', 'passed', 'blocked'])
   },
-  async ({ deliverableId, passed }) => { /* ... */ }
+  async ({ deliverableId, status }) => { /* ... */ }
 )
 ```
 
-#### 3.5.5 blockDeliverable Tool
+**Status Semantics:**
 
-```typescript
-const blockDeliverableTool = tool(
-  'block_deliverable',
-  'Mark a deliverable as blocked due to current environment limitations. Only works when passed=false.',
-  {
-    deliverableId: z.string()
-  },
-  async ({ deliverableId }) => { /* ... */ }
-)
-```
+| Status | passed | blocked | Use Case |
+|--------|--------|---------|----------|
+| pending | false | false | Reset state, bugs found in passed deliverable |
+| passed | true | false | All acceptance criteria verified |
+| blocked | false | true | External constraints prevent completion |
 
-**Mutual Exclusion Rule:** Cannot block a deliverable that has already passed.
+**External Constraints (blocked):**
+- Missing API keys or credentials
+- Unavailable external services
+- Missing hardware requirements
+- Network restrictions
 
-#### 3.5.6 Tool Usage
+**NOT blocked (use pending instead):**
+- Implementation dependencies
+- Code refactoring needed
+- Technical debt
 
-| Tool                   | Phase          | Operation                                            |
-| ---------------------- | -------------- | ---------------------------------------------------- |
-| create_deliverable     | Initialization | Create deliverables with acceptance criteria         |
-| set_deliverable_status | Coding         | Set deliverable verification status                  |
-| block_deliverable      | Coding         | Mark deliverable as blocked due to environment limits |
+#### 3.5.5 Tool Usage
+
+| Tool                   | Phase          | Operation                                                |
+| ---------------------- | -------------- | -------------------------------------------------------- |
+| create_deliverable     | Initialization | Create deliverables with acceptance criteria             |
+| set_deliverable_status | Coding         | Set status: pending (reset), passed, or blocked          |
 
 ### 3.6 Dependency Injection
 
@@ -657,6 +654,7 @@ interface SessionRunnerResult {
 
 **Blocked Deliverable Rules:**
 - A deliverable can only be blocked when `passed=false` (mutual exclusion)
+- Blocked means external constraints prevent completion (missing API keys, unavailable services, hardware, network)
 - When all non-blocked deliverables pass, the session succeeds even if some are blocked
 - When all deliverables are blocked, the session fails
 - Reasons for blocking should be documented in `.autonoe-note.txt`
@@ -1147,11 +1145,11 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | ------- | ---------------------- | ------------------------------ | ----------------------------- |
 | DL-T001 | create_deliverable     | Array with valid deliverables  | All deliverables added        |
 | DL-T002 | create_deliverable     | Array with duplicate ID        | Error: ID already exists      |
-| DL-T003 | set_deliverable_status | Valid ID, passed=true          | status.json updated           |
+| DL-T003 | set_deliverable_status | Valid ID, status=passed        | passed=true, blocked=false    |
 | DL-T004 | set_deliverable_status | Invalid deliverable ID         | Error: deliverable not found  |
-| DL-T010 | block_deliverable      | Valid ID, passed=false         | blocked=true                  |
-| DL-T011 | block_deliverable      | Invalid ID                     | Error: NOT_FOUND              |
-| DL-T012 | block_deliverable      | Valid ID, passed=true          | Error: MUTUAL_EXCLUSION       |
+| DL-T005 | set_deliverable_status | Valid ID, status=blocked       | passed=false, blocked=true    |
+| DL-T006 | set_deliverable_status | Valid ID, status=pending       | passed=false, blocked=false   |
+| DL-T007 | set_deliverable_status | Blocked ID, status=pending     | Reset: blocked=false          |
 
 ### 8.4 Configuration
 

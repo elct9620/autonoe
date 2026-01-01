@@ -56,7 +56,7 @@ For example, you are working on a web app, you might:
 
 **If ANY ISSUE is found:**
 
-- Use `set_deliverable_status` tool to mark the passed to false
+- Use `set_deliverable_status` tool with `status: "pending"` to reset the deliverable
 - Add issues to list
 - Fix all issues BEFORE moving to new work
 - This includes any bugs like:
@@ -114,11 +114,17 @@ When ALL acceptance criteria are verified, use the `set_deliverable_status` tool
 ```json
 {
   "deliverableId": "UI-001",
-  "passed": true
+  "status": "passed"
 }
 ```
 
-**ONLY CHANGE PASSED TO FALSE IF ISSUES ARE FOUND WITH LOGS OR SCREENSHOTS.** Never modify or delete deliverables.
+**Status values:**
+
+- `passed`: All acceptance criteria verified
+- `pending`: Reset (when bugs found in passed deliverable)
+- `blocked`: External constraints only (missing API keys, unavailable services, hardware, network)
+
+**NEVER use blocked for implementation dependencies.** Only use blocked when external constraints prevent completion. Never modify or delete deliverables.
 
 ## STEP 8: Commit Work
 

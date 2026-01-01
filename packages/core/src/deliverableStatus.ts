@@ -11,7 +11,7 @@ export interface Deliverable {
   name: string
   acceptanceCriteria: string[]
   passed: boolean
-  blocked: boolean // When true, deliverable is blocked due to environment limitations
+  blocked: boolean // When true, deliverable is blocked due to external constraints
 }
 
 /**
@@ -38,18 +38,19 @@ export interface CreateDeliverableInput {
 }
 
 /**
+ * Deliverable status values
+ * - pending: reset state (passed=false, blocked=false)
+ * - passed: completed (passed=true, blocked=false)
+ * - blocked: external constraints (passed=false, blocked=true)
+ */
+export type DeliverableStatusValue = 'pending' | 'passed' | 'blocked'
+
+/**
  * Input for set_deliverable_status tool
  */
 export interface SetDeliverableStatusInput {
   deliverableId: string
-  passed: boolean
-}
-
-/**
- * Input for block_deliverable tool
- */
-export interface BlockDeliverableInput {
-  deliverableId: string
+  status: DeliverableStatusValue
 }
 
 /**
@@ -223,7 +224,10 @@ export function createDeliverables(
 }
 
 /**
- * Set deliverable verification status
+ * Set deliverable status
+ * - pending: reset state (passed=false, blocked=false)
+ * - passed: completed (passed=true, blocked=false)
+ * - blocked: external constraints (passed=false, blocked=true)
  * @returns Updated status and tool result
  */
 export function setDeliverableStatus(
@@ -237,6 +241,18 @@ export function setDeliverableStatus(
       result: {
         success: false,
         message: 'Deliverable ID is required',
+        error: 'VALIDATION_ERROR',
+      },
+    }
+  }
+
+  // Validate status value
+  if (!['pending', 'passed', 'blocked'].includes(input.status)) {
+    return {
+      status,
+      result: {
+        success: false,
+        message: `Invalid status "${input.status}". Must be pending, passed, or blocked`,
         error: 'VALIDATION_ERROR',
       },
     }
@@ -257,14 +273,33 @@ export function setDeliverableStatus(
     }
   }
 
+  // Determine passed and blocked values based on status
+  let passed: boolean
+  let blocked: boolean
+
+  switch (input.status) {
+    case 'pending':
+      passed = false
+      blocked = false
+      break
+    case 'passed':
+      passed = true
+      blocked = false
+      break
+    case 'blocked':
+      passed = false
+      blocked = true
+      break
+  }
+
   // Update deliverable (index is guaranteed to be valid after findIndex check)
   const existing = status.deliverables[index]!
   const updated: Deliverable = {
     id: existing.id,
     name: existing.name,
     acceptanceCriteria: existing.acceptanceCriteria,
-    passed: input.passed,
-    blocked: existing.blocked,
+    passed,
+    blocked,
   }
 
   const updatedDeliverables = [
@@ -273,15 +308,13 @@ export function setDeliverableStatus(
     ...status.deliverables.slice(index + 1),
   ]
 
-  const statusText = input.passed ? 'passed' : 'failed'
-
   return {
     status: {
       deliverables: updatedDeliverables,
     },
     result: {
       success: true,
-      message: `Deliverable "${updated.name}" (${updated.id}) marked as ${statusText}`,
+      message: `Deliverable "${updated.name}" (${updated.id}) marked as ${input.status}`,
     },
   }
 }
@@ -308,81 +341,6 @@ export function countPassedDeliverables(status: DeliverableStatus): number {
  */
 export function emptyDeliverableStatus(): DeliverableStatus {
   return { deliverables: [] }
-}
-
-/**
- * Block a deliverable due to environment limitations
- * Only works when passed=false (mutual exclusion rule)
- * @returns Updated status and tool result
- */
-export function blockDeliverable(
-  status: DeliverableStatus,
-  input: BlockDeliverableInput,
-): { status: DeliverableStatus; result: ToolResult } {
-  // Validate input
-  if (!input.deliverableId || input.deliverableId.trim() === '') {
-    return {
-      status,
-      result: {
-        success: false,
-        message: 'Deliverable ID is required',
-        error: 'VALIDATION_ERROR',
-      },
-    }
-  }
-
-  // Find deliverable
-  const index = status.deliverables.findIndex(
-    (d) => d.id === input.deliverableId,
-  )
-  if (index === -1) {
-    return {
-      status,
-      result: {
-        success: false,
-        message: `Deliverable with ID "${input.deliverableId}" not found`,
-        error: 'NOT_FOUND',
-      },
-    }
-  }
-
-  // Check mutual exclusion: cannot block a passed deliverable
-  const existing = status.deliverables[index]!
-  if (existing.passed) {
-    return {
-      status,
-      result: {
-        success: false,
-        message: `Cannot block deliverable "${existing.id}" because it has already passed`,
-        error: 'MUTUAL_EXCLUSION',
-      },
-    }
-  }
-
-  // Update deliverable to blocked
-  const updated: Deliverable = {
-    id: existing.id,
-    name: existing.name,
-    acceptanceCriteria: existing.acceptanceCriteria,
-    passed: false,
-    blocked: true,
-  }
-
-  const updatedDeliverables = [
-    ...status.deliverables.slice(0, index),
-    updated,
-    ...status.deliverables.slice(index + 1),
-  ]
-
-  return {
-    status: {
-      deliverables: updatedDeliverables,
-    },
-    result: {
-      success: true,
-      message: `Deliverable "${updated.name}" (${updated.id}) marked as blocked`,
-    },
-  }
 }
 
 /**

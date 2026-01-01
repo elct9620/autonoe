@@ -125,11 +125,8 @@ export class SessionRunner {
         deliverablesTotalCount > 0 &&
         allAchievableDeliverablesPassed(status)
       ) {
-        const blockedMsg =
-          blockedCount > 0 ? ` (${blockedCount} blocked)` : ''
-        logger.info(
-          `All achievable deliverables passed${blockedMsg}`,
-        )
+        const blockedMsg = blockedCount > 0 ? ` (${blockedCount} blocked)` : ''
+        logger.info(`All achievable deliverables passed${blockedMsg}`)
         return {
           success: true,
           iterations,

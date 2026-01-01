@@ -75,7 +75,7 @@ describe('deliverableToolsAdapter', () => {
           name: 'User Authentication',
           acceptanceCriteria: ['User can login', 'User can logout'],
           passed: false,
-            blocked: false,
+          blocked: false,
         })
 
         // Verify result format
@@ -126,7 +126,7 @@ describe('deliverableToolsAdapter', () => {
               name: 'Existing',
               acceptanceCriteria: ['AC1'],
               passed: false,
-            blocked: false,
+              blocked: false,
             },
           ],
         })
@@ -182,8 +182,8 @@ describe('deliverableToolsAdapter', () => {
   })
 
   describe('handleSetDeliverableStatus', () => {
-    describe('DL-T003: Valid ID, passed=true', () => {
-      it('updates status.json with passed=true', async () => {
+    describe('DL-T003: status=passed', () => {
+      it('updates status.json with passed=true, blocked=false', async () => {
         // Setup existing deliverable
         repository.setStatus({
           deliverables: [
@@ -192,15 +192,14 @@ describe('deliverableToolsAdapter', () => {
               name: 'Feature',
               acceptanceCriteria: ['AC1'],
               passed: false,
-            blocked: false,
+              blocked: false,
             },
           ],
         })
 
         const input = {
           deliverableId: 'DL-001',
-          passed: true,
-            blocked: false,
+          status: 'passed' as const,
         }
 
         const result = await handleSetDeliverableStatus(repository, input)
@@ -212,6 +211,7 @@ describe('deliverableToolsAdapter', () => {
         // Verify saved status
         expect(repository.savedStatus).not.toBeNull()
         expect(repository.savedStatus?.deliverables[0]?.passed).toBe(true)
+        expect(repository.savedStatus?.deliverables[0]?.blocked).toBe(false)
 
         // Verify result
         const parsedResult = JSON.parse(result.content[0]?.text ?? '')
@@ -227,8 +227,7 @@ describe('deliverableToolsAdapter', () => {
 
         const input = {
           deliverableId: 'DL-999',
-          passed: true,
-            blocked: false,
+          status: 'passed' as const,
         }
 
         const result = await handleSetDeliverableStatus(repository, input)
@@ -241,6 +240,98 @@ describe('deliverableToolsAdapter', () => {
         const parsedResult = JSON.parse(result.content[0]?.text ?? '')
         expect(parsedResult.success).toBe(false)
         expect(parsedResult.message).toContain('not found')
+      })
+    })
+
+    describe('DL-T005: status=blocked', () => {
+      it('updates status.json with passed=false, blocked=true', async () => {
+        repository.setStatus({
+          deliverables: [
+            {
+              id: 'DL-001',
+              name: 'Feature',
+              acceptanceCriteria: ['AC1'],
+              passed: false,
+              blocked: false,
+            },
+          ],
+        })
+
+        const input = {
+          deliverableId: 'DL-001',
+          status: 'blocked' as const,
+        }
+
+        const result = await handleSetDeliverableStatus(repository, input)
+
+        expect(repository.saveCalls).toBe(1)
+        expect(repository.savedStatus?.deliverables[0]?.passed).toBe(false)
+        expect(repository.savedStatus?.deliverables[0]?.blocked).toBe(true)
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(true)
+        expect(parsedResult.message).toContain('blocked')
+      })
+    })
+
+    describe('DL-T006: status=pending', () => {
+      it('updates status.json with passed=false, blocked=false', async () => {
+        repository.setStatus({
+          deliverables: [
+            {
+              id: 'DL-001',
+              name: 'Feature',
+              acceptanceCriteria: ['AC1'],
+              passed: true,
+              blocked: false,
+            },
+          ],
+        })
+
+        const input = {
+          deliverableId: 'DL-001',
+          status: 'pending' as const,
+        }
+
+        const result = await handleSetDeliverableStatus(repository, input)
+
+        expect(repository.saveCalls).toBe(1)
+        expect(repository.savedStatus?.deliverables[0]?.passed).toBe(false)
+        expect(repository.savedStatus?.deliverables[0]?.blocked).toBe(false)
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(true)
+        expect(parsedResult.message).toContain('pending')
+      })
+    })
+
+    describe('DL-T007: pending resets blocked state', () => {
+      it('resets blocked deliverable to pending', async () => {
+        repository.setStatus({
+          deliverables: [
+            {
+              id: 'DL-001',
+              name: 'Feature',
+              acceptanceCriteria: ['AC1'],
+              passed: false,
+              blocked: true,
+            },
+          ],
+        })
+
+        const input = {
+          deliverableId: 'DL-001',
+          status: 'pending' as const,
+        }
+
+        const result = await handleSetDeliverableStatus(repository, input)
+
+        expect(repository.saveCalls).toBe(1)
+        expect(repository.savedStatus?.deliverables[0]?.passed).toBe(false)
+        expect(repository.savedStatus?.deliverables[0]?.blocked).toBe(false)
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(true)
       })
     })
   })
