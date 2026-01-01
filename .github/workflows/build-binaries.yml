@@ -11,10 +11,6 @@ on:
         required: false
         type: string
         description: 'Version tag for release (e.g., v1.0.0)'
-    outputs:
-      artifact-name:
-        description: 'Name of the aggregated artifact'
-        value: ${{ jobs.aggregate.outputs.artifact-name }}
 
 jobs:
   build:
@@ -57,45 +53,17 @@ jobs:
             rm autonoe-${{ matrix.target }}
           fi
 
+      - name: Generate checksum
+        if: inputs.tag-strategy == 'release'
+        working-directory: apps/cli/dist
+        run: |
+          for file in autonoe-${{ matrix.target }}.*; do
+            sha256sum "$file" > "$file.sha256"
+          done
+
       - name: Upload platform artifact
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.target }}
           path: apps/cli/dist/autonoe-${{ matrix.target }}.*
-          retention-days: 1
-
-  aggregate:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      artifact-name: ${{ steps.set-name.outputs.name }}
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: binary-*
-          path: dist
-          merge-multiple: true
-
-      - name: Set artifact name
-        id: set-name
-        run: |
-          if [[ "${{ inputs.tag-strategy }}" == "release" ]]; then
-            echo "name=binaries-${{ inputs.version-tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "name=binaries-snapshot" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Generate checksums
-        if: inputs.tag-strategy == 'release'
-        working-directory: dist
-        run: sha256sum * > checksums.txt
-
-      - name: Upload aggregated artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.set-name.outputs.name }}
-          path: dist/*
           retention-days: ${{ inputs.tag-strategy == 'release' && 90 || 7 }}

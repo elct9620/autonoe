@@ -1650,49 +1650,44 @@ Push to main ──────────────────────�
 # .github/workflows/ci.yml
 jobs:
   docker-latest:    # Uses build-docker.yml reusable workflow
-  build-snapshot:   # Uses build-binaries composite action
+  build-snapshot:   # Uses build-binaries.yml reusable workflow
 
 # .github/workflows/release-please.yml
 jobs:
   release-please:   # Create release PR
   docker-release:   # Uses build-docker.yml reusable workflow
-  binary-release:   # Uses build-binaries composite action
+  binary-build:     # Uses build-binaries.yml reusable workflow
+  binary-release:   # Downloads artifacts, uploads to GitHub Release
 ```
 
-### 10.10.1 Reusable Actions Architecture
+### 10.10.1 Reusable Workflow Architecture
 
-**Hybrid Approach:**
+**Unified Approach:**
 
 | Component | Type | Location | Purpose |
 |-----------|------|----------|---------|
 | Docker builds | Reusable Workflow | `.github/workflows/build-docker.yml` | Job-level reuse with matrix strategy |
-| Binary builds | Composite Action | `.github/actions/build-binaries/action.yml` | Step-level reuse for flexibility |
-
-**Selection Criteria:**
-
-| Scenario | Approach | Reason |
-|----------|----------|--------|
-| Docker build | Reusable Workflow | Built-in matrix strategy (5 targets), independent job |
-| Binary build | Composite Action | Need pre/post steps (checksum, upload), step-level flexibility |
+| Binary builds | Reusable Workflow | `.github/workflows/build-binaries.yml` | Job-level reuse with matrix strategy |
 
 **Architecture:**
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Hybrid Reuse Architecture                     │
+│                    Reusable Workflow Architecture                │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  Caller Workflows          Reusable Workflow    Composite Action │
-│  ┌──────────────────┐     ┌────────────────┐   ┌──────────────┐ │
-│  │  ci.yml          │     │ build-docker   │   │ build-       │ │
-│  │    docker-latest │────▶│   .yml         │   │ binaries/    │ │
-│  │    build-snapshot│─────┼────────────────┼──▶│ action.yml   │ │
-│  └──────────────────┘     │ (job level)    │   │ (step level) │ │
-│                           │ matrix: 5x     │   └──────────────┘ │
-│  ┌──────────────────┐     └────────────────┘                    │
-│  │  release-please  │            │                    │         │
-│  │    docker-release│────────────┘                    │         │
-│  │    binary-release│─────────────────────────────────┘         │
+│  Caller Workflows          Reusable Workflows                   │
+│  ┌──────────────────┐     ┌────────────────┐                    │
+│  │  ci.yml          │     │ build-docker   │                    │
+│  │    docker-latest │────▶│   .yml         │                    │
+│  │    build-snapshot│────▶│ (matrix: 5x)   │                    │
+│  └──────────────────┘     └────────────────┘                    │
+│                                 │                                │
+│  ┌──────────────────┐     ┌────────────────┐                    │
+│  │  release-please  │     │ build-binaries │                    │
+│  │    docker-release│────▶│   .yml         │                    │
+│  │    binary-build  │────▶│ (matrix: 5x)   │                    │
+│  │    binary-release│     └────────────────┘                    │
 │  └──────────────────┘                                           │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
@@ -1705,13 +1700,29 @@ jobs:
 | `tag-strategy` | string | Yes | `latest` or `semver` |
 | `version-tag` | string | No | Version tag for semver (e.g., `v1.0.0`) |
 
-**build-binaries/action.yml Inputs:**
+**build-binaries.yml Inputs:**
 
-| Input | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `entrypoint` | string | Yes | - | Entry point file |
-| `output-name` | string | Yes | - | Output binary name |
-| `working-directory` | string | No | `apps/cli` | Working directory |
+| Input | Type | Required | Description |
+|-------|------|----------|-------------|
+| `tag-strategy` | string | Yes | `snapshot` or `release` |
+| `version-tag` | string | No | Version tag for release (e.g., `v1.0.0`) |
+
+**Artifact Strategy:**
+
+| Strategy | Artifacts | Retention | Checksums |
+|----------|-----------|-----------|-----------|
+| snapshot | Per-platform (binary-{target}) | 7 days | None |
+| release | Per-platform (binary-{target}) | 90 days | Per-platform .sha256 files |
+
+**Release Assets Example:**
+
+```
+autonoe-linux-x64.tar.gz
+autonoe-linux-x64.tar.gz.sha256
+autonoe-darwin-arm64.tar.gz
+autonoe-darwin-arm64.tar.gz.sha256
+...
+```
 
 ---
 

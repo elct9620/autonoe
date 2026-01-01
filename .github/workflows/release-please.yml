@@ -46,14 +46,16 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download artifacts
+      - name: Download all platform artifacts
         uses: actions/download-artifact@v4
         with:
-          name: binaries-${{ needs.release-please.outputs.cli_tag }}
+          pattern: binary-*
           path: dist
+          merge-multiple: true
 
       - name: Upload to GitHub Release
         working-directory: dist
         run: gh release upload ${{ needs.release-please.outputs.cli_tag }} *
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
