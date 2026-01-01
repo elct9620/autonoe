@@ -49,6 +49,7 @@ The "fine-grained" means each deliverable should represent a small, testable uni
 
 - Each deliverable must have a unique ID with a prefix indicating its type (e.g., "UI-" for user interface tasks, "BE-" for backend tasks, "DB-" for database tasks, etc.)
 - Mix of narrow acceptance criteria (2-5 steps) and broader ones (5-10 steps) to cover both simple and complex features
+- Well-defined and easily use Test-Driven Development (TDD) approach or Behavior-Driven Development (BDD) approach
 - At least 30% of deliverables should have 10 or more acceptance criteria steps for deeper verification
 - Order deliverables by priority, the foundational tasks should come first, followed by features that depend on them
 - Cover every deliverable in specification exhaustively, ensuring no part is left unaddressed
@@ -93,6 +94,7 @@ If time permits, you may start implementing the highest priority deliverable fro
 - ONE deliverable at a time
 - Test thoroughly before marking it as passed
 - Commit your progress before session ends
+- Do not process more than one deliverable in this session
 
 ## ENDING THIS SESSION
 
