@@ -99,8 +99,3 @@ jobs:
           name: ${{ steps.set-name.outputs.name }}
           path: dist/*
           retention-days: ${{ inputs.tag-strategy == 'release' && 90 || 7 }}
-
-      - name: Delete intermediate artifacts
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: binary-*
