@@ -91,6 +91,15 @@ To make a progress on the chosen deliverable, process throughly:
 - Fix any issues discovered
 - Verify the works end-to-end against acceptance criteria
 
+**TIPS:**
+
+- Use programming languages, frameworks, and libraries best suited for the task
+- Use `uv add`, `bundle add`, `npm install`, or equivalent commands to add dependencies correctly
+- Use `make`, `bundle exec`, `npm run`, or equivalent commands to run predefined tasks
+- Use predefined tools e.g. `rails generate`, `npx create-react-app`, etc., to scaffold code when applicable
+- Design patterns, clean architecture, and best practices are helpful to maintain code quality
+- **QUALITY IS EASIER TO CHANGE.** Refactor and improve code as needed to keep it easy to change and maintain
+
 ## STEP 6: Verify With Tools
 
 **CRITICAL:** You must verify the deliverable close to real user with all possible tools, e.g. browser automation tools, API testing tools, CLI tools, etc.

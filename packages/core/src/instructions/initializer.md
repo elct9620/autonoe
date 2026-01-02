@@ -105,9 +105,11 @@ Commit message: "chore: initialize project with deliverables and dev setup"
 
 Setup the basic project structure based on `SPEC.md` mentions. This may include:
 
+- Use `bundle init`, `npm init`, `uv init`, or equivalent commands to create initial project which provides template files
 - Framework-specific structure can use initialization commands (e.g., `npx create-react-app`, `django-admin startproject`, etc.)
 - Plain folder structure for custom setups, use common conventions for the chosen technology stack
 - `.gitignore` file to exclude unnecessary files from version control
+- Keep simple and clean first, avoid making complete setup, just enough for future development
 
 Focus on `SPEC.md` requirements and best practices for the chosen technology stack.
 
