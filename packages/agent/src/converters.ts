@@ -130,10 +130,7 @@ export function toStreamEvent(block: SDKContentBlock): StreamEvent | null {
  * Detects quota exceeded and parses reset time if applicable
  */
 export function toSessionEnd(sdkMessage: SDKMessage): SessionEnd {
-  const outcome = toSessionOutcome(
-    sdkMessage.subtype ?? '',
-    sdkMessage.result,
-  )
+  const outcome = toSessionOutcome(sdkMessage.subtype ?? '', sdkMessage.result)
 
   const sessionEnd: SessionEnd = {
     type: 'session_end',
@@ -145,7 +142,8 @@ export function toSessionEnd(sdkMessage: SDKMessage): SessionEnd {
 
   // Parse quota reset time if quota exceeded
   if (outcome === SessionOutcome.QuotaExceeded && sdkMessage.result) {
-    sessionEnd.quotaResetTime = parseQuotaResetTime(sdkMessage.result) ?? undefined
+    sessionEnd.quotaResetTime =
+      parseQuotaResetTime(sdkMessage.result) ?? undefined
   }
 
   return sessionEnd

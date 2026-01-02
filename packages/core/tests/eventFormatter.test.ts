@@ -97,7 +97,9 @@ describe('formatStreamEvent', () => {
         outcome: SessionOutcome.Completed,
         result: 'Task completed',
       }
-      expect(formatStreamEvent(event)).toBe('[session: completed] Task completed')
+      expect(formatStreamEvent(event)).toBe(
+        '[session: completed] Task completed',
+      )
     })
 
     it('formats error with error messages', () => {

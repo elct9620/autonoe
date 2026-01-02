@@ -121,6 +121,7 @@ For example, if you are working on a web app and Playwright MCP tools is availab
 When ALL acceptance criteria are verified, you MUST call the `mcp__autonoe-deliverable__set_deliverable_status` tool:
 
 **Tool call:**
+
 - Tool: `mcp__autonoe-deliverable__set_deliverable_status`
 - Input: `{"deliverableId": "UI-001", "status": "passed"}`
 
