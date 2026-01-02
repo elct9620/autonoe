@@ -60,6 +60,7 @@ export interface RunCommandOptions {
   debug?: boolean
   sandbox?: boolean
   waitForQuota?: boolean
+  allowDestructive?: boolean
 }
 
 /**
@@ -81,6 +82,20 @@ export async function handleRunCommand(
   if (!existsSync(projectDir) || !statSync(projectDir).isDirectory()) {
     logger.error(`Project directory does not exist: ${projectDir}`)
     process.exit(1)
+  }
+
+  // Warning: --no-sandbox (SPEC.md Section 6.4.6)
+  if (options.sandbox === false) {
+    console.error(
+      'Warning: SDK sandbox is disabled. System-level isolation is not enforced.',
+    )
+  }
+
+  // Warning: --allow-destructive (SPEC.md Section 6.4.6)
+  if (options.allowDestructive) {
+    console.error(
+      'Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.',
+    )
   }
 
   const maxIterations = options.maxIterations
@@ -111,7 +126,11 @@ export async function handleRunCommand(
     const config = await loadConfig(runnerOptions.projectDir)
 
     // Create security hooks
-    const bashSecurity = new DefaultBashSecurity()
+    const bashSecurity = new DefaultBashSecurity({
+      ...config.bashSecurity,
+      allowDestructive: options.allowDestructive,
+      projectDir: runnerOptions.projectDir,
+    })
     const preToolUseHooks = [
       createBashSecurityHook(bashSecurity),
       createAutonoeProtectionHook(),

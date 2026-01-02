@@ -1136,15 +1136,10 @@ Command Input
 
 #### 6.4.1 CLI Flag
 
-| Flag                | Alias | Type    | Default | Description                                     |
-| ------------------- | ----- | ------- | ------- | ----------------------------------------------- |
-| --allow-destructive | -D    | boolean | false   | Enable rm and mv commands with path validation  |
-
-**Warning Message (stderr):**
-
-```
-Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.
-```
+| Flag                | Alias | Type    | Default | Description                                    |
+| ------------------- | ----- | ------- | ------- | ---------------------------------------------- |
+| --allow-destructive | -D    | boolean | false   | Enable rm and mv commands with path validation |
+| --no-sandbox        | -     | boolean | false   | Disable SDK sandbox                            |
 
 #### 6.4.2 Enabled Commands
 
@@ -1200,6 +1195,15 @@ Input Path
 | Path escapes project | `Path '{path}' escapes project directory`     |
 | Blocked flag         | `Flag '{flag}' is not allowed with {command}` |
 | Symlink escapes      | `Symlink target escapes project directory`    |
+
+#### 6.4.6 Warning Messages (stderr)
+
+| Flag                | Message                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| --allow-destructive | `Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.` |
+| --no-sandbox        | `Warning: SDK sandbox is disabled. System-level isolation is not enforced.`                      |
+
+Pattern: `Warning: [what is enabled/disabled]. [consequence/risk].`
 
 ---
 

@@ -16,6 +16,7 @@ cli
   .option('-d, --debug', 'Show debug output')
   .option('--no-sandbox', 'Disable SDK sandbox')
   .option('--wait-for-quota', 'Wait for quota reset instead of exiting')
+  .option('-D, --allow-destructive', 'Enable rm/mv with path validation')
   .action(async (options) => {
     await handleRunCommand({
       projectDir: options.projectDir,
@@ -24,6 +25,7 @@ cli
       debug: options.debug,
       sandbox: options.sandbox,
       waitForQuota: options.waitForQuota,
+      allowDestructive: options.allowDestructive,
     })
   })
 

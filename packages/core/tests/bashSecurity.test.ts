@@ -634,3 +634,153 @@ describe('Language Profiles', () => {
     })
   })
 })
+
+describe('Destructive Commands (--allow-destructive)', () => {
+  const projectDir = '/project'
+
+  describe('SC-X019: rm denied when allowDestructive=false', () => {
+    it('blocks rm file.txt', () => {
+      const security = new DefaultBashSecurity({ projectDir })
+      const result = security.isCommandAllowed('rm file.txt')
+      expect(result.allowed).toBe(false)
+    })
+  })
+
+  describe('SC-X020: rm allowed when allowDestructive=true', () => {
+    it('allows rm file.txt within project', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('rm file.txt')
+      expect(result.allowed).toBe(true)
+    })
+  })
+
+  describe('SC-X021: rm ../file.txt denied (escape)', () => {
+    it('blocks rm ../file.txt', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('rm ../file.txt')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('escapes')
+    })
+  })
+
+  describe('SC-X022: rm /etc/passwd denied (escape)', () => {
+    it('blocks rm /etc/passwd', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('rm /etc/passwd')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('escapes')
+    })
+  })
+
+  describe('SC-X023: rm --no-preserve-root denied (flag)', () => {
+    it('blocks rm --no-preserve-root /', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('rm --no-preserve-root /')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('not allowed')
+    })
+  })
+
+  describe('SC-X024: mv allowed when allowDestructive=true', () => {
+    it('allows mv src.ts dst.ts within project', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('mv src.ts dst.ts')
+      expect(result.allowed).toBe(true)
+    })
+  })
+
+  describe('SC-X025: mv src.ts ../dst.ts denied (escape)', () => {
+    it('blocks mv with destination outside project', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('mv src.ts ../dst.ts')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('escapes')
+    })
+  })
+
+  describe('SC-X026: mv ../src.ts dst.ts denied (escape)', () => {
+    it('blocks mv with source outside project', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('mv ../src.ts dst.ts')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('escapes')
+    })
+  })
+
+  describe('Edge cases', () => {
+    it('requires projectDir when allowDestructive is true', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        // projectDir intentionally omitted
+      })
+      const result = security.isCommandAllowed('rm file.txt')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('projectDir')
+    })
+
+    it('handles rm with multiple flags', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('rm -rf file.txt')
+      expect(result.allowed).toBe(true)
+    })
+
+    it('handles mv with -f flag', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('mv -f src.ts dst.ts')
+      expect(result.allowed).toBe(true)
+    })
+
+    it('blocks rm without file path', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('rm -rf')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('requires')
+    })
+
+    it('blocks mv without destination', () => {
+      const security = new DefaultBashSecurity({
+        allowDestructive: true,
+        projectDir,
+      })
+      const result = security.isCommandAllowed('mv src.ts')
+      expect(result.allowed).toBe(false)
+      expect(result.reason).toContain('requires')
+    })
+
+    it('blocks mv denied when allowDestructive=false', () => {
+      const security = new DefaultBashSecurity({ projectDir })
+      const result = security.isCommandAllowed('mv src.ts dst.ts')
+      expect(result.allowed).toBe(false)
+    })
+  })
+})
