@@ -563,13 +563,55 @@ const silentLogger: Logger
 | Domain       | No direct logging (pure functions)     |
 | Tests        | TestLogger to capture and verify       |
 
-#### 3.7.1 Debug Message Format
+#### 3.7.1 Message Format
+
+**Debug Messages** (--debug flag only):
 
 | Event              | Format                                        |
 | ------------------ | --------------------------------------------- |
 | Send instruction   | `[Send] {instruction (truncated to 200)}`     |
 | Receive message    | `[Recv] {type}: {content (truncated to 200)}` |
-| Error with stack   | `{message}\n{stack}` (debug only)             |
+| Error with stack   | `{message}\n{stack}`                          |
+
+**Session Messages** (info level):
+
+| Event         | Format                                     |
+| ------------- | ------------------------------------------ |
+| Session start | `Session {N} started`                      |
+| Session end   | `Session {N}: cost=${cost}, duration={duration}` |
+
+**Overall Messages** (info level, logged on SessionRunner completion):
+
+| Event           | Format                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| Overall summary | `Overall: {iterations} session(s), {passed}/{total} deliverables passed, cost=${totalCost}, duration={totalDuration}` |
+
+**Examples:**
+- Session: `Session 1: cost=$0.0234, duration=45s`
+- Session: `Session 2: cost=$0.0156, duration=1m 30s`
+- Overall: `Overall: 2 session(s), 5/5 deliverables passed, cost=$0.0390, duration=2m 15s`
+- Overall (with blocked): `Overall: 3 session(s), 3/5 deliverables passed (2 blocked), cost=$0.0580, duration=5m 20s`
+
+#### 3.7.2 Duration Format
+
+All duration displays use human-readable format with zero-value parts omitted:
+
+| Component | Condition                          | Format    |
+| --------- | ---------------------------------- | --------- |
+| Hours     | > 0                                | `{h}h `   |
+| Minutes   | > 0                                | `{m}m `   |
+| Seconds   | > 0 or (hours=0 and minutes=0)     | `{s}s`    |
+
+**Examples:**
+- 3661000ms → `1h 1m 1s`
+- 3600000ms → `1h`
+- 90000ms → `1m 30s`
+- 60000ms → `1m`
+- 5000ms → `5s`
+- 0ms → `0s`
+
+**Utility Function:**
+- `formatDuration(ms: number): string` in `packages/core/src/duration.ts`
 
 ### 3.8 Session Loop
 
@@ -666,7 +708,8 @@ interface SessionRunnerResult {
   deliverablesPassedCount: number
   deliverablesTotalCount: number
   blockedCount: number
-  totalDuration: number
+  totalDuration: number      // displayed using formatDuration()
+  totalCostUsd: number       // sum of all session costs
   interrupted?: boolean
   quotaExceeded?: boolean
 }
@@ -705,7 +748,7 @@ Quota detection utilities in `quotaLimit.ts`:
 - `isQuotaExceededMessage(text)` - Check if message indicates quota limit
 - `parseQuotaResetTime(text)` - Extract reset time from message
 - `calculateWaitDuration(resetTime)` - Calculate milliseconds to wait
-- `formatWaitDuration(ms)` - Format duration as human-readable string
+- `formatDuration(ms)` - Format duration as human-readable string (see Section 3.7.2)
 
 ---
 
@@ -1164,6 +1207,9 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | SC-S008 | All deliverables pass on iter 1    | Loop exits immediately with success     |
 | SC-S009 | No maxIterations, partial progress | Loop continues to next session          |
 | SC-S010 | delayBetweenSessions: 5000         | 5s delay observed between sessions      |
+| SC-S011 | All passed, 2 sessions             | Overall log with cost and duration      |
+| SC-S012 | Partial with blocked               | Overall log shows "(N blocked)"         |
+| SC-S013 | Max iterations reached             | Overall logged before exit              |
 
 ### 8.2 Bash Security
 
@@ -1272,6 +1318,18 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | SC-AP006 | filePath (camelCase): `.autonoe/x` | Block           |
 | SC-AP007 | Windows path: `.autonoe\\file`     | Block           |
 | SC-AP008 | file_path: `.autonoe-note.txt`     | Approve         |
+
+### 8.9 Duration Format
+
+| ID      | Input (ms) | Expected Output |
+| ------- | ---------- | --------------- |
+| DU-001  | 0          | `0s`            |
+| DU-002  | 5000       | `5s`            |
+| DU-003  | 60000      | `1m`            |
+| DU-004  | 90000      | `1m 30s`        |
+| DU-005  | 3600000    | `1h`            |
+| DU-006  | 3661000    | `1h 1m 1s`      |
+| DU-007  | 3660000    | `1h 1m`         |
 
 ---
 

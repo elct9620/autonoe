@@ -422,4 +422,190 @@ describe('SessionRunner', () => {
       expect(result.deliverablesTotalCount).toBe(3)
     })
   })
+
+  describe('SC-S011: Overall output with cost and duration', () => {
+    it('logs Overall with accumulated cost after all passed', async () => {
+      const client = new MockAgentClient()
+      client.setResponsesPerSession([
+        [createMockSessionEnd('session 1', 0.0123)],
+        [createMockSessionEnd('session 2', 0.0234)],
+      ])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            name: 'Test1',
+            acceptanceCriteria: ['AC1'],
+            passed: false,
+            blocked: false,
+          },
+          {
+            id: 'DL-002',
+            name: 'Test2',
+            acceptanceCriteria: ['AC2'],
+            passed: false,
+            blocked: false,
+          },
+          {
+            id: 'DL-003',
+            name: 'Test3',
+            acceptanceCriteria: ['AC3'],
+            passed: false,
+            blocked: false,
+          },
+        ]),
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            name: 'Test1',
+            acceptanceCriteria: ['AC1'],
+            passed: true,
+            blocked: false,
+          },
+          {
+            id: 'DL-002',
+            name: 'Test2',
+            acceptanceCriteria: ['AC2'],
+            passed: true,
+            blocked: false,
+          },
+          {
+            id: 'DL-003',
+            name: 'Test3',
+            acceptanceCriteria: ['AC3'],
+            passed: true,
+            blocked: false,
+          },
+        ]),
+      ])
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, logger, statusReader)
+
+      expect(result.totalCostUsd).toBeCloseTo(0.0357, 4)
+      expect(result.iterations).toBe(2)
+      expect(logger.hasMessage('Overall:')).toBe(true)
+      expect(logger.hasMessage('2 session(s)')).toBe(true)
+      expect(logger.hasMessage('3/3 deliverables passed')).toBe(true)
+      expect(logger.hasMessage('cost=$')).toBe(true)
+      expect(logger.hasMessage('duration=')).toBe(true)
+    })
+  })
+
+  describe('SC-S012: Overall output with blocked', () => {
+    it('logs Overall with blocked count', async () => {
+      const client = new MockAgentClient()
+      client.setResponsesPerSession([[createMockSessionEnd('done', 0.01)]])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            name: 'Passed',
+            acceptanceCriteria: ['AC'],
+            passed: true,
+            blocked: false,
+          },
+          {
+            id: 'DL-002',
+            name: 'Blocked1',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: true,
+          },
+          {
+            id: 'DL-003',
+            name: 'Blocked2',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: true,
+          },
+        ]),
+      ])
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+      })
+
+      await runner.run(factory, logger, statusReader)
+
+      expect(logger.hasMessage('Overall:')).toBe(true)
+      expect(logger.hasMessage('(2 blocked)')).toBe(true)
+    })
+  })
+
+  describe('SC-S013: Overall logged before max iterations exit', () => {
+    it('logs Overall when max iterations reached', async () => {
+      const client = new MockAgentClient()
+      client.setResponsesPerSession([
+        [createMockSessionEnd('session 1', 0.01)],
+        [createMockSessionEnd('session 2', 0.02)],
+      ])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            name: 'Test',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: false,
+          },
+        ]),
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            name: 'Test',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: false,
+          },
+        ]),
+      ])
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 2,
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, logger, statusReader)
+
+      expect(result.success).toBe(false)
+      expect(result.totalCostUsd).toBeCloseTo(0.03, 4)
+      expect(logger.hasMessage('Overall:')).toBe(true)
+    })
+  })
+
+  describe('totalCostUsd in result', () => {
+    it('returns totalCostUsd in SessionRunnerResult', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockSessionEnd('done', 0.0123)])
+      const factory = createMockClientFactory(client)
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 1,
+      })
+      const result = await runner.run(factory)
+
+      expect(result).toHaveProperty('totalCostUsd')
+      expect(result.totalCostUsd).toBeCloseTo(0.0123, 4)
+    })
+  })
 })

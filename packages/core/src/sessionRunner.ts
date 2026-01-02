@@ -13,7 +13,8 @@ import {
 } from './deliverableStatus'
 import { initializerInstruction, codingInstruction } from './instructions'
 import { SessionOutcome } from './types'
-import { calculateWaitDuration, formatWaitDuration } from './quotaLimit'
+import { calculateWaitDuration } from './quotaLimit'
+import { formatDuration } from './duration'
 
 /**
  * SessionRunner configuration options
@@ -38,6 +39,7 @@ export interface SessionRunnerResult {
   deliverablesTotalCount: number
   blockedCount: number
   totalDuration: number
+  totalCostUsd: number
   interrupted?: boolean
   quotaExceeded?: boolean
 }
@@ -72,18 +74,30 @@ export class SessionRunner {
     let deliverablesPassedCount = 0
     let deliverablesTotalCount = 0
     let blockedCount = 0
+    let totalCostUsd = 0
 
     while (true) {
       // Termination condition 0: User interrupt (SIGINT)
       if (signal?.aborted) {
         logger.info('User interrupted')
+        const totalDuration = Date.now() - startTime
+        this.logOverall(
+          logger,
+          iterations,
+          deliverablesPassedCount,
+          deliverablesTotalCount,
+          blockedCount,
+          totalCostUsd,
+          totalDuration,
+        )
         return {
           success: false,
           iterations,
           deliverablesPassedCount,
           deliverablesTotalCount,
           blockedCount,
-          totalDuration: Date.now() - startTime,
+          totalDuration,
+          totalCostUsd,
           interrupted: true,
         }
       }
@@ -110,8 +124,9 @@ export class SessionRunner {
 
       const result = await session.run(client, instruction, logger)
 
+      totalCostUsd += result.costUsd
       logger.info(
-        `Session ${iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${result.duration}ms`,
+        `Session ${iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${formatDuration(result.duration)}`,
       )
 
       // Termination/wait condition: Quota exceeded
@@ -119,7 +134,7 @@ export class SessionRunner {
         if (this.options.waitForQuota && result.quotaResetTime) {
           const waitMs = calculateWaitDuration(result.quotaResetTime)
           logger.info(
-            `Quota exceeded, waiting ${formatWaitDuration(waitMs)} until reset...`,
+            `Quota exceeded, waiting ${formatDuration(waitMs)} until reset...`,
           )
           await this.delay(waitMs)
           // Retry same session (don't count this iteration)
@@ -127,13 +142,24 @@ export class SessionRunner {
           continue
         } else {
           logger.error('Quota exceeded')
+          const totalDuration = Date.now() - startTime
+          this.logOverall(
+            logger,
+            iterations,
+            deliverablesPassedCount,
+            deliverablesTotalCount,
+            blockedCount,
+            totalCostUsd,
+            totalDuration,
+          )
           return {
             success: false,
             iterations,
             deliverablesPassedCount,
             deliverablesTotalCount,
             blockedCount,
-            totalDuration: Date.now() - startTime,
+            totalDuration,
+            totalCostUsd,
             quotaExceeded: true,
           }
         }
@@ -156,13 +182,24 @@ export class SessionRunner {
       ) {
         const blockedMsg = blockedCount > 0 ? ` (${blockedCount} blocked)` : ''
         logger.info(`All achievable deliverables passed${blockedMsg}`)
+        const totalDuration = Date.now() - startTime
+        this.logOverall(
+          logger,
+          iterations,
+          deliverablesPassedCount,
+          deliverablesTotalCount,
+          blockedCount,
+          totalCostUsd,
+          totalDuration,
+        )
         return {
           success: true,
           iterations,
           deliverablesPassedCount,
           deliverablesTotalCount,
           blockedCount,
-          totalDuration: Date.now() - startTime,
+          totalDuration,
+          totalCostUsd,
         }
       }
 
@@ -173,13 +210,24 @@ export class SessionRunner {
         allDeliverablesBlocked(status)
       ) {
         logger.info(`All ${deliverablesTotalCount} deliverables are blocked`)
+        const totalDuration = Date.now() - startTime
+        this.logOverall(
+          logger,
+          iterations,
+          deliverablesPassedCount,
+          deliverablesTotalCount,
+          blockedCount,
+          totalCostUsd,
+          totalDuration,
+        )
         return {
           success: false,
           iterations,
           deliverablesPassedCount,
           deliverablesTotalCount,
           blockedCount,
-          totalDuration: Date.now() - startTime,
+          totalDuration,
+          totalCostUsd,
         }
       }
 
@@ -189,13 +237,24 @@ export class SessionRunner {
         iterations >= this.maxIterations
       ) {
         logger.info(`Max iterations (${this.maxIterations}) reached`)
+        const totalDuration = Date.now() - startTime
+        this.logOverall(
+          logger,
+          iterations,
+          deliverablesPassedCount,
+          deliverablesTotalCount,
+          blockedCount,
+          totalCostUsd,
+          totalDuration,
+        )
         return {
           success: false,
           iterations,
           deliverablesPassedCount,
           deliverablesTotalCount,
           blockedCount,
-          totalDuration: Date.now() - startTime,
+          totalDuration,
+          totalCostUsd,
         }
       }
 
@@ -204,6 +263,25 @@ export class SessionRunner {
         await this.delay(this.delayBetweenSessions)
       }
     }
+  }
+
+  /**
+   * Log the overall summary when session runner completes
+   * @see SPEC.md Section 3.7.1
+   */
+  private logOverall(
+    logger: Logger,
+    iterations: number,
+    passedCount: number,
+    totalCount: number,
+    blockedCount: number,
+    totalCostUsd: number,
+    totalDuration: number,
+  ): void {
+    const blockedMsg = blockedCount > 0 ? ` (${blockedCount} blocked)` : ''
+    logger.info(
+      `Overall: ${iterations} session(s), ${passedCount}/${totalCount} deliverables passed${blockedMsg}, cost=$${totalCostUsd.toFixed(4)}, duration=${formatDuration(totalDuration)}`,
+    )
   }
 
   private delay(ms: number): Promise<void> {

@@ -11,12 +11,14 @@ export type {
 } from './types'
 export { SessionOutcome } from './types'
 
+// Duration formatting utilities
+export { formatDuration } from './duration'
+
 // Quota limit utilities
 export {
   isQuotaExceededMessage,
   parseQuotaResetTime,
   calculateWaitDuration,
-  formatWaitDuration,
 } from './quotaLimit'
 
 // Event formatter exports

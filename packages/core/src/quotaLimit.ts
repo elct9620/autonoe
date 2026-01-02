@@ -1,6 +1,6 @@
 /**
  * Quota limit detection and handling utilities
- * @see SPEC.md Section TBD
+ * @see SPEC.md Section 3.9
  */
 
 const QUOTA_PATTERN = /You've hit your limit/i
@@ -61,13 +61,4 @@ export function parseQuotaResetTime(text: string): Date | null {
  */
 export function calculateWaitDuration(resetTime: Date): number {
   return Math.max(0, resetTime.getTime() - Date.now())
-}
-
-/**
- * Format a duration in milliseconds to a human-readable string
- */
-export function formatWaitDuration(ms: number): string {
-  const hours = Math.floor(ms / 3600000)
-  const minutes = Math.floor((ms % 3600000) / 60000)
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
 }
