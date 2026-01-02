@@ -18,6 +18,7 @@ Start by reading `SPEC.md` in your working directory. This file contains the det
 ## STEP 2: Create a List of Deliverables (CRITICAL)
 
 Based on `SPEC.md`, call the `mcp__autonoe-deliverable__create_deliverable` tool to create a fine-grained list of deliverables with detailed step by step E2E acceptance criteria. This is the single of truth for what needs to be built.
+For each deliverable, it provides value to the end user and can be independently tested and verified. e.g. a feature, a component, an API endpoint, etc.
 
 **REMINDER:** You MUST use the tool, not write directly to `.autonoe/status.json`.
 
