@@ -74,8 +74,8 @@ COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
-# Install Playwright dependencies
-RUN npx playwright install-deps chromium
+# Install Playwright with Chromium browser
+RUN npx playwright install --with-deps chromium
 
 WORKDIR /workspace
 
@@ -103,8 +103,8 @@ COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
-# Install Playwright dependencies
-RUN npx playwright install-deps chromium
+# Install Playwright with Chromium browser
+RUN npx playwright install --with-deps chromium
 
 WORKDIR /workspace
 
@@ -132,8 +132,8 @@ COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
-# Install Playwright dependencies
-RUN npx playwright install-deps chromium
+# Install Playwright with Chromium browser
+RUN npx playwright install --with-deps chromium
 
 WORKDIR /workspace
 
@@ -161,8 +161,8 @@ COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
-# Install Playwright dependencies
-RUN npx playwright install-deps chromium
+# Install Playwright with Chromium browser
+RUN npx playwright install --with-deps chromium
 
 WORKDIR /workspace
 
