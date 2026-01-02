@@ -137,6 +137,16 @@ const BASE_COMMANDS = new Set([
   'ps',
   'lsof',
   'sleep',
+  // Text Processing
+  'tree',
+  'sort',
+  'diff',
+  'printf',
+  'date',
+  'uniq',
+  'cut',
+  'tr',
+  'tac',
 ])
 
 /**

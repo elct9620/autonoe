@@ -77,6 +77,55 @@ describe('BashSecurity', () => {
       const security = new DefaultBashSecurity()
       expect(security.isCommandAllowed('sleep 1').allowed).toBe(true)
     })
+
+    it('allows tree', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('tree').allowed).toBe(true)
+    })
+
+    it('allows sort', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('sort file.txt').allowed).toBe(true)
+    })
+
+    it('allows diff', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('diff file1.txt file2.txt').allowed).toBe(
+        true,
+      )
+    })
+
+    it('allows printf', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('printf "%s" "hello"').allowed).toBe(true)
+    })
+
+    it('allows date', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('date').allowed).toBe(true)
+    })
+
+    it('allows uniq', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('uniq file.txt').allowed).toBe(true)
+    })
+
+    it('allows cut', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('cut -d "," -f 1 file.csv').allowed).toBe(
+        true,
+      )
+    })
+
+    it('allows tr', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('tr "a-z" "A-Z"').allowed).toBe(true)
+    })
+
+    it('allows tac', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('tac file.txt').allowed).toBe(true)
+    })
   })
 
   describe('SC-X002: Blocked dangerous commands', () => {

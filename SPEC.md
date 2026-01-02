@@ -1002,13 +1002,14 @@ Users may restrict to specific profiles via `agent.json`:
 
 **Base Profile** (always included):
 
-| Category   | Commands                                 | Validation       |
-| ---------- | ---------------------------------------- | ---------------- |
-| Navigation | ls, pwd, cat, head, tail, wc, find, grep | Allowlist        |
-| File Ops   | mkdir, cp, chmod                         | chmod: args      |
-| Git        | git                                      | Allowlist        |
-| Process    | echo, which, ps, lsof, sleep, pkill      | pkill: args      |
-| Script     | bin/dev.sh                               | bin/dev.sh: args |
+| Category   | Commands                                    | Validation       |
+| ---------- | ------------------------------------------- | ---------------- |
+| Navigation | ls, pwd, cat, head, tail, wc, find, grep    | Allowlist        |
+| File Ops   | mkdir, cp, chmod                            | chmod: args      |
+| Git        | git                                         | Allowlist        |
+| Process    | echo, which, ps, lsof, sleep, pkill         | pkill: args      |
+| Script     | bin/dev.sh                                  | bin/dev.sh: args |
+| Text       | tree, sort, diff, printf, date, uniq, cut, tr, tac | Allowlist        |
 
 **Node.js Profile**:
 
