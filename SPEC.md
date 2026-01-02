@@ -375,6 +375,8 @@ Session.run() called
 
 **Design Principle**: Each session must be independent and isolated. The `dispose()` method ensures that resources from one session do not leak into subsequent sessions.
 
+**Implementation Note**: The `dispose()` method is planned for implementation when Claude Agent SDK V2 becomes stable. Currently, `delayBetweenSessions` (default: 3000ms) provides buffer time for SDK internal cleanup between sessions.
+
 ### 3.2 MockAgentClient
 
 ```typescript
