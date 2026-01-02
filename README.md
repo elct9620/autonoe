@@ -55,7 +55,7 @@ Create a `compose.yml` in your project:
 
 ```yaml
 services:
-  autonoe:
+  cli:
     image: ghcr.io/elct9620/autonoe/cli:node
     volumes:
       - .:/workspace
@@ -81,7 +81,7 @@ Build a simple CLI tool that prints "Hello, World!"
 autonoe run -p /path/to/your/project
 
 # Using Docker
-docker compose run --rm autonoe autonoe run
+docker compose run --rm cli autonoe run
 ```
 
 ## Docker Options
@@ -102,7 +102,7 @@ Example for a Python project:
 
 ```yaml
 services:
-  autonoe:
+  cli:
     image: ghcr.io/elct9620/autonoe/cli:python
     volumes:
       - .:/workspace
@@ -135,6 +135,8 @@ Options:
   -m, --model <model>         Claude model to use
   -d, --debug                 Show debug output
   --no-sandbox                Disable SDK sandbox (not recommended)
+  --wait-for-quota            Wait for quota reset instead of exiting
+  -D, --allow-destructive     Enable rm/mv with path validation
   -h, --help                  Show help
   -v, --version               Show version
 ```
@@ -291,6 +293,7 @@ bun run test                       # Run all tests
 bun run test --project core        # Run core package tests
 bun run test --project agent       # Run agent package tests
 bun run test --coverage            # Run with coverage report
+make test-integration              # Run integration tests (requires Docker)
 ```
 
 ### Docker
