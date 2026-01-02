@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
   toSdkMcpServers,
-  toResultSubtype,
+  toSessionOutcome,
   toStreamEvent,
   toSessionEnd,
   toStreamEvents,
 } from '../src/converters'
-import { ResultSubtype } from '@autonoe/core'
+import { SessionOutcome } from '@autonoe/core'
 
 describe('converters', () => {
   describe('toSdkMcpServers', () => {
@@ -47,34 +47,44 @@ describe('converters', () => {
     })
   })
 
-  describe('toResultSubtype', () => {
-    it('SC-AC006: converts "success" to ResultSubtype.Success', () => {
-      expect(toResultSubtype('success')).toBe(ResultSubtype.Success)
+  describe('toSessionOutcome', () => {
+    it('SC-AC006: converts "success" to SessionOutcome.Completed', () => {
+      expect(toSessionOutcome('success')).toBe(SessionOutcome.Completed)
     })
 
-    it('SC-AC007: converts "error_max_turns"', () => {
-      expect(toResultSubtype('error_max_turns')).toBe(
-        ResultSubtype.ErrorMaxTurns,
+    it('SC-AC007: converts "error_max_turns" to MaxIterationsReached', () => {
+      expect(toSessionOutcome('error_max_turns')).toBe(
+        SessionOutcome.MaxIterationsReached,
       )
     })
 
-    it('SC-AC008: converts "error_during_execution"', () => {
-      expect(toResultSubtype('error_during_execution')).toBe(
-        ResultSubtype.ErrorDuringExecution,
+    it('SC-AC008: converts "error_during_execution" to ExecutionError', () => {
+      expect(toSessionOutcome('error_during_execution')).toBe(
+        SessionOutcome.ExecutionError,
       )
     })
 
-    it('SC-AC009: converts "error_max_budget_usd"', () => {
-      expect(toResultSubtype('error_max_budget_usd')).toBe(
-        ResultSubtype.ErrorMaxBudgetUsd,
+    it('SC-AC009: converts "error_max_budget_usd" to BudgetExceeded', () => {
+      expect(toSessionOutcome('error_max_budget_usd')).toBe(
+        SessionOutcome.BudgetExceeded,
       )
     })
 
-    it('SC-AC010: defaults unknown subtypes to ErrorDuringExecution', () => {
-      expect(toResultSubtype('unknown')).toBe(
-        ResultSubtype.ErrorDuringExecution,
+    it('SC-AC010: defaults unknown subtypes to ExecutionError', () => {
+      expect(toSessionOutcome('unknown')).toBe(SessionOutcome.ExecutionError)
+      expect(toSessionOutcome('')).toBe(SessionOutcome.ExecutionError)
+    })
+
+    it('detects quota exceeded from result text', () => {
+      expect(
+        toSessionOutcome('success', "You've hit your limit · resets 6pm (UTC)"),
+      ).toBe(SessionOutcome.QuotaExceeded)
+    })
+
+    it('converts error_max_structured_output_retries to ExecutionError', () => {
+      expect(toSessionOutcome('error_max_structured_output_retries')).toBe(
+        SessionOutcome.ExecutionError,
       )
-      expect(toResultSubtype('')).toBe(ResultSubtype.ErrorDuringExecution)
     })
   })
 
@@ -190,7 +200,7 @@ describe('converters', () => {
       const result = toSessionEnd(sdkMessage)
       expect(result).toEqual({
         type: 'session_end',
-        subtype: ResultSubtype.Success,
+        outcome: SessionOutcome.Completed,
         result: 'Done',
         errors: undefined,
         totalCostUsd: 0.05,
@@ -206,7 +216,7 @@ describe('converters', () => {
       const result = toSessionEnd(sdkMessage)
       expect(result).toEqual({
         type: 'session_end',
-        subtype: ResultSubtype.ErrorDuringExecution,
+        outcome: SessionOutcome.ExecutionError,
         result: undefined,
         errors: ['Error 1', 'Error 2'],
         totalCostUsd: undefined,
@@ -219,6 +229,17 @@ describe('converters', () => {
       expect(result.result).toBeUndefined()
       expect(result.errors).toBeUndefined()
       expect(result.totalCostUsd).toBeUndefined()
+    })
+
+    it('detects quota exceeded and parses reset time', () => {
+      const sdkMessage = {
+        type: 'result',
+        subtype: 'success',
+        result: "You've hit your limit · resets 6pm (UTC)",
+      }
+      const result = toSessionEnd(sdkMessage)
+      expect(result.outcome).toBe(SessionOutcome.QuotaExceeded)
+      expect(result.quotaResetTime).toBeInstanceOf(Date)
     })
   })
 
@@ -233,7 +254,7 @@ describe('converters', () => {
       expect(events).toHaveLength(1)
       expect(events[0]).toEqual({
         type: 'session_end',
-        subtype: ResultSubtype.Success,
+        outcome: SessionOutcome.Completed,
         result: 'Done',
         errors: undefined,
         totalCostUsd: undefined,

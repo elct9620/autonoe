@@ -3,12 +3,17 @@
  * @see SPEC.md Section 2.3 Domain Model
  */
 
-// ResultSubtype - enum for session result outcomes
-export enum ResultSubtype {
-  Success = 'success',
-  ErrorMaxTurns = 'error_max_turns',
-  ErrorDuringExecution = 'error_during_execution',
-  ErrorMaxBudgetUsd = 'error_max_budget_usd',
+/**
+ * SessionOutcome - domain-specific session result outcomes
+ * Decoupled from SDK subtypes for clean architecture
+ * @see SPEC.md Section 2.3 Domain Model
+ */
+export enum SessionOutcome {
+  Completed = 'completed',
+  MaxIterationsReached = 'max_iterations',
+  ExecutionError = 'execution_error',
+  BudgetExceeded = 'budget_exceeded',
+  QuotaExceeded = 'quota_exceeded',
 }
 
 // AgentText - Agent's text response
@@ -35,10 +40,11 @@ export interface ToolResponse {
 // SessionEnd - Session termination state
 export interface SessionEnd {
   type: 'session_end'
-  subtype: ResultSubtype
+  outcome: SessionOutcome
   result?: string
   errors?: string[]
   totalCostUsd?: number
+  quotaResetTime?: Date
 }
 
 // StreamEvent - discriminated union of all event types

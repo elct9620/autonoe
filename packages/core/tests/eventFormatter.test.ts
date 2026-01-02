@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { formatStreamEvent } from '../src/eventFormatter'
-import { ResultSubtype } from '../src/types'
+import { SessionOutcome } from '../src/types'
 import type {
   AgentText,
   ToolInvocation,
@@ -91,40 +91,51 @@ describe('formatStreamEvent', () => {
   })
 
   describe('SessionEnd', () => {
-    it('formats success with result text', () => {
+    it('formats completed with result text', () => {
       const event: SessionEnd = {
         type: 'session_end',
-        subtype: ResultSubtype.Success,
+        outcome: SessionOutcome.Completed,
         result: 'Task completed',
       }
-      expect(formatStreamEvent(event)).toBe('[session: success] Task completed')
+      expect(formatStreamEvent(event)).toBe('[session: completed] Task completed')
     })
 
     it('formats error with error messages', () => {
       const event: SessionEnd = {
         type: 'session_end',
-        subtype: ResultSubtype.ErrorDuringExecution,
+        outcome: SessionOutcome.ExecutionError,
         errors: ['Error 1', 'Error 2'],
       }
       expect(formatStreamEvent(event)).toBe(
-        '[session: error_during_execution] Error 1, Error 2',
+        '[session: execution_error] Error 1, Error 2',
       )
     })
 
     it('formats without result or errors', () => {
       const event: SessionEnd = {
         type: 'session_end',
-        subtype: ResultSubtype.ErrorMaxTurns,
+        outcome: SessionOutcome.MaxIterationsReached,
       }
-      expect(formatStreamEvent(event)).toBe('[session: error_max_turns]')
+      expect(formatStreamEvent(event)).toBe('[session: max_iterations]')
     })
 
-    it('formats max budget error', () => {
+    it('formats budget exceeded', () => {
       const event: SessionEnd = {
         type: 'session_end',
-        subtype: ResultSubtype.ErrorMaxBudgetUsd,
+        outcome: SessionOutcome.BudgetExceeded,
       }
-      expect(formatStreamEvent(event)).toBe('[session: error_max_budget_usd]')
+      expect(formatStreamEvent(event)).toBe('[session: budget_exceeded]')
+    })
+
+    it('formats quota exceeded', () => {
+      const event: SessionEnd = {
+        type: 'session_end',
+        outcome: SessionOutcome.QuotaExceeded,
+        result: "You've hit your limit",
+      }
+      expect(formatStreamEvent(event)).toBe(
+        "[session: quota_exceeded] You've hit your limit",
+      )
     })
   })
 

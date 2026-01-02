@@ -59,6 +59,7 @@ export interface RunCommandOptions {
   model?: string
   debug?: boolean
   sandbox?: boolean
+  waitForQuota?: boolean
 }
 
 /**
@@ -90,6 +91,7 @@ export async function handleRunCommand(
     projectDir,
     maxIterations: Number.isNaN(maxIterations) ? undefined : maxIterations,
     model: options.model,
+    waitForQuota: options.waitForQuota,
   }
 
   logger.info(`Autonoe v${VERSION}`)
@@ -183,6 +185,9 @@ export async function handleRunCommand(
     logger.info('')
     if (result.interrupted) {
       logger.info('Session interrupted by user')
+    } else if (result.quotaExceeded) {
+      logger.error('Session stopped: quota exceeded')
+      process.exit(1)
     } else if (result.success) {
       logger.info('Session completed successfully')
     } else {

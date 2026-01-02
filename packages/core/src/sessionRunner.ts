@@ -12,6 +12,8 @@ import {
   emptyDeliverableStatus,
 } from './deliverableStatus'
 import { initializerInstruction, codingInstruction } from './instructions'
+import { SessionOutcome } from './types'
+import { calculateWaitDuration, formatWaitDuration } from './quotaLimit'
 
 /**
  * SessionRunner configuration options
@@ -22,6 +24,7 @@ export interface SessionRunnerOptions {
   maxIterations?: number
   delayBetweenSessions?: number
   model?: string
+  waitForQuota?: boolean
 }
 
 /**
@@ -36,6 +39,7 @@ export interface SessionRunnerResult {
   blockedCount: number
   totalDuration: number
   interrupted?: boolean
+  quotaExceeded?: boolean
 }
 
 /**
@@ -109,6 +113,31 @@ export class SessionRunner {
       logger.info(
         `Session ${iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${result.duration}ms`,
       )
+
+      // Termination/wait condition: Quota exceeded
+      if (result.outcome === SessionOutcome.QuotaExceeded) {
+        if (this.options.waitForQuota && result.quotaResetTime) {
+          const waitMs = calculateWaitDuration(result.quotaResetTime)
+          logger.info(
+            `Quota exceeded, waiting ${formatWaitDuration(waitMs)} until reset...`,
+          )
+          await this.delay(waitMs)
+          // Retry same session (don't count this iteration)
+          iterations--
+          continue
+        } else {
+          logger.error('Quota exceeded')
+          return {
+            success: false,
+            iterations,
+            deliverablesPassedCount,
+            deliverablesTotalCount,
+            blockedCount,
+            totalDuration: Date.now() - startTime,
+            quotaExceeded: true,
+          }
+        }
+      }
 
       // Read deliverable status after session
       const status = statusReader

@@ -15,6 +15,7 @@ cli
   .option('-m, --model <model>', 'Claude model to use')
   .option('-d, --debug', 'Show debug output')
   .option('--no-sandbox', 'Disable SDK sandbox')
+  .option('--wait-for-quota', 'Wait for quota reset instead of exiting')
   .action(async (options) => {
     await handleRunCommand({
       projectDir: options.projectDir,
@@ -22,6 +23,7 @@ cli
       model: options.model,
       debug: options.debug,
       sandbox: options.sandbox,
+      waitForQuota: options.waitForQuota,
     })
   })
 

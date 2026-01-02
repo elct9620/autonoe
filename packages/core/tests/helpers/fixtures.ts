@@ -9,7 +9,7 @@ import type {
   Deliverable,
   DeliverableStatus,
 } from '../../src/index'
-import { ResultSubtype } from '../../src/index'
+import { SessionOutcome } from '../../src/index'
 
 /**
  * Create a minimal valid SessionOptions for testing
@@ -35,6 +35,7 @@ export function createSessionResult(
     duration: 0,
     deliverablesPassedCount: 0,
     deliverablesTotalCount: 0,
+    outcome: SessionOutcome.Completed,
     ...overrides,
   }
 }
@@ -117,7 +118,7 @@ export function createMockToolResponse(
 }
 
 /**
- * Create a mock SessionEnd event with success subtype
+ * Create a mock SessionEnd event with completed outcome
  */
 export function createMockSessionEnd(
   result: string,
@@ -125,22 +126,22 @@ export function createMockSessionEnd(
 ): SessionEnd {
   return {
     type: 'session_end',
-    subtype: ResultSubtype.Success,
+    outcome: SessionOutcome.Completed,
     result,
     totalCostUsd,
   }
 }
 
 /**
- * Create a mock SessionEnd event with error subtype
+ * Create a mock SessionEnd event with error outcome
  */
 export function createMockErrorSessionEnd(
   errors: string[],
-  subtype: ResultSubtype = ResultSubtype.ErrorDuringExecution,
+  outcome: SessionOutcome = SessionOutcome.ExecutionError,
 ): SessionEnd {
   return {
     type: 'session_end',
-    subtype,
+    outcome,
     errors,
   }
 }

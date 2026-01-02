@@ -9,7 +9,15 @@ export type {
   McpServer,
   PermissionLevel,
 } from './types'
-export { ResultSubtype } from './types'
+export { SessionOutcome } from './types'
+
+// Quota limit utilities
+export {
+  isQuotaExceededMessage,
+  parseQuotaResetTime,
+  calculateWaitDuration,
+  formatWaitDuration,
+} from './quotaLimit'
 
 // Event formatter exports
 export { formatStreamEvent } from './eventFormatter'

@@ -1,7 +1,7 @@
 import type { AgentClient } from './agentClient'
 import { formatStreamEvent } from './eventFormatter'
 import { silentLogger, type Logger } from './logger'
-import { ResultSubtype } from './types'
+import { SessionOutcome } from './types'
 import type { StreamEvent, SessionEnd } from './types'
 
 /**
@@ -23,6 +23,8 @@ export interface SessionResult {
   duration: number
   deliverablesPassedCount: number
   deliverablesTotalCount: number
+  outcome: SessionOutcome
+  quotaResetTime?: Date
 }
 
 /**
@@ -50,6 +52,8 @@ export class Session {
   ): Promise<SessionResult> {
     const startTime = Date.now()
     let costUsd = 0
+    let outcome: SessionOutcome = SessionOutcome.Completed
+    let quotaResetTime: Date | undefined
 
     logger.debug(`[Send] ${truncate(instruction, 200)}`)
 
@@ -65,6 +69,8 @@ export class Session {
           if (event.totalCostUsd !== undefined) {
             costUsd = event.totalCostUsd
           }
+          outcome = event.outcome
+          quotaResetTime = event.quotaResetTime
           this.handleSessionEnd(event, logger)
         }
       }
@@ -77,11 +83,13 @@ export class Session {
     }
 
     return {
-      success: true,
+      success: outcome === SessionOutcome.Completed,
       costUsd,
       duration: Date.now() - startTime,
       deliverablesPassedCount: 0,
       deliverablesTotalCount: 0,
+      outcome,
+      quotaResetTime,
     }
   }
 
@@ -90,14 +98,21 @@ export class Session {
    * @see SPEC.md Section 2.3 Domain Model
    */
   private handleSessionEnd(event: SessionEnd, logger: Logger): void {
-    if (event.subtype === ResultSubtype.Success) {
-      if (event.result) {
-        logger.info(event.result)
-      }
-    } else if (event.errors) {
-      for (const error of event.errors) {
-        logger.error(error)
-      }
+    switch (event.outcome) {
+      case SessionOutcome.Completed:
+        if (event.result) {
+          logger.info(event.result)
+        }
+        break
+      case SessionOutcome.QuotaExceeded:
+        logger.warn('Quota exceeded: ' + (event.result ?? 'Unknown'))
+        break
+      default:
+        if (event.errors) {
+          for (const error of event.errors) {
+            logger.error(error)
+          }
+        }
     }
   }
 }

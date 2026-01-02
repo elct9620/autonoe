@@ -35,12 +35,12 @@ export function formatStreamEvent(event: StreamEvent): string {
 
     case 'session_end': {
       if (event.result) {
-        return `[session: ${event.subtype}] ${event.result}`
+        return `[session: ${event.outcome}] ${event.result}`
       }
       if (event.errors?.length) {
-        return `[session: ${event.subtype}] ${event.errors.join(', ')}`
+        return `[session: ${event.outcome}] ${event.errors.join(', ')}`
       }
-      return `[session: ${event.subtype}]`
+      return `[session: ${event.outcome}]`
     }
 
     default:

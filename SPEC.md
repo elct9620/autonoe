@@ -216,10 +216,11 @@ type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
 | Field | Type | Description |
 |-------|------|-------------|
 | type | 'session_end' | Event type discriminator |
-| subtype | ResultSubtype | Execution outcome |
+| outcome | SessionOutcome | Execution outcome |
 | result | string? | Output text (on success) |
 | errors | string[]? | Error messages (on failure) |
 | totalCostUsd | number? | API cost in USD |
+| quotaResetTime | Date? | Quota reset time (on quota exceeded) |
 
 #### Value Objects
 
@@ -298,14 +299,15 @@ Persistence: `.autonoe/status.json`
 
 #### Enums
 
-**ResultSubtype** - Execution outcome
+**SessionOutcome** - Domain-specific session result outcomes
 
 | Value | Description |
 |-------|-------------|
-| Success | Execution completed |
-| ErrorMaxTurns | Max iterations reached |
-| ErrorDuringExecution | Runtime error |
-| ErrorMaxBudgetUsd | Budget limit exceeded |
+| Completed | Session finished normally |
+| MaxIterationsReached | Hit turn/iteration limit |
+| ExecutionError | Error during execution |
+| BudgetExceeded | API cost limit hit |
+| QuotaExceeded | Subscription quota hit |
 
 **PermissionLevel** - Security permission level
 
@@ -655,6 +657,7 @@ interface SessionRunnerOptions {
   maxIterations?: number        // undefined = unlimited
   delayBetweenSessions?: number // default: 3000ms
   model?: string
+  waitForQuota?: boolean        // wait for quota reset instead of exiting
 }
 
 interface SessionRunnerResult {
@@ -665,6 +668,7 @@ interface SessionRunnerResult {
   blockedCount: number
   totalDuration: number
   interrupted?: boolean
+  quotaExceeded?: boolean
 }
 ```
 
@@ -672,10 +676,11 @@ interface SessionRunnerResult {
 
 | Priority | Condition                    | Check                                         | Result              |
 | -------- | ---------------------------- | --------------------------------------------- | ------------------- |
-| 1        | All achievable passed        | All non-blocked deliverables have passed=true | success=true        |
-| 2        | All blocked                  | All deliverables have blocked=true            | success=false       |
-| 3        | Max iterations reached       | iteration >= maxIterations                    | success=false       |
-| 4        | User interrupt               | SIGINT received                               | success=false, interrupted=true |
+| 1        | Quota exceeded (no wait)     | SessionOutcome.QuotaExceeded && !waitForQuota | success=false, quotaExceeded=true |
+| 2        | All achievable passed        | All non-blocked deliverables have passed=true | success=true        |
+| 3        | All blocked                  | All deliverables have blocked=true            | success=false       |
+| 4        | Max iterations reached       | iteration >= maxIterations                    | success=false       |
+| 5        | User interrupt               | SIGINT received                               | success=false, interrupted=true |
 
 **Blocked Deliverable Rules:**
 - A deliverable can only be blocked when `passed=false` (mutual exclusion)
@@ -683,6 +688,24 @@ interface SessionRunnerResult {
 - When all non-blocked deliverables pass, the session succeeds even if some are blocked
 - When all deliverables are blocked, the session fails
 - Reasons for blocking should be documented in `.autonoe-note.txt`
+
+**Quota Handling:**
+
+When Claude Code Subscription quota is exceeded:
+- SDK returns `subtype: 'success'` with limit message in `result` field (e.g., "You've hit your limit · resets 6pm (UTC)")
+- Claude Code process exits with code 1
+- Detection: Text pattern matching on session result for "You've hit your limit"
+- Reset time parsing: Extract time from "resets Xpm (UTC)" or "resets Xam (UTC)" pattern
+
+Behavior options:
+- **Default (waitForQuota=false):** Exit immediately with `quotaExceeded: true`
+- **Wait mode (waitForQuota=true):** Auto-calculate wait duration from reset time and pause until quota resets, then retry
+
+Quota detection utilities in `quotaLimit.ts`:
+- `isQuotaExceededMessage(text)` - Check if message indicates quota limit
+- `parseQuotaResetTime(text)` - Extract reset time from message
+- `calculateWaitDuration(resetTime)` - Calculate milliseconds to wait
+- `formatWaitDuration(ms)` - Format duration as human-readable string
 
 ---
 
@@ -1226,11 +1249,12 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | SC-AC003 | toStreamEvent        | text block                 | AgentText                          |
 | SC-AC004 | toStreamEvent        | tool_use block             | ToolInvocation                     |
 | SC-AC005 | toStreamEvent        | tool_result block          | ToolResponse                       |
-| SC-AC006 | toResultSubtype      | 'success'                  | ResultSubtype.Success              |
-| SC-AC007 | toResultSubtype      | 'error_max_turns'          | ResultSubtype.ErrorMaxTurns        |
-| SC-AC008 | toResultSubtype      | 'error_during_execution'   | ResultSubtype.ErrorDuringExecution |
-| SC-AC009 | toResultSubtype      | 'error_max_budget_usd'     | ResultSubtype.ErrorMaxBudgetUsd    |
-| SC-AC010 | toResultSubtype      | unknown                    | ResultSubtype.ErrorDuringExecution |
+| SC-AC006 | toSessionOutcome     | 'success'                  | SessionOutcome.Completed           |
+| SC-AC007 | toSessionOutcome     | 'error_max_turns'          | SessionOutcome.MaxIterationsReached|
+| SC-AC008 | toSessionOutcome     | 'error_during_execution'   | SessionOutcome.ExecutionError      |
+| SC-AC009 | toSessionOutcome     | 'error_max_budget_usd'     | SessionOutcome.BudgetExceeded      |
+| SC-AC010 | toSessionOutcome     | unknown                    | SessionOutcome.ExecutionError      |
+| SC-AC015 | toSessionOutcome     | 'success' + quota message  | SessionOutcome.QuotaExceeded       |
 | SC-AC011 | toStreamEvents       | SDK message with content   | Generator\<StreamEvent\>             |
 | SC-AC012 | toSessionEnd         | Result with total_cost_usd | SessionEnd with totalCostUsd       |
 | SC-AC013 | detectClaudeCodePath | claude found               | Path string                        |
@@ -1822,6 +1846,7 @@ Options:
   --model, -m             Claude model to use
   --debug, -d             Show debug output
   --no-sandbox            Disable SDK sandbox
+  --wait-for-quota        Wait for quota reset instead of exiting
 ```
 
 ### 11.2 Behavior
@@ -1857,6 +1882,7 @@ cli
   .option('-m, --model <model>', 'Claude model to use')
   .option('-d, --debug', 'Show debug output')
   .option('--no-sandbox', 'Disable SDK sandbox')
+  .option('--wait-for-quota', 'Wait for quota reset instead of exiting')
   .action((options) => {
     // Run session with options
   })

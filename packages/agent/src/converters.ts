@@ -7,7 +7,11 @@ import type {
   SessionEnd,
   McpServer,
 } from '@autonoe/core'
-import { ResultSubtype } from '@autonoe/core'
+import {
+  SessionOutcome,
+  isQuotaExceededMessage,
+  parseQuotaResetTime,
+} from '@autonoe/core'
 
 /**
  * SDK content block type definition
@@ -53,20 +57,31 @@ export function toSdkMcpServers(
 }
 
 /**
- * Convert SDK result subtype string to domain ResultSubtype
+ * Convert SDK result subtype string to domain SessionOutcome
+ * Detects quota exceeded from result text (SDK reports as 'success' with limit message)
  */
-export function toResultSubtype(subtype: string): ResultSubtype {
+export function toSessionOutcome(
+  subtype: string,
+  resultText?: string,
+): SessionOutcome {
+  // Check for quota exceeded first (SDK reports as 'success' with limit message)
+  if (resultText && isQuotaExceededMessage(resultText)) {
+    return SessionOutcome.QuotaExceeded
+  }
+
   switch (subtype) {
     case 'success':
-      return ResultSubtype.Success
+      return SessionOutcome.Completed
     case 'error_max_turns':
-      return ResultSubtype.ErrorMaxTurns
+      return SessionOutcome.MaxIterationsReached
     case 'error_during_execution':
-      return ResultSubtype.ErrorDuringExecution
+      return SessionOutcome.ExecutionError
     case 'error_max_budget_usd':
-      return ResultSubtype.ErrorMaxBudgetUsd
+      return SessionOutcome.BudgetExceeded
+    case 'error_max_structured_output_retries':
+      return SessionOutcome.ExecutionError
     default:
-      return ResultSubtype.ErrorDuringExecution
+      return SessionOutcome.ExecutionError
   }
 }
 
@@ -112,15 +127,28 @@ export function toStreamEvent(block: SDKContentBlock): StreamEvent | null {
 
 /**
  * Convert SDK result message to SessionEnd
+ * Detects quota exceeded and parses reset time if applicable
  */
 export function toSessionEnd(sdkMessage: SDKMessage): SessionEnd {
-  return {
+  const outcome = toSessionOutcome(
+    sdkMessage.subtype ?? '',
+    sdkMessage.result,
+  )
+
+  const sessionEnd: SessionEnd = {
     type: 'session_end',
-    subtype: toResultSubtype(sdkMessage.subtype ?? ''),
+    outcome,
     result: sdkMessage.result,
     errors: sdkMessage.errors,
     totalCostUsd: sdkMessage.total_cost_usd,
   }
+
+  // Parse quota reset time if quota exceeded
+  if (outcome === SessionOutcome.QuotaExceeded && sdkMessage.result) {
+    sessionEnd.quotaResetTime = parseQuotaResetTime(sdkMessage.result) ?? undefined
+  }
+
+  return sessionEnd
 }
 
 /**
