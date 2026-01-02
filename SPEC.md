@@ -927,6 +927,22 @@ const sandboxSettings: SandboxSettings = {
 }
 ```
 
+See Section 6 for security layer architecture.
+
+---
+
+## 6. Security
+
+### 6.1 Autonoe Security Controls
+
+| Control              | Implementation              | Enforcement     |
+| -------------------- | --------------------------- | --------------- |
+| OS-Level Sandbox     | SandboxSettings.enabled     | SDK (hardcoded) |
+| Bash Auto-Allow      | autoAllowBashIfSandboxed    | SDK (hardcoded) |
+| Filesystem Scope     | permissions: ["./**"]       | SDK             |
+| Bash Allowlist       | BashSecurity hook           | PreToolUse      |
+| .autonoe/ Protection | PreToolUse hook             | PreToolUse      |
+
 **Security Layers:**
 
 ```
@@ -945,20 +961,6 @@ const sandboxSettings: SandboxSettings = {
 │  └── .autonoe/ Protection: Block direct writes      │
 └─────────────────────────────────────────────────────┘
 ```
-
----
-
-## 6. Security
-
-### 6.1 Autonoe Security Controls
-
-| Control              | Implementation              | Enforcement     |
-| -------------------- | --------------------------- | --------------- |
-| OS-Level Sandbox     | SandboxSettings.enabled     | SDK (hardcoded) |
-| Bash Auto-Allow      | autoAllowBashIfSandboxed    | SDK (hardcoded) |
-| Filesystem Scope     | permissions: ["./**"]       | SDK             |
-| Bash Allowlist       | BashSecurity hook           | PreToolUse      |
-| .autonoe/ Protection | PreToolUse hook             | PreToolUse      |
 
 ### 6.2 Coding Agent Restrictions
 
@@ -1244,7 +1246,7 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | Custom hooks                | Merge with security baseline                |
 | Custom mcpServers           | User priority (see Section 5.4)             |
 | Custom allowCommands        | Merge with profile commands                 |
-| Disable sandbox             | Ignored, always enabled                     |
+| Disable sandbox             | Allowed with warning (stderr)               |
 | Remove .autonoe/ protection | Re-apply security baseline                  |
 
 ### 7.5 Profile Selection
@@ -1750,24 +1752,25 @@ bun build apps/cli/bin/autonoe.ts --compile --outfile dist/autonoe
 bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dist/autonoe-linux
 ```
 
-### 10.6 Docker Image Architecture
+### 10.6 Docker Image Configuration
 
-**Monorepo Docker Strategy**:
+**Monorepo Image Strategy:**
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                  ghcr.io/[org]/autonoe/                  │
-├─────────────────────────────────────────────────────────┤
-│  cli ─────────▶ apps/cli (Coding Agent CLI)              │
-│  (future) ────▶ Other packages as needed                 │
-└─────────────────────────────────────────────────────────┘
-```
+Each publishable package maps to a separate image path under the organization namespace:
 
 | Package | Image Path | Description |
 |---------|------------|-------------|
 | apps/cli | `ghcr.io/[org]/autonoe/cli` | Coding Agent CLI |
 
-**Build Architecture (apps/cli)**:
+**Registry:**
+
+| Setting | Value |
+|---------|-------|
+| Registry | GitHub Container Registry |
+| Path Pattern | `ghcr.io/[org]/autonoe/<package>` |
+| Default Tag | `:latest` = `:base` |
+
+**Build Architecture:**
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -1776,45 +1779,26 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 │  builder ──▶ Compile autonoe binary                     │
 │      │                                                  │
 │      ├──▶ base (debian:bookworm-slim)                   │
-│      │                                                  │
 │      ├──▶ node (node:XX-bookworm-slim)                  │
-│      │                                                  │
 │      ├──▶ python (python:X.XX-slim-bookworm)            │
-│      │                                                  │
 │      ├──▶ golang (golang:X.XX-bookworm)                 │
-│      │                                                  │
 │      └──▶ ruby (ruby:X.X-slim-bookworm)                 │
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Target Definition**:
+**Targets and Tags:**
 
-| Target | Base Image                  | Tools Included                                    |
-|--------|-----------------------------|-------------------------------------------------|
-| base   | debian:bookworm-slim        | git, curl, ca-certificates                        |
-| node   | node:XX-bookworm-slim       | git, curl, npm, Playwright deps                   |
-| python | python:X.XX-slim-bookworm   | git, curl, Node.js, npm, Playwright deps, pip, venv |
-| golang | golang:X.XX-bookworm        | git, curl, Node.js, npm, Playwright deps          |
-| ruby   | ruby:X.X-slim-bookworm      | git, curl, Node.js, npm, Playwright deps, Bundler |
+| Target | Base Image | Tag | Tools | Use Case |
+|--------|------------|-----|-------|----------|
+| base | debian:bookworm-slim | `:latest`, `:base` | git, curl, ca-certificates | Minimal runtime |
+| node | node:XX-bookworm-slim | `:node` | git, curl, npm, Playwright deps | Frontend development |
+| python | python:X.XX-slim-bookworm | `:python` | git, curl, Node.js, npm, Playwright deps, pip, venv | Backend / Data science |
+| golang | golang:X.XX-bookworm | `:golang` | git, curl, Node.js, npm, Playwright deps | System programming |
+| ruby | ruby:X.X-slim-bookworm | `:ruby` | git, curl, Node.js, npm, Playwright deps, Bundler | Web development |
 
-**Build Args**:
+Each target must include base tools (git, curl, ca-certificates) for Claude Code to function properly.
 
-| Arg | Default | Description |
-|-----|---------|-------------|
-| `NODE_VERSION` | 24 | Node.js LTS |
-| `PYTHON_VERSION` | 3.14 | Python stable |
-| `GOLANG_VERSION` | 1.25 | Go stable |
-| `RUBY_VERSION` | 4.0 | Ruby stable |
-
-### 10.7 Container Registry
-
-| Setting | Value |
-|---------|-------|
-| Registry | GitHub Container Registry |
-| Path | `ghcr.io/[org]/autonoe/cli` |
-| Default | `:latest` = `:base` |
-
-**Tag Naming Convention**:
+**Tag Naming Convention:**
 
 | Pattern | Example | Description |
 |---------|---------|-------------|
@@ -1822,17 +1806,16 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 | `:<lang>` | `:node`, `:python` | Language runtime with Node.js + Playwright |
 | `:X.Y.Z-<variant>` | `:1.0.0-node` | Versioned tag |
 
-### 10.8 Default Publish Matrix
+**Build Args:**
 
-| Tag | Tools | Use Case |
-|-----|-------|----------|
-| `:latest`, `:base` | git, curl | Minimal runtime |
-| `:node` | Node.js, Playwright | Frontend development |
-| `:python` | Python, pip, Node.js, Playwright | Backend / Data science |
-| `:golang` | Go, Node.js, Playwright | System programming |
-| `:ruby` | Ruby, Bundler, Node.js, Playwright | Web development |
+| Arg | Default | Description |
+|-----|---------|-------------|
+| `NODE_VERSION` | XX | Node.js LTS (check latest) |
+| `PYTHON_VERSION` | X.XX | Python stable (check latest) |
+| `GOLANG_VERSION` | X.XX | Go stable (check latest) |
+| `RUBY_VERSION` | X.X | Ruby stable (check latest) |
 
-### 10.9 Version Support Policy
+### 10.7 Version Support Policy
 
 | Language | Policy |
 |----------|--------|
@@ -1845,46 +1828,13 @@ bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dis
 - Default versions follow official LTS/stable releases
 - Users can specify versions via Build Args for custom builds
 
-### 10.10 Release Management
+### 10.8 Release Management
 
 | Tool                     | Purpose                            |
 | ------------------------ | ---------------------------------- |
 | Release Please           | Version management, CHANGELOG      |
 | Bun cross-compile        | Multi-platform binary distribution |
 | docker/build-push-action | Multi-platform Docker images       |
-
-**Release Flow:**
-
-```
-Push to main ─────────────────────────────────────────────────────┐
-       │                                                          │
-       ▼                                                          ▼
-┌─────────────────────────────────────────┐            ┌─────────────────────────────┐
-│              ci.yml                      │            │      release-please.yml     │
-├─────────────────────────────────────────┤            ├─────────────────────────────┤
-│  docker-latest:                          │            │  release-please:            │
-│    Build :latest Docker images           │            │    Create/update release PR │
-│                                          │            │                             │
-│  build-snapshot:                         │            │         ▼ (on CLI release)  │
-│    Bun cross-compile binaries            │            │  ┌──────┴──────┐            │
-│    Upload as workflow artifacts          │            │  ▼             ▼            │
-└─────────────────────────────────────────┘            │  docker-    binary-         │
-       │                                                │  release    release         │
-       ▼                                                └─────────────────────────────┘
-┌─────────────────────────────────────────┐                   │             │
-│  ghcr.io/.../cli:latest                  │                   ▼             ▼
-│  ghcr.io/.../cli:base                    │            ┌─────────────────────────────┐
-│  ghcr.io/.../cli:node                    │            │  ghcr.io/.../cli:X.Y.Z      │
-│  ghcr.io/.../cli:python                  │            │  ghcr.io/.../cli:X.Y-node   │
-│  ghcr.io/.../cli:golang                  │            │  ghcr.io/.../cli:X-python   │
-│  ghcr.io/.../cli:ruby                    │            │  ...                        │
-│                                          │            ├─────────────────────────────┤
-│  GitHub Actions Artifacts (7 days)       │            │  GitHub Release Assets      │
-│    └── binaries (snapshot)               │            │    ├── autonoe-linux-x64    │
-└─────────────────────────────────────────┘            │    ├── autonoe-darwin-arm64 │
-                                                        │    └── checksums.txt        │
-                                                        └─────────────────────────────┘
-```
 
 **Workflow Structure:**
 
@@ -1907,7 +1857,7 @@ jobs:
   binary-release:   # Downloads artifacts, uploads to GitHub Release
 ```
 
-### 10.10.1 Reusable Workflow Architecture
+### 10.8.1 Reusable Workflow Architecture
 
 **Unified Approach:**
 
