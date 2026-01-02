@@ -1130,6 +1130,75 @@ Command Input
 - Rule: If ANY command in chain is blocked, ENTIRE chain is denied
 - Parse: Use shell-aware tokenizer (handle quotes, escapes)
 
+### 6.4 Runtime Security Options
+
+#### 6.4.1 CLI Flag
+
+| Flag                | Alias | Type    | Default | Description                                     |
+| ------------------- | ----- | ------- | ------- | ----------------------------------------------- |
+| --allow-destructive | -D    | boolean | false   | Enable rm and mv commands with path validation  |
+
+**Warning Message (stderr):**
+
+```
+Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.
+```
+
+#### 6.4.2 Enabled Commands
+
+| Command | Validation                         |
+| ------- | ---------------------------------- |
+| rm      | Path validation required           |
+| mv      | Source + destination validation    |
+
+#### 6.4.3 Path Validation
+
+```
+Input Path
+    │
+    ▼
+┌───────────────────────────────────────┐
+│ 1. Resolve against projectDir         │
+│    path.resolve(projectDir, input)    │
+└───────────────────┬───────────────────┘
+                    ▼
+┌───────────────────────────────────────┐
+│ 2. Resolve symlinks                   │
+│    fs.realpathSync(resolved)          │
+└───────────────────┬───────────────────┘
+                    ▼
+┌───────────────────────────────────────┐
+│ 3. Normalize (remove . and ..)        │
+│    path.normalize(final)              │
+└───────────────────┬───────────────────┘
+                    ▼
+┌───────────────────────────────────────┐
+│ 4. Verify starts with projectDir      │
+│    normalized.startsWith(projectDir)  │
+└───────────────────┬───────────────────┘
+                    │
+         ┌─────────┴─────────┐
+         ▼                   ▼
+    ┌─────────┐         ┌─────────┐
+    │  ALLOW  │         │  DENY   │
+    │ (inside)│         │(outside)│
+    └─────────┘         └─────────┘
+```
+
+#### 6.4.4 Blocked Flags
+
+| Command | Blocked Flags      | Reason                   |
+| ------- | ------------------ | ------------------------ |
+| rm      | --no-preserve-root | Bypasses root protection |
+
+#### 6.4.5 Error Messages
+
+| Condition            | Message                                       |
+| -------------------- | --------------------------------------------- |
+| Path escapes project | `Path '{path}' escapes project directory`     |
+| Blocked flag         | `Flag '{flag}' is not allowed with {command}` |
+| Symlink escapes      | `Symlink target escapes project directory`    |
+
 ---
 
 ## 7. Decision Table
@@ -1229,6 +1298,19 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | SC-X016 | Hook with no command        | Approved (continue=true)        |
 | SC-X017 | `./bin/dev.sh`              | Allowed (dev script)            |
 | SC-X018 | `bin/dev.sh --flag`         | Denied (no args allowed)        |
+
+**Destructive Commands (--allow-destructive):**
+
+| ID      | Input                     | allowDestructive | Expected        |
+| ------- | ------------------------- | ---------------- | --------------- |
+| SC-X019 | `rm file.txt`             | false            | Denied          |
+| SC-X020 | `rm file.txt`             | true             | Allowed         |
+| SC-X021 | `rm ../file.txt`          | true             | Denied (escape) |
+| SC-X022 | `rm /etc/passwd`          | true             | Denied (escape) |
+| SC-X023 | `rm --no-preserve-root /` | true             | Denied (flag)   |
+| SC-X024 | `mv src.ts dst.ts`        | true             | Allowed         |
+| SC-X025 | `mv src.ts ../dst.ts`     | true             | Denied (escape) |
+| SC-X026 | `mv ../src.ts dst.ts`     | true             | Denied (escape) |
 
 ### 8.3 Deliverable Tools (autonoe-deliverable)
 
@@ -1905,6 +1987,7 @@ Options:
   --debug, -d             Show debug output
   --no-sandbox            Disable SDK sandbox
   --wait-for-quota        Wait for quota reset instead of exiting
+  --allow-destructive, -D Enable rm/mv with path validation
 ```
 
 ### 11.2 Behavior
@@ -1941,6 +2024,7 @@ cli
   .option('-d, --debug', 'Show debug output')
   .option('--no-sandbox', 'Disable SDK sandbox')
   .option('--wait-for-quota', 'Wait for quota reset instead of exiting')
+  .option('-D, --allow-destructive', 'Enable rm/mv with path validation')
   .action((options) => {
     // Run session with options
   })
