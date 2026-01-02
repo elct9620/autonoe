@@ -2,6 +2,11 @@ name: Integration Test
 
 on:
   workflow_dispatch:
+    inputs:
+      test:
+        description: 'Test ID to run (e.g., IT-001, SC-B001). Leave empty to run all tests.'
+        required: false
+        type: string
   schedule:
     - cron: '0 2 * * *'
 
@@ -14,4 +19,9 @@ jobs:
       - name: Run integration tests
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-        run: ./tests/integration/run.sh
+        run: |
+          if [ -n "${{ inputs.test }}" ]; then
+            ./tests/integration/run.sh --test "${{ inputs.test }}"
+          else
+            ./tests/integration/run.sh
+          fi

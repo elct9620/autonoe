@@ -157,8 +157,106 @@ test_it005() {
   fi
 }
 
+# SC-B001: Browser Navigate to localhost
+test_scb001() {
+  echo ""
+  echo "SC-B001: Browser Navigate to localhost"
+  setup browser-test
+
+  # Run with more iterations for browser interaction
+  if run_autonoe -n 5; then
+    # Verify browser test completed via status.json
+    if test -f ./tmp/.autonoe/status.json; then
+      if jq -e '.deliverables[] | select(.passed == true)' ./tmp/.autonoe/status.json > /dev/null 2>&1; then
+        # Check if screenshot was taken
+        if test -f ./tmp/screenshot.png; then
+          pass
+        else
+          fail "screenshot.png not found"
+        fi
+      else
+        fail "no deliverable with passed=true"
+      fi
+    else
+      fail ".autonoe/status.json not found"
+    fi
+  else
+    fail "autonoe execution failed"
+  fi
+}
+
+# Run a single test by ID
+run_test() {
+  local test_id="$1"
+  case "$test_id" in
+    IT-001|it-001) test_it001 ;;
+    IT-002|it-002) test_it002 ;;
+    IT-003|it-003) test_it003 ;;
+    IT-004|it-004) test_it004 ;;
+    IT-005|it-005) test_it005 ;;
+    SC-B001|sc-b001) test_scb001 ;;
+    *)
+      echo -e "${RED}Error: Unknown test ID: $test_id${NC}"
+      echo "Available tests: IT-001, IT-002, IT-003, IT-004, IT-005, SC-B001"
+      exit 1
+      ;;
+  esac
+}
+
+# Run all tests
+run_all_tests() {
+  test_it001
+  test_it002
+  test_it003
+  test_it004
+  test_it005
+}
+
+# Show usage
+usage() {
+  echo "Usage: $0 [OPTIONS]"
+  echo ""
+  echo "Options:"
+  echo "  --test <ID>  Run a specific test (e.g., IT-001, SC-B001)"
+  echo "  --help       Show this help message"
+  echo ""
+  echo "Available tests:"
+  echo "  IT-001   Basic Workflow"
+  echo "  IT-002   Technology Stack Recognition"
+  echo "  IT-003   Instruction Override"
+  echo "  IT-004   Deliverable Status Persistence"
+  echo "  IT-005   Session Iteration Limit"
+  echo "  SC-B001  Browser Navigate to localhost"
+}
+
 # Main execution
 main() {
+  local selected_test=""
+
+  # Parse arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --test)
+        if [[ -n "${2:-}" ]]; then
+          selected_test="$2"
+          shift 2
+        else
+          echo -e "${RED}Error: --test requires a test ID${NC}"
+          exit 1
+        fi
+        ;;
+      --help)
+        usage
+        exit 0
+        ;;
+      *)
+        echo -e "${RED}Error: Unknown option: $1${NC}"
+        usage
+        exit 1
+        ;;
+    esac
+  done
+
   echo "================================"
   echo "Autonoe Integration Tests"
   echo "================================"
@@ -178,12 +276,12 @@ main() {
   echo "Building Docker image..."
   docker compose build cli
 
-  # Run all tests
-  test_it001
-  test_it002
-  test_it003
-  test_it004
-  test_it005
+  # Run tests
+  if [[ -n "$selected_test" ]]; then
+    run_test "$selected_test"
+  else
+    run_all_tests
+  fi
 
   # Summary
   echo ""

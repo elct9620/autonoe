@@ -72,13 +72,14 @@ export interface UserConfig {
 /**
  * Built-in MCP servers (hardcoded)
  * Uses Microsoft Playwright MCP with headless mode for browser automation
+ * --isolated allows multiple browser instances across sessions
  * @see https://github.com/microsoft/playwright-mcp
  */
 export const BUILTIN_MCP_SERVERS: Readonly<Record<string, McpServer>> =
   Object.freeze({
     playwright: Object.freeze({
       command: 'npx',
-      args: ['@playwright/mcp@latest', '--headless'],
+      args: ['@playwright/mcp@latest', '--headless', '--isolated'],
     }),
   })
 
