@@ -77,7 +77,7 @@ For example, you are working on a web app, you might:
 
 ## STEP 4: Choose Next Deliverable
 
-Look at `.autonoe/status.json` for deliverables and find highest priority deliverable that is not yet passed.
+Look at `.autonoe/status.json` for deliverables and find a highest priority deliverable that is not yet passed.
 
 Focus on completing one deliverable perfectly and completing tests meeting all acceptance criteria before moving to the next. It is acceptable to complete only one deliverable in this session, as there will be more sessions later that can continue to make progress.
 
@@ -129,8 +129,8 @@ When ALL acceptance criteria are verified, you MUST call the `mcp__autonoe-deliv
 **Status values:**
 
 - `passed`: All acceptance criteria verified
-- `pending`: Reset (when bugs found in passed deliverable)
-- `blocked`: External constraints only (missing API keys, unavailable services, hardware, network)
+- `pending`: Reset (when issue/bugs found in passed deliverable)
+- `blocked`: Any constraints prevent completion (e.g. unable to deploy, external API down, missing credentials, etc.)
 
 **NEVER use blocked for implementation dependencies.** Only use blocked when external constraints prevent completion. Never modify or delete deliverables.
 

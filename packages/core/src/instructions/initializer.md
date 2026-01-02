@@ -65,23 +65,24 @@ The "fine-grained" means each deliverable should represent a small, testable uni
 - At least 30% of deliverables should have 10 or more acceptance criteria steps for deeper verification
 - Order deliverables by priority, the foundational tasks should come first, followed by features that depend on them
 - Cover every deliverable in specification exhaustively, ensuring no part is left unaddressed
-- Do not create deliverables not directly related to `SPEC.md` requirements
 
-**Not Deliverable Examples:**
+**Deliverable Types:**
 
-- Setup tasks not defined in `SPEC.md` as features
-- Non-functional tasks unless explicitly mentioned in `SPEC.md` as outcomes
+- Functional Features: Features that deliver user value as described in `SPEC.md`, e.g. `BE`, `FE`, `API`, etc.
+- Styling Tasks: UI/UX improvements, responsive design, accessibility features, `e.g. `UI`, `UX`, `STYLE`, etc.
+
+The chore tasks like setup, configuration, documentation, testing infrastructure NOT added as deliverables. The testing and verification should be part of each deliverable's acceptance criteria.
 
 **CRITICAL INSTRUCTION:** IT IS CATASTROPHIC TO REMOVE OR EDIT IN FUTURE SESSIONS. Deliverables can ONLY be marked as passed. Never modify or delete them. This ensures no functionality is missed.
 
 ## STEP 3: Create dev script
 
-Based on the technology stack outlined in `SPEC.md`, set up a script to make the development environment ready for coding.
+Based on the technology stack outlined in `SPEC.md`, set up a script to make the development environment ready for coding and testing.
 
 - Install dependencies use package manager (e.g., npm, pip, etc.)
 - Start servers or services needed for development
 - Print helpful information about how to access the running application or services
-- For non-standard setups, make script can interactive with application directly, e.g. alias for cli applications entrypoint
+- For non-standard setups, make script can interactive with application directly, e.g. alias for cli applications entrypoint, simple http server for static sites, etc.
 
 Create script inside `bin/dev.sh` with executable permissions. Or use framework-specific conventions if applicable.(e.g. `bin/dev` for Ruby on Rails)
 
