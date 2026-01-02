@@ -51,6 +51,8 @@ For each deliverable, it provides value to the end user and can be independently
 
 **Specification Size:**
 
+Follow are reference guidelines for the number of deliverables, not strict rules:
+
 - If `SPEC.md` is simple and short, create fewer deliverables but cover all aspects
 - If `SPEC.md` is less than 500 words, create 5-10 deliverables
 - If `SPEC.md` is between 500 to 2000 lines, create 10-200 deliverables
