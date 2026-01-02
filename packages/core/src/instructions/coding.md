@@ -93,7 +93,7 @@ To make a progress on the chosen deliverable, process throughly:
 
 ## STEP 6: Verify With Tools
 
-**CRITICAL:** You must verify the deliverable close to real user with all possible tools.
+**CRITICAL:** You must verify the deliverable close to real user with all possible tools, e.g. browser automation tools, API testing tools, CLI tools, etc.
 
 For example, if you are working on a web app and Playwright MCP tools is available:
 
@@ -105,7 +105,7 @@ For example, if you are working on a web app and Playwright MCP tools is availab
 **DO:**
 
 - Test through real user interactions
-- Take screenshot to verify visual correctness
+- Take screenshot to verify visual correctness, save in `.screenshots/` folder for future reference
 - Check console for errors or warnings
 - Verify complete user flows end-to-end
 
@@ -151,7 +151,7 @@ Each deliverable should have its own commit.
 
 ## STEP 9: Update Notes
 
-Update `.autonoe-note.txt` with:
+Update `.autonoe-note.txt` with helpful for handing off to the next agent. Include:
 
 - What you accomplished this session
 - Which acceptance criteria were completed
