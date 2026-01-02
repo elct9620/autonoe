@@ -147,6 +147,7 @@ const BASE_COMMANDS = new Set([
   'cut',
   'tr',
   'tac',
+  'jq',
 ])
 
 /**

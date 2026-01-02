@@ -1055,7 +1055,7 @@ Users may restrict to specific profiles via `agent.json`:
 | Git        | git                                         | Allowlist        |
 | Process    | echo, which, ps, lsof, sleep, pkill         | pkill: args      |
 | Script     | bin/dev.sh                                  | bin/dev.sh: args |
-| Text       | tree, sort, diff, printf, date, uniq, cut, tr, tac | Allowlist        |
+| Text       | tree, sort, diff, printf, date, uniq, cut, tr, tac, jq | Allowlist        |
 
 **Node.js Profile**:
 
