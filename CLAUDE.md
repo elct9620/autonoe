@@ -19,12 +19,21 @@ bun apps/cli/bin/autonoe.ts run
 ```bash
 bun run test                                       # Run all tests
 bun run test --project core                        # Run core package tests
-bun run test --project agent                        # Run agent package tests
+bun run test --project agent                       # Run agent package tests
 bun run test packages/core/tests/session.test.ts   # Run a single test file
+bun run test packages/agent/tests/converters.test.ts  # Agent package single test
 bun run test --coverage                            # Run with coverage report
 ```
 
 Project names: `core`, `agent` (defined in each package's `vitest.config.ts`). Coverage reports are generated in `./coverage/`.
+
+### Integration Tests
+
+```bash
+make test-integration                              # Run all integration tests (requires Docker)
+```
+
+Integration tests are in `tests/integration/` and use Docker to run full end-to-end scenarios. They are separated from unit tests due to execution time and API costs.
 
 ### Docker
 
@@ -55,7 +64,7 @@ Autonoe is a Bun/TypeScript monorepo that orchestrates an autonomous coding agen
 └─────────────────────────────────┘  └─────────────────────────────────┘
 ```
 
-**Key flow**: CLI → `SessionRunner.run(factory, logger)` → loop creates `Session` → `client.query()` returns `MessageStream` → process `StreamEvent` discriminated union → terminates when all deliverables pass
+**Key flow**: CLI → `SessionRunner.run(factory, logger)` → loop creates `Session` → `client.query()` returns `MessageStream` → process `StreamEvent` discriminated union → terminates when all deliverables pass (or all non-blocked pass)
 
 ### Packages
 
@@ -140,3 +149,15 @@ See `SPEC.md` Section 6 for bash command allowlist and validation rules.
 ## Specification
 
 `SPEC.md` is the single source of truth for requirements, interfaces, and scenarios. Always consult it when implementing new features.
+
+## Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `packages/core/src/types.ts` | All domain types (StreamEvent, Deliverable, etc.) |
+| `packages/core/src/sessionRunner.ts` | Session loop orchestration |
+| `packages/core/src/session.ts` | Single session execution |
+| `packages/core/src/bashSecurity.ts` | Command allowlist validation |
+| `packages/core/src/configuration.ts` | Security baseline and config loading |
+| `packages/agent/src/claudeAgentClient.ts` | SDK wrapper implementation |
+| `packages/agent/src/converters.ts` | SDK ↔ Domain type conversions |
