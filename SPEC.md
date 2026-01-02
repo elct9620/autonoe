@@ -335,6 +335,7 @@ Persistence: `.autonoe/status.json`
 // packages/core/src/agentClient.ts
 interface AgentClient {
   query(instruction: string): MessageStream
+  dispose(): Promise<void>
 }
 
 interface AgentClientFactory {
@@ -349,6 +350,30 @@ interface AgentClientOptions {
   allowedTools?: string[]
 }
 ```
+
+#### 3.1.1 Session Lifecycle
+
+Each session follows a strict lifecycle to ensure proper resource management:
+
+```
+Session.run() called
+    │
+    ├── client.query(instruction)
+    │       ├── Start MCP servers
+    │       ├── Launch browser (if Playwright)
+    │       └── Return MessageStream
+    │
+    ├── Process MessageStream until completion
+    │
+    ├── client.dispose()
+    │       ├── Stop MCP server processes
+    │       ├── Close browser instances
+    │       └── Release system resources
+    │
+    └── Return SessionResult
+```
+
+**Design Principle**: Each session must be independent and isolated. The `dispose()` method ensures that resources from one session do not leak into subsequent sessions.
 
 ### 3.2 MockAgentClient
 
@@ -756,11 +781,30 @@ Quota detection utilities in `quotaLimit.ts`:
 
 ### 4.1 Playwright MCP Tools
 
-Uses Microsoft Playwright MCP server (`@playwright/mcp@latest`) with `--headless` mode by default.
+Uses Microsoft Playwright MCP server (`@playwright/mcp@latest`) with session isolation:
+
+| Flag | Purpose |
+|------|---------|
+| `--headless` | Run browser without GUI for CI/server environments |
+| `--isolated` | Ensure browser instance isolation per session |
 
 - Server: https://github.com/microsoft/playwright-mcp
 - Tool prefix: `mcp__playwright__*`
 - Allowed tools defined in `PLAYWRIGHT_MCP_TOOLS` constant (`packages/core/src/configuration.ts`)
+
+#### 4.1.1 Browser Lifecycle
+
+```
+Session Start ─────► MCP Server Start ─────► Browser Launch
+                                                   │
+                                                   ▼
+                                            [Browser Operations]
+                                                   │
+                                                   ▼
+Session End ◄────── client.dispose() ◄────── Browser Close
+```
+
+**Session Isolation**: The `--isolated` flag ensures each session creates an independent browser context, preventing state leakage between iterations. This enables reliable multi-session workflows where browser state is fresh for each coding cycle.
 
 ### 4.2 Verification Flow
 
@@ -823,7 +867,7 @@ project/
 ├─────────────────────────────────────────────────────────────────┤
 │  Hardcoded (packages/core)                                       │
 │  ├── sandbox: { enabled: true }                                  │
-│  └── mcpServers: { playwright: @playwright/mcp@latest --headless}│
+│  └── mcpServers: { playwright: @playwright/mcp --headless --isolated }│
 │                                                                  │
 │  Security Baseline (packages/core, always enforced)              │
 │  ├── permissions.allow: [Read(./**), Write(./**), ...]           │
@@ -1616,24 +1660,25 @@ echo "$OUTPUT" | grep -qi "permission denied\|not allowed\|blocked"
 
 ### 9.7 Browser Test Cases
 
-| ID      | Input                  | Expected Output          |
-| ------- | ---------------------- | ------------------------ |
-| SC-B001 | Navigate to localhost  | Page loaded              |
-| SC-B002 | Click without snapshot | Error: snapshot required |
-| SC-B003 | Form submission        | Form submitted, verified |
-| SC-B004 | Text verification      | Assertion passes/fails   |
+| ID      | Input                    | Expected Output                   |
+| ------- | ------------------------ | --------------------------------- |
+| SC-B001 | Navigate to example.com  | Page loaded, screenshot captured  |
+| SC-B002 | Click without snapshot   | Error: snapshot required          |
+| SC-B003 | Form submission          | Form submitted, verified          |
+| SC-B004 | Text verification        | Assertion passes/fails            |
 
 ```bash
-# Setup - Start local web server and prepare fixture
+# Setup - Prepare browser test fixture
 find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
 cp -r tests/integration/fixtures/browser-test/* ./tmp/
 
-# Execute (web server runs inside container)
+# Execute
 docker compose run --rm cli autonoe run -n 5
 
 # Verify - Check browser interaction artifacts
 test -f ./tmp/.autonoe/status.json
-jq -e '.deliverables[] | select(.name | contains("Browser"))' ./tmp/.autonoe/status.json
+test -f ./tmp/screenshot.png
+jq -e '.deliverables[] | select(.passed == true)' ./tmp/.autonoe/status.json
 ```
 
 ### 9.8 Makefile Integration
@@ -1646,9 +1691,18 @@ test: test-unit
 test-unit:
 	bun run test
 
+# Run all integration tests or a specific test with TEST=<ID>
+# Examples:
+#   make test-integration            # Run all tests
+#   make test-integration TEST=IT-001  # Run specific test
+#   make test-integration TEST=SC-B001 # Run browser test
 test-integration:
 	@echo "Running integration tests..."
+ifdef TEST
+	./tests/integration/run.sh --test $(TEST)
+else
 	./tests/integration/run.sh
+endif
 
 test-all: test-unit test-integration
 ```
