@@ -104,6 +104,8 @@ To make a progress on the chosen deliverable, process throughly:
 
 **CRITICAL:** You must verify the deliverable close to real user with all possible tools, e.g. browser automation tools, API testing tools, CLI tools, etc.
 
+**PREFER Browser Automation:** When working on web applications, you MUST use browser automation tools (Playwright, Puppeteer) as the PRIMARY verification method. API/curl testing is supplementary, not a replacement for real browser verification.
+
 For example, if you are working on a web app and Playwright MCP tools is available:
 
 - Navigate to the app use real browser
@@ -138,11 +140,13 @@ When ALL acceptance criteria are verified, you MUST call the `mcp__autonoe-deliv
 
 **Status values:**
 
-- `passed`: All acceptance criteria verified
+- `passed`: All acceptance criteria verified through actual testing
 - `pending`: Reset (when issue/bugs found in passed deliverable)
-- `blocked`: Any constraints prevent completion (e.g. unable to deploy, external API down, missing credentials, etc.)
+- `blocked`: Cannot verify the deliverable (e.g. unable to deploy, external API down, missing credentials, browser automation unavailable for UI features, etc.)
 
-**NEVER use blocked for implementation dependencies.** Only use blocked when external constraints prevent completion. Never modify or delete deliverables.
+**CRITICAL:** If you CANNOT verify a deliverable, you MUST mark it as `blocked`, NOT `passed`. Never mark passed based on code logic alone - actual verification is required.
+
+**NEVER use blocked for implementation dependencies.** Only use blocked when external constraints prevent verification. Never modify or delete deliverables.
 
 ## STEP 8: Commit Work
 
