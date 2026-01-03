@@ -184,6 +184,7 @@ export async function handleRunCommand(
           preToolUseHooks,
           sdkMcpServers: [deliverableMcpServer],
           allowedTools: [...config.allowedTools, ...deliverableTools],
+          model: runnerOptions.model,
         }),
     }
 

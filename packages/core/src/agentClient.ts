@@ -61,4 +61,5 @@ export interface AgentClientOptions {
   sandbox?: SandboxConfig
   preToolUseHooks?: PreToolUseHook[]
   settingSources?: SettingSource[]
+  model?: string
 }

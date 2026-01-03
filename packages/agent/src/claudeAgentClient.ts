@@ -95,6 +95,7 @@ export class ClaudeAgentClient implements AgentClient {
       cwd: options.cwd,
       abortController,
       pathToClaudeCodeExecutable: detectClaudeCodePath(),
+      model: options.model,
     }
 
     // Merge external MCP servers and SDK MCP servers
