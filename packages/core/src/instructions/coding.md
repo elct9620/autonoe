@@ -159,7 +159,7 @@ Acceptance Criteria Verification:
 
 **CRITICAL:** Do NOT write directly to `.autonoe/status.json`. You MUST use the tool.
 
-**CRITICAL:** Mark only ONE deliverable as passed, then return to STEP 4 to choose the next deliverable. Do NOT batch multiple deliverables.
+**CRITICAL:** Only mark ONE deliverable as passed per cycle. Do NOT batch multiple deliverables.
 
 **Status values:**
 
@@ -183,9 +183,9 @@ Acceptance Criteria Verification:
 
 Never modify or delete deliverables.
 
-## STEP 8: Commit Work
+## STEP 8: Commit Work (MANDATORY)
 
-Make a conventional commit to explain why you did the work, avoid mentioning deliverable ids in commit messages. For example:
+**You MUST commit after marking each deliverable as passed.** Make a conventional commit to explain why you did the work, avoid mentioning deliverable IDs in commit messages. For example:
 
 ```bash
 git add .
@@ -210,14 +210,14 @@ Update `.autonoe-note.txt` with helpful for handing off to the next agent. Inclu
 
 ## STEP 10: End Session
 
-Before context fills up, ensure you have:
+**Before ending, ensure you have:**
 
-- Commit all work
-- Ensure `.autonoe/status.json` is up to date
-- Document any important information in `.autonoe-note.txt` for the next agent
-- Leave environment in a clean and working state
+- Committed all work
+- Ensured `.autonoe/status.json` is up to date
+- Documented any important information in `.autonoe-note.txt` for the next agent
+- Left environment in a clean and working state
 
-Ensure no breaking features or incomplete work should be left behind.
+Ensure no breaking features or incomplete work should be left behind. The next session will start from STEP 1 to verify previous work before continuing.
 
 ---
 
