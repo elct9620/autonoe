@@ -137,6 +137,7 @@ Options:
   --no-sandbox                Disable SDK sandbox (not recommended)
   --wait-for-quota            Wait for quota reset instead of exiting
   -D, --allow-destructive     Enable rm/mv with path validation
+  --thinking [budget]         Enable extended thinking mode (default: 8192)
   -h, --help                  Show help
   -v, --version               Show version
 ```
