@@ -74,9 +74,12 @@ COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
-# Install Playwright system dependencies (browser installed via MCP at runtime)
+# Install Playwright system dependencies (browser installed via npx at runtime)
 RUN npx playwright install-deps chromium
 ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
+
+# Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
+ENV AUTONOE_NO_SANDBOX=1
 
 WORKDIR /workspace
 
@@ -104,9 +107,12 @@ COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
-# Install Playwright system dependencies (browser installed via MCP at runtime)
+# Install Playwright system dependencies (browser installed via npx at runtime)
 RUN npx playwright install-deps chromium
 ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
+
+# Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
+ENV AUTONOE_NO_SANDBOX=1
 
 WORKDIR /workspace
 
@@ -134,9 +140,12 @@ COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
-# Install Playwright system dependencies (browser installed via MCP at runtime)
+# Install Playwright system dependencies (browser installed via npx at runtime)
 RUN npx playwright install-deps chromium
 ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
+
+# Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
+ENV AUTONOE_NO_SANDBOX=1
 
 WORKDIR /workspace
 
@@ -164,9 +173,12 @@ COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
-# Install Playwright system dependencies (browser installed via MCP at runtime)
+# Install Playwright system dependencies (browser installed via npx at runtime)
 RUN npx playwright install-deps chromium
 ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
+
+# Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
+ENV AUTONOE_NO_SANDBOX=1
 
 WORKDIR /workspace
 

@@ -796,21 +796,27 @@ Uses Microsoft Playwright MCP server (`@playwright/mcp@latest`) with session iso
 
 #### 4.1.1 Browser Installation
 
-Docker images include Playwright system dependencies but NOT the browser binary. The agent must use `mcp__playwright__browser_install` to install the browser at runtime:
+| Platform     | Sandbox | Browser Source       | Status              |
+|--------------|---------|----------------------|---------------------|
+| Linux x64    | Enabled | MCP browser_install  | ✓                   |
+| Linux ARM64  | Enabled | MCP browser_install  | ✗ (not supported)   |
+| Linux ARM64  | Disabled| npx playwright       | ✓                   |
+| Docker       | Disabled| npx playwright       | ✓ (recommended)     |
 
-```
-First browser_navigate ──► "Browser not found" error
-                                    │
-                                    ▼
-              Agent calls browser_install ──► Browser downloaded to $PLAYWRIGHT_BROWSERS_PATH
-                                    │
-                                    ▼
-              Retry browser_navigate ──► Success
-```
+**SDK Sandbox Limitations:**
+- MCP `browser_install` fails on Linux ARM64: "not supported on Linux Arm64"
+- SDK cannot detect pre-installed browsers (via `npx playwright install`)
 
-- `PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers` is set in Docker images
-- Browser installation is a one-time operation per container session
-- System dependencies are pre-installed for faster browser setup
+**Docker Configuration:**
+- `PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers`
+- `AUTONOE_NO_SANDBOX=1` (sandbox disabled for compatibility)
+
+**Recommended SPEC.md Prompt** (for Docker/ARM64):
+```markdown
+## Prerequisites
+Install Chromium before browser testing:
+npx playwright install --with-deps chromium
+```
 
 #### 4.1.2 Browser Lifecycle
 
@@ -978,18 +984,15 @@ project/
 
 **SandboxSettings:**
 
-| Setting                  | Default | CLI Override   |
-| ------------------------ | ------- | -------------- |
-| enabled                  | true    | --no-sandbox   |
-| autoAllowBashIfSandboxed | true    | -              |
+| Setting                  | Default | CLI Override | Env Variable          |
+| ------------------------ | ------- | ------------ | --------------------- |
+| enabled                  | true    | --no-sandbox | AUTONOE_NO_SANDBOX=1  |
+| autoAllowBashIfSandboxed | true    | -            | -                     |
 
-```typescript
-// Passed to SDK query() options
-const sandboxSettings: SandboxSettings = {
-  enabled: !options.noSandbox,  // --no-sandbox disables
-  autoAllowBashIfSandboxed: true,
-}
-```
+**Resolution Order:**
+1. `--no-sandbox` CLI flag (explicit disable)
+2. `AUTONOE_NO_SANDBOX=1` environment variable
+3. Default: enabled
 
 See Section 6 for security layer architecture.
 
@@ -1263,10 +1266,11 @@ Input Path
 
 #### 6.4.6 Warning Messages (stderr)
 
-| Flag                | Message                                                                                          |
+| Trigger             | Message                                                                                          |
 | ------------------- | ------------------------------------------------------------------------------------------------ |
 | --allow-destructive | `Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.` |
 | --no-sandbox        | `Warning: SDK sandbox is disabled. System-level isolation is not enforced.`                      |
+| AUTONOE_NO_SANDBOX  | `Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.`                     |
 
 Pattern: `Warning: [what is enabled/disabled]. [consequence/risk].`
 

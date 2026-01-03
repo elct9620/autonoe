@@ -253,6 +253,29 @@ Autonoe implements three layers of security:
 └─────────────────────────────────────────────────────┘
 ```
 
+## Sandbox Limitations
+
+The Claude Agent SDK sandbox has platform-specific limitations:
+
+| Limitation                          | Workaround                                      |
+| ----------------------------------- | ----------------------------------------------- |
+| macOS support unstable              | Use Docker                                      |
+| Linux ARM64 browser install fails   | Disable sandbox, use `npx playwright install`  |
+| Cannot detect pre-installed browsers| Install browser at runtime via npx              |
+
+### Docker (Recommended)
+
+Docker images disable the sandbox by default (`AUTONOE_NO_SANDBOX=1`) for maximum compatibility. Browser automation works reliably across all platforms.
+
+For browser automation, add to your `SPEC.md`:
+
+```markdown
+## Prerequisites
+
+Before browser testing, install Chromium:
+npx playwright install --with-deps chromium
+```
+
 ## Architecture
 
 ```

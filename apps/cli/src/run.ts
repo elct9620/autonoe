@@ -84,10 +84,18 @@ export async function handleRunCommand(
     process.exit(1)
   }
 
-  // Warning: --no-sandbox (SPEC.md Section 6.4.6)
+  // Check for AUTONOE_NO_SANDBOX environment variable (SPEC.md Section 5.5, 6.4.6)
+  const noSandboxEnv = process.env.AUTONOE_NO_SANDBOX === '1'
+  const sandboxDisabled = options.sandbox === false || noSandboxEnv
+
+  // Warning: --no-sandbox or AUTONOE_NO_SANDBOX
   if (options.sandbox === false) {
     console.error(
       'Warning: SDK sandbox is disabled. System-level isolation is not enforced.',
+    )
+  } else if (noSandboxEnv) {
+    console.error(
+      'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.',
     )
   }
 
@@ -171,7 +179,7 @@ export async function handleRunCommand(
         new ClaudeAgentClient({
           cwd: runnerOptions.projectDir,
           permissionLevel: 'acceptEdits',
-          sandbox: options.sandbox !== false ? config.sandbox : undefined,
+          sandbox: sandboxDisabled ? undefined : config.sandbox,
           mcpServers: config.mcpServers,
           preToolUseHooks,
           sdkMcpServers: [deliverableMcpServer],
