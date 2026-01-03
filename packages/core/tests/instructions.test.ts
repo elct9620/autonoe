@@ -59,7 +59,9 @@ describe('instructions', () => {
     it('returns coding instruction when status.json exists', async () => {
       const statusReader = new MockDeliverableStatusReader()
       // Setting any status makes exists() return true
-      statusReader.setStatusSequence([{ deliverables: [] }])
+      statusReader.setStatusSequence([
+        { createdAt: '2025-01-01', updatedAt: '2025-01-01', deliverables: [] },
+      ])
       const resolver = createDefaultInstructionResolver()
 
       const instruction = await selectInstruction(statusReader, resolver)

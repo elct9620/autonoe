@@ -107,6 +107,7 @@ export {
   hasBlockedDeliverables,
   countBlockedDeliverables,
   allDeliverablesBlocked,
+  getCurrentDate,
 } from './deliverableStatus'
 
 // Instruction exports

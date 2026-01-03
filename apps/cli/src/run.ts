@@ -158,7 +158,7 @@ export async function handleRunCommand(
             ? '[BLOCKED]'
             : '[PENDING]'
       logger.info(
-        `${icon} ${notification.deliverableName} (${notification.deliverableId})`,
+        `${icon} ${notification.deliverableDescription} (${notification.deliverableId})`,
       )
     }
 

@@ -29,7 +29,7 @@ For each deliverable, it provides value to the end user and can be independently
   "deliverables": [
     {
       "id": "UI-001",
-      "name": "Feature Name",
+      "description": "Feature Name",
       "acceptanceCriteria": [
         "Step 1: Navigate to the feature page",
         "Step 2: Perform action X",
@@ -38,7 +38,7 @@ For each deliverable, it provides value to the end user and can be independently
     },
     {
       "id": "BE-001",
-      "name": "Another Feature",
+      "description": "Another Feature",
       "acceptanceCriteria": [
         "Step 1: Setup fixture A",
         "Step 2: Call API endpoint B",

@@ -111,7 +111,7 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test',
+            description: 'Test',
             acceptanceCriteria: ['AC1'],
             passed: false,
             blocked: false,
@@ -120,7 +120,7 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test',
+            description: 'Test',
             acceptanceCriteria: ['AC1'],
             passed: false,
             blocked: false,
@@ -129,7 +129,7 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test',
+            description: 'Test',
             acceptanceCriteria: ['AC1'],
             passed: false,
             blocked: false,
@@ -162,7 +162,7 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test',
+            description: 'Test',
             acceptanceCriteria: ['AC1'],
             passed: true,
             blocked: false,
@@ -200,14 +200,14 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test1',
+            description: 'Test1',
             acceptanceCriteria: ['AC1'],
             passed: false,
             blocked: false,
           },
           {
             id: 'DL-002',
-            name: 'Test2',
+            description: 'Test2',
             acceptanceCriteria: ['AC2'],
             passed: false,
             blocked: false,
@@ -216,14 +216,14 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test1',
+            description: 'Test1',
             acceptanceCriteria: ['AC1'],
             passed: true,
             blocked: false,
           },
           {
             id: 'DL-002',
-            name: 'Test2',
+            description: 'Test2',
             acceptanceCriteria: ['AC2'],
             passed: false,
             blocked: false,
@@ -232,14 +232,14 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test1',
+            description: 'Test1',
             acceptanceCriteria: ['AC1'],
             passed: true,
             blocked: false,
           },
           {
             id: 'DL-002',
-            name: 'Test2',
+            description: 'Test2',
             acceptanceCriteria: ['AC2'],
             passed: true,
             blocked: false,
@@ -275,7 +275,7 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test',
+            description: 'Test',
             acceptanceCriteria: ['AC'],
             passed: false,
             blocked: false,
@@ -284,7 +284,7 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test',
+            description: 'Test',
             acceptanceCriteria: ['AC'],
             passed: true,
             blocked: false,
@@ -319,14 +319,14 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Passed',
+            description: 'Passed',
             acceptanceCriteria: ['AC'],
             passed: true,
             blocked: false,
           },
           {
             id: 'DL-002',
-            name: 'Blocked',
+            description: 'Blocked',
             acceptanceCriteria: ['AC'],
             passed: false,
             blocked: true,
@@ -358,7 +358,7 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Blocked',
+            description: 'Blocked',
             acceptanceCriteria: ['AC'],
             passed: false,
             blocked: true,
@@ -389,21 +389,21 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Passed',
+            description: 'Passed',
             acceptanceCriteria: ['AC'],
             passed: true,
             blocked: false,
           },
           {
             id: 'DL-002',
-            name: 'Blocked1',
+            description: 'Blocked1',
             acceptanceCriteria: ['AC'],
             passed: false,
             blocked: true,
           },
           {
             id: 'DL-003',
-            name: 'Blocked2',
+            description: 'Blocked2',
             acceptanceCriteria: ['AC'],
             passed: false,
             blocked: true,
@@ -437,21 +437,21 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test1',
+            description: 'Test1',
             acceptanceCriteria: ['AC1'],
             passed: false,
             blocked: false,
           },
           {
             id: 'DL-002',
-            name: 'Test2',
+            description: 'Test2',
             acceptanceCriteria: ['AC2'],
             passed: false,
             blocked: false,
           },
           {
             id: 'DL-003',
-            name: 'Test3',
+            description: 'Test3',
             acceptanceCriteria: ['AC3'],
             passed: false,
             blocked: false,
@@ -460,21 +460,21 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test1',
+            description: 'Test1',
             acceptanceCriteria: ['AC1'],
             passed: true,
             blocked: false,
           },
           {
             id: 'DL-002',
-            name: 'Test2',
+            description: 'Test2',
             acceptanceCriteria: ['AC2'],
             passed: true,
             blocked: false,
           },
           {
             id: 'DL-003',
-            name: 'Test3',
+            description: 'Test3',
             acceptanceCriteria: ['AC3'],
             passed: true,
             blocked: false,
@@ -511,21 +511,21 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Passed',
+            description: 'Passed',
             acceptanceCriteria: ['AC'],
             passed: true,
             blocked: false,
           },
           {
             id: 'DL-002',
-            name: 'Blocked1',
+            description: 'Blocked1',
             acceptanceCriteria: ['AC'],
             passed: false,
             blocked: true,
           },
           {
             id: 'DL-003',
-            name: 'Blocked2',
+            description: 'Blocked2',
             acceptanceCriteria: ['AC'],
             passed: false,
             blocked: true,
@@ -560,7 +560,7 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test',
+            description: 'Test',
             acceptanceCriteria: ['AC'],
             passed: false,
             blocked: false,
@@ -569,7 +569,7 @@ describe('SessionRunner', () => {
         createMockStatusJson([
           {
             id: 'DL-001',
-            name: 'Test',
+            description: 'Test',
             acceptanceCriteria: ['AC'],
             passed: false,
             blocked: false,

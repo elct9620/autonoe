@@ -13,7 +13,11 @@ import {
  * Mock implementation of DeliverableRepository for testing
  */
 class MockDeliverableRepository implements DeliverableRepository {
-  private status: DeliverableStatus = { deliverables: [] }
+  private status: DeliverableStatus = {
+    createdAt: '2025-01-01',
+    updatedAt: '2025-01-01',
+    deliverables: [],
+  }
   public loadCalls = 0
   public saveCalls = 0
   public savedStatus: DeliverableStatus | null = null
@@ -38,7 +42,11 @@ class MockDeliverableRepository implements DeliverableRepository {
   }
 
   reset(): void {
-    this.status = { deliverables: [] }
+    this.status = {
+      createdAt: '2025-01-01',
+      updatedAt: '2025-01-01',
+      deliverables: [],
+    }
     this.loadCalls = 0
     this.saveCalls = 0
     this.savedStatus = null
@@ -59,7 +67,7 @@ describe('deliverableToolsAdapter', () => {
           deliverables: [
             {
               id: 'DL-001',
-              name: 'User Authentication',
+              description: 'User Authentication',
               acceptanceCriteria: ['User can login', 'User can logout'],
             },
           ],
@@ -76,7 +84,7 @@ describe('deliverableToolsAdapter', () => {
         expect(repository.savedStatus!.deliverables).toHaveLength(1)
         expect(repository.savedStatus!.deliverables[0]).toMatchObject({
           id: 'DL-001',
-          name: 'User Authentication',
+          description: 'User Authentication',
           acceptanceCriteria: ['User can login', 'User can logout'],
           passed: false,
           blocked: false,
@@ -96,12 +104,12 @@ describe('deliverableToolsAdapter', () => {
           deliverables: [
             {
               id: 'DL-001',
-              name: 'First Feature',
+              description: 'First Feature',
               acceptanceCriteria: ['AC1'],
             },
             {
               id: 'DL-002',
-              name: 'Second Feature',
+              description: 'Second Feature',
               acceptanceCriteria: ['AC2'],
             },
           ],
@@ -124,10 +132,12 @@ describe('deliverableToolsAdapter', () => {
       it('returns error for duplicate in existing status and does not save', async () => {
         // Setup existing deliverable
         repository.setStatus({
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
           deliverables: [
             {
               id: 'DL-001',
-              name: 'Existing',
+              description: 'Existing',
               acceptanceCriteria: ['AC1'],
               passed: false,
               blocked: false,
@@ -139,7 +149,7 @@ describe('deliverableToolsAdapter', () => {
           deliverables: [
             {
               id: 'DL-001',
-              name: 'Duplicate',
+              description: 'Duplicate',
               acceptanceCriteria: ['AC2'],
             },
           ],
@@ -162,12 +172,12 @@ describe('deliverableToolsAdapter', () => {
           deliverables: [
             {
               id: 'DL-001',
-              name: 'First',
+              description: 'First',
               acceptanceCriteria: ['AC1'],
             },
             {
               id: 'DL-001',
-              name: 'Duplicate',
+              description: 'Duplicate',
               acceptanceCriteria: ['AC2'],
             },
           ],
@@ -190,10 +200,12 @@ describe('deliverableToolsAdapter', () => {
       it('updates status.json with passed=true, blocked=false', async () => {
         // Setup existing deliverable
         repository.setStatus({
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
           deliverables: [
             {
               id: 'DL-001',
-              name: 'Feature',
+              description: 'Feature',
               acceptanceCriteria: ['AC1'],
               passed: false,
               blocked: false,
@@ -227,7 +239,11 @@ describe('deliverableToolsAdapter', () => {
     describe('DL-T004: Invalid deliverable ID', () => {
       it('returns error: deliverable not found', async () => {
         // Empty repository
-        repository.setStatus({ deliverables: [] })
+        repository.setStatus({
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
+          deliverables: [],
+        })
 
         const input = {
           deliverableId: 'DL-999',
@@ -250,10 +266,12 @@ describe('deliverableToolsAdapter', () => {
     describe('DL-T005: status=blocked', () => {
       it('updates status.json with passed=false, blocked=true', async () => {
         repository.setStatus({
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
           deliverables: [
             {
               id: 'DL-001',
-              name: 'Feature',
+              description: 'Feature',
               acceptanceCriteria: ['AC1'],
               passed: false,
               blocked: false,
@@ -281,10 +299,12 @@ describe('deliverableToolsAdapter', () => {
     describe('DL-T006: status=pending', () => {
       it('updates status.json with passed=false, blocked=false', async () => {
         repository.setStatus({
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
           deliverables: [
             {
               id: 'DL-001',
-              name: 'Feature',
+              description: 'Feature',
               acceptanceCriteria: ['AC1'],
               passed: true,
               blocked: false,
@@ -312,10 +332,12 @@ describe('deliverableToolsAdapter', () => {
     describe('DL-T007: pending resets blocked state', () => {
       it('resets blocked deliverable to pending', async () => {
         repository.setStatus({
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
           deliverables: [
             {
               id: 'DL-001',
-              name: 'Feature',
+              description: 'Feature',
               acceptanceCriteria: ['AC1'],
               passed: false,
               blocked: true,
@@ -342,10 +364,12 @@ describe('deliverableToolsAdapter', () => {
     describe('DL-T008: Callback invoked on successful status change', () => {
       it('invokes callback with correct notification data', async () => {
         repository.setStatus({
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
           deliverables: [
             {
               id: 'DL-001',
-              name: 'User Authentication',
+              description: 'User Authentication',
               acceptanceCriteria: ['AC1'],
               passed: false,
               blocked: false,
@@ -364,7 +388,7 @@ describe('deliverableToolsAdapter', () => {
         expect(callback).toHaveBeenCalledTimes(1)
         expect(callback).toHaveBeenCalledWith({
           deliverableId: 'DL-001',
-          deliverableName: 'User Authentication',
+          deliverableDescription: 'User Authentication',
           previousStatus: 'pending',
           newStatus: 'passed',
         } satisfies DeliverableStatusNotification)
@@ -372,10 +396,12 @@ describe('deliverableToolsAdapter', () => {
 
       it('reports correct previous status when blocked', async () => {
         repository.setStatus({
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
           deliverables: [
             {
               id: 'DL-001',
-              name: 'Feature',
+              description: 'Feature',
               acceptanceCriteria: ['AC1'],
               passed: false,
               blocked: true,
@@ -402,7 +428,11 @@ describe('deliverableToolsAdapter', () => {
 
     describe('DL-T009: Callback not invoked on failure', () => {
       it('does not invoke callback when deliverable not found', async () => {
-        repository.setStatus({ deliverables: [] })
+        repository.setStatus({
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
+          deliverables: [],
+        })
 
         const callback = vi.fn()
         const input = {
@@ -423,7 +453,7 @@ describe('deliverableToolsAdapter', () => {
         deliverables: [
           {
             id: 'DL-001',
-            name: 'Test',
+            description: 'Test',
             acceptanceCriteria: ['AC1'],
           },
         ],

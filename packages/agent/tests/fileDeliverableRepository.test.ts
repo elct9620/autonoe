@@ -43,15 +43,19 @@ describe('FileDeliverableRepository', () => {
   describe('load()', () => {
     it('returns empty status when file does not exist', async () => {
       const status = await repo.load()
-      expect(status).toEqual({ deliverables: [] })
+      expect(status.deliverables).toEqual([])
+      expect(status.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(status.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     })
 
     it('returns status from file', async () => {
       const expected: DeliverableStatus = {
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
         deliverables: [
           {
             id: 'DL-001',
-            name: 'Test Deliverable',
+            description: 'Test Deliverable',
             acceptanceCriteria: ['Criterion 1', 'Criterion 2'],
             passed: true,
             blocked: false,
@@ -76,7 +80,8 @@ describe('FileDeliverableRepository', () => {
       await fs.writeFile(path.join(autonoeDir, 'status.json'), 'not valid json')
 
       const status = await repo.load()
-      expect(status).toEqual({ deliverables: [] })
+      expect(status.deliverables).toEqual([])
+      expect(status.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     })
 
     it('returns empty status for JSON without deliverables array', async () => {
@@ -85,13 +90,18 @@ describe('FileDeliverableRepository', () => {
       await fs.writeFile(path.join(autonoeDir, 'status.json'), '{"foo":"bar"}')
 
       const status = await repo.load()
-      expect(status).toEqual({ deliverables: [] })
+      expect(status.deliverables).toEqual([])
+      expect(status.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     })
   })
 
   describe('save()', () => {
     it('creates .autonoe directory if not exists', async () => {
-      const status: DeliverableStatus = { deliverables: [] }
+      const status: DeliverableStatus = {
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
+        deliverables: [],
+      }
       await repo.save(status)
 
       const dirExists = await fs
@@ -101,12 +111,14 @@ describe('FileDeliverableRepository', () => {
       expect(dirExists).toBe(true)
     })
 
-    it('writes status to file', async () => {
+    it('writes status to file with updated timestamp', async () => {
       const status: DeliverableStatus = {
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
         deliverables: [
           {
             id: 'DL-001',
-            name: 'Test',
+            description: 'Test',
             acceptanceCriteria: ['Criterion'],
             passed: false,
             blocked: false,
@@ -121,15 +133,20 @@ describe('FileDeliverableRepository', () => {
         'utf-8',
       )
       const saved = JSON.parse(content)
-      expect(saved).toEqual(status)
+      // updatedAt is refreshed on save
+      expect(saved.createdAt).toBe(status.createdAt)
+      expect(saved.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(saved.deliverables).toEqual(status.deliverables)
     })
 
     it('overwrites existing file', async () => {
       const initial: DeliverableStatus = {
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
         deliverables: [
           {
             id: 'DL-001',
-            name: 'Initial',
+            description: 'Initial',
             acceptanceCriteria: ['Criterion'],
             passed: false,
             blocked: false,
@@ -137,10 +154,12 @@ describe('FileDeliverableRepository', () => {
         ],
       }
       const updated: DeliverableStatus = {
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
         deliverables: [
           {
             id: 'DL-001',
-            name: 'Initial',
+            description: 'Initial',
             acceptanceCriteria: ['Criterion'],
             passed: true,
             blocked: false,
@@ -156,11 +175,16 @@ describe('FileDeliverableRepository', () => {
         'utf-8',
       )
       const saved = JSON.parse(content)
-      expect(saved).toEqual(updated)
+      expect(saved.deliverables).toEqual(updated.deliverables)
+      expect(saved.createdAt).toBe(updated.createdAt)
     })
 
     it('writes pretty-formatted JSON', async () => {
-      const status: DeliverableStatus = { deliverables: [] }
+      const status: DeliverableStatus = {
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
+        deliverables: [],
+      }
       await repo.save(status)
 
       const content = await fs.readFile(
@@ -173,19 +197,21 @@ describe('FileDeliverableRepository', () => {
   })
 
   describe('round-trip', () => {
-    it('load after save returns same data', async () => {
+    it('load after save returns same deliverables with updated timestamp', async () => {
       const original: DeliverableStatus = {
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
         deliverables: [
           {
             id: 'DL-001',
-            name: 'First',
+            description: 'First',
             acceptanceCriteria: ['Criterion 1', 'Criterion 2'],
             passed: false,
             blocked: false,
           },
           {
             id: 'DL-002',
-            name: 'Second',
+            description: 'Second',
             acceptanceCriteria: ['Criterion 3'],
             passed: true,
             blocked: false,
@@ -196,7 +222,10 @@ describe('FileDeliverableRepository', () => {
       await repo.save(original)
       const loaded = await repo.load()
 
-      expect(loaded).toEqual(original)
+      expect(loaded.deliverables).toEqual(original.deliverables)
+      expect(loaded.createdAt).toBe(original.createdAt)
+      // updatedAt is refreshed on save
+      expect(loaded.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     })
   })
 })

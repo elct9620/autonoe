@@ -8,7 +8,7 @@
  */
 export interface Deliverable {
   id: string
-  name: string
+  description: string
   acceptanceCriteria: string[]
   passed: boolean
   blocked: boolean // When true, deliverable is blocked due to external constraints
@@ -18,6 +18,8 @@ export interface Deliverable {
  * DeliverableStatus aggregate root - persisted in .autonoe/status.json
  */
 export interface DeliverableStatus {
+  createdAt: string
+  updatedAt: string
   deliverables: Deliverable[]
 }
 
@@ -26,7 +28,7 @@ export interface DeliverableStatus {
  */
 export interface DeliverableInput {
   id: string
-  name: string
+  description: string
   acceptanceCriteria: string[]
 }
 
@@ -50,7 +52,7 @@ export type DeliverableStatusValue = 'pending' | 'passed' | 'blocked'
  */
 export interface DeliverableStatusNotification {
   deliverableId: string
-  deliverableName: string
+  deliverableDescription: string
   previousStatus: DeliverableStatusValue | null
   newStatus: DeliverableStatusValue
 }
@@ -116,12 +118,12 @@ function createSingleDeliverable(
     }
   }
 
-  if (!input.name || input.name.trim() === '') {
+  if (!input.description || input.description.trim() === '') {
     return {
       status,
       result: {
         success: false,
-        message: 'Deliverable name is required',
+        message: 'Deliverable description is required',
         error: 'VALIDATION_ERROR',
       },
     }
@@ -165,7 +167,7 @@ function createSingleDeliverable(
   // Create new deliverable
   const newDeliverable: Deliverable = {
     id: input.id,
-    name: input.name,
+    description: input.description,
     acceptanceCriteria: input.acceptanceCriteria,
     passed: false,
     blocked: false,
@@ -173,11 +175,13 @@ function createSingleDeliverable(
 
   return {
     status: {
+      createdAt: status.createdAt,
+      updatedAt: status.updatedAt,
       deliverables: [...status.deliverables, newDeliverable],
     },
     result: {
       success: true,
-      message: `Deliverable "${input.name}" (${input.id}) created successfully`,
+      message: `Deliverable "${input.description}" (${input.id}) created successfully`,
     },
   }
 }
@@ -313,7 +317,7 @@ export function setDeliverableStatus(
   const existing = status.deliverables[index]!
   const updated: Deliverable = {
     id: existing.id,
-    name: existing.name,
+    description: existing.description,
     acceptanceCriteria: existing.acceptanceCriteria,
     passed,
     blocked,
@@ -327,11 +331,13 @@ export function setDeliverableStatus(
 
   return {
     status: {
+      createdAt: status.createdAt,
+      updatedAt: status.updatedAt,
       deliverables: updatedDeliverables,
     },
     result: {
       success: true,
-      message: `Deliverable "${updated.name}" (${updated.id}) marked as ${input.status}`,
+      message: `Deliverable "${updated.description}" (${updated.id}) marked as ${input.status}`,
     },
   }
 }
@@ -354,10 +360,18 @@ export function countPassedDeliverables(status: DeliverableStatus): number {
 }
 
 /**
+ * Get current date in YYYY-MM-DD format
+ */
+export function getCurrentDate(): string {
+  return new Date().toISOString().split('T')[0]!
+}
+
+/**
  * Create an empty DeliverableStatus
  */
 export function emptyDeliverableStatus(): DeliverableStatus {
-  return { deliverables: [] }
+  const now = getCurrentDate()
+  return { createdAt: now, updatedAt: now, deliverables: [] }
 }
 
 /**

@@ -76,7 +76,7 @@ export async function handleSetDeliverableStatus(
     if (onStatusChange && existingDeliverable) {
       onStatusChange({
         deliverableId: input.deliverableId,
-        deliverableName: existingDeliverable.name,
+        deliverableDescription: existingDeliverable.description,
         previousStatus,
         newStatus: input.status,
       })
@@ -106,7 +106,9 @@ export function createDeliverableMcpServer(
         .array(
           z.object({
             id: z.string().describe('Unique deliverable ID (e.g., DL-001)'),
-            name: z.string().describe('Human-readable deliverable name'),
+            description: z
+              .string()
+              .describe('Clear description of the deliverable'),
             acceptanceCriteria: z
               .array(z.string())
               .describe('List of verifiable completion conditions'),

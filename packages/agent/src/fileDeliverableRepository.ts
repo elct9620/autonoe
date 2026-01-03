@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import type { DeliverableRepository, DeliverableStatus } from '@autonoe/core'
-import { emptyDeliverableStatus } from '@autonoe/core'
+import { emptyDeliverableStatus, getCurrentDate } from '@autonoe/core'
 
 const AUTONOE_DIR = '.autonoe'
 const STATUS_FILE = 'status.json'
@@ -50,6 +50,7 @@ export class FileDeliverableRepository implements DeliverableRepository {
 
   /**
    * Save status to file, creating directory if needed
+   * Updates updatedAt timestamp on every save
    */
   async save(status: DeliverableStatus): Promise<void> {
     const dir = path.dirname(this.statusPath)
@@ -57,8 +58,15 @@ export class FileDeliverableRepository implements DeliverableRepository {
     // Ensure .autonoe directory exists
     await fs.mkdir(dir, { recursive: true })
 
+    // Update timestamp
+    const now = getCurrentDate()
+    const statusWithTimestamp: DeliverableStatus = {
+      ...status,
+      updatedAt: now,
+    }
+
     // Write status file with pretty formatting
-    const content = JSON.stringify(status, null, 2)
+    const content = JSON.stringify(statusWithTimestamp, null, 2)
     await fs.writeFile(this.statusPath, content, 'utf-8')
   }
 }

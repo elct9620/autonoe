@@ -46,8 +46,12 @@ export function createSessionResult(
  */
 export function createMockStatusJson(
   deliverables: Deliverable[] = [],
+  createdAt = '2025-01-01',
+  updatedAt = '2025-01-01',
 ): DeliverableStatus {
   return {
+    createdAt,
+    updatedAt,
     deliverables,
   }
 }
@@ -58,7 +62,7 @@ export function createMockStatusJson(
 export const mockDeliverables: Deliverable[] = [
   {
     id: 'DL-001',
-    name: 'User Authentication',
+    description: 'User Authentication',
     acceptanceCriteria: [
       'User can login with email and password',
       'Invalid credentials show error message',
@@ -68,7 +72,7 @@ export const mockDeliverables: Deliverable[] = [
   },
   {
     id: 'DL-002',
-    name: 'Dashboard',
+    description: 'Dashboard',
     acceptanceCriteria: [
       'Dashboard loads within 2 seconds',
       'All widgets display correctly',
