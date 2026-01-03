@@ -29,20 +29,23 @@ For each deliverable, it provides value to the end user and can be independently
   "deliverables": [
     {
       "id": "UI-001",
-      "description": "Feature Name",
+      "description": "As an user, I want to log in to the application so that I can access my dashboard",
       "acceptanceCriteria": [
-        "Step 1: Navigate to the feature page",
-        "Step 2: Perform action X",
-        "Step 3: Verify outcome Y"
+        "Step 1: Navigate to the homepage",
+        "Step 2: Click on the login button",
+        "Step 3: Enter valid username and password",
+        "Step 4: Click on submit",
+        "Step 5: Verify user is redirected to the dashboard"
       ]
     },
     {
       "id": "BE-001",
-      "description": "Another Feature",
+      "description": "As a vendor, I want to retrieve user profile data via API endpoint /api/profile/{userId} so that I can display user information",
       "acceptanceCriteria": [
-        "Step 1: Setup fixture A",
-        "Step 2: Call API endpoint B",
-        "Step 3: Validate response C"
+        "Step 1: Setup profile data with test user - user123",
+        "Step 2: Send GET request to /api/profile/user123",
+        "Step 3: Verify response status is 200",
+        "Step 4: Verify response body contains correct user data"
       ]
     }
   ]
@@ -62,10 +65,9 @@ The "fine-grained" means each deliverable should represent a small, testable uni
 
 **Deliverable Requirements:**
 
-- Each deliverable must have a unique ID with a prefix indicating its type (e.g., "UI-" for user interface tasks, "BE-" for backend tasks, "DB-" for database tasks, etc.)
-- Mix of narrow acceptance criteria (2-5 steps) and broader ones (5-10 steps) to cover both simple and complex features
-- Well-defined and easily use Test-Driven Development (TDD) approach or Behavior-Driven Development (BDD) approach
-- At least 30% of deliverables should have 10 or more acceptance criteria steps for deeper verification
+- Deliverable is what ends users or stakeholders can reach or interact with
+- At least 30% of deliverables should have 10 or more acceptance criteria steps for complex scenarios
+- Mix of narrow acceptance criteria (2-5 steps) and broader ones (5-10 steps) to cover both simple and complex scenarios
 - Order deliverables by priority, the foundational tasks should come first, followed by features that depend on them
 - Cover every deliverable in specification exhaustively, ensuring no part is left unaddressed
 
@@ -75,6 +77,13 @@ The "fine-grained" means each deliverable should represent a small, testable uni
 - Styling Tasks: UI/UX improvements, responsive design, accessibility features, `e.g. `UI`, `UX`, `STYLE`, etc.
 
 The chore tasks like setup, configuration, documentation, testing infrastructure NOT added as deliverables. The testing and verification should be part of each deliverable's acceptance criteria not separate deliverables.
+
+**Acceptance Criteria Quality:**
+
+- Each acceptance criteria step should be clear, concise, and actionable
+- The acceptance criteria is step-by-step instructions that end-users or testers can follow to verify the deliverable
+- Define how end-users will interact with the feature and what outcomes to expect
+- Behavior-driven: Focus on what user does and which functionality/style should be observed
 
 **CRITICAL INSTRUCTION:** IT IS CATASTROPHIC TO REMOVE OR EDIT IN FUTURE SESSIONS. Deliverables can ONLY be marked as passed. Never modify or delete them. This ensures no functionality is missed.
 
