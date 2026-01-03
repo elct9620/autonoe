@@ -54,32 +54,37 @@ export class Session {
     let costUsd = 0
     let outcome: SessionOutcome = SessionOutcome.Completed
     let quotaResetTime: Date | undefined
+    let sessionEndReceived = false
 
     logger.debug(`[Send] ${truncate(instruction, 200)}`)
 
     const query = client.query(instruction)
 
-    try {
-      for await (const event of query) {
-        logger.debug(
-          `[Recv] ${event.type}: ${truncate(formatStreamEvent(event), 200)}`,
-        )
+    for await (const event of query) {
+      logger.debug(
+        `[Recv] ${event.type}: ${truncate(formatStreamEvent(event), 200)}`,
+      )
 
-        if (event.type === 'session_end') {
-          if (event.totalCostUsd !== undefined) {
-            costUsd = event.totalCostUsd
-          }
-          outcome = event.outcome
-          quotaResetTime = event.quotaResetTime
-          this.handleSessionEnd(event, logger)
+      if (event.type === 'session_end') {
+        sessionEndReceived = true
+        if (event.totalCostUsd !== undefined) {
+          costUsd = event.totalCostUsd
+        }
+        outcome = event.outcome
+        quotaResetTime = event.quotaResetTime
+        this.handleSessionEnd(event, logger)
+      }
+
+      if (event.type === 'stream_error') {
+        if (sessionEndReceived) {
+          // Error after session_end - expected for some outcomes (e.g., quota exceeded)
+          logger.debug(`Stream error after session end: ${event.message}`)
+        } else {
+          // Error without session_end - this is a real error
+          logger.error('Stream error', new Error(event.message))
+          throw new Error(event.message)
         }
       }
-    } catch (error) {
-      logger.error(
-        'Session query failed',
-        error instanceof Error ? error : undefined,
-      )
-      throw error
     }
 
     return {

@@ -184,7 +184,7 @@ autonoe/
 **StreamEvent** - Discriminated union of all event types
 
 ```typescript
-type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
+type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd | StreamError
 ```
 
 **AgentText** - Agent's text response
@@ -221,6 +221,25 @@ type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
 | errors | string[]? | Error messages (on failure) |
 | totalCostUsd | number? | API cost in USD |
 | quotaResetTime | Date? | Quota reset time (on quota exceeded) |
+
+**StreamError** - SDK error wrapped as event
+
+| Field | Type | Description |
+|-------|------|-------------|
+| type | 'stream_error' | Event type discriminator |
+| message | string | Error message |
+| stack | string? | Stack trace (for debugging) |
+
+**MessageStream Error Handling:**
+
+The SDK may throw errors after yielding `session_end` for certain outcomes (e.g., quota exceeded causes Claude Code to exit with code 1). The `ClaudeAgentClient` wrapper handles this by:
+
+1. Wrap SDK errors as `StreamError` events (yield instead of throw)
+2. Session checks if `session_end` was already received:
+   - If yes: Log error at debug level and continue (expected behavior)
+   - If no: Throw the error (real failure)
+
+This encapsulates SDK-specific behavior in the infrastructure layer, keeping the domain layer (Session) clean.
 
 #### Value Objects
 

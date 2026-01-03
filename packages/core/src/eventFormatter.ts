@@ -43,6 +43,9 @@ export function formatStreamEvent(event: StreamEvent): string {
       return `[session: ${event.outcome}]`
     }
 
+    case 'stream_error':
+      return `[error] ${event.message}`
+
     default:
       return '[unknown]'
   }

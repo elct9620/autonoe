@@ -155,13 +155,24 @@ export class ClaudeAgentClient implements AgentClient {
   /**
    * Wrap SDK Query to convert SDK messages to domain StreamEvents
    * Flattens batched SDK messages into individual events
+   * Wraps SDK errors as StreamError events instead of throwing
    */
   private wrapSdkQuery(sdkQuery: SDKQuery): MessageStream {
     const generator = (async function* () {
-      for await (const sdkMessage of sdkQuery) {
-        // Flatten SDK message into multiple StreamEvents
-        for (const event of toStreamEvents(sdkMessage)) {
-          yield event
+      try {
+        for await (const sdkMessage of sdkQuery) {
+          // Flatten SDK message into multiple StreamEvents
+          for (const event of toStreamEvents(sdkMessage)) {
+            yield event
+          }
+        }
+      } catch (error) {
+        // Yield error as StreamError event instead of throwing
+        // This handles cases like quota exceeded where SDK throws after session_end
+        yield {
+          type: 'stream_error' as const,
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
         }
       }
     })()

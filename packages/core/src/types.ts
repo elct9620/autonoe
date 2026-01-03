@@ -47,8 +47,20 @@ export interface SessionEnd {
   quotaResetTime?: Date
 }
 
+// StreamError - Error event from stream (SDK errors wrapped as events)
+export interface StreamError {
+  type: 'stream_error'
+  message: string
+  stack?: string
+}
+
 // StreamEvent - discriminated union of all event types
-export type StreamEvent = AgentText | ToolInvocation | ToolResponse | SessionEnd
+export type StreamEvent =
+  | AgentText
+  | ToolInvocation
+  | ToolResponse
+  | SessionEnd
+  | StreamError
 
 // MessageStream - async generator yielding StreamEvents with interrupt capability
 export interface MessageStream extends AsyncGenerator<StreamEvent, void> {

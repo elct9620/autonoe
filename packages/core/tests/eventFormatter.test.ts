@@ -6,6 +6,7 @@ import type {
   ToolInvocation,
   ToolResponse,
   SessionEnd,
+  StreamError,
 } from '../src/types'
 
 describe('formatStreamEvent', () => {
@@ -138,6 +139,25 @@ describe('formatStreamEvent', () => {
       expect(formatStreamEvent(event)).toBe(
         "[session: quota_exceeded] You've hit your limit",
       )
+    })
+  })
+
+  describe('StreamError', () => {
+    it('formats error message', () => {
+      const event: StreamError = {
+        type: 'stream_error',
+        message: 'Connection lost',
+      }
+      expect(formatStreamEvent(event)).toBe('[error] Connection lost')
+    })
+
+    it('formats error message with stack', () => {
+      const event: StreamError = {
+        type: 'stream_error',
+        message: 'Connection lost',
+        stack: 'at Function.run ()',
+      }
+      expect(formatStreamEvent(event)).toBe('[error] Connection lost')
     })
   })
 

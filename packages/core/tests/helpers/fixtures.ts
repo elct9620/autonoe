@@ -6,6 +6,7 @@ import type {
   ToolInvocation,
   ToolResponse,
   SessionEnd,
+  StreamError,
   Deliverable,
   DeliverableStatus,
 } from '../../src/index'
@@ -143,6 +144,35 @@ export function createMockErrorSessionEnd(
     type: 'session_end',
     outcome,
     errors,
+  }
+}
+
+/**
+ * Create a mock SessionEnd event with quota exceeded outcome
+ */
+export function createMockQuotaExceededSessionEnd(
+  result: string,
+  quotaResetTime?: Date,
+): SessionEnd {
+  return {
+    type: 'session_end',
+    outcome: SessionOutcome.QuotaExceeded,
+    result,
+    quotaResetTime,
+  }
+}
+
+/**
+ * Create a mock StreamError event for testing
+ */
+export function createMockStreamError(
+  message: string,
+  stack?: string,
+): StreamError {
+  return {
+    type: 'stream_error',
+    message,
+    stack,
   }
 }
 

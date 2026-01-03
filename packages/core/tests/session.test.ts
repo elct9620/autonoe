@@ -5,6 +5,8 @@ import {
   createMockAgentText,
   createMockSessionEnd,
   createMockErrorSessionEnd,
+  createMockQuotaExceededSessionEnd,
+  createMockStreamError,
   TestLogger,
 } from './helpers'
 
@@ -140,6 +142,61 @@ describe('Session', () => {
       const errorEntries = logger.getEntriesByLevel('error')
       expect(errorEntries.some((e) => e.message === 'Error 1')).toBe(true)
       expect(errorEntries.some((e) => e.message === 'Error 2')).toBe(true)
+    })
+  })
+
+  describe('StreamError handling', () => {
+    it('ignores stream error after session_end (expected for quota exceeded)', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockQuotaExceededSessionEnd("You've hit your limit"),
+        createMockStreamError('Claude Code process exited with code 1'),
+      ])
+      const logger = new TestLogger()
+
+      const session = new Session({ projectDir: '/test/project' })
+      const result = await session.run(client, 'test', logger)
+
+      // Should complete normally with quota exceeded outcome
+      expect(result.success).toBe(false)
+      expect(result.outcome).toBe('quota_exceeded')
+
+      // Stream error should be logged at debug level
+      const debugEntries = logger.getEntriesByLevel('debug')
+      expect(
+        debugEntries.some((e) => e.message.includes('Stream error after')),
+      ).toBe(true)
+    })
+
+    it('throws when stream error occurs without session_end', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockAgentText('Processing...'),
+        createMockStreamError('Connection lost'),
+      ])
+
+      const session = new Session({ projectDir: '/test/project' })
+
+      await expect(session.run(client, 'test')).rejects.toThrow(
+        'Connection lost',
+      )
+    })
+
+    it('logs stream error at error level when no session_end', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamError('Unexpected failure')])
+      const logger = new TestLogger()
+
+      const session = new Session({ projectDir: '/test/project' })
+
+      try {
+        await session.run(client, 'test', logger)
+      } catch {
+        // Expected to throw
+      }
+
+      const errorEntries = logger.getEntriesByLevel('error')
+      expect(errorEntries.some((e) => e.message === 'Stream error')).toBe(true)
     })
   })
 })

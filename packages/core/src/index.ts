@@ -5,6 +5,7 @@ export type {
   ToolInvocation,
   ToolResponse,
   SessionEnd,
+  StreamError,
   MessageStream,
   McpServer,
   PermissionLevel,
