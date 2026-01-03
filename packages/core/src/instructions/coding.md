@@ -4,12 +4,11 @@ You are continuing work on a long-running autonomous task. This is a FRESH conte
 
 ## Available Tools
 
-You have access to these MCP tools for managing deliverables:
+You have access to this MCP tool for managing deliverables:
 
-- `mcp__autonoe-deliverable__create_deliverable` - Create deliverables in status.json
 - `mcp__autonoe-deliverable__set_deliverable_status` - Update deliverable status (pending/passed/blocked)
 
-**IMPORTANT:** You MUST use these tools to manage deliverables. Direct writes to `.autonoe/status.json` are blocked.
+**IMPORTANT:** You MUST use this tool to update deliverable status. Direct writes to `.autonoe/status.json` are blocked.
 
 ## STEP 1: Get your bearings (MANDATORY)
 
@@ -40,7 +39,7 @@ cat .autonoe/status.json | grep '"passed": false' | wc -l
 
 Understand the `SPEC.md` is critical, it contains the full requirements for the project you are building.
 
-### STEP 2: Start Servers
+## STEP 2: Start Servers
 
 If `bin/dev.sh` or similar dev script exists, run it to start any necessary servers or watchers:
 
@@ -51,12 +50,13 @@ chmod +x bin/dev.sh
 
 Otherwise, manually start any required services and document the process.
 
-### STEP 3: Verification Deliverable (CRITICAL)
+## STEP 3: Verify Previous Work (CRITICAL)
 
-**MANDATORY BEFORE NEW WORK:** The previous session may have introduced bugs. Before implementing anything new, you MUST verify the passed deliverables.
+**MANDATORY BEFORE NEW WORK:** The previous session may have introduced bugs. Before implementing anything new, you MUST verify the existing work.
 
 - Run tests if available
-- Pick 1 ~ 2 deliverables items that were marked as passed in the last session to verify
+- If there are passed deliverables, pick 1-2 to verify they still work correctly
+- If no deliverables are passed yet (e.g., first coding session after initialization), skip to STEP 4
 
 For example, you are working on a web app, you might:
 
@@ -141,12 +141,24 @@ When ALL acceptance criteria are verified, you MUST call the `mcp__autonoe-deliv
 **Status values:**
 
 - `passed`: All acceptance criteria verified through actual testing
-- `pending`: Reset (when issue/bugs found in passed deliverable)
-- `blocked`: Cannot verify the deliverable (e.g. unable to deploy, external API down, missing credentials, browser automation unavailable for UI features, etc.)
+- `pending`: Reset when a previously passed deliverable is found to have regressions or bugs
+- `blocked`: After 2-3 different attempts using various approaches, you still cannot verify the deliverable due to external constraints (e.g., deployment requires production access, external API credentials unavailable, browser automation tool not installed)
 
 **CRITICAL:** If you CANNOT verify a deliverable, you MUST mark it as `blocked`, NOT `passed`. Never mark passed based on code logic alone - actual verification is required.
 
-**NEVER use blocked for implementation dependencies.** Only use blocked when external constraints prevent verification. Never modify or delete deliverables.
+**When to use blocked:**
+
+- External service or credentials are genuinely unavailable
+- Required tools (e.g., browser automation) are not installed and cannot be installed
+- The verification requires human intervention or production access
+
+**NEVER use blocked for:**
+
+- Implementation dependencies (just implement them first)
+- Difficult but solvable problems (keep trying different approaches)
+- First attempt failures (try 2-3 different approaches before marking blocked)
+
+Never modify or delete deliverables.
 
 ## STEP 8: Commit Work
 
@@ -199,7 +211,7 @@ Search available MCP tools for testing like a real user. Examples:
 ## IMPORTANT REMINDERS
 
 **Goal:** Production-quality application with all deliverables passed.
-**This Session Goal:** Deliver at least one deliverable perfectly meeting all acceptance criteria.
+**This Session Goal:** Make quality progress toward completing deliverables. It is acceptable to not complete any deliverable in a session if you are making meaningful progress (fixing bugs, implementing partial features, improving code quality).
 **Priority:** Fix broken features before adding new ones.
 **Quality Bar:**
 

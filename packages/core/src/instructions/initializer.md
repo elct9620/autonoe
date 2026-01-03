@@ -17,7 +17,7 @@ Start by reading `SPEC.md` in your working directory. This file contains the det
 
 ## STEP 2: Create a List of Deliverables (CRITICAL)
 
-Based on `SPEC.md`, call the `mcp__autonoe-deliverable__create_deliverable` tool to create a fine-grained list of deliverables with detailed step by step E2E acceptance criteria. This is the single of truth for what needs to be built.
+Based on `SPEC.md`, call the `mcp__autonoe-deliverable__create_deliverable` tool to create a fine-grained list of deliverables with detailed step by step E2E acceptance criteria. This is the single source of truth for what needs to be built.
 For each deliverable, it provides value to the end user and can be independently tested and verified. e.g. a feature, a component, an API endpoint, etc.
 
 **REMINDER:** You MUST use the tool, not write directly to `.autonoe/status.json`.
@@ -65,9 +65,9 @@ The "fine-grained" means each deliverable should represent a small, testable uni
 
 **Deliverable Requirements:**
 
-- Deliverable is what ends users or stakeholders can reach or interact with
-- At least 30% of deliverables should have 10 or more acceptance criteria steps for complex scenarios
-- Mix of narrow acceptance criteria (2-5 steps) and broader ones (5-10 steps) to cover both simple and complex scenarios
+- Deliverable is what end users or stakeholders can reach or interact with
+- Most deliverables should have around 5 acceptance criteria steps for typical scenarios
+- At least 30% of deliverables should have 8-12 steps for broader scenarios (e.g., edge cases, error handling, complex user flows)
 - Order deliverables by priority, the foundational tasks should come first, followed by features that depend on them
 - Cover every deliverable in specification exhaustively, ensuring no part is left unaddressed
 
@@ -85,63 +85,17 @@ The chore tasks like setup, configuration, documentation, testing infrastructure
 - Define how end-users will interact with the feature and what outcomes to expect
 - Behavior-driven: Focus on what user does and which functionality/style should be observed
 
-**CRITICAL INSTRUCTION:** IT IS CATASTROPHIC TO REMOVE OR EDIT IN FUTURE SESSIONS. Deliverables can ONLY be marked as passed. Never modify or delete them. This ensures no functionality is missed.
+**Deliverables Requiring External Actions:**
 
-## STEP 3: Create dev script
+For deliverables that require actions outside Autonoe's capabilities (e.g., deployment, external service integration), write acceptance criteria that verify the **preparation** is complete:
 
-Based on the technology stack outlined in `SPEC.md`, set up a script to make the development environment ready for coding and testing.
+- Deployment: Verify configuration files, scripts, and instructions are ready (e.g., "Dockerfile builds successfully", "deployment script executes without errors in dry-run mode")
+- External APIs: Verify integration code and configuration are in place (e.g., "API client is configured with placeholder credentials", "error handling for API failures is implemented")
+- Manual steps: Document what human operators need to do and verify automation covers everything possible
 
-- Install dependencies use package manager (e.g., npm, pip, etc.)
-- Start servers or services needed for development
-- Print helpful information about how to access the running application or services
-- For non-standard setups, make script can interactive with application directly, e.g. alias for cli applications entrypoint, simple http server for static sites, etc.
+**CRITICAL INSTRUCTION:** IT IS CATASTROPHIC TO REMOVE OR EDIT IN FUTURE SESSIONS. Deliverables can ONLY be marked as passed or reset to pending when regression is found. Never modify or delete them. This ensures no functionality is missed.
 
-Create script inside `bin/dev.sh` with executable permissions. Or use framework-specific conventions if applicable.(e.g. `bin/dev` for Ruby on Rails)
-
-**Example `bin/dev.sh`:**
-
-```bash
-#!/bin/bash
-
-# Verify environment
-echo "Setting up development environment..."
-# uv / bundle / npm is available
-# e.g. npx playwright install chromium for browser automation, install uv cli if needed
-# ...
-
-# Install dependencies
-echo "Installing dependencies..."
-# uv install / bundle install / npm install
-# ...
-
-# Start services
-echo "Starting development server..."
-# e.g. mysql server, redis server, uv dev, rails server, etc.
-# ...
-
-# Start application
-echo "Starting application..."
-# e.g. uv start / rails s / npm start
-# ...
-echo "Development environment is ready!"
-echo "Access the application at http://localhost:3000"
-# Helpful info or tips
-# ...
-```
-
-## STEP 4: Initialize Git
-
-Create a git repository commit with the following:
-
-- `.autonoe/` directory containing `status.json` with deliverables
-- `bin/dev.sh` script for setting up the development environment
-- `README.md` with project overview and setup instructions
-- `.gitignore` file to exclude unnecessary files from version control, e.g. sensitive files, build artifacts, etc.
-- Use `main` as the default branch name
-
-Commit message: "chore: initialize project with deliverables and dev setup"
-
-## STEP 5: Setup Project Structure
+## STEP 3: Setup Project Structure
 
 Setup the basic project structure based on `SPEC.md` mentions. This may include:
 
@@ -150,8 +104,63 @@ Setup the basic project structure based on `SPEC.md` mentions. This may include:
 - Plain folder structure for custom setups, use common conventions for the chosen technology stack
 - `.gitignore` file to exclude unnecessary files from version control
 - Keep simple and clean first, avoid making complete setup, just enough for future development
+- Create `README.md` with project overview and setup instructions based on `SPEC.md` description
 
 Focus on `SPEC.md` requirements and best practices for the chosen technology stack.
+
+## STEP 4: Create dev script
+
+Based on the technology stack outlined in `SPEC.md`, set up a script to make the development environment ready for coding and testing.
+
+- Install system-level tools if needed (e.g., `npx playwright install chromium`, `apt install` for dependencies)
+- Install project dependencies using package manager (e.g., npm install, bundle install, uv sync)
+- Start servers or services needed for development
+- Print helpful information about how to access the running application or services
+- For non-standard setups, make script can interact with application directly, e.g. alias for CLI applications entrypoint, simple http server for static sites, etc.
+
+Create script inside `bin/dev.sh` with executable permissions. Or use framework-specific conventions if applicable (e.g. `bin/dev` for Ruby on Rails).
+
+**Example `bin/dev.sh`:**
+
+```bash
+#!/bin/bash
+
+# Verify environment
+echo "Setting up development environment..."
+# e.g. npx playwright install chromium for browser automation
+# ...
+
+# Install dependencies
+echo "Installing dependencies..."
+# uv sync / bundle install / npm install
+# ...
+
+# Start services
+echo "Starting development server..."
+# e.g. mysql server, redis server, etc.
+# ...
+
+# Start application
+echo "Starting application..."
+# e.g. uv run dev / rails s / npm start
+# ...
+echo "Development environment is ready!"
+echo "Access the application at http://localhost:3000"
+# Helpful info or tips
+# ...
+```
+
+## STEP 5: Initialize Git
+
+Create a git repository and commit with the following:
+
+- `.autonoe/` directory containing `status.json` with deliverables
+- `bin/dev.sh` script for setting up the development environment
+- `README.md` with project overview and setup instructions
+- `.gitignore` file to exclude unnecessary files from version control
+- Use `main` as the default branch name
+
+Commit message: "chore: initialize project with deliverables and dev setup"
 
 ## OPTIONAL STEP: First Deliverable Implementation
 
