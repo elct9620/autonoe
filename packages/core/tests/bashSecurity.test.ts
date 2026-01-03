@@ -90,14 +90,16 @@ describe('BashSecurity', () => {
 
     it('allows diff', () => {
       const security = new DefaultBashSecurity()
-      expect(security.isCommandAllowed('diff file1.txt file2.txt').allowed).toBe(
-        true,
-      )
+      expect(
+        security.isCommandAllowed('diff file1.txt file2.txt').allowed,
+      ).toBe(true)
     })
 
     it('allows printf', () => {
       const security = new DefaultBashSecurity()
-      expect(security.isCommandAllowed('printf "%s" "hello"').allowed).toBe(true)
+      expect(security.isCommandAllowed('printf "%s" "hello"').allowed).toBe(
+        true,
+      )
     })
 
     it('allows date', () => {
@@ -112,9 +114,9 @@ describe('BashSecurity', () => {
 
     it('allows cut', () => {
       const security = new DefaultBashSecurity()
-      expect(security.isCommandAllowed('cut -d "," -f 1 file.csv').allowed).toBe(
-        true,
-      )
+      expect(
+        security.isCommandAllowed('cut -d "," -f 1 file.csv').allowed,
+      ).toBe(true)
     })
 
     it('allows tr', () => {
