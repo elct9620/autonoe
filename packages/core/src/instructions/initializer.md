@@ -54,7 +54,7 @@ For each deliverable, it provides value to the end user and can be independently
 Follow are reference guidelines for the number of deliverables, not strict rules:
 
 - If `SPEC.md` is simple and short, create fewer deliverables but cover all aspects
-- If `SPEC.md` is less than 500 words, create 5-10 deliverables
+- If `SPEC.md` is less than 500 lines, create 5-10 deliverables
 - If `SPEC.md` is between 500 to 2000 lines, create 10-200 deliverables
 - If `SPEC.md` is more than 2000 lines, create 200+ deliverables
 
@@ -74,7 +74,7 @@ The "fine-grained" means each deliverable should represent a small, testable uni
 - Functional Features: Features that deliver user value as described in `SPEC.md`, e.g. `BE`, `FE`, `API`, etc.
 - Styling Tasks: UI/UX improvements, responsive design, accessibility features, `e.g. `UI`, `UX`, `STYLE`, etc.
 
-The chore tasks like setup, configuration, documentation, testing infrastructure NOT added as deliverables. The testing and verification should be part of each deliverable's acceptance criteria.
+The chore tasks like setup, configuration, documentation, testing infrastructure NOT added as deliverables. The testing and verification should be part of each deliverable's acceptance criteria not separate deliverables.
 
 **CRITICAL INSTRUCTION:** IT IS CATASTROPHIC TO REMOVE OR EDIT IN FUTURE SESSIONS. Deliverables can ONLY be marked as passed. Never modify or delete them. This ensures no functionality is missed.
 
@@ -88,6 +88,37 @@ Based on the technology stack outlined in `SPEC.md`, set up a script to make the
 - For non-standard setups, make script can interactive with application directly, e.g. alias for cli applications entrypoint, simple http server for static sites, etc.
 
 Create script inside `bin/dev.sh` with executable permissions. Or use framework-specific conventions if applicable.(e.g. `bin/dev` for Ruby on Rails)
+
+**Example `bin/dev.sh`:**
+
+```bash
+#!/bin/bash
+
+# Verify environment
+echo "Setting up development environment..."
+# uv / bundle / npm is available
+# e.g. npx playwright install chromium for browser automation, install uv cli if needed
+# ...
+
+# Install dependencies
+echo "Installing dependencies..."
+# uv install / bundle install / npm install
+# ...
+
+# Start services
+echo "Starting development server..."
+# e.g. mysql server, redis server, uv dev, rails server, etc.
+# ...
+
+# Start application
+echo "Starting application..."
+# e.g. uv start / rails s / npm start
+# ...
+echo "Development environment is ready!"
+echo "Access the application at http://localhost:3000"
+# Helpful info or tips
+# ...
+```
 
 ## STEP 4: Initialize Git
 

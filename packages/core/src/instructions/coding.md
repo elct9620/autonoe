@@ -157,7 +157,7 @@ git commit -m "feat: make user login form functional with validation and tests
 - Wrote unit tests to cover login functionality"
 ```
 
-Each deliverable should have its own commit.
+Keep commits focused, concise, and small enough to understand the purpose of the changes. No sensitive or temporary files should be committed.
 
 ## STEP 9: Update Notes
 
