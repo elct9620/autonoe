@@ -1,5 +1,11 @@
 # Browser Test
 
+## Environment
+
+- Use `mcp__playwright__browser_install` if browser is not available
+- Do NOT run `npx playwright install` - use MCP tools instead
+- Use `mcp__playwright__*` tools for browser automation
+
 ## Deliverables
 
 ### DL-001: Browser Navigation and Screenshot

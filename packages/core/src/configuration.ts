@@ -88,6 +88,7 @@ export const BUILTIN_MCP_SERVERS: Readonly<Record<string, McpServer>> =
  * These are the tools provided by the Microsoft Playwright MCP server
  */
 export const PLAYWRIGHT_MCP_TOOLS = [
+  'mcp__playwright__browser_install',
   'mcp__playwright__browser_navigate',
   'mcp__playwright__browser_snapshot',
   'mcp__playwright__browser_click',

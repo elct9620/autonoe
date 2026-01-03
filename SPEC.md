@@ -794,7 +794,25 @@ Uses Microsoft Playwright MCP server (`@playwright/mcp@latest`) with session iso
 - Tool prefix: `mcp__playwright__*`
 - Allowed tools defined in `PLAYWRIGHT_MCP_TOOLS` constant (`packages/core/src/configuration.ts`)
 
-#### 4.1.1 Browser Lifecycle
+#### 4.1.1 Browser Installation
+
+Docker images include Playwright system dependencies but NOT the browser binary. The agent must use `mcp__playwright__browser_install` to install the browser at runtime:
+
+```
+First browser_navigate ──► "Browser not found" error
+                                    │
+                                    ▼
+              Agent calls browser_install ──► Browser downloaded to $PLAYWRIGHT_BROWSERS_PATH
+                                    │
+                                    ▼
+              Retry browser_navigate ──► Success
+```
+
+- `PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers` is set in Docker images
+- Browser installation is a one-time operation per container session
+- System dependencies are pre-installed for faster browser setup
+
+#### 4.1.2 Browser Lifecycle
 
 ```
 Session Start ─────► MCP Server Start ─────► Browser Launch
