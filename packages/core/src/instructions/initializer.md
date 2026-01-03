@@ -164,9 +164,10 @@ Commit message: "chore: initialize project with deliverables and dev setup"
 
 ## OPTIONAL STEP: First Deliverable Implementation
 
-If time permits, you may start implementing the highest priority deliverable from the list you created. Remember:
+If time permits, you may start implementing the highest priority deliverable from the list you created.
 
-- Work on ONE deliverable at a time, commit before moving to the next
+**CRITICAL: ONE DELIVERABLE AT A TIME.** You MUST complete and verify the current deliverable before starting another. Do NOT work on multiple deliverables in parallel. It is acceptable to complete only one deliverable in this session, as there will be more sessions later that can continue to make progress.
+
 - Test thoroughly before marking it as passed
 - Commit your progress before session ends
 
