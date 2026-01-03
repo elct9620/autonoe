@@ -79,7 +79,7 @@ For example, you are working on a web app, you might:
 
 Look at `.autonoe/status.json` for deliverables and find a highest priority deliverable that is not yet passed.
 
-Focus on completing one deliverable perfectly and completing tests meeting all acceptance criteria before moving to the next. It is acceptable to complete only one deliverable in this session, as there will be more sessions later that can continue to make progress.
+**CRITICAL: ONE DELIVERABLE AT A TIME.** You MUST complete and verify the current deliverable before starting another. Do NOT work on multiple deliverables in parallel. It is acceptable to complete only one deliverable in this session, as there will be more sessions later that can continue to make progress.
 
 ## STEP 5: Make Deliverable Pass
 
@@ -129,14 +129,37 @@ For example, if you are working on a web app and Playwright MCP tools is availab
 
 ## STEP 7: Mark Deliverable as Passed (CRITICAL)
 
-When ALL acceptance criteria are verified, you MUST call the `mcp__autonoe-deliverable__set_deliverable_status` tool:
+**BEFORE marking passed, you MUST verify EACH acceptance criterion individually:**
 
-**Tool call:**
+1. List ALL acceptance criteria for the current deliverable
+2. For EACH criterion, describe HOW you verified it with evidence:
+   - Test output (copy the actual test result)
+   - Screenshot path (if visual verification)
+   - Manual verification steps taken
+3. Create a checklist showing verification status
+
+**Example verification checklist:**
+
+```
+Deliverable: UI-001 - User Login Form
+
+Acceptance Criteria Verification:
+- [x] AC1: User can login with valid credentials
+      → Verified: Playwright test passed, screenshot: .screenshots/login-success.png
+- [x] AC2: Error message shows on invalid input
+      → Verified: Manual test, screenshot: .screenshots/login-error.png
+- [x] AC3: Session persists after refresh
+      → Verified: Browser test confirmed cookie persistence
+```
+
+**Only after ALL criteria are verified with evidence**, call the tool:
 
 - Tool: `mcp__autonoe-deliverable__set_deliverable_status`
 - Input: `{"deliverableId": "UI-001", "status": "passed"}`
 
 **CRITICAL:** Do NOT write directly to `.autonoe/status.json`. You MUST use the tool.
+
+**CRITICAL:** Mark only ONE deliverable as passed, then return to STEP 4 to choose the next deliverable. Do NOT batch multiple deliverables.
 
 **Status values:**
 
