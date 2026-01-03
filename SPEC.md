@@ -1894,7 +1894,7 @@ Each publishable package maps to a separate image path under the organization na
 |--------|------------|-----|-------|----------|
 | base | debian:bookworm-slim | `:latest`, `:base` | git, curl, ca-certificates | Minimal runtime |
 | node | node:XX-bookworm-slim | `:node` | git, curl, npm, Playwright deps | Frontend development |
-| python | python:X.XX-slim-bookworm | `:python` | git, curl, Node.js, npm, Playwright deps, pip, venv | Backend / Data science |
+| python | python:X.XX-slim-bookworm | `:python` | git, curl, Node.js, npm, Playwright deps, pip, venv, uv | Backend / Data science |
 | golang | golang:X.XX-bookworm | `:golang` | git, curl, Node.js, npm, Playwright deps | System programming |
 | ruby | ruby:X.X-slim-bookworm | `:ruby` | git, curl, Node.js, npm, Playwright deps, Bundler | Web development |
 
