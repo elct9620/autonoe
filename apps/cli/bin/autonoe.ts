@@ -17,6 +17,10 @@ cli
   .option('--no-sandbox', 'Disable SDK sandbox')
   .option('--wait-for-quota', 'Wait for quota reset instead of exiting')
   .option('-D, --allow-destructive', 'Enable rm/mv with path validation')
+  .option(
+    '--thinking [budget]',
+    'Enable extended thinking mode (default: 8192)',
+  )
   .action(async (options) => {
     await handleRunCommand({
       projectDir: options.projectDir,
@@ -26,6 +30,7 @@ cli
       sandbox: options.sandbox,
       waitForQuota: options.waitForQuota,
       allowDestructive: options.allowDestructive,
+      thinking: options.thinking,
     })
   })
 

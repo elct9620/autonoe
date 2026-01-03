@@ -61,6 +61,7 @@ export interface RunCommandOptions {
   sandbox?: boolean
   waitForQuota?: boolean
   allowDestructive?: boolean
+  thinking?: string | boolean // boolean when no value, string when value provided
 }
 
 /**
@@ -110,11 +111,26 @@ export async function handleRunCommand(
     ? parseInt(options.maxIterations, 10)
     : undefined
 
+  // Parse thinking option (can be boolean true or string number)
+  const maxThinkingTokens =
+    options.thinking === true
+      ? 8192 // default when --thinking without value
+      : typeof options.thinking === 'string'
+        ? parseInt(options.thinking, 10)
+        : undefined
+
+  // Validate minimum thinking tokens
+  if (maxThinkingTokens !== undefined && maxThinkingTokens < 1024) {
+    logger.error('Thinking budget must be at least 1024 tokens')
+    process.exit(1)
+  }
+
   const runnerOptions: SessionRunnerOptions = {
     projectDir,
     maxIterations: Number.isNaN(maxIterations) ? undefined : maxIterations,
     model: options.model,
     waitForQuota: options.waitForQuota,
+    maxThinkingTokens,
   }
 
   logger.info(`Autonoe v${VERSION}`)
@@ -126,6 +142,9 @@ export async function handleRunCommand(
   }
   if (runnerOptions.model) {
     logger.info(`  Model: ${runnerOptions.model}`)
+  }
+  if (runnerOptions.maxThinkingTokens) {
+    logger.info(`  Thinking: ${runnerOptions.maxThinkingTokens} tokens`)
   }
   logger.info('')
 
@@ -185,6 +204,7 @@ export async function handleRunCommand(
           sdkMcpServers: [deliverableMcpServer],
           allowedTools: [...config.allowedTools, ...deliverableTools],
           model: runnerOptions.model,
+          maxThinkingTokens: runnerOptions.maxThinkingTokens,
         }),
     }
 

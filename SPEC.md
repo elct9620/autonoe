@@ -762,6 +762,7 @@ interface SessionRunnerOptions {
   delayBetweenSessions?: number // default: 3000ms
   model?: string
   waitForQuota?: boolean        // wait for quota reset instead of exiting
+  maxThinkingTokens?: number    // extended thinking mode budget (min: 1024)
 }
 
 interface SessionRunnerResult {
@@ -2059,6 +2060,7 @@ Options:
   --no-sandbox            Disable SDK sandbox
   --wait-for-quota        Wait for quota reset instead of exiting
   --allow-destructive, -D Enable rm/mv with path validation
+  --thinking [budget]     Enable extended thinking mode (default: 8192)
 ```
 
 ### 11.2 Behavior
@@ -2096,6 +2098,7 @@ cli
   .option('--no-sandbox', 'Disable SDK sandbox')
   .option('--wait-for-quota', 'Wait for quota reset instead of exiting')
   .option('-D, --allow-destructive', 'Enable rm/mv with path validation')
+  .option('--thinking [budget]', 'Enable extended thinking mode (default: 8192)')
   .action((options) => {
     // Run session with options
   })

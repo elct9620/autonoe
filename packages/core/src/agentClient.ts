@@ -62,4 +62,5 @@ export interface AgentClientOptions {
   preToolUseHooks?: PreToolUseHook[]
   settingSources?: SettingSource[]
   model?: string
+  maxThinkingTokens?: number
 }

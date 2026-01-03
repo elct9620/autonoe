@@ -144,6 +144,11 @@ export class ClaudeAgentClient implements AgentClient {
       sdkOptions.settingSources = options.settingSources
     }
 
+    // Add thinking tokens for extended thinking mode
+    if (options.maxThinkingTokens) {
+      sdkOptions.maxThinkingTokens = options.maxThinkingTokens
+    }
+
     const sdkQueryResult: SDKQuery = sdkQuery({
       prompt: message,
       options: sdkOptions,

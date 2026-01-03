@@ -26,6 +26,7 @@ export interface SessionRunnerOptions {
   delayBetweenSessions?: number
   model?: string
   waitForQuota?: boolean
+  maxThinkingTokens?: number
 }
 
 /**
