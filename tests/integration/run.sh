@@ -15,6 +15,9 @@ FAILED=0
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# Default CLI options for all tests
+DEFAULT_OPTIONS="--model opus --thinking"
+
 # Change to project root
 cd "$PROJECT_ROOT"
 
@@ -38,7 +41,7 @@ fix_permissions() {
 
 # Run autonoe in Docker
 run_autonoe() {
-  docker compose run --rm cli autonoe run "$@"
+  docker compose run --rm cli autonoe run $DEFAULT_OPTIONS "$@"
   local exit_code=$?
   fix_permissions
   return $exit_code
@@ -107,7 +110,7 @@ test_it003() {
 
   # Capture output with debug flag
   local output
-  output=$(docker compose run --rm cli autonoe run -d -n 2 2>&1) || true
+  output=$(docker compose run --rm cli autonoe run $DEFAULT_OPTIONS -d -n 2 2>&1) || true
   fix_permissions
 
   if echo "$output" | grep -q "=== CUSTOM MARKER ==="; then
