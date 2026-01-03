@@ -87,9 +87,11 @@ apps/cli
 
 **StreamEvent** - Discriminated union processed by Session:
 - `AgentText` - Text output from agent
+- `AgentThinking` - Agent's internal reasoning (displayed in debug mode, truncated to 200 chars)
 - `ToolInvocation` - Agent requesting tool execution
 - `ToolResponse` - Result returned to agent
 - `SessionEnd` - Terminal state with result/errors/cost
+- `StreamError` - SDK error wrapped as event
 
 **DeliverableStatus** - Aggregate tracking work completion (persisted to `.autonoe/status.json`)
 
@@ -161,3 +163,16 @@ See `SPEC.md` Section 6 for bash command allowlist and validation rules.
 | `packages/core/src/configuration.ts` | Security baseline and config loading |
 | `packages/agent/src/claudeAgentClient.ts` | SDK wrapper implementation |
 | `packages/agent/src/converters.ts` | SDK ↔ Domain type conversions |
+| `packages/core/src/quotaLimit.ts` | Quota detection and wait duration utilities |
+| `packages/core/src/duration.ts` | Human-readable duration formatting |
+
+## Extended Thinking Mode
+
+Use `--thinking [budget]` to enable extended thinking mode:
+
+```bash
+bun apps/cli/bin/autonoe.ts run --thinking        # Default 8192 tokens
+bun apps/cli/bin/autonoe.ts run --thinking 16384  # Custom budget
+```
+
+Minimum budget is 1024 tokens. Thinking content appears in debug output (`-d` flag).
