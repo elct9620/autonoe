@@ -763,6 +763,7 @@ interface SessionRunnerOptions {
   model?: string
   waitForQuota?: boolean        // wait for quota reset instead of exiting
   maxThinkingTokens?: number    // extended thinking mode budget (min: 1024)
+  maxRetries?: number           // default: 3, max consecutive errors before exit
 }
 
 interface SessionRunnerResult {
@@ -775,6 +776,17 @@ interface SessionRunnerResult {
   totalCostUsd: number       // sum of all session costs
   interrupted?: boolean
   quotaExceeded?: boolean
+  error?: string             // error message when maxRetries exceeded
+}
+
+// Exit reason enum for unified exit point
+enum ExitReason {
+  AllPassed = 'all_passed',
+  AllBlocked = 'all_blocked',
+  MaxIterations = 'max_iterations',
+  QuotaExceeded = 'quota_exceeded',
+  Interrupted = 'interrupted',
+  MaxRetriesExceeded = 'max_retries_exceeded',
 }
 ```
 
@@ -787,6 +799,7 @@ interface SessionRunnerResult {
 | 3        | All blocked                  | All deliverables have blocked=true            | success=false       |
 | 4        | Max iterations reached       | iteration >= maxIterations                    | success=false       |
 | 5        | User interrupt               | SIGINT received                               | success=false, interrupted=true |
+| 6        | Max retries exceeded         | consecutiveErrors > maxRetries                | success=false, error=message |
 
 **Blocked Deliverable Rules:**
 - A deliverable can only be blocked when `passed=false` (mutual exclusion)
@@ -812,6 +825,20 @@ Quota detection utilities in `quotaLimit.ts`:
 - `parseQuotaResetTime(text)` - Extract reset time from message
 - `calculateWaitDuration(resetTime)` - Calculate milliseconds to wait
 - `formatDuration(ms)` - Format duration as human-readable string (see Section 3.7.2)
+
+**Session Error Retry:**
+
+When a session throws an error (e.g., context window exhaustion, SDK errors):
+- SessionRunner tracks `consecutiveErrors` counter
+- On error: increment counter, log warning, start new session
+- On success: reset counter to 0
+- When `consecutiveErrors > maxRetries`: exit with `error` field in result
+
+Retry behavior:
+- **Default (maxRetries=3):** Allow up to 3 consecutive errors before exit
+- Each retry starts a fresh session with `clientFactory.create()`
+- Quota exceeded is NOT counted as a retry error (handled separately)
+- Overall info is logged even on max retries exit
 
 ---
 
@@ -2055,6 +2082,7 @@ autonoe run [options]
 Options:
   --project-dir, -p       Project directory (default: cwd)
   --max-iterations, -n    Maximum coding sessions
+  --max-retries           Maximum retries on session error (default: 3)
   --model, -m             Claude model to use
   --debug, -d             Show debug output
   --no-sandbox            Disable SDK sandbox
@@ -2093,6 +2121,7 @@ cli
   .command('run', 'Run the coding agent')
   .option('-p, --project-dir <path>', 'Project directory')
   .option('-n, --max-iterations <count>', 'Maximum coding sessions')
+  .option('--max-retries <count>', 'Maximum retries on session error (default: 3)')
   .option('-m, --model <model>', 'Claude model to use')
   .option('-d, --debug', 'Show debug output')
   .option('--no-sandbox', 'Disable SDK sandbox')

@@ -17,6 +17,19 @@ import { calculateWaitDuration } from './quotaLimit'
 import { formatDuration } from './duration'
 
 /**
+ * Exit reason for session runner loop
+ * @see SPEC.md Section 3.9
+ */
+export enum ExitReason {
+  AllPassed = 'all_passed',
+  AllBlocked = 'all_blocked',
+  MaxIterations = 'max_iterations',
+  QuotaExceeded = 'quota_exceeded',
+  Interrupted = 'interrupted',
+  MaxRetriesExceeded = 'max_retries_exceeded',
+}
+
+/**
  * SessionRunner configuration options
  * @see SPEC.md Section 3.8.4
  */
@@ -27,6 +40,7 @@ export interface SessionRunnerOptions {
   model?: string
   waitForQuota?: boolean
   maxThinkingTokens?: number
+  maxRetries?: number
 }
 
 /**
@@ -43,6 +57,7 @@ export interface SessionRunnerResult {
   totalCostUsd: number
   interrupted?: boolean
   quotaExceeded?: boolean
+  error?: string
 }
 
 /**
@@ -52,10 +67,12 @@ export interface SessionRunnerResult {
 export class SessionRunner {
   private readonly delayBetweenSessions: number
   private readonly maxIterations: number | undefined
+  private readonly maxRetries: number
 
   constructor(private options: SessionRunnerOptions) {
     this.delayBetweenSessions = options.delayBetweenSessions ?? 3000
     this.maxIterations = options.maxIterations
+    this.maxRetries = options.maxRetries ?? 3
   }
 
   /**
@@ -76,32 +93,19 @@ export class SessionRunner {
     let deliverablesTotalCount = 0
     let blockedCount = 0
     let totalCostUsd = 0
+    let consecutiveErrors = 0
+    let lastError: Error | undefined
+    let exitReason: ExitReason | undefined
 
-    while (true) {
-      // Termination condition 0: User interrupt (SIGINT)
+    // Main loop - use break to exit to unified exit point
+    while (!exitReason) {
+      // Termination condition: User interrupt (SIGINT)
       if (signal?.aborted) {
         logger.info('User interrupted')
-        const totalDuration = Date.now() - startTime
-        this.logOverall(
-          logger,
-          iterations,
-          deliverablesPassedCount,
-          deliverablesTotalCount,
-          blockedCount,
-          totalCostUsd,
-          totalDuration,
-        )
-        return {
-          success: false,
-          iterations,
-          deliverablesPassedCount,
-          deliverablesTotalCount,
-          blockedCount,
-          totalDuration,
-          totalCostUsd,
-          interrupted: true,
-        }
+        exitReason = ExitReason.Interrupted
+        break
       }
+
       // Select instruction based on status existence
       // @see SPEC.md Section 7.2
       const statusExists = statusReader ? await statusReader.exists() : false
@@ -115,155 +119,144 @@ export class SessionRunner {
       iterations++
       logger.info(`Session ${iterations} started`)
 
-      // Create fresh client per session to avoid SDK child process accumulation
-      const client = clientFactory.create()
+      try {
+        // Create fresh client per session to avoid SDK child process accumulation
+        const client = clientFactory.create()
 
-      const session = new Session({
-        projectDir: this.options.projectDir,
-        model: this.options.model,
-      })
+        const session = new Session({
+          projectDir: this.options.projectDir,
+          model: this.options.model,
+        })
 
-      const result = await session.run(client, instruction, logger)
+        const result = await session.run(client, instruction, logger)
 
-      totalCostUsd += result.costUsd
-      logger.info(
-        `Session ${iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${formatDuration(result.duration)}`,
-      )
+        // Reset error counter on successful session
+        consecutiveErrors = 0
 
-      // Termination/wait condition: Quota exceeded
-      if (result.outcome === SessionOutcome.QuotaExceeded) {
-        if (this.options.waitForQuota && result.quotaResetTime) {
-          const waitMs = calculateWaitDuration(result.quotaResetTime)
-          logger.info(
-            `Quota exceeded, waiting ${formatDuration(waitMs)} until reset...`,
-          )
-          await this.delay(waitMs)
-          // Retry same session (don't count this iteration)
-          iterations--
-          continue
-        } else {
-          logger.error('Quota exceeded')
-          const totalDuration = Date.now() - startTime
-          this.logOverall(
-            logger,
-            iterations,
-            deliverablesPassedCount,
-            deliverablesTotalCount,
-            blockedCount,
-            totalCostUsd,
-            totalDuration,
-          )
-          return {
-            success: false,
-            iterations,
-            deliverablesPassedCount,
-            deliverablesTotalCount,
-            blockedCount,
-            totalDuration,
-            totalCostUsd,
-            quotaExceeded: true,
+        totalCostUsd += result.costUsd
+        logger.info(
+          `Session ${iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${formatDuration(result.duration)}`,
+        )
+
+        // Termination/wait condition: Quota exceeded
+        if (result.outcome === SessionOutcome.QuotaExceeded) {
+          if (this.options.waitForQuota && result.quotaResetTime) {
+            const waitMs = calculateWaitDuration(result.quotaResetTime)
+            logger.info(
+              `Quota exceeded, waiting ${formatDuration(waitMs)} until reset...`,
+            )
+            await this.delay(waitMs)
+            // Retry same session (don't count this iteration)
+            iterations--
+            continue
+          } else {
+            logger.error('Quota exceeded')
+            exitReason = ExitReason.QuotaExceeded
+            break
           }
         }
-      }
 
-      // Read deliverable status after session
-      const status = statusReader
-        ? await statusReader.load()
-        : emptyDeliverableStatus()
+        // Read deliverable status after session
+        const status = statusReader
+          ? await statusReader.load()
+          : emptyDeliverableStatus()
 
-      deliverablesPassedCount = countPassedDeliverables(status)
-      deliverablesTotalCount = status.deliverables.length
-      blockedCount = countBlockedDeliverables(status)
+        deliverablesPassedCount = countPassedDeliverables(status)
+        deliverablesTotalCount = status.deliverables.length
+        blockedCount = countBlockedDeliverables(status)
 
-      // Termination condition 1: All achievable deliverables passed
-      if (
-        statusReader &&
-        deliverablesTotalCount > 0 &&
-        allAchievableDeliverablesPassed(status)
-      ) {
-        const blockedMsg = blockedCount > 0 ? ` (${blockedCount} blocked)` : ''
-        logger.info(`All achievable deliverables passed${blockedMsg}`)
-        const totalDuration = Date.now() - startTime
-        this.logOverall(
-          logger,
-          iterations,
-          deliverablesPassedCount,
-          deliverablesTotalCount,
-          blockedCount,
-          totalCostUsd,
-          totalDuration,
-        )
-        return {
-          success: true,
-          iterations,
-          deliverablesPassedCount,
-          deliverablesTotalCount,
-          blockedCount,
-          totalDuration,
-          totalCostUsd,
+        // Termination condition: All achievable deliverables passed
+        if (
+          statusReader &&
+          deliverablesTotalCount > 0 &&
+          allAchievableDeliverablesPassed(status)
+        ) {
+          const blockedMsg =
+            blockedCount > 0 ? ` (${blockedCount} blocked)` : ''
+          logger.info(`All achievable deliverables passed${blockedMsg}`)
+          exitReason = ExitReason.AllPassed
+          break
         }
-      }
 
-      // Termination condition 2: All deliverables blocked
-      if (
-        statusReader &&
-        deliverablesTotalCount > 0 &&
-        allDeliverablesBlocked(status)
-      ) {
-        logger.info(`All ${deliverablesTotalCount} deliverables are blocked`)
-        const totalDuration = Date.now() - startTime
-        this.logOverall(
-          logger,
-          iterations,
-          deliverablesPassedCount,
-          deliverablesTotalCount,
-          blockedCount,
-          totalCostUsd,
-          totalDuration,
-        )
-        return {
-          success: false,
-          iterations,
-          deliverablesPassedCount,
-          deliverablesTotalCount,
-          blockedCount,
-          totalDuration,
-          totalCostUsd,
+        // Termination condition: All deliverables blocked
+        if (
+          statusReader &&
+          deliverablesTotalCount > 0 &&
+          allDeliverablesBlocked(status)
+        ) {
+          logger.info(`All ${deliverablesTotalCount} deliverables are blocked`)
+          exitReason = ExitReason.AllBlocked
+          break
         }
-      }
 
-      // Termination condition 3: Max iterations reached
-      if (
-        this.maxIterations !== undefined &&
-        iterations >= this.maxIterations
-      ) {
-        logger.info(`Max iterations (${this.maxIterations}) reached`)
-        const totalDuration = Date.now() - startTime
-        this.logOverall(
-          logger,
-          iterations,
-          deliverablesPassedCount,
-          deliverablesTotalCount,
-          blockedCount,
-          totalCostUsd,
-          totalDuration,
-        )
-        return {
-          success: false,
-          iterations,
-          deliverablesPassedCount,
-          deliverablesTotalCount,
-          blockedCount,
-          totalDuration,
-          totalCostUsd,
+        // Termination condition: Max iterations reached
+        if (
+          this.maxIterations !== undefined &&
+          iterations >= this.maxIterations
+        ) {
+          logger.info(`Max iterations (${this.maxIterations}) reached`)
+          exitReason = ExitReason.MaxIterations
+          break
         }
-      }
 
-      // Delay before next session
-      if (this.delayBetweenSessions > 0) {
+        // Delay before next session
+        if (this.delayBetweenSessions > 0) {
+          await this.delay(this.delayBetweenSessions)
+        }
+      } catch (error) {
+        consecutiveErrors++
+        lastError = error instanceof Error ? error : new Error(String(error))
+
+        if (consecutiveErrors > this.maxRetries) {
+          logger.error(
+            `Session failed after ${this.maxRetries} consecutive errors`,
+          )
+          exitReason = ExitReason.MaxRetriesExceeded
+          break
+        }
+
+        logger.warn(
+          `Session error (${consecutiveErrors}/${this.maxRetries}), starting new session...`,
+        )
         await this.delay(this.delayBetweenSessions)
       }
     }
+
+    // =============================================
+    // Unified exit point - all termination conditions reach here
+    // =============================================
+    const totalDuration = Date.now() - startTime
+
+    // Build result based on exitReason
+    const success = exitReason === ExitReason.AllPassed
+    const result: SessionRunnerResult = {
+      success,
+      iterations,
+      deliverablesPassedCount,
+      deliverablesTotalCount,
+      blockedCount,
+      totalDuration,
+      totalCostUsd,
+      interrupted: exitReason === ExitReason.Interrupted,
+      quotaExceeded: exitReason === ExitReason.QuotaExceeded,
+      error:
+        exitReason === ExitReason.MaxRetriesExceeded
+          ? lastError?.message
+          : undefined,
+    }
+
+    // Single logOverall call
+    this.logOverall(
+      logger,
+      iterations,
+      deliverablesPassedCount,
+      deliverablesTotalCount,
+      blockedCount,
+      totalCostUsd,
+      totalDuration,
+    )
+
+    return result
   }
 
   /**

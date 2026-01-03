@@ -12,6 +12,10 @@ cli
     'Project directory (default: current directory)',
   )
   .option('-n, --max-iterations <count>', 'Maximum coding sessions')
+  .option(
+    '--max-retries <count>',
+    'Maximum retries on session error (default: 3)',
+  )
   .option('-m, --model <model>', 'Claude model to use')
   .option('-d, --debug', 'Show debug output')
   .option('--no-sandbox', 'Disable SDK sandbox')
@@ -25,6 +29,7 @@ cli
     await handleRunCommand({
       projectDir: options.projectDir,
       maxIterations: options.maxIterations,
+      maxRetries: options.maxRetries,
       model: options.model,
       debug: options.debug,
       sandbox: options.sandbox,

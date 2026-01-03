@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { SessionRunner } from '../src/sessionRunner'
+import { SessionRunner, ExitReason } from '../src/sessionRunner'
 import { silentLogger } from '../src/logger'
+import type { AgentClient, AgentClientFactory } from '../src/agentClient'
+import type { MessageStream } from '../src/types'
 import {
   MockAgentClient,
   MockDeliverableStatusReader,
@@ -10,6 +12,45 @@ import {
   createMockClientFactory,
   TestLogger,
 } from './helpers'
+
+/**
+ * Mock client that throws errors for retry testing
+ */
+class ThrowingMockClient implements AgentClient {
+  private throwCount: number
+  private callCount = 0
+  private successResponses: ReturnType<typeof createMockSessionEnd>[]
+
+  constructor(
+    throwCount: number,
+    successResponses: ReturnType<typeof createMockSessionEnd>[],
+  ) {
+    this.throwCount = throwCount
+    this.successResponses = successResponses
+  }
+
+  getCallCount(): number {
+    return this.callCount
+  }
+
+  query(): MessageStream {
+    this.callCount++
+    if (this.callCount <= this.throwCount) {
+      throw new Error(`Session error ${this.callCount}`)
+    }
+
+    const responses = this.successResponses
+    const generator = (async function* () {
+      for (const response of responses) {
+        yield response
+      }
+    })()
+
+    const stream = generator as MessageStream
+    stream.interrupt = async () => {}
+    return stream
+  }
+}
 
 describe('SessionRunner', () => {
   describe('run()', () => {
@@ -606,6 +647,247 @@ describe('SessionRunner', () => {
 
       expect(result).toHaveProperty('totalCostUsd')
       expect(result.totalCostUsd).toBeCloseTo(0.0123, 4)
+    })
+  })
+
+  describe('Retry on session error', () => {
+    it('should retry on session error and create new session', async () => {
+      const throwingClient = new ThrowingMockClient(2, [
+        createMockSessionEnd('success', 0.01),
+      ])
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            description: 'Test',
+            acceptanceCriteria: ['AC'],
+            passed: true,
+            blocked: false,
+          },
+        ]),
+      ])
+
+      const factory: AgentClientFactory = {
+        create: () => throwingClient,
+      }
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxRetries: 3,
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, logger, statusReader)
+
+      // Should have called query 3 times (2 errors + 1 success)
+      expect(throwingClient.getCallCount()).toBe(3)
+      expect(result.success).toBe(true)
+      expect(logger.hasMessage('Session error (1/3)')).toBe(true)
+      expect(logger.hasMessage('Session error (2/3)')).toBe(true)
+    })
+
+    it('should return result with error after maxRetries consecutive errors', async () => {
+      const throwingClient = new ThrowingMockClient(5, [
+        createMockSessionEnd('never reached', 0.01),
+      ])
+
+      const factory: AgentClientFactory = {
+        create: () => throwingClient,
+      }
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxRetries: 3,
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, logger)
+
+      // Should have called query 4 times (3 retries + 1 initial)
+      expect(throwingClient.getCallCount()).toBe(4)
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Session error 4')
+      expect(
+        logger.hasMessage('Session failed after 3 consecutive errors'),
+      ).toBe(true)
+    })
+
+    it('should log overall info when max retries exceeded', async () => {
+      const throwingClient = new ThrowingMockClient(5, [])
+
+      const factory: AgentClientFactory = {
+        create: () => throwingClient,
+      }
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxRetries: 2,
+        delayBetweenSessions: 0,
+      })
+
+      await runner.run(factory, logger)
+
+      expect(logger.hasMessage('Overall:')).toBe(true)
+    })
+
+    it('should reset error counter after successful session', async () => {
+      // First session errors once, second session succeeds
+      let callCount = 0
+      const factory: AgentClientFactory = {
+        create: () => {
+          callCount++
+          if (callCount === 1 || callCount === 3) {
+            return new ThrowingMockClient(1, [
+              createMockSessionEnd('retry success', 0.01),
+            ])
+          }
+          return new ThrowingMockClient(0, [
+            createMockSessionEnd('direct success', 0.01),
+          ])
+        },
+      }
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            description: 'Test',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: false,
+          },
+        ]),
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            description: 'Test',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: false,
+          },
+        ]),
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            description: 'Test',
+            acceptanceCriteria: ['AC'],
+            passed: true,
+            blocked: false,
+          },
+        ]),
+      ])
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxRetries: 3,
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, logger, statusReader)
+
+      expect(result.success).toBe(true)
+      // Error counter should be reset between successful sessions
+      // so we should see (1/3) for each retry, not (2/3)
+      const entries = logger.getEntries()
+      const errorLogs = entries.filter((e) =>
+        e.message.includes('Session error'),
+      )
+      expect(errorLogs.every((e) => e.message.includes('(1/3)'))).toBe(true)
+    })
+
+    it('should use default maxRetries=3 when not specified', async () => {
+      const throwingClient = new ThrowingMockClient(5, [])
+
+      const factory: AgentClientFactory = {
+        create: () => throwingClient,
+      }
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, logger)
+
+      // Default is 3, so 4 calls total (3 retries + 1 initial)
+      expect(throwingClient.getCallCount()).toBe(4)
+      expect(result.error).toBeDefined()
+    })
+  })
+
+  describe('Unified exit point', () => {
+    it('should call logOverall exactly once for all exit reasons', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockSessionEnd('done', 0.01)])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            description: 'Test',
+            acceptanceCriteria: ['AC'],
+            passed: true,
+            blocked: false,
+          },
+        ]),
+      ])
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+      })
+
+      await runner.run(factory, logger, statusReader)
+
+      const overallLogs = logger
+        .getEntries()
+        .filter((e) => e.message.includes('Overall:'))
+      expect(overallLogs.length).toBe(1)
+    })
+
+    it('should return consistent result structure regardless of exit reason', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockSessionEnd('done', 0.01)])
+      const factory = createMockClientFactory(client)
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 1,
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, silentLogger)
+
+      // All expected properties should be present
+      expect(result).toHaveProperty('success')
+      expect(result).toHaveProperty('iterations')
+      expect(result).toHaveProperty('deliverablesPassedCount')
+      expect(result).toHaveProperty('deliverablesTotalCount')
+      expect(result).toHaveProperty('blockedCount')
+      expect(result).toHaveProperty('totalDuration')
+      expect(result).toHaveProperty('totalCostUsd')
+    })
+  })
+
+  describe('ExitReason enum', () => {
+    it('should export ExitReason enum', () => {
+      expect(ExitReason.AllPassed).toBe('all_passed')
+      expect(ExitReason.AllBlocked).toBe('all_blocked')
+      expect(ExitReason.MaxIterations).toBe('max_iterations')
+      expect(ExitReason.QuotaExceeded).toBe('quota_exceeded')
+      expect(ExitReason.Interrupted).toBe('interrupted')
+      expect(ExitReason.MaxRetriesExceeded).toBe('max_retries_exceeded')
     })
   })
 })

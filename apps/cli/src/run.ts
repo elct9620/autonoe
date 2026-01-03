@@ -56,6 +56,7 @@ function createInstructionResolver(projectDir: string): InstructionResolver {
 export interface RunCommandOptions {
   projectDir?: string
   maxIterations?: string
+  maxRetries?: string
   model?: string
   debug?: boolean
   sandbox?: boolean
@@ -111,6 +112,10 @@ export async function handleRunCommand(
     ? parseInt(options.maxIterations, 10)
     : undefined
 
+  const maxRetries = options.maxRetries
+    ? parseInt(options.maxRetries, 10)
+    : undefined
+
   // Parse thinking option (can be boolean true or string number)
   const maxThinkingTokens =
     options.thinking === true
@@ -128,6 +133,7 @@ export async function handleRunCommand(
   const runnerOptions: SessionRunnerOptions = {
     projectDir,
     maxIterations: Number.isNaN(maxIterations) ? undefined : maxIterations,
+    maxRetries: Number.isNaN(maxRetries) ? undefined : maxRetries,
     model: options.model,
     waitForQuota: options.waitForQuota,
     maxThinkingTokens,
@@ -235,6 +241,9 @@ export async function handleRunCommand(
       logger.info('Session interrupted by user')
     } else if (result.quotaExceeded) {
       logger.error('Session stopped: quota exceeded')
+      process.exit(1)
+    } else if (result.error) {
+      logger.error(`Session stopped: ${result.error}`)
       process.exit(1)
     } else if (result.success) {
       logger.info('Session completed successfully')
