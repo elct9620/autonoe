@@ -2,6 +2,7 @@ import type { McpServerConfig as SDKMcpServerConfig } from '@anthropic-ai/claude
 import type {
   StreamEvent,
   AgentText,
+  AgentThinking,
   ToolInvocation,
   ToolResponse,
   SessionEnd,
@@ -19,6 +20,7 @@ import {
 interface SDKContentBlock {
   type: string
   text?: string
+  thinking?: string
   name?: string
   input?: Record<string, unknown>
   tool_use_id?: string
@@ -91,6 +93,12 @@ export function toSessionOutcome(
  */
 export function toStreamEvent(block: SDKContentBlock): StreamEvent | null {
   switch (block.type) {
+    case 'thinking':
+      return {
+        type: 'agent_thinking',
+        thinking: block.thinking ?? '',
+      } as AgentThinking
+
     case 'text':
       return {
         type: 'agent_text',

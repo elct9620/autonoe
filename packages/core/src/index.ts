@@ -2,6 +2,7 @@
 export type {
   StreamEvent,
   AgentText,
+  AgentThinking,
   ToolInvocation,
   ToolResponse,
   SessionEnd,

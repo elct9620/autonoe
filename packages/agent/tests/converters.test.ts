@@ -187,6 +187,24 @@ describe('converters', () => {
       const result = toStreamEvent(block)
       expect(result).toBeNull()
     })
+
+    it('converts thinking block to AgentThinking', () => {
+      const block = { type: 'thinking', thinking: 'Let me analyze this...' }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'agent_thinking',
+        thinking: 'Let me analyze this...',
+      })
+    })
+
+    it('handles thinking block with empty content', () => {
+      const block = { type: 'thinking' }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'agent_thinking',
+        thinking: '',
+      })
+    })
   })
 
   describe('toSessionEnd', () => {
@@ -309,6 +327,28 @@ describe('converters', () => {
       }
       const events = [...toStreamEvents(sdkMessage)]
       expect(events).toHaveLength(0)
+    })
+
+    it('yields thinking event for message with thinking block', () => {
+      const sdkMessage = {
+        type: 'assistant',
+        message: {
+          content: [
+            { type: 'thinking', thinking: 'Let me think about this...' },
+            { type: 'text', text: 'Based on my analysis...' },
+          ],
+        },
+      }
+      const events = [...toStreamEvents(sdkMessage)]
+      expect(events).toHaveLength(2)
+      expect(events[0]).toEqual({
+        type: 'agent_thinking',
+        thinking: 'Let me think about this...',
+      })
+      expect(events[1]).toEqual({
+        type: 'agent_text',
+        text: 'Based on my analysis...',
+      })
     })
   })
 })

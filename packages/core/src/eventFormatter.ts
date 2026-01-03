@@ -7,6 +7,7 @@ import type { StreamEvent } from './types'
 
 const TRUNCATE_INPUT = 100
 const TRUNCATE_CONTENT = 100
+const TRUNCATE_THINKING = 200
 
 /**
  * Truncate string to specified length with ellipsis
@@ -22,6 +23,9 @@ export function formatStreamEvent(event: StreamEvent): string {
   switch (event.type) {
     case 'agent_text':
       return event.text
+
+    case 'agent_thinking':
+      return `[thinking] ${truncate(event.thinking, TRUNCATE_THINKING)}`
 
     case 'tool_invocation': {
       const input = JSON.stringify(event.input)

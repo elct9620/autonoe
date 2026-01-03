@@ -3,6 +3,7 @@ import { formatStreamEvent } from '../src/eventFormatter'
 import { SessionOutcome } from '../src/types'
 import type {
   AgentText,
+  AgentThinking,
   ToolInvocation,
   ToolResponse,
   SessionEnd,
@@ -19,6 +20,35 @@ describe('formatStreamEvent', () => {
     it('handles empty text', () => {
       const event: AgentText = { type: 'agent_text', text: '' }
       expect(formatStreamEvent(event)).toBe('')
+    })
+  })
+
+  describe('AgentThinking', () => {
+    it('formats thinking content with prefix', () => {
+      const event: AgentThinking = {
+        type: 'agent_thinking',
+        thinking: 'Let me analyze this step by step...',
+      }
+      expect(formatStreamEvent(event)).toBe(
+        '[thinking] Let me analyze this step by step...',
+      )
+    })
+
+    it('truncates long thinking content to 200 chars', () => {
+      const longThinking = 'a'.repeat(250)
+      const event: AgentThinking = {
+        type: 'agent_thinking',
+        thinking: longThinking,
+      }
+      const result = formatStreamEvent(event)
+      expect(result).toContain('[thinking]')
+      expect(result.length).toBeLessThan(250)
+      expect(result).toContain('...')
+    })
+
+    it('handles empty thinking', () => {
+      const event: AgentThinking = { type: 'agent_thinking', thinking: '' }
+      expect(formatStreamEvent(event)).toBe('[thinking] ')
     })
   })
 

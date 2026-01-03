@@ -22,6 +22,12 @@ export interface AgentText {
   text: string
 }
 
+// AgentThinking - Agent's thinking/reasoning content (summarized in Claude 4)
+export interface AgentThinking {
+  type: 'agent_thinking'
+  thinking: string
+}
+
 // ToolInvocation - Agent's tool call request
 export interface ToolInvocation {
   type: 'tool_invocation'
@@ -57,6 +63,7 @@ export interface StreamError {
 // StreamEvent - discriminated union of all event types
 export type StreamEvent =
   | AgentText
+  | AgentThinking
   | ToolInvocation
   | ToolResponse
   | SessionEnd
