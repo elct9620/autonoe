@@ -268,7 +268,7 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 | Field | Type | Description |
 |-------|------|-------------|
 | id | string | Unique deliverable identifier |
-| name | string | Deliverable name |
+| description | string | Clear description of the deliverable |
 | acceptanceCriteria | string[] | List of acceptance criteria |
 
 **CreateDeliverableInput** - Input for create_deliverable tool
@@ -299,7 +299,7 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 | Field | Type | Description |
 |-------|------|-------------|
 | id | string | Unique identifier (e.g., DL-001) |
-| name | string | Deliverable name |
+| description | string | Clear description of the deliverable |
 | acceptanceCriteria | string[] | Verifiable conditions for completion |
 | passed | boolean | Verification status |
 | blocked | boolean | When true, deliverable is blocked due to external constraints (mutually exclusive with passed=true) |
@@ -316,6 +316,8 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 
 | Field | Type | Description |
 |-------|------|-------------|
+| createdAt | string | Creation date (YYYY-MM-DD) |
+| updatedAt | string | Last update date, updated on tool use |
 | deliverables | Deliverable[] | All tracked deliverables |
 
 Persistence: `.autonoe/status.json`
@@ -503,7 +505,7 @@ const createDeliverableTool = tool(
   {
     deliverables: z.array(z.object({
       id: z.string(),
-      name: z.string(),
+      description: z.string(),
       acceptanceCriteria: z.array(z.string())
     }))
   },
@@ -558,7 +560,7 @@ const setDeliverableStatusTool = tool(
 | Field | Type | Description |
 |-------|------|-------------|
 | deliverableId | string | Deliverable ID |
-| deliverableName | string | Deliverable name |
+| deliverableDescription | string | Deliverable description |
 | previousStatus | DeliverableStatusValue \| null | Previous status |
 | newStatus | DeliverableStatusValue | New status |
 
@@ -892,10 +894,12 @@ project/
 
 ```json
 {
+  "createdAt": "YYYY-MM-DD",
+  "updatedAt": "YYYY-MM-DD",
   "deliverables": [
     {
       "id": "DL-001",
-      "name": "User Authentication",
+      "description": "User Authentication",
       "acceptanceCriteria": [
         "User can login with email and password",
         "Invalid credentials show error message",
