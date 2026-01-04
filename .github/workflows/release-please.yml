@@ -28,7 +28,7 @@ jobs:
     uses: ./.github/workflows/build-docker.yml
     with:
       tag-strategy: semver
-      version-tag: ${{ needs.release-please.outputs.cli_tag }}
+      version-tag: v${{ needs.release-please.outputs.cli_version }}
     secrets: inherit
 
   binary-build:
