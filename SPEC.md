@@ -1820,6 +1820,51 @@ tests/
     └── README.md
 ```
 
+### 9.10 CI Reporting
+
+Integration tests generate GitHub Actions Job Summary when running in CI:
+
+| Element | Content |
+|---------|---------|
+| Methodology | How tests work (fixture → execute → verify) |
+| Summary Table | Test ID, name, pass/fail status |
+| Test Details | Verification criteria, agent notes, status.json |
+
+**Environment Detection:**
+
+Summary is generated only when `GITHUB_STEP_SUMMARY` environment variable is set. Local runs output console summary only.
+
+**Artifacts Captured:**
+
+| File | Description |
+|------|-------------|
+| `.autonoe-note.txt` | Agent handoff notes (if created) |
+| `.autonoe/status.json` | Deliverable status with pass/block states |
+
+**Summary Format:**
+
+```markdown
+# Autonoe Integration Test Results
+
+## Test Methodology
+[How tests work]
+
+## Summary
+| Test ID | Name | Status |
+|---------|------|--------|
+| IT-001 | Basic Workflow | :white_check_mark: PASS |
+
+## Test Details
+### IT-001: Basic Workflow
+**Status:** :white_check_mark: PASS
+**Verification:** File hello.txt exists and contains 'Hello, World!'
+
+<details>
+<summary>Agent Notes</summary>
+[.autonoe-note.txt content]
+</details>
+```
+
 ---
 
 ## 10. Build & Distribution
