@@ -909,10 +909,6 @@ navigate ──▶ snapshot ──▶ interact ──▶ wait_for ──▶ veri
 
 ```
 project/
-├── features/
-│   ├── authentication.feature
-│   ├── dashboard.feature
-│   └── settings.feature
 ├── .autonoe/
 │   └── status.json
 └── .autonoe-note.md
@@ -2141,7 +2137,6 @@ Options:
 - Runs in specified project directory (or cwd if not specified)
 - All relative paths (.autonoe/, SPEC.md) resolved from project directory
 - Reads `SPEC.md` for project specification
-- Recommends using Gherkin (`.feature` files) to define acceptance criteria
 - Agent SDK auto-detects API credentials
 - Shows help message when no command is provided
 

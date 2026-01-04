@@ -3,6 +3,7 @@
 Autonomous coding agent orchestrator powered by Claude's Agent SDK.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![codecov](https://codecov.io/github/elct9620/autonoe/graph/badge.svg?token=A681DA03X2)](https://codecov.io/github/elct9620/autonoe)
 
 ## Inspiration
 
@@ -132,6 +133,7 @@ autonoe run [options]
 Options:
   -p, --project-dir <path>    Project directory (default: current directory)
   -n, --max-iterations <n>    Maximum coding sessions (default: unlimited)
+  --max-retries <n>           Maximum retries on session error (default: 3)
   -m, --model <model>         Claude model to use
   -d, --debug                 Show debug output
   --no-sandbox                Disable SDK sandbox (not recommended)
@@ -147,35 +149,37 @@ Options:
 Autonoe operates in two phases:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Session Loop                              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌──────────────────┐         ┌──────────────────┐              │
-│  │  Phase 1:        │         │  Phase 2:        │              │
-│  │  Initialization  │────────▶│  Coding          │              │
-│  │                  │         │                  │              │
-│  │  - Read SPEC.md  │         │  - Implement     │              │
-│  │  - Create        │         │  - Test          │              │
-│  │    deliverables  │         │  - Verify        │              │
-│  └──────────────────┘         └────────┬─────────┘              │
-│                                        │                         │
-│                                        ▼                         │
-│                               ┌──────────────────┐              │
-│                               │ All deliverables │──Yes──▶ Done │
-│                               │ passed?          │              │
-│                               └────────┬─────────┘              │
-│                                        │ No                      │
-│                                        └───────────────┐        │
-│                                                        │        │
-│                                        ┌───────────────┘        │
-│                                        ▼                         │
-│                               ┌──────────────────┐              │
-│                               │ Max iterations?  │──Yes──▶ Exit │
-│                               └────────┬─────────┘              │
-│                                        │ No                      │
-│                                        └──────▶ Next session    │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                          Session Loop                               │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────────┐                  ┌──────────────────┐        │
+│  │ Phase 1:         │                  │ Phase 2:         │        │
+│  │ Initialization   │─────────────────▶│ Coding           │        │
+│  │                  │                  │                  │        │
+│  │ - Read SPEC.md   │  (status.json    │ - Implement      │        │
+│  │ - Create         │   created)       │ - Test & Verify  │        │
+│  │   deliverables   │                  │ - Mark status    │        │
+│  └──────────────────┘                  └────────┬─────────┘        │
+│                                                 │                   │
+│                                                 ▼                   │
+│                                  ┌──────────────────────────┐      │
+│                                  │ All deliverables passed? │      │
+│                                  └─────────────┬────────────┘      │
+│                                       Yes      │      No           │
+│                                        ▼       │       ▼           │
+│                                      Done      │  ┌────────────┐   │
+│                                                │  │ Continue?  │   │
+│                                                │  └─────┬──────┘   │
+│                                                │        │          │
+│                                                │   Yes  │  No      │
+│                                                │    ▼   │   ▼      │
+│                                                │  Next  │  Exit    │
+│                                                │ session│          │
+│                                                └────────┘          │
+└─────────────────────────────────────────────────────────────────────┘
+
+Exit conditions: max iterations, all blocked, quota exceeded, max retries
 ```
 
 **Phase 1: Initialization**
@@ -190,6 +194,23 @@ Autonoe operates in two phases:
 - Runs tests and verification
 - Marks deliverables as passed/failed
 - Continues until all deliverables pass or max iterations reached
+
+**Deliverable Status**
+
+Each deliverable tracks progress with three states:
+
+| Status    | Meaning                                |
+| --------- | -------------------------------------- |
+| `pending` | Not yet completed                      |
+| `passed`  | All acceptance criteria verified       |
+| `blocked` | Cannot proceed (dependency/constraint) |
+
+The session loop exits when:
+
+- **All achievable passed**: All non-blocked deliverables have passed
+- **All blocked**: Every deliverable is blocked
+- **Max iterations**: Reached `-n` limit
+- **Max retries**: Exceeded `--max-retries` consecutive errors
 
 ## Configuration
 
@@ -232,6 +253,51 @@ Create `.autonoe/agent.json` to customize behavior:
 | `python` | python, pip, uv, pytest, django, flask, etc. |
 | `ruby`   | ruby, gem, bundle, rails, rspec, etc.        |
 | `go`     | go, gofmt, golangci-lint, etc.               |
+
+## Custom Instructions
+
+Override the default agent instructions by creating files in `.autonoe/`:
+
+| File                      | Purpose                                       |
+| ------------------------- | --------------------------------------------- |
+| `.autonoe/initializer.md` | First session: read SPEC, create deliverables |
+| `.autonoe/coding.md`      | Subsequent sessions: implement and verify     |
+
+### Instruction Selection
+
+1. **First session** (no `.autonoe/status.json`): Uses `initializer.md`
+2. **Subsequent sessions**: Uses `coding.md`
+
+### Override Priority
+
+```
+.autonoe/{name}.md  →  (if exists) use custom
+                    →  (if not) use built-in default
+```
+
+### Example: Custom Initializer
+
+```bash
+mkdir -p .autonoe
+
+cat > .autonoe/initializer.md << 'EOF'
+# Custom Initialization
+
+Your custom instructions here...
+
+## Required Steps
+1. Read SPEC.md
+2. Create deliverables with acceptance criteria
+...
+EOF
+```
+
+Custom instructions completely replace the defaults (no merging).
+
+### Agent Notes
+
+The agent may create `.autonoe-note.md` to persist observations between sessions.
+This file is auto-generated and should not be manually edited.
 
 ## Security Model
 
