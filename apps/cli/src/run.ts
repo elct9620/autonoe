@@ -25,7 +25,7 @@ import { ConsoleLogger } from './consoleLogger'
 /**
  * Version constant - should match package.json
  */
-export const VERSION = '0.2.0' // x-release-please-version
+export const VERSION = '0.2.1' // x-release-please-version
 
 /**
  * Create an instruction resolver with override support
