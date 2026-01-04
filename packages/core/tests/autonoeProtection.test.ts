@@ -157,22 +157,22 @@ describe('Autonoe Protection', () => {
     })
   })
 
-  describe('SC-AP008: Approve .autonoe-note.txt', () => {
-    it('approves .autonoe-note.txt (hyphenated filename at root)', async () => {
+  describe('SC-AP008: Approve .autonoe-note.md', () => {
+    it('approves .autonoe-note.md (hyphenated filename at root)', async () => {
       const hook = createAutonoeProtectionHook()
       const result = await hook.callback({
         toolName: 'Write',
-        toolInput: { file_path: '/workspace/.autonoe-note.txt' },
+        toolInput: { file_path: '/workspace/.autonoe-note.md' },
       })
 
       expect(result.decision).toBe('approve')
     })
 
-    it('approves relative .autonoe-note.txt', async () => {
+    it('approves relative .autonoe-note.md', async () => {
       const hook = createAutonoeProtectionHook()
       const result = await hook.callback({
         toolName: 'Write',
-        toolInput: { file_path: '.autonoe-note.txt' },
+        toolInput: { file_path: '.autonoe-note.md' },
       })
 
       expect(result.decision).toBe('approve')

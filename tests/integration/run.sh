@@ -76,8 +76,8 @@ run_autonoe() {
 
 # Capture test artifacts for summary
 capture_test_artifacts() {
-  if [[ -f ./tmp/.autonoe-note.txt ]]; then
-    TEST_NOTES["$CURRENT_TEST"]=$(cat ./tmp/.autonoe-note.txt 2>/dev/null || echo "")
+  if [[ -f ./tmp/.autonoe-note.md ]]; then
+    TEST_NOTES["$CURRENT_TEST"]=$(cat ./tmp/.autonoe-note.md 2>/dev/null || echo "")
   fi
   if [[ -f ./tmp/.autonoe/status.json ]]; then
     TEST_STATUS_JSON["$CURRENT_TEST"]=$(cat ./tmp/.autonoe/status.json 2>/dev/null || echo "")
@@ -345,7 +345,7 @@ EOF
     if [[ -n "$notes" ]]; then
       cat >> "$summary_file" << EOF
 <details>
-<summary>Agent Notes (.autonoe-note.txt)</summary>
+<summary>Agent Notes (.autonoe-note.md)</summary>
 
 \`\`\`
 $notes

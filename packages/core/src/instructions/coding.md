@@ -28,7 +28,7 @@ cat SPEC.md
 cat .autonoe/status.json | head -50
 
 # 5. Read notes from previous agents if available
-cat .autonoe-note.txt || echo "No notes found"
+cat .autonoe-note.md || echo "No notes found"
 
 # 6. Check recent git history
 git log --oneline -20
@@ -200,7 +200,7 @@ Keep commits focused, concise, and small enough to understand the purpose of the
 
 ## STEP 9: Update Notes
 
-Update `.autonoe-note.txt` with helpful for handing off to the next agent. Include:
+Update `.autonoe-note.md` with helpful information for handing off to the next agent. Include:
 
 - What you accomplished this session
 - Which acceptance criteria were completed
@@ -214,7 +214,7 @@ Update `.autonoe-note.txt` with helpful for handing off to the next agent. Inclu
 
 - Committed all work
 - Ensured `.autonoe/status.json` is up to date
-- Documented any important information in `.autonoe-note.txt` for the next agent
+- Documented any important information in `.autonoe-note.md` for the next agent
 - Left environment in a clean and working state
 
 Ensure no breaking features or incomplete work should be left behind. The next session will start from STEP 1 to verify previous work before continuing.

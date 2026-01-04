@@ -806,7 +806,7 @@ enum ExitReason {
 - Blocked means external constraints prevent completion (missing API keys, unavailable services, hardware, network)
 - When all non-blocked deliverables pass, the session succeeds even if some are blocked
 - When all deliverables are blocked, the session fails
-- Reasons for blocking should be documented in `.autonoe-note.txt`
+- Reasons for blocking should be documented in `.autonoe-note.md`
 
 **Quota Handling:**
 
@@ -915,7 +915,7 @@ project/
 │   └── settings.feature
 ├── .autonoe/
 │   └── status.json
-└── .autonoe-note.txt
+└── .autonoe-note.md
 ```
 
 ### 5.2 Status Tracking (.autonoe/status.json)
@@ -945,7 +945,7 @@ project/
 | -------------------- | ---------------------------- | ------ | ---------------------------------- |
 | Project Files        | Coding Agent (Direct)        | Both   | Application source code            |
 | .autonoe/status.json | Deliverable Tools            | Both   | Deliverable tracking               |
-| .autonoe-note.txt    | Coding Agent (Direct)        | Both   | Session handoff notes (agent-maintained) |
+| .autonoe-note.md    | Coding Agent (Direct)        | Both   | Session handoff notes (agent-maintained) |
 | Git History          | Coding Agent (Direct)        | Both   | Version control history            |
 
 ### 5.4 Configuration
@@ -1540,7 +1540,7 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | SC-AP005 | file_path: undefined               | Approve         |
 | SC-AP006 | filePath (camelCase): `.autonoe/x` | Block           |
 | SC-AP007 | Windows path: `.autonoe\\file`     | Block           |
-| SC-AP008 | file_path: `.autonoe-note.txt`     | Approve         |
+| SC-AP008 | file_path: `.autonoe-note.md`     | Approve         |
 
 ### 8.9 Duration Format
 
@@ -1838,7 +1838,7 @@ Summary is generated only when `GITHUB_STEP_SUMMARY` environment variable is set
 
 | File | Description |
 |------|-------------|
-| `.autonoe-note.txt` | Agent handoff notes (if created) |
+| `.autonoe-note.md` | Agent handoff notes (if created) |
 | `.autonoe/status.json` | Deliverable status with pass/block states |
 
 **Summary Format:**
@@ -1861,7 +1861,7 @@ Summary is generated only when `GITHUB_STEP_SUMMARY` environment variable is set
 
 <details>
 <summary>Agent Notes</summary>
-[.autonoe-note.txt content]
+[.autonoe-note.md content]
 </details>
 ```
 

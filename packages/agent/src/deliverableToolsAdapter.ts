@@ -121,7 +121,7 @@ export function createDeliverableMcpServer(
 
   const setDeliverableStatusTool = tool(
     'set_deliverable_status',
-    'Set deliverable status: pending (reset), passed (completed), or blocked (external constraints only). Document reason in .autonoe-note.txt before blocking.',
+    'Set deliverable status: pending (reset), passed (completed), or blocked (external constraints only). Document reason in .autonoe-note.md before blocking.',
     {
       deliverableId: z.string().describe('Deliverable ID to update'),
       status: z
