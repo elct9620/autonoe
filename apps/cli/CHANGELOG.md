@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/elct9620/autonoe/compare/cli-v0.2.0...cli-v0.2.1) (2026-01-04)
+
+
+### Bug Fixes
+
+* **cli:** add package description and workflow concurrency settings ([ae48ac0](https://github.com/elct9620/autonoe/commit/ae48ac0f5551bf263c07e6c009733deb21ce3e76))
+
 ## [0.2.0](https://github.com/elct9620/autonoe/compare/cli-v0.1.0...cli-v0.2.0) (2026-01-04)
 
 
