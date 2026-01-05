@@ -890,4 +890,101 @@ describe('SessionRunner', () => {
       expect(ExitReason.MaxRetriesExceeded).toBe('max_retries_exceeded')
     })
   })
+
+  describe('Custom termination chain', () => {
+    it('uses injected termination chain instead of default', async () => {
+      const client = new MockAgentClient()
+      // Set up responses for potentially multiple sessions
+      client.setResponsesPerSession([
+        [createMockSessionEnd('session 1', 0.01)],
+        [createMockSessionEnd('session 2', 0.01)],
+      ])
+      const factory = createMockClientFactory(client)
+
+      // Custom evaluator that always terminates immediately
+      const customEvaluator = {
+        evaluate: () => ({
+          shouldTerminate: true,
+          exitReason: ExitReason.Interrupted,
+        }),
+      }
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+        terminationChain: customEvaluator,
+      })
+
+      const result = await runner.run(factory, logger)
+
+      // Should terminate immediately without running any sessions
+      expect(result.iterations).toBe(0)
+      expect(result.interrupted).toBe(true)
+      expect(logger.hasMessage('User interrupted')).toBe(true)
+    })
+
+    it('custom chain can return waitDuration for quota handling', async () => {
+      const client = new MockAgentClient()
+      let evaluationCount = 0
+
+      client.setResponsesPerSession([
+        [createMockSessionEnd('session 1', 0.01)],
+        [createMockSessionEnd('session 2', 0.01)],
+      ])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            description: 'Test',
+            acceptanceCriteria: ['AC'],
+            passed: false,
+            blocked: false,
+          },
+        ]),
+        createMockStatusJson([
+          {
+            id: 'DL-001',
+            description: 'Test',
+            acceptanceCriteria: ['AC'],
+            passed: true,
+            blocked: false,
+          },
+        ]),
+      ])
+
+      // Custom evaluator that returns waitDuration on first post-session evaluation
+      const customEvaluator = {
+        evaluate: () => {
+          evaluationCount++
+          // First evaluation is pre-session check (pass through)
+          // Second evaluation is post-session, return wait
+          // Third evaluation is pre-session check again (pass through)
+          // Fourth evaluation is post-session, terminate with success
+          if (evaluationCount === 2) {
+            return { shouldTerminate: false, waitDuration: 10 }
+          }
+          if (evaluationCount === 4) {
+            return { shouldTerminate: true, exitReason: ExitReason.AllPassed }
+          }
+          return { shouldTerminate: false }
+        },
+      }
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+        terminationChain: customEvaluator,
+      })
+
+      const result = await runner.run(factory, logger, statusReader)
+
+      expect(result.success).toBe(true)
+      expect(logger.hasMessage('Quota exceeded, waiting')).toBe(true)
+    })
+  })
 })

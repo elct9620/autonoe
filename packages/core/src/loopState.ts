@@ -18,6 +18,20 @@ export interface LoopState {
 }
 
 /**
+ * Partial update for LoopState
+ * All fields are optional - only specified fields are updated
+ */
+export interface LoopStateUpdate {
+  incrementIterations?: boolean
+  decrementIterations?: boolean
+  addCost?: number
+  error?: Error
+  resetErrors?: boolean
+  exitReason?: ExitReason
+  deliverableCounts?: { passed: number; total: number; blocked: number }
+}
+
+/**
  * Create initial loop state with default values
  */
 export function createInitialLoopState(): LoopState {
@@ -34,81 +48,47 @@ export function createInitialLoopState(): LoopState {
 }
 
 /**
- * Increment iteration count
+ * Update loop state with partial updates
+ * Combines multiple state mutations into a single pure function
  */
-export function incrementIteration(state: LoopState): LoopState {
-  return {
-    ...state,
-    iterations: state.iterations + 1,
-  }
-}
-
-/**
- * Decrement iteration count (used for quota retry)
- */
-export function decrementIteration(state: LoopState): LoopState {
-  return {
-    ...state,
-    iterations: Math.max(0, state.iterations - 1),
-  }
-}
-
-/**
- * Add cost to total
- */
-export function addCost(state: LoopState, cost: number): LoopState {
-  return {
-    ...state,
-    totalCostUsd: state.totalCostUsd + cost,
-  }
-}
-
-/**
- * Record an error and increment consecutive error count
- */
-export function recordError(state: LoopState, error: Error): LoopState {
-  return {
-    ...state,
-    consecutiveErrors: state.consecutiveErrors + 1,
-    lastError: error,
-  }
-}
-
-/**
- * Reset consecutive error count after successful session
- */
-export function resetErrors(state: LoopState): LoopState {
-  return {
-    ...state,
-    consecutiveErrors: 0,
-  }
-}
-
-/**
- * Set the exit reason for loop termination
- */
-export function setExitReason(state: LoopState, reason: ExitReason): LoopState {
-  return {
-    ...state,
-    exitReason: reason,
-  }
-}
-
-/**
- * Update deliverable counts from status
- */
-export function updateDeliverableCounts(
+export function updateLoopState(
   state: LoopState,
-  passed: number,
-  total: number,
-  blocked: number,
+  update: LoopStateUpdate,
 ): LoopState {
-  return {
-    ...state,
-    deliverablesPassedCount: passed,
-    deliverablesTotalCount: total,
-    blockedCount: blocked,
+  let newState = { ...state }
+
+  if (update.incrementIterations) {
+    newState.iterations = newState.iterations + 1
   }
+
+  if (update.decrementIterations) {
+    newState.iterations = Math.max(0, newState.iterations - 1)
+  }
+
+  if (update.addCost !== undefined) {
+    newState.totalCostUsd = newState.totalCostUsd + update.addCost
+  }
+
+  if (update.error !== undefined) {
+    newState.consecutiveErrors = newState.consecutiveErrors + 1
+    newState.lastError = update.error
+  }
+
+  if (update.resetErrors) {
+    newState.consecutiveErrors = 0
+  }
+
+  if (update.exitReason !== undefined) {
+    newState.exitReason = update.exitReason
+  }
+
+  if (update.deliverableCounts !== undefined) {
+    newState.deliverablesPassedCount = update.deliverableCounts.passed
+    newState.deliverablesTotalCount = update.deliverableCounts.total
+    newState.blockedCount = update.deliverableCounts.blocked
+  }
+
+  return newState
 }
 
 /**

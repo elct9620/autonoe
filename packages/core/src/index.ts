@@ -124,16 +124,10 @@ export type { Timer } from './timer'
 export { realTimer } from './timer'
 
 // LoopState exports
-export type { LoopState } from './loopState'
+export type { LoopState, LoopStateUpdate } from './loopState'
 export {
   createInitialLoopState,
-  incrementIteration,
-  decrementIteration,
-  addCost,
-  recordError,
-  resetErrors,
-  setExitReason,
-  updateDeliverableCounts,
+  updateLoopState,
   buildResult,
 } from './loopState'
 

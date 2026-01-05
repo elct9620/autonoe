@@ -1,13 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   createInitialLoopState,
-  incrementIteration,
-  decrementIteration,
-  addCost,
-  recordError,
-  resetErrors,
-  setExitReason,
-  updateDeliverableCounts,
+  updateLoopState,
   buildResult,
 } from '../src/loopState'
 import { ExitReason } from '../src/sessionRunner'
@@ -46,137 +40,173 @@ describe('LoopState', () => {
     })
   })
 
-  describe('incrementIteration', () => {
-    it('LS-010: increments iteration count by 1', () => {
-      const initial = createInitialLoopState()
-      const next = incrementIteration(initial)
-      expect(next.iterations).toBe(1)
+  describe('updateLoopState', () => {
+    describe('incrementIterations', () => {
+      it('LS-010: increments iteration count by 1', () => {
+        const initial = createInitialLoopState()
+        const next = updateLoopState(initial, { incrementIterations: true })
+        expect(next.iterations).toBe(1)
+      })
+
+      it('LS-011: does not mutate original state', () => {
+        const initial = createInitialLoopState()
+        updateLoopState(initial, { incrementIterations: true })
+        expect(initial.iterations).toBe(0)
+      })
+
+      it('LS-012: preserves other state properties', () => {
+        const initial = { ...createInitialLoopState(), totalCostUsd: 1.5 }
+        const next = updateLoopState(initial, { incrementIterations: true })
+        expect(next.totalCostUsd).toBe(1.5)
+      })
     })
 
-    it('LS-011: does not mutate original state', () => {
-      const initial = createInitialLoopState()
-      incrementIteration(initial)
-      expect(initial.iterations).toBe(0)
+    describe('decrementIterations', () => {
+      it('LS-015: decrements iteration count by 1', () => {
+        const state = { ...createInitialLoopState(), iterations: 5 }
+        const next = updateLoopState(state, { decrementIterations: true })
+        expect(next.iterations).toBe(4)
+      })
+
+      it('LS-016: does not go below zero', () => {
+        const initial = createInitialLoopState()
+        const next = updateLoopState(initial, { decrementIterations: true })
+        expect(next.iterations).toBe(0)
+      })
     })
 
-    it('LS-012: preserves other state properties', () => {
-      const initial = { ...createInitialLoopState(), totalCostUsd: 1.5 }
-      const next = incrementIteration(initial)
-      expect(next.totalCostUsd).toBe(1.5)
-    })
-  })
+    describe('addCost', () => {
+      it('LS-020: adds cost to total', () => {
+        const initial = createInitialLoopState()
+        const next = updateLoopState(initial, { addCost: 0.5 })
+        expect(next.totalCostUsd).toBe(0.5)
+      })
 
-  describe('decrementIteration', () => {
-    it('LS-015: decrements iteration count by 1', () => {
-      const state = { ...createInitialLoopState(), iterations: 5 }
-      const next = decrementIteration(state)
-      expect(next.iterations).toBe(4)
-    })
-
-    it('LS-016: does not go below zero', () => {
-      const initial = createInitialLoopState()
-      const next = decrementIteration(initial)
-      expect(next.iterations).toBe(0)
-    })
-  })
-
-  describe('addCost', () => {
-    it('LS-020: adds cost to total', () => {
-      const initial = createInitialLoopState()
-      const next = addCost(initial, 0.5)
-      expect(next.totalCostUsd).toBe(0.5)
+      it('LS-021: accumulates costs', () => {
+        let state = createInitialLoopState()
+        state = updateLoopState(state, { addCost: 0.5 })
+        state = updateLoopState(state, { addCost: 0.3 })
+        expect(state.totalCostUsd).toBe(0.8)
+      })
     })
 
-    it('LS-021: accumulates costs', () => {
-      let state = createInitialLoopState()
-      state = addCost(state, 0.5)
-      state = addCost(state, 0.3)
-      expect(state.totalCostUsd).toBe(0.8)
-    })
-  })
+    describe('error', () => {
+      it('LS-030: increments consecutive error count', () => {
+        const initial = createInitialLoopState()
+        const error = new Error('test error')
+        const next = updateLoopState(initial, { error })
+        expect(next.consecutiveErrors).toBe(1)
+      })
 
-  describe('recordError', () => {
-    it('LS-030: increments consecutive error count', () => {
-      const initial = createInitialLoopState()
-      const error = new Error('test error')
-      const next = recordError(initial, error)
-      expect(next.consecutiveErrors).toBe(1)
-    })
+      it('LS-031: stores the last error', () => {
+        const initial = createInitialLoopState()
+        const error = new Error('test error')
+        const next = updateLoopState(initial, { error })
+        expect(next.lastError).toBe(error)
+      })
 
-    it('LS-031: stores the last error', () => {
-      const initial = createInitialLoopState()
-      const error = new Error('test error')
-      const next = recordError(initial, error)
-      expect(next.lastError).toBe(error)
-    })
-
-    it('LS-032: accumulates error count', () => {
-      let state = createInitialLoopState()
-      state = recordError(state, new Error('error 1'))
-      state = recordError(state, new Error('error 2'))
-      expect(state.consecutiveErrors).toBe(2)
-    })
-  })
-
-  describe('resetErrors', () => {
-    it('LS-040: resets consecutive error count to zero', () => {
-      let state = createInitialLoopState()
-      state = recordError(state, new Error('test'))
-      state = recordError(state, new Error('test'))
-      state = resetErrors(state)
-      expect(state.consecutiveErrors).toBe(0)
+      it('LS-032: accumulates error count', () => {
+        let state = createInitialLoopState()
+        state = updateLoopState(state, { error: new Error('error 1') })
+        state = updateLoopState(state, { error: new Error('error 2') })
+        expect(state.consecutiveErrors).toBe(2)
+      })
     })
 
-    it('LS-041: preserves other state', () => {
-      let state = createInitialLoopState()
-      state = incrementIteration(state)
-      state = addCost(state, 1.0)
-      state = recordError(state, new Error('test'))
-      state = resetErrors(state)
-      expect(state.iterations).toBe(1)
-      expect(state.totalCostUsd).toBe(1.0)
+    describe('resetErrors', () => {
+      it('LS-040: resets consecutive error count to zero', () => {
+        let state = createInitialLoopState()
+        state = updateLoopState(state, { error: new Error('test') })
+        state = updateLoopState(state, { error: new Error('test') })
+        state = updateLoopState(state, { resetErrors: true })
+        expect(state.consecutiveErrors).toBe(0)
+      })
+
+      it('LS-041: preserves other state', () => {
+        let state = createInitialLoopState()
+        state = updateLoopState(state, { incrementIterations: true })
+        state = updateLoopState(state, { addCost: 1.0 })
+        state = updateLoopState(state, { error: new Error('test') })
+        state = updateLoopState(state, { resetErrors: true })
+        expect(state.iterations).toBe(1)
+        expect(state.totalCostUsd).toBe(1.0)
+      })
     })
-  })
 
-  describe('setExitReason', () => {
-    it('LS-050: sets exit reason', () => {
-      const initial = createInitialLoopState()
-      const next = setExitReason(initial, ExitReason.AllPassed)
-      expect(next.exitReason).toBe(ExitReason.AllPassed)
+    describe('exitReason', () => {
+      it('LS-050: sets exit reason', () => {
+        const initial = createInitialLoopState()
+        const next = updateLoopState(initial, {
+          exitReason: ExitReason.AllPassed,
+        })
+        expect(next.exitReason).toBe(ExitReason.AllPassed)
+      })
+
+      it('LS-051: can set different exit reasons', () => {
+        const initial = createInitialLoopState()
+
+        expect(
+          updateLoopState(initial, { exitReason: ExitReason.Interrupted })
+            .exitReason,
+        ).toBe(ExitReason.Interrupted)
+        expect(
+          updateLoopState(initial, { exitReason: ExitReason.QuotaExceeded })
+            .exitReason,
+        ).toBe(ExitReason.QuotaExceeded)
+        expect(
+          updateLoopState(initial, { exitReason: ExitReason.MaxIterations })
+            .exitReason,
+        ).toBe(ExitReason.MaxIterations)
+      })
     })
 
-    it('LS-051: can set different exit reasons', () => {
-      const initial = createInitialLoopState()
-
-      expect(setExitReason(initial, ExitReason.Interrupted).exitReason).toBe(
-        ExitReason.Interrupted,
-      )
-      expect(setExitReason(initial, ExitReason.QuotaExceeded).exitReason).toBe(
-        ExitReason.QuotaExceeded,
-      )
-      expect(setExitReason(initial, ExitReason.MaxIterations).exitReason).toBe(
-        ExitReason.MaxIterations,
-      )
+    describe('deliverableCounts', () => {
+      it('LS-060: updates all deliverable counts', () => {
+        const initial = createInitialLoopState()
+        const next = updateLoopState(initial, {
+          deliverableCounts: { passed: 3, total: 5, blocked: 1 },
+        })
+        expect(next.deliverablesPassedCount).toBe(3)
+        expect(next.deliverablesTotalCount).toBe(5)
+        expect(next.blockedCount).toBe(1)
+      })
     })
-  })
 
-  describe('updateDeliverableCounts', () => {
-    it('LS-060: updates all deliverable counts', () => {
-      const initial = createInitialLoopState()
-      const next = updateDeliverableCounts(initial, 3, 5, 1)
-      expect(next.deliverablesPassedCount).toBe(3)
-      expect(next.deliverablesTotalCount).toBe(5)
-      expect(next.blockedCount).toBe(1)
+    describe('combined updates', () => {
+      it('LS-080: handles multiple updates in one call', () => {
+        const initial = createInitialLoopState()
+        const next = updateLoopState(initial, {
+          incrementIterations: true,
+          addCost: 0.5,
+          resetErrors: true,
+        })
+        expect(next.iterations).toBe(1)
+        expect(next.totalCostUsd).toBe(0.5)
+        expect(next.consecutiveErrors).toBe(0)
+      })
+
+      it('LS-081: handles increment and decrement in same call', () => {
+        const state = { ...createInitialLoopState(), iterations: 5 }
+        // Both flags set - increment happens first, then decrement
+        const next = updateLoopState(state, {
+          incrementIterations: true,
+          decrementIterations: true,
+        })
+        // 5 + 1 = 6, then 6 - 1 = 5
+        expect(next.iterations).toBe(5)
+      })
     })
   })
 
   describe('buildResult', () => {
     it('LS-070: builds success result when AllPassed', () => {
       let state = createInitialLoopState()
-      state = incrementIteration(state)
-      state = addCost(state, 0.5)
-      state = updateDeliverableCounts(state, 3, 3, 0)
-      state = setExitReason(state, ExitReason.AllPassed)
+      state = updateLoopState(state, { incrementIterations: true })
+      state = updateLoopState(state, { addCost: 0.5 })
+      state = updateLoopState(state, {
+        deliverableCounts: { passed: 3, total: 3, blocked: 0 },
+      })
+      state = updateLoopState(state, { exitReason: ExitReason.AllPassed })
 
       const result = buildResult(state, 1000)
 
@@ -190,7 +220,7 @@ describe('LoopState', () => {
 
     it('LS-071: builds interrupted result', () => {
       let state = createInitialLoopState()
-      state = setExitReason(state, ExitReason.Interrupted)
+      state = updateLoopState(state, { exitReason: ExitReason.Interrupted })
 
       const result = buildResult(state, 500)
 
@@ -200,7 +230,7 @@ describe('LoopState', () => {
 
     it('LS-072: builds quota exceeded result', () => {
       let state = createInitialLoopState()
-      state = setExitReason(state, ExitReason.QuotaExceeded)
+      state = updateLoopState(state, { exitReason: ExitReason.QuotaExceeded })
 
       const result = buildResult(state, 500)
 
@@ -210,8 +240,10 @@ describe('LoopState', () => {
 
     it('LS-073: builds error result with error message', () => {
       let state = createInitialLoopState()
-      state = recordError(state, new Error('Connection failed'))
-      state = setExitReason(state, ExitReason.MaxRetriesExceeded)
+      state = updateLoopState(state, { error: new Error('Connection failed') })
+      state = updateLoopState(state, {
+        exitReason: ExitReason.MaxRetriesExceeded,
+      })
 
       const result = buildResult(state, 500)
 
@@ -221,8 +253,10 @@ describe('LoopState', () => {
 
     it('LS-074: includes blocked count', () => {
       let state = createInitialLoopState()
-      state = updateDeliverableCounts(state, 2, 5, 3)
-      state = setExitReason(state, ExitReason.AllBlocked)
+      state = updateLoopState(state, {
+        deliverableCounts: { passed: 2, total: 5, blocked: 3 },
+      })
+      state = updateLoopState(state, { exitReason: ExitReason.AllBlocked })
 
       const result = buildResult(state, 500)
 

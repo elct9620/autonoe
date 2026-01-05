@@ -1,34 +1,34 @@
 import type { AgentClientFactory } from './agentClient'
-import type { DeliverableStatusReader } from './deliverableStatus'
+import type {
+  DeliverableStatusReader,
+  DeliverableStatus,
+} from './deliverableStatus'
 import type { Logger } from './logger'
 import type { InstructionResolver } from './instructions'
 import type { Timer } from './timer'
 import type { LoopState } from './loopState'
+import type {
+  TerminationEvaluator,
+  TerminationContext,
+  TerminationDecision,
+} from './terminationEvaluator'
 import { silentLogger } from './logger'
 import { Session } from './session'
 import {
-  allAchievableDeliverablesPassed,
-  allDeliverablesBlocked,
   countPassedDeliverables,
   countBlockedDeliverables,
   emptyDeliverableStatus,
 } from './deliverableStatus'
 import { initializerInstruction, codingInstruction } from './instructions'
 import { SessionOutcome } from './types'
-import { calculateWaitDuration } from './quotaLimit'
 import { formatDuration } from './duration'
 import { realTimer } from './timer'
 import {
   createInitialLoopState,
-  incrementIteration,
-  decrementIteration,
-  addCost,
-  recordError,
-  resetErrors,
-  setExitReason,
-  updateDeliverableCounts,
+  updateLoopState,
   buildResult,
 } from './loopState'
+import { createDefaultTerminationChain } from './terminationEvaluator'
 
 /**
  * Exit reason for session runner loop
@@ -57,6 +57,8 @@ export interface SessionRunnerOptions {
   maxRetries?: number
   /** Timer for delay operations (default: realTimer) */
   timer?: Timer
+  /** Termination evaluator chain (default: createDefaultTerminationChain()) */
+  terminationChain?: TerminationEvaluator
 }
 
 /**
@@ -85,12 +87,15 @@ export class SessionRunner {
   private readonly maxIterations: number | undefined
   private readonly maxRetries: number
   private readonly timer: Timer
+  private readonly terminationChain: TerminationEvaluator
 
   constructor(private options: SessionRunnerOptions) {
     this.delayBetweenSessions = options.delayBetweenSessions ?? 3000
     this.maxIterations = options.maxIterations
     this.maxRetries = options.maxRetries ?? 3
     this.timer = options.timer ?? realTimer
+    this.terminationChain =
+      options.terminationChain ?? createDefaultTerminationChain()
   }
 
   /**
@@ -110,10 +115,11 @@ export class SessionRunner {
 
     // Main loop - use break to exit to unified exit point
     while (!state.exitReason) {
-      // Termination condition: User interrupt (SIGINT)
-      if (signal?.aborted) {
-        logger.info('User interrupted')
-        state = setExitReason(state, ExitReason.Interrupted)
+      // Pre-session: check interrupt
+      const preDecision = this.evaluateTermination(state, { signal })
+      if (preDecision.shouldTerminate && preDecision.exitReason) {
+        this.logTermination(logger, preDecision.exitReason, state)
+        state = updateLoopState(state, { exitReason: preDecision.exitReason })
         break
       }
 
@@ -127,7 +133,7 @@ export class SessionRunner {
           ? codingInstruction
           : initializerInstruction
 
-      state = incrementIteration(state)
+      state = updateLoopState(state, { incrementIterations: true })
       logger.info(`Session ${state.iterations} started`)
 
       try {
@@ -141,77 +147,53 @@ export class SessionRunner {
 
         const result = await session.run(client, instruction, logger)
 
-        // Reset error counter on successful session
-        state = resetErrors(state)
-
-        state = addCost(state, result.costUsd)
+        // Reset error counter on successful session and add cost
+        state = updateLoopState(state, {
+          resetErrors: true,
+          addCost: result.costUsd,
+        })
         logger.info(
           `Session ${state.iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${formatDuration(result.duration)}`,
         )
-
-        // Termination/wait condition: Quota exceeded
-        if (result.outcome === SessionOutcome.QuotaExceeded) {
-          if (this.options.waitForQuota && result.quotaResetTime) {
-            const waitMs = calculateWaitDuration(result.quotaResetTime)
-            logger.info(
-              `Quota exceeded, waiting ${formatDuration(waitMs)} until reset...`,
-            )
-            await this.timer.delay(waitMs)
-            // Retry same session (don't count this iteration)
-            state = decrementIteration(state)
-            continue
-          } else {
-            logger.error('Quota exceeded')
-            state = setExitReason(state, ExitReason.QuotaExceeded)
-            break
-          }
-        }
 
         // Read deliverable status after session
         const status = statusReader
           ? await statusReader.load()
           : emptyDeliverableStatus()
 
-        state = updateDeliverableCounts(
-          state,
-          countPassedDeliverables(status),
-          status.deliverables.length,
-          countBlockedDeliverables(status),
-        )
+        state = updateLoopState(state, {
+          deliverableCounts: {
+            passed: countPassedDeliverables(status),
+            total: status.deliverables.length,
+            blocked: countBlockedDeliverables(status),
+          },
+        })
 
-        // Termination condition: All achievable deliverables passed
-        if (
-          statusReader &&
-          state.deliverablesTotalCount > 0 &&
-          allAchievableDeliverablesPassed(status)
-        ) {
-          const blockedMsg =
-            state.blockedCount > 0 ? ` (${state.blockedCount} blocked)` : ''
-          logger.info(`All achievable deliverables passed${blockedMsg}`)
-          state = setExitReason(state, ExitReason.AllPassed)
-          break
-        }
+        // Post-session: evaluate all termination conditions
+        const postDecision = this.evaluateTermination(state, {
+          sessionOutcome: result.outcome,
+          quotaResetTime: result.quotaResetTime,
+          deliverableStatus: statusReader ? status : undefined,
+          signal,
+        })
 
-        // Termination condition: All deliverables blocked
-        if (
-          statusReader &&
-          state.deliverablesTotalCount > 0 &&
-          allDeliverablesBlocked(status)
-        ) {
+        // Handle quota wait (special case: not terminating, but waiting)
+        if (postDecision.waitDuration !== undefined) {
           logger.info(
-            `All ${state.deliverablesTotalCount} deliverables are blocked`,
+            `Quota exceeded, waiting ${formatDuration(postDecision.waitDuration)} until reset...`,
           )
-          state = setExitReason(state, ExitReason.AllBlocked)
-          break
+          await this.timer.delay(postDecision.waitDuration)
+          // Retry same session (don't count this iteration)
+          state = updateLoopState(state, { decrementIterations: true })
+          continue
         }
 
-        // Termination condition: Max iterations reached
-        if (
-          this.maxIterations !== undefined &&
-          state.iterations >= this.maxIterations
-        ) {
-          logger.info(`Max iterations (${this.maxIterations}) reached`)
-          state = setExitReason(state, ExitReason.MaxIterations)
+        // Handle termination
+        if (postDecision.shouldTerminate && postDecision.exitReason) {
+          this.logTermination(logger, postDecision.exitReason, state)
+          state = updateLoopState(state, {
+            exitReason: postDecision.exitReason,
+          })
           break
         }
 
@@ -222,13 +204,15 @@ export class SessionRunner {
       } catch (error) {
         const errorObj =
           error instanceof Error ? error : new Error(String(error))
-        state = recordError(state, errorObj)
+        state = updateLoopState(state, { error: errorObj })
 
-        if (state.consecutiveErrors > this.maxRetries) {
-          logger.error(
-            `Session failed after ${this.maxRetries} consecutive errors`,
-          )
-          state = setExitReason(state, ExitReason.MaxRetriesExceeded)
+        // Check if max retries exceeded
+        const errorDecision = this.evaluateTermination(state, { signal })
+        if (errorDecision.shouldTerminate && errorDecision.exitReason) {
+          this.logTermination(logger, errorDecision.exitReason, state)
+          state = updateLoopState(state, {
+            exitReason: errorDecision.exitReason,
+          })
           break
         }
 
@@ -265,5 +249,71 @@ export class SessionRunner {
     logger.info(
       `Overall: ${state.iterations} session(s), ${state.deliverablesPassedCount}/${state.deliverablesTotalCount} deliverables passed${blockedMsg}, cost=$${state.totalCostUsd.toFixed(4)}, duration=${formatDuration(totalDuration)}`,
     )
+  }
+
+  /**
+   * Build termination context from current state and partial context
+   */
+  private buildTerminationContext(
+    state: LoopState,
+    partial: Partial<Omit<TerminationContext, 'state' | 'options'>>,
+  ): TerminationContext {
+    return {
+      state,
+      options: {
+        maxIterations: this.maxIterations,
+        maxRetries: this.maxRetries,
+        waitForQuota: this.options.waitForQuota,
+      },
+      ...partial,
+    }
+  }
+
+  /**
+   * Evaluate termination conditions using the termination chain
+   */
+  private evaluateTermination(
+    state: LoopState,
+    partial: Partial<Omit<TerminationContext, 'state' | 'options'>>,
+  ): TerminationDecision {
+    const context = this.buildTerminationContext(state, partial)
+    return this.terminationChain.evaluate(context)
+  }
+
+  /**
+   * Log termination reason with appropriate log level
+   */
+  private logTermination(
+    logger: Logger,
+    reason: ExitReason,
+    state: LoopState,
+  ): void {
+    switch (reason) {
+      case ExitReason.Interrupted:
+        logger.info('User interrupted')
+        break
+      case ExitReason.QuotaExceeded:
+        logger.error('Quota exceeded')
+        break
+      case ExitReason.AllPassed: {
+        const blockedMsg =
+          state.blockedCount > 0 ? ` (${state.blockedCount} blocked)` : ''
+        logger.info(`All achievable deliverables passed${blockedMsg}`)
+        break
+      }
+      case ExitReason.AllBlocked:
+        logger.info(
+          `All ${state.deliverablesTotalCount} deliverables are blocked`,
+        )
+        break
+      case ExitReason.MaxIterations:
+        logger.info(`Max iterations (${this.maxIterations}) reached`)
+        break
+      case ExitReason.MaxRetriesExceeded:
+        logger.error(
+          `Session failed after ${this.maxRetries} consecutive errors`,
+        )
+        break
+    }
   }
 }
