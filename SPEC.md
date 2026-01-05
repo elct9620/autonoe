@@ -488,7 +488,7 @@ Session.run() called
 
 **Design Principle**: Each session must be independent and isolated. The `dispose()` method ensures that resources from one session do not leak into subsequent sessions.
 
-**Implementation Note**: The `dispose()` method is planned for implementation when Claude Agent SDK V2 becomes stable. Currently, `delayBetweenSessions` (default: 3000ms) provides buffer time for SDK internal cleanup between sessions.
+**Requirement**: Sessions must have a minimum delay (`delayBetweenSessions`, default: 3000ms) between executions to ensure SDK internal cleanup completes.
 
 ### 3.2 MockAgentClient
 
@@ -563,50 +563,23 @@ interface ValidationResult {
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-#### 3.5.2 Tool Registration
+#### 3.5.2 Tool Specifications
 
-```typescript
-// packages/agent/src/deliverableToolsAdapter.ts
-import { tool, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk'
-import { z } from 'zod'
+**create_deliverable** - Create one or more deliverables in status.json
 
-const deliverableServer = createSdkMcpServer({
-  name: 'autonoe-deliverable',
-  version: '1.0.0',
-  tools: [createDeliverableTool, setDeliverableStatusTool]  // 2 tools only
-})
-```
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| deliverables | array | Array of deliverable objects |
+| deliverables[].id | string | Unique identifier |
+| deliverables[].description | string | Clear description |
+| deliverables[].acceptanceCriteria | string[] | Verifiable conditions |
 
-#### 3.5.3 createDeliverable Tool
+**set_deliverable_status** - Update deliverable status
 
-```typescript
-const createDeliverableTool = tool(
-  'create_deliverable',
-  'Create one or more deliverables in status.json',
-  {
-    deliverables: z.array(z.object({
-      id: z.string(),
-      description: z.string(),
-      acceptanceCriteria: z.array(z.string())
-    }))
-  },
-  async ({ deliverables }) => { /* ... */ }
-)
-```
-
-#### 3.5.4 setDeliverableStatus Tool
-
-```typescript
-const setDeliverableStatusTool = tool(
-  'set_deliverable_status',
-  'Set deliverable status: pending (reset), passed (completed), or blocked (external constraints)',
-  {
-    deliverableId: z.string(),
-    status: z.enum(['pending', 'passed', 'blocked'])
-  },
-  async ({ deliverableId, status }) => { /* ... */ }
-)
-```
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| deliverableId | string | Target deliverable ID |
+| status | enum | 'pending' \| 'passed' \| 'blocked' |
 
 **Status Semantics:**
 
@@ -851,23 +824,7 @@ All duration displays use human-readable format with zero-value parts omitted:
 | Session Loop     | SessionRunner    | --max-iterations | Run multiple agent sessions      |
 | Agent Turn Loop  | Claude Agent SDK | SDK internal     | Process messages within session  |
 
-#### 3.9.3 Client Lifecycle
-
-```
-SessionRunner
-    │
-    ├─ Iteration 1
-    │   ├─ client = factory.create()
-    │   ├─ session.run(client, instruction)
-    │   └─ client disposed
-    │
-    ├─ delay(3000ms)
-    │
-    └─ Iteration 2
-        ├─ client = factory.create()
-        ├─ session.run(client, instruction)
-        └─ client disposed
-```
+#### 3.9.3 Resource Scope
 
 | Scope        | Resource            |
 | ------------ | ------------------- |
@@ -2316,105 +2273,24 @@ cli.parse()
 
 ## Appendix A: Instructions
 
-### A.1 File Structure
+### A.1 Instruction Selection
 
-```
-packages/core/
-├── src/
-│   ├── instructions.ts
-│   └── instructions/
-│       ├── initializer.md
-│       └── coding.md
-└── markdown.d.ts
-```
+| Instruction   | Condition                   |
+| ------------- | --------------------------- |
+| initializer   | No .autonoe/status.json     |
+| coding        | .autonoe/status.json exists |
 
-### A.2 Import Method
-
-```typescript
-// packages/core/src/instructions.ts
-import initializerInstruction from './instructions/initializer.md' with { type: 'text' }
-import codingInstruction from './instructions/coding.md' with { type: 'text' }
-
-export { initializerInstruction, codingInstruction }
-```
-
-```typescript
-// packages/core/markdown.d.ts
-declare module '*.md' {
-  const content: string
-  export default content
-}
-```
-
-### A.3 Instruction Usage
-
-| Instruction            | Condition                   |
-| ---------------------- | --------------------------- |
-| initializerInstruction | No .autonoe/status.json     |
-| codingInstruction      | .autonoe/status.json exists |
-
-### A.4 Instruction Override
-
-```
-Instruction Resolution
-┌──────────────────────────────────────────────────────┐
-│  .autonoe/{name}.md  →  packages/core instruction    │
-│                         (fallback if not exists)     │
-└──────────────────────────────────────────────────────┘
-```
+### A.2 Instruction Override
 
 | Override File           | Fallback               | Purpose                    |
 | ----------------------- | ---------------------- | -------------------------- |
-| .autonoe/initializer.md | initializerInstruction | Custom initialization flow |
-| .autonoe/coding.md      | codingInstruction      | Custom implementation flow |
+| .autonoe/initializer.md | Built-in instruction   | Custom initialization flow |
+| .autonoe/coding.md      | Built-in instruction   | Custom implementation flow |
 
-### A.5 InstructionResolver Interface
+### A.3 InstructionResolver Interface
 
-```typescript
-// packages/core/src/instructions.ts
-type InstructionName = 'initializer' | 'coding'
-
-interface InstructionResolver {
-  resolve(name: InstructionName): Promise<string>
-}
-```
-
-**InstructionName** - Available instruction types
-
-| Value | Description |
-|-------|-------------|
-| 'initializer' | Initialization phase instruction |
-| 'coding' | Coding phase instruction |
-
-**InstructionResolver** - Interface for instruction resolution
+**InstructionName** - Available instruction types: `'initializer'` | `'coding'`
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
 | resolve | `(name: InstructionName) => Promise<string>` | Resolve instruction by name |
-
-**Default Implementation:**
-
-```typescript
-function createDefaultInstructionResolver(): InstructionResolver {
-  return {
-    async resolve(name: InstructionName): Promise<string> {
-      return name === 'initializer'
-        ? initializerInstruction
-        : codingInstruction
-    }
-  }
-}
-```
-
-**Instruction Selection Logic:**
-
-```typescript
-async function selectInstruction(
-  statusReader: DeliverableStatusReader,
-  resolver: InstructionResolver
-): Promise<string> {
-  const statusExists = await statusReader.exists()
-  const name = statusExists ? 'coding' : 'initializer'
-  return resolver.resolve(name)
-}
-```
