@@ -118,3 +118,45 @@ export {
   createDefaultInstructionResolver,
   selectInstruction,
 } from './instructions'
+
+// Timer exports
+export type { Timer } from './timer'
+export { realTimer } from './timer'
+
+// LoopState exports
+export type { LoopState } from './loopState'
+export {
+  createInitialLoopState,
+  incrementIteration,
+  decrementIteration,
+  addCost,
+  recordError,
+  resetErrors,
+  setExitReason,
+  updateDeliverableCounts,
+  buildResult,
+} from './loopState'
+
+// TerminationEvaluator exports
+export type {
+  TerminationContext,
+  TerminationDecision,
+  TerminationEvaluator,
+} from './terminationEvaluator'
+export {
+  InterruptedEvaluator,
+  QuotaExceededEvaluator,
+  AllPassedEvaluator,
+  AllBlockedEvaluator,
+  MaxIterationsEvaluator,
+  MaxRetriesEvaluator,
+  TerminationChain,
+  createDefaultTerminationChain,
+} from './terminationEvaluator'
+
+// SessionEndHandler exports
+export type { SessionEndHandler } from './sessionEndHandler'
+export {
+  DefaultSessionEndHandler,
+  silentSessionEndHandler,
+} from './sessionEndHandler'

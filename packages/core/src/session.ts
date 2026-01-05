@@ -2,7 +2,9 @@ import type { AgentClient } from './agentClient'
 import { formatStreamEvent } from './eventFormatter'
 import { silentLogger, type Logger } from './logger'
 import { SessionOutcome } from './types'
-import type { StreamEvent, SessionEnd } from './types'
+import type { SessionEnd } from './types'
+import type { SessionEndHandler } from './sessionEndHandler'
+import { DefaultSessionEndHandler } from './sessionEndHandler'
 
 /**
  * Session configuration options
@@ -11,6 +13,8 @@ import type { StreamEvent, SessionEnd } from './types'
 export interface SessionOptions {
   projectDir: string
   model?: string
+  /** Handler for session end events (default: DefaultSessionEndHandler) */
+  sessionEndHandler?: SessionEndHandler
 }
 
 /**
@@ -39,7 +43,12 @@ function truncate(str: string, maxLen: number): string {
  * @see SPEC.md Section 3.3
  */
 export class Session {
-  constructor(private options: SessionOptions) {}
+  private readonly sessionEndHandler: SessionEndHandler
+
+  constructor(private options: SessionOptions) {
+    this.sessionEndHandler =
+      options.sessionEndHandler ?? new DefaultSessionEndHandler()
+  }
 
   /**
    * Run the session with an injected AgentClient, instruction, and Logger
@@ -72,7 +81,7 @@ export class Session {
         }
         outcome = event.outcome
         quotaResetTime = event.quotaResetTime
-        this.handleSessionEnd(event, logger)
+        this.sessionEndHandler.handle(event, logger)
       }
 
       if (event.type === 'stream_error') {
@@ -95,29 +104,6 @@ export class Session {
       deliverablesTotalCount: 0,
       outcome,
       quotaResetTime,
-    }
-  }
-
-  /**
-   * Handle session end event and display to user
-   * @see SPEC.md Section 2.3 Domain Model
-   */
-  private handleSessionEnd(event: SessionEnd, logger: Logger): void {
-    switch (event.outcome) {
-      case SessionOutcome.Completed:
-        if (event.result) {
-          logger.info(event.result)
-        }
-        break
-      case SessionOutcome.QuotaExceeded:
-        logger.warn('Quota exceeded: ' + (event.result ?? 'Unknown'))
-        break
-      default:
-        if (event.errors) {
-          for (const error of event.errors) {
-            logger.error(error)
-          }
-        }
     }
   }
 }
