@@ -224,16 +224,17 @@ Thinking events are:
 | content | string | Result content |
 | isError | boolean | Whether the tool execution failed |
 
-**SessionEnd** - Session termination state
+**SessionEnd** - Discriminated union for session termination
 
-| Field | Type | Description |
-|-------|------|-------------|
-| type | 'session_end' | Event type discriminator |
-| outcome | SessionOutcome | Execution outcome |
-| result | string? | Output text (on success) |
-| errors | string[]? | Error messages (on failure) |
-| totalCostUsd | number? | API cost in USD |
-| quotaResetTime | Date? | Quota reset time (on quota exceeded) |
+| Variant | Fields | Description |
+|---------|--------|-------------|
+| SessionEndCompleted | result?: string | Normal completion |
+| SessionEndExecutionError | messages: string[] | Execution errors |
+| SessionEndMaxIterations | - | Hit iteration limit |
+| SessionEndBudgetExceeded | - | API cost limit hit |
+| SessionEndQuotaExceeded | message?: string, resetTime?: Date | Subscription quota hit |
+
+Common fields: `type: 'session_end'`, `outcome: SessionOutcome`, `totalCostUsd?: number`
 
 **StreamError** - SDK error wrapped as event
 
@@ -398,15 +399,15 @@ Implementation lives in infrastructure layer (`packages/agent`).
 
 #### Enums
 
-**SessionOutcome** - Domain-specific session result outcomes
+**SessionOutcome** - Literal type union
 
 | Value | Description |
 |-------|-------------|
-| Completed | Session finished normally |
-| MaxIterationsReached | Hit turn/iteration limit |
-| ExecutionError | Error during execution |
-| BudgetExceeded | API cost limit hit |
-| QuotaExceeded | Subscription quota hit |
+| 'completed' | Session finished normally |
+| 'max_iterations' | Hit turn/iteration limit |
+| 'execution_error' | Error during execution |
+| 'budget_exceeded' | API cost limit hit |
+| 'quota_exceeded' | Subscription quota hit |
 
 **PermissionLevel** - Security permission level
 
@@ -928,7 +929,7 @@ enum ExitReason {
 
 | Priority | Condition                    | Check                                         | Result              |
 | -------- | ---------------------------- | --------------------------------------------- | ------------------- |
-| 1        | Quota exceeded (no wait)     | SessionOutcome.QuotaExceeded && !waitForQuota | success=false, quotaExceeded=true |
+| 1        | Quota exceeded (no wait)     | outcome === 'quota_exceeded' && !waitForQuota | success=false, quotaExceeded=true |
 | 2        | All achievable passed        | All non-blocked deliverables have passed=true | success=true        |
 | 3        | All blocked                  | All deliverables have blocked=true            | success=false       |
 | 4        | Max iterations reached       | iteration >= maxIterations                    | success=false       |
@@ -954,11 +955,10 @@ Behavior options:
 - **Default (waitForQuota=false):** Exit immediately with `quotaExceeded: true`
 - **Wait mode (waitForQuota=true):** Auto-calculate wait duration from reset time and pause until quota resets, then retry
 
-Quota detection utilities in `quotaLimit.ts`:
+Quota detection utilities in `quotaManager.ts`:
 - `isQuotaExceededMessage(text)` - Check if message indicates quota limit
 - `parseQuotaResetTime(text)` - Extract reset time from message
 - `calculateWaitDuration(resetTime)` - Calculate milliseconds to wait
-- `formatDuration(ms)` - Format duration as human-readable string (see Section 3.8.2)
 
 **Session Error Retry:**
 
@@ -976,11 +976,10 @@ Retry behavior:
 
 **Session Error Classification:**
 
-| Error Code | Source | Description | Retry Strategy |
-|------------|--------|-------------|----------------|
-| QUOTA_EXCEEDED | SDK | API subscription quota exhausted | Controlled by `waitForQuota` option |
-| SDK_ERROR | SDK | Internal SDK errors (e.g., stream errors) | Count toward `consecutiveErrors` |
-| EXECUTION_ERROR | Session | Runtime errors during execution (timeout, context exhaustion) | Count toward `consecutiveErrors` |
+| Outcome | Source | Description | Retry Strategy |
+|---------|--------|-------------|----------------|
+| 'quota_exceeded' | SDK | API subscription quota exhausted | Controlled by `waitForQuota` option |
+| 'execution_error' | SDK/Session | Internal SDK errors or runtime errors | Count toward `consecutiveErrors` |
 
 ---
 
@@ -1656,12 +1655,6 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | SC-AC004 | toStreamEvent        | tool_use block             | ToolInvocation                     |
 | SC-AC005 | toStreamEvent        | tool_result block          | ToolResponse                       |
 | SC-AC016 | toStreamEvent        | thinking block             | AgentThinking                      |
-| SC-AC006 | toSessionOutcome     | 'success'                  | SessionOutcome.Completed           |
-| SC-AC007 | toSessionOutcome     | 'error_max_turns'          | SessionOutcome.MaxIterationsReached|
-| SC-AC008 | toSessionOutcome     | 'error_during_execution'   | SessionOutcome.ExecutionError      |
-| SC-AC009 | toSessionOutcome     | 'error_max_budget_usd'     | SessionOutcome.BudgetExceeded      |
-| SC-AC010 | toSessionOutcome     | unknown                    | SessionOutcome.ExecutionError      |
-| SC-AC015 | toSessionOutcome     | 'success' + quota message  | SessionOutcome.QuotaExceeded       |
 | SC-AC011 | toStreamEvents       | SDK message with content   | Generator\<StreamEvent\>             |
 | SC-AC012 | toSessionEnd         | Result with total_cost_usd | SessionEnd with totalCostUsd       |
 | SC-AC013 | detectClaudeCodePath | claude found               | Path string                        |
