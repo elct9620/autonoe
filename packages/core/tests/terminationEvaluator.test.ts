@@ -10,9 +10,9 @@ import {
   createDefaultTerminationChain,
   type TerminationContext,
 } from '../src/terminationEvaluator'
-import { createInitialLoopState } from '../src/loopState'
+import { LoopState } from '../src/loopState'
 import { ExitReason } from '../src/sessionRunner'
-import { SessionOutcome } from '../src/types'
+import type { SessionOutcome } from '../src/types'
 import type { DeliverableStatus } from '../src/deliverableStatus'
 
 /**
@@ -20,11 +20,27 @@ import type { DeliverableStatus } from '../src/deliverableStatus'
  * Tests for the Strategy pattern termination evaluators
  */
 
+function createStateWithIterations(count: number): LoopState {
+  let state = LoopState.create()
+  for (let i = 0; i < count; i++) {
+    state = state.incrementIterations()
+  }
+  return state
+}
+
+function createStateWithErrors(count: number): LoopState {
+  let state = LoopState.create()
+  for (let i = 0; i < count; i++) {
+    state = state.recordError(new Error(`error ${i + 1}`))
+  }
+  return state
+}
+
 function createContext(
   overrides: Partial<TerminationContext> = {},
 ): TerminationContext {
   return {
-    state: createInitialLoopState(),
+    state: LoopState.create(),
     options: { maxRetries: 3 },
     ...overrides,
   }
@@ -68,7 +84,7 @@ describe('QuotaExceededEvaluator', () => {
   it('TE-010: returns shouldTerminate when quota exceeded without waitForQuota', () => {
     const decision = evaluator.evaluate(
       createContext({
-        sessionOutcome: SessionOutcome.QuotaExceeded,
+        sessionOutcome: 'quota_exceeded',
         options: { maxRetries: 3, waitForQuota: false },
       }),
     )
@@ -82,7 +98,7 @@ describe('QuotaExceededEvaluator', () => {
 
     const decision = evaluator.evaluate(
       createContext({
-        sessionOutcome: SessionOutcome.QuotaExceeded,
+        sessionOutcome: 'quota_exceeded',
         quotaResetTime: futureTime,
         options: { maxRetries: 3, waitForQuota: true },
       }),
@@ -95,7 +111,7 @@ describe('QuotaExceededEvaluator', () => {
   it('TE-012: returns shouldNotTerminate when outcome is not quota exceeded', () => {
     const decision = evaluator.evaluate(
       createContext({
-        sessionOutcome: SessionOutcome.Completed,
+        sessionOutcome: 'completed',
       }),
     )
 
@@ -269,7 +285,7 @@ describe('MaxIterationsEvaluator', () => {
   const evaluator = new MaxIterationsEvaluator()
 
   it('TE-040: returns shouldTerminate when max iterations reached', () => {
-    const state = { ...createInitialLoopState(), iterations: 5 }
+    const state = createStateWithIterations(5)
 
     const decision = evaluator.evaluate(
       createContext({
@@ -283,7 +299,7 @@ describe('MaxIterationsEvaluator', () => {
   })
 
   it('TE-041: returns shouldNotTerminate when below max iterations', () => {
-    const state = { ...createInitialLoopState(), iterations: 3 }
+    const state = createStateWithIterations(3)
 
     const decision = evaluator.evaluate(
       createContext({
@@ -296,7 +312,7 @@ describe('MaxIterationsEvaluator', () => {
   })
 
   it('TE-042: returns shouldNotTerminate when maxIterations not set', () => {
-    const state = { ...createInitialLoopState(), iterations: 100 }
+    const state = createStateWithIterations(100)
 
     const decision = evaluator.evaluate(
       createContext({
@@ -313,7 +329,7 @@ describe('MaxRetriesEvaluator', () => {
   const evaluator = new MaxRetriesEvaluator()
 
   it('TE-050: returns shouldTerminate when consecutive errors exceed max retries', () => {
-    const state = { ...createInitialLoopState(), consecutiveErrors: 4 }
+    const state = createStateWithErrors(4)
 
     const decision = evaluator.evaluate(
       createContext({
@@ -327,7 +343,7 @@ describe('MaxRetriesEvaluator', () => {
   })
 
   it('TE-051: returns shouldNotTerminate when errors at max retries', () => {
-    const state = { ...createInitialLoopState(), consecutiveErrors: 3 }
+    const state = createStateWithErrors(3)
 
     const decision = evaluator.evaluate(
       createContext({
@@ -373,7 +389,7 @@ describe('TerminationChain', () => {
       new MaxIterationsEvaluator(),
     ])
 
-    const state = { ...createInitialLoopState(), iterations: 5 }
+    const state = createStateWithIterations(5)
 
     const decision = chain.evaluate(
       createContext({
@@ -404,7 +420,7 @@ describe('TerminationChain', () => {
 
     const decision = chain.evaluate(
       createContext({
-        sessionOutcome: SessionOutcome.QuotaExceeded,
+        sessionOutcome: 'quota_exceeded',
         quotaResetTime: futureTime,
         options: { maxRetries: 3, waitForQuota: true },
       }),
@@ -423,7 +439,7 @@ describe('createDefaultTerminationChain', () => {
     const controller = new AbortController()
     controller.abort()
 
-    const state = { ...createInitialLoopState(), iterations: 5 }
+    const state = createStateWithIterations(5)
     const status: DeliverableStatus = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

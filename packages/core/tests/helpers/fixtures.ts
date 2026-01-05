@@ -5,12 +5,13 @@ import type {
   AgentText,
   ToolInvocation,
   ToolResponse,
-  SessionEnd,
+  SessionEndCompleted,
+  SessionEndExecutionError,
+  SessionEndQuotaExceeded,
   StreamError,
   Deliverable,
   DeliverableStatus,
 } from '../../src/index'
-import { SessionOutcome } from '../../src/index'
 
 /**
  * Create a minimal valid SessionOptions for testing
@@ -36,7 +37,7 @@ export function createSessionResult(
     duration: 0,
     deliverablesPassedCount: 0,
     deliverablesTotalCount: 0,
-    outcome: SessionOutcome.Completed,
+    outcome: 'completed',
     ...overrides,
   }
 }
@@ -126,12 +127,12 @@ export function createMockToolResponse(
  * Create a mock SessionEnd event with completed outcome
  */
 export function createMockSessionEnd(
-  result: string,
+  result?: string,
   totalCostUsd?: number,
-): SessionEnd {
+): SessionEndCompleted {
   return {
     type: 'session_end',
-    outcome: SessionOutcome.Completed,
+    outcome: 'completed',
     result,
     totalCostUsd,
   }
@@ -141,13 +142,12 @@ export function createMockSessionEnd(
  * Create a mock SessionEnd event with error outcome
  */
 export function createMockErrorSessionEnd(
-  errors: string[],
-  outcome: SessionOutcome = SessionOutcome.ExecutionError,
-): SessionEnd {
+  messages: string[],
+): SessionEndExecutionError {
   return {
     type: 'session_end',
-    outcome,
-    errors,
+    outcome: 'execution_error',
+    messages,
   }
 }
 
@@ -155,14 +155,14 @@ export function createMockErrorSessionEnd(
  * Create a mock SessionEnd event with quota exceeded outcome
  */
 export function createMockQuotaExceededSessionEnd(
-  result: string,
-  quotaResetTime?: Date,
-): SessionEnd {
+  message: string,
+  resetTime?: Date,
+): SessionEndQuotaExceeded {
   return {
     type: 'session_end',
-    outcome: SessionOutcome.QuotaExceeded,
-    result,
-    quotaResetTime,
+    outcome: 'quota_exceeded',
+    message,
+    resetTime,
   }
 }
 

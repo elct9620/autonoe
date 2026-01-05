@@ -3,114 +3,162 @@ import { ExitReason } from './sessionRunner'
 
 /**
  * Immutable value object representing session runner loop state
- * Enables pure function state transitions for testability
+ * All update methods return new instances
  * @see SPEC.md Section 3.9 SessionRunner
  */
-export interface LoopState {
-  readonly iterations: number
-  readonly totalCostUsd: number
-  readonly consecutiveErrors: number
-  readonly lastError: Error | undefined
-  readonly exitReason: ExitReason | undefined
-  readonly deliverablesPassedCount: number
-  readonly deliverablesTotalCount: number
-  readonly blockedCount: number
-}
+export class LoopState {
+  private constructor(
+    readonly iterations: number,
+    readonly totalCostUsd: number,
+    readonly consecutiveErrors: number,
+    readonly lastError: Error | undefined,
+    readonly exitReason: ExitReason | undefined,
+    readonly deliverablesPassedCount: number,
+    readonly deliverablesTotalCount: number,
+    readonly blockedCount: number,
+  ) {}
 
-/**
- * Partial update for LoopState
- * All fields are optional - only specified fields are updated
- */
-export interface LoopStateUpdate {
-  incrementIterations?: boolean
-  decrementIterations?: boolean
-  addCost?: number
-  error?: Error
-  resetErrors?: boolean
-  exitReason?: ExitReason
-  deliverableCounts?: { passed: number; total: number; blocked: number }
-}
-
-/**
- * Create initial loop state with default values
- */
-export function createInitialLoopState(): LoopState {
-  return {
-    iterations: 0,
-    totalCostUsd: 0,
-    consecutiveErrors: 0,
-    lastError: undefined,
-    exitReason: undefined,
-    deliverablesPassedCount: 0,
-    deliverablesTotalCount: 0,
-    blockedCount: 0,
-  }
-}
-
-/**
- * Update loop state with partial updates
- * Combines multiple state mutations into a single pure function
- */
-export function updateLoopState(
-  state: LoopState,
-  update: LoopStateUpdate,
-): LoopState {
-  let newState = { ...state }
-
-  if (update.incrementIterations) {
-    newState.iterations = newState.iterations + 1
+  /**
+   * Create initial loop state with default values
+   */
+  static create(): LoopState {
+    return new LoopState(0, 0, 0, undefined, undefined, 0, 0, 0)
   }
 
-  if (update.decrementIterations) {
-    newState.iterations = Math.max(0, newState.iterations - 1)
+  /**
+   * Increment iteration count
+   */
+  incrementIterations(): LoopState {
+    return new LoopState(
+      this.iterations + 1,
+      this.totalCostUsd,
+      this.consecutiveErrors,
+      this.lastError,
+      this.exitReason,
+      this.deliverablesPassedCount,
+      this.deliverablesTotalCount,
+      this.blockedCount,
+    )
   }
 
-  if (update.addCost !== undefined) {
-    newState.totalCostUsd = newState.totalCostUsd + update.addCost
+  /**
+   * Decrement iteration count (minimum 0)
+   */
+  decrementIterations(): LoopState {
+    return new LoopState(
+      Math.max(0, this.iterations - 1),
+      this.totalCostUsd,
+      this.consecutiveErrors,
+      this.lastError,
+      this.exitReason,
+      this.deliverablesPassedCount,
+      this.deliverablesTotalCount,
+      this.blockedCount,
+    )
   }
 
-  if (update.error !== undefined) {
-    newState.consecutiveErrors = newState.consecutiveErrors + 1
-    newState.lastError = update.error
+  /**
+   * Add cost to total
+   */
+  addCost(cost: number): LoopState {
+    return new LoopState(
+      this.iterations,
+      this.totalCostUsd + cost,
+      this.consecutiveErrors,
+      this.lastError,
+      this.exitReason,
+      this.deliverablesPassedCount,
+      this.deliverablesTotalCount,
+      this.blockedCount,
+    )
   }
 
-  if (update.resetErrors) {
-    newState.consecutiveErrors = 0
+  /**
+   * Record an error (increments consecutive error count)
+   */
+  recordError(error: Error): LoopState {
+    return new LoopState(
+      this.iterations,
+      this.totalCostUsd,
+      this.consecutiveErrors + 1,
+      error,
+      this.exitReason,
+      this.deliverablesPassedCount,
+      this.deliverablesTotalCount,
+      this.blockedCount,
+    )
   }
 
-  if (update.exitReason !== undefined) {
-    newState.exitReason = update.exitReason
+  /**
+   * Reset consecutive error count to 0
+   */
+  resetErrors(): LoopState {
+    return new LoopState(
+      this.iterations,
+      this.totalCostUsd,
+      0,
+      this.lastError,
+      this.exitReason,
+      this.deliverablesPassedCount,
+      this.deliverablesTotalCount,
+      this.blockedCount,
+    )
   }
 
-  if (update.deliverableCounts !== undefined) {
-    newState.deliverablesPassedCount = update.deliverableCounts.passed
-    newState.deliverablesTotalCount = update.deliverableCounts.total
-    newState.blockedCount = update.deliverableCounts.blocked
+  /**
+   * Set exit reason
+   */
+  setExitReason(reason: ExitReason): LoopState {
+    return new LoopState(
+      this.iterations,
+      this.totalCostUsd,
+      this.consecutiveErrors,
+      this.lastError,
+      reason,
+      this.deliverablesPassedCount,
+      this.deliverablesTotalCount,
+      this.blockedCount,
+    )
   }
 
-  return newState
-}
+  /**
+   * Update deliverable counts
+   */
+  updateDeliverableCounts(
+    passed: number,
+    total: number,
+    blocked: number,
+  ): LoopState {
+    return new LoopState(
+      this.iterations,
+      this.totalCostUsd,
+      this.consecutiveErrors,
+      this.lastError,
+      this.exitReason,
+      passed,
+      total,
+      blocked,
+    )
+  }
 
-/**
- * Build SessionRunnerResult from loop state
- */
-export function buildResult(
-  state: LoopState,
-  totalDuration: number,
-): SessionRunnerResult {
-  return {
-    success: state.exitReason === ExitReason.AllPassed,
-    iterations: state.iterations,
-    deliverablesPassedCount: state.deliverablesPassedCount,
-    deliverablesTotalCount: state.deliverablesTotalCount,
-    blockedCount: state.blockedCount,
-    totalDuration,
-    totalCostUsd: state.totalCostUsd,
-    interrupted: state.exitReason === ExitReason.Interrupted,
-    quotaExceeded: state.exitReason === ExitReason.QuotaExceeded,
-    error:
-      state.exitReason === ExitReason.MaxRetriesExceeded
-        ? state.lastError?.message
-        : undefined,
+  /**
+   * Build SessionRunnerResult from this state
+   */
+  toResult(totalDuration: number): SessionRunnerResult {
+    return {
+      success: this.exitReason === ExitReason.AllPassed,
+      iterations: this.iterations,
+      deliverablesPassedCount: this.deliverablesPassedCount,
+      deliverablesTotalCount: this.deliverablesTotalCount,
+      blockedCount: this.blockedCount,
+      totalDuration,
+      totalCostUsd: this.totalCostUsd,
+      interrupted: this.exitReason === ExitReason.Interrupted,
+      quotaExceeded: this.exitReason === ExitReason.QuotaExceeded,
+      error:
+        this.exitReason === ExitReason.MaxRetriesExceeded
+          ? this.lastError?.message
+          : undefined,
+    }
   }
 }

@@ -1,6 +1,5 @@
 import type { Logger } from './logger'
 import type { SessionEnd } from './types'
-import { SessionOutcome } from './types'
 
 /**
  * Interface for handling session end events
@@ -17,20 +16,20 @@ export interface SessionEndHandler {
 export class DefaultSessionEndHandler implements SessionEndHandler {
   handle(event: SessionEnd, logger: Logger): void {
     switch (event.outcome) {
-      case SessionOutcome.Completed:
+      case 'completed':
         if (event.result) {
           logger.info(event.result)
         }
         break
-      case SessionOutcome.QuotaExceeded:
-        logger.warn('Quota exceeded: ' + (event.result ?? 'Unknown'))
+      case 'quota_exceeded':
+        logger.warn('Quota exceeded: ' + (event.message ?? 'Unknown'))
         break
-      default:
-        if (event.errors) {
-          for (const error of event.errors) {
-            logger.error(error)
-          }
+      case 'execution_error':
+        for (const msg of event.messages) {
+          logger.error(msg)
         }
+        break
+      // max_iterations and budget_exceeded have no special handling
     }
   }
 }

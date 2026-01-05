@@ -6,7 +6,6 @@ import type {
 import type { Logger } from './logger'
 import type { InstructionResolver } from './instructions'
 import type { Timer } from './timer'
-import type { LoopState } from './loopState'
 import type {
   TerminationEvaluator,
   TerminationContext,
@@ -20,14 +19,10 @@ import {
   emptyDeliverableStatus,
 } from './deliverableStatus'
 import { initializerInstruction, codingInstruction } from './instructions'
-import { SessionOutcome } from './types'
+import type { SessionOutcome } from './types'
 import { formatDuration } from './duration'
 import { realTimer } from './timer'
-import {
-  createInitialLoopState,
-  updateLoopState,
-  buildResult,
-} from './loopState'
+import { LoopState } from './loopState'
 import { createDefaultTerminationChain } from './terminationEvaluator'
 
 /**
@@ -111,7 +106,7 @@ export class SessionRunner {
     signal?: AbortSignal,
   ): Promise<SessionRunnerResult> {
     const startTime = Date.now()
-    let state = createInitialLoopState()
+    let state = LoopState.create()
 
     // Main loop - use break to exit to unified exit point
     while (!state.exitReason) {
@@ -119,7 +114,7 @@ export class SessionRunner {
       const preDecision = this.evaluateTermination(state, { signal })
       if (preDecision.shouldTerminate && preDecision.exitReason) {
         this.logTermination(logger, preDecision.exitReason, state)
-        state = updateLoopState(state, { exitReason: preDecision.exitReason })
+        state = state.setExitReason(preDecision.exitReason)
         break
       }
 
@@ -133,7 +128,7 @@ export class SessionRunner {
           ? codingInstruction
           : initializerInstruction
 
-      state = updateLoopState(state, { incrementIterations: true })
+      state = state.incrementIterations()
       logger.info(`Session ${state.iterations} started`)
 
       try {
@@ -148,10 +143,7 @@ export class SessionRunner {
         const result = await session.run(client, instruction, logger)
 
         // Reset error counter on successful session and add cost
-        state = updateLoopState(state, {
-          resetErrors: true,
-          addCost: result.costUsd,
-        })
+        state = state.resetErrors().addCost(result.costUsd)
         logger.info(
           `Session ${state.iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${formatDuration(result.duration)}`,
         )
@@ -161,13 +153,11 @@ export class SessionRunner {
           ? await statusReader.load()
           : emptyDeliverableStatus()
 
-        state = updateLoopState(state, {
-          deliverableCounts: {
-            passed: countPassedDeliverables(status),
-            total: status.deliverables.length,
-            blocked: countBlockedDeliverables(status),
-          },
-        })
+        state = state.updateDeliverableCounts(
+          countPassedDeliverables(status),
+          status.deliverables.length,
+          countBlockedDeliverables(status),
+        )
 
         // Post-session: evaluate all termination conditions
         const postDecision = this.evaluateTermination(state, {
@@ -184,16 +174,14 @@ export class SessionRunner {
           )
           await this.timer.delay(postDecision.waitDuration)
           // Retry same session (don't count this iteration)
-          state = updateLoopState(state, { decrementIterations: true })
+          state = state.decrementIterations()
           continue
         }
 
         // Handle termination
         if (postDecision.shouldTerminate && postDecision.exitReason) {
           this.logTermination(logger, postDecision.exitReason, state)
-          state = updateLoopState(state, {
-            exitReason: postDecision.exitReason,
-          })
+          state = state.setExitReason(postDecision.exitReason)
           break
         }
 
@@ -204,15 +192,13 @@ export class SessionRunner {
       } catch (error) {
         const errorObj =
           error instanceof Error ? error : new Error(String(error))
-        state = updateLoopState(state, { error: errorObj })
+        state = state.recordError(errorObj)
 
         // Check if max retries exceeded
         const errorDecision = this.evaluateTermination(state, { signal })
         if (errorDecision.shouldTerminate && errorDecision.exitReason) {
           this.logTermination(logger, errorDecision.exitReason, state)
-          state = updateLoopState(state, {
-            exitReason: errorDecision.exitReason,
-          })
+          state = state.setExitReason(errorDecision.exitReason)
           break
         }
 
@@ -227,7 +213,7 @@ export class SessionRunner {
     // Unified exit point - all termination conditions reach here
     // =============================================
     const totalDuration = Date.now() - startTime
-    const result = buildResult(state, totalDuration)
+    const result = state.toResult(totalDuration)
 
     // Log overall summary
     this.logOverall(logger, state, totalDuration)

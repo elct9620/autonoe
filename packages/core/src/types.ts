@@ -4,16 +4,47 @@
  */
 
 /**
- * SessionOutcome - domain-specific session result outcomes
- * Decoupled from SDK subtypes for clean architecture
+ * SessionOutcome - literal type for outcome discrimination
+ */
+export type SessionOutcome =
+  | 'completed'
+  | 'max_iterations'
+  | 'execution_error'
+  | 'budget_exceeded'
+  | 'quota_exceeded'
+
+/**
+ * SessionEnd variants - discriminated union by outcome
  * @see SPEC.md Section 2.3 Domain Model
  */
-export enum SessionOutcome {
-  Completed = 'completed',
-  MaxIterationsReached = 'max_iterations',
-  ExecutionError = 'execution_error',
-  BudgetExceeded = 'budget_exceeded',
-  QuotaExceeded = 'quota_exceeded',
+
+interface SessionEndBase {
+  type: 'session_end'
+  totalCostUsd?: number
+}
+
+export interface SessionEndCompleted extends SessionEndBase {
+  outcome: 'completed'
+  result?: string
+}
+
+export interface SessionEndExecutionError extends SessionEndBase {
+  outcome: 'execution_error'
+  messages: string[]
+}
+
+export interface SessionEndMaxIterations extends SessionEndBase {
+  outcome: 'max_iterations'
+}
+
+export interface SessionEndBudgetExceeded extends SessionEndBase {
+  outcome: 'budget_exceeded'
+}
+
+export interface SessionEndQuotaExceeded extends SessionEndBase {
+  outcome: 'quota_exceeded'
+  message?: string
+  resetTime?: Date
 }
 
 // AgentText - Agent's text response
@@ -43,15 +74,13 @@ export interface ToolResponse {
   isError: boolean
 }
 
-// SessionEnd - Session termination state
-export interface SessionEnd {
-  type: 'session_end'
-  outcome: SessionOutcome
-  result?: string
-  errors?: string[]
-  totalCostUsd?: number
-  quotaResetTime?: Date
-}
+// SessionEnd - discriminated union of all session end variants
+export type SessionEnd =
+  | SessionEndCompleted
+  | SessionEndExecutionError
+  | SessionEndMaxIterations
+  | SessionEndBudgetExceeded
+  | SessionEndQuotaExceeded
 
 // StreamError - Error event from stream (SDK errors wrapped as events)
 export interface StreamError {

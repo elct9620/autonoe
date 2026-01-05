@@ -1,12 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
   toSdkMcpServers,
-  toSessionOutcome,
   toStreamEvent,
   toSessionEnd,
   toStreamEvents,
 } from '../src/converters'
-import { SessionOutcome } from '@autonoe/core'
 
 describe('converters', () => {
   describe('toSdkMcpServers', () => {
@@ -44,47 +42,6 @@ describe('converters', () => {
       expect(result).toEqual({
         simple: { command: 'simple-cmd', args: undefined },
       })
-    })
-  })
-
-  describe('toSessionOutcome', () => {
-    it('SC-AC006: converts "success" to SessionOutcome.Completed', () => {
-      expect(toSessionOutcome('success')).toBe(SessionOutcome.Completed)
-    })
-
-    it('SC-AC007: converts "error_max_turns" to MaxIterationsReached', () => {
-      expect(toSessionOutcome('error_max_turns')).toBe(
-        SessionOutcome.MaxIterationsReached,
-      )
-    })
-
-    it('SC-AC008: converts "error_during_execution" to ExecutionError', () => {
-      expect(toSessionOutcome('error_during_execution')).toBe(
-        SessionOutcome.ExecutionError,
-      )
-    })
-
-    it('SC-AC009: converts "error_max_budget_usd" to BudgetExceeded', () => {
-      expect(toSessionOutcome('error_max_budget_usd')).toBe(
-        SessionOutcome.BudgetExceeded,
-      )
-    })
-
-    it('SC-AC010: defaults unknown subtypes to ExecutionError', () => {
-      expect(toSessionOutcome('unknown')).toBe(SessionOutcome.ExecutionError)
-      expect(toSessionOutcome('')).toBe(SessionOutcome.ExecutionError)
-    })
-
-    it('detects quota exceeded from result text', () => {
-      expect(
-        toSessionOutcome('success', "You've hit your limit · resets 6pm (UTC)"),
-      ).toBe(SessionOutcome.QuotaExceeded)
-    })
-
-    it('converts error_max_structured_output_retries to ExecutionError', () => {
-      expect(toSessionOutcome('error_max_structured_output_retries')).toBe(
-        SessionOutcome.ExecutionError,
-      )
     })
   })
 
@@ -208,7 +165,7 @@ describe('converters', () => {
   })
 
   describe('toSessionEnd', () => {
-    it('converts SDK result message to SessionEnd', () => {
+    it('converts SDK success result to SessionEndCompleted', () => {
       const sdkMessage = {
         type: 'result',
         subtype: 'success',
@@ -218,14 +175,13 @@ describe('converters', () => {
       const result = toSessionEnd(sdkMessage)
       expect(result).toEqual({
         type: 'session_end',
-        outcome: SessionOutcome.Completed,
+        outcome: 'completed',
         result: 'Done',
-        errors: undefined,
         totalCostUsd: 0.05,
       })
     })
 
-    it('converts error result message', () => {
+    it('converts error result to SessionEndExecutionError', () => {
       const sdkMessage = {
         type: 'result',
         subtype: 'error_during_execution',
@@ -234,18 +190,45 @@ describe('converters', () => {
       const result = toSessionEnd(sdkMessage)
       expect(result).toEqual({
         type: 'session_end',
-        outcome: SessionOutcome.ExecutionError,
-        result: undefined,
-        errors: ['Error 1', 'Error 2'],
+        outcome: 'execution_error',
+        messages: ['Error 1', 'Error 2'],
         totalCostUsd: undefined,
       })
     })
 
-    it('handles missing optional fields', () => {
+    it('converts max turns error to SessionEndMaxIterations', () => {
+      const sdkMessage = {
+        type: 'result',
+        subtype: 'error_max_turns',
+      }
+      const result = toSessionEnd(sdkMessage)
+      expect(result).toEqual({
+        type: 'session_end',
+        outcome: 'max_iterations',
+        totalCostUsd: undefined,
+      })
+    })
+
+    it('converts budget exceeded to SessionEndBudgetExceeded', () => {
+      const sdkMessage = {
+        type: 'result',
+        subtype: 'error_max_budget_usd',
+      }
+      const result = toSessionEnd(sdkMessage)
+      expect(result).toEqual({
+        type: 'session_end',
+        outcome: 'budget_exceeded',
+        totalCostUsd: undefined,
+      })
+    })
+
+    it('handles missing optional fields in success', () => {
       const sdkMessage = { type: 'result', subtype: 'success' }
       const result = toSessionEnd(sdkMessage)
-      expect(result.result).toBeUndefined()
-      expect(result.errors).toBeUndefined()
+      expect(result.outcome).toBe('completed')
+      if (result.outcome === 'completed') {
+        expect(result.result).toBeUndefined()
+      }
       expect(result.totalCostUsd).toBeUndefined()
     })
 
@@ -256,13 +239,29 @@ describe('converters', () => {
         result: "You've hit your limit · resets 6pm (UTC)",
       }
       const result = toSessionEnd(sdkMessage)
-      expect(result.outcome).toBe(SessionOutcome.QuotaExceeded)
-      expect(result.quotaResetTime).toBeInstanceOf(Date)
+      expect(result.outcome).toBe('quota_exceeded')
+      if (result.outcome === 'quota_exceeded') {
+        expect(result.message).toBe("You've hit your limit · resets 6pm (UTC)")
+        expect(result.resetTime).toBeInstanceOf(Date)
+      }
+    })
+
+    it('handles empty errors array as empty messages', () => {
+      const sdkMessage = {
+        type: 'result',
+        subtype: 'error_during_execution',
+        errors: [],
+      }
+      const result = toSessionEnd(sdkMessage)
+      expect(result.outcome).toBe('execution_error')
+      if (result.outcome === 'execution_error') {
+        expect(result.messages).toEqual([])
+      }
     })
   })
 
   describe('toStreamEvents', () => {
-    it('yields SessionEnd for result message', () => {
+    it('yields SessionEndCompleted for success result message', () => {
       const sdkMessage = {
         type: 'result',
         subtype: 'success',
@@ -272,9 +271,8 @@ describe('converters', () => {
       expect(events).toHaveLength(1)
       expect(events[0]).toEqual({
         type: 'session_end',
-        outcome: SessionOutcome.Completed,
+        outcome: 'completed',
         result: 'Done',
-        errors: undefined,
         totalCostUsd: undefined,
       })
     })

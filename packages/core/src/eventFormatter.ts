@@ -38,11 +38,14 @@ export function formatStreamEvent(event: StreamEvent): string {
     }
 
     case 'session_end': {
-      if (event.result) {
-        return `[session: ${event.outcome}] ${event.result}`
+      if (event.outcome === 'completed' && event.result) {
+        return `[session: completed] ${event.result}`
       }
-      if (event.errors?.length) {
-        return `[session: ${event.outcome}] ${event.errors.join(', ')}`
+      if (event.outcome === 'execution_error' && event.messages.length) {
+        return `[session: execution_error] ${event.messages.join(', ')}`
+      }
+      if (event.outcome === 'quota_exceeded' && event.message) {
+        return `[session: quota_exceeded] ${event.message}`
       }
       return `[session: ${event.outcome}]`
     }

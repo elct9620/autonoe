@@ -6,22 +6,27 @@ export type {
   ToolInvocation,
   ToolResponse,
   SessionEnd,
+  SessionEndCompleted,
+  SessionEndExecutionError,
+  SessionEndMaxIterations,
+  SessionEndBudgetExceeded,
+  SessionEndQuotaExceeded,
+  SessionOutcome,
   StreamError,
   MessageStream,
   McpServer,
   PermissionLevel,
 } from './types'
-export { SessionOutcome } from './types'
 
 // Duration formatting utilities
 export { formatDuration } from './duration'
 
-// Quota limit utilities
+// Quota management utilities
 export {
   isQuotaExceededMessage,
   parseQuotaResetTime,
   calculateWaitDuration,
-} from './quotaLimit'
+} from './quotaManager'
 
 // Event formatter exports
 export { formatStreamEvent } from './eventFormatter'
@@ -124,12 +129,7 @@ export type { Timer } from './timer'
 export { realTimer } from './timer'
 
 // LoopState exports
-export type { LoopState, LoopStateUpdate } from './loopState'
-export {
-  createInitialLoopState,
-  updateLoopState,
-  buildResult,
-} from './loopState'
+export { LoopState } from './loopState'
 
 // TerminationEvaluator exports
 export type {

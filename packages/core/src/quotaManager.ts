@@ -1,5 +1,5 @@
 /**
- * Quota limit detection and handling utilities
+ * Quota management utilities
  * @see SPEC.md Section 3.10
  */
 

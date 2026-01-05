@@ -310,6 +310,48 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 | Refactor | "API response time reduced by 50%", "Code coverage maintained above 80%" |
 | Technical Rewrite | "New and old API behavior identical", "No breaking changes" |
 
+**Deliverable State Machine:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Deliverable State Machine                │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   ┌──────────┐                                              │
+│   │  create  │                                              │
+│   └────┬─────┘                                              │
+│        │                                                    │
+│        ▼                                                    │
+│   ┌──────────┐    set_status(passed=true)    ┌──────────┐  │
+│   │ pending  │ ─────────────────────────────▶│  passed  │  │
+│   │passed=F  │                               │passed=T  │  │
+│   │blocked=F │◀─────────────────────────────│blocked=F │  │
+│   └────┬─────┘    set_status(reset)          └──────────┘  │
+│        │                                           ▲        │
+│        │ set_status(blocked=true)                  │        │
+│        ▼                                           │        │
+│   ┌──────────┐                                     │        │
+│   │ blocked  │─────────────────────────────────────┘        │
+│   │passed=F  │    set_status(passed=true)                   │
+│   │blocked=T │                                              │
+│   └────┬─────┘                                              │
+│        │                                                    │
+│        └──────────────── set_status(reset) ─────────────────┤
+│                                    │                        │
+│                                    ▼                        │
+│                              (back to pending)              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| Transition | From | To | Constraint |
+|------------|------|-----|------------|
+| create | - | pending | Initial state |
+| set_status(passed=true) | pending/blocked | passed | Sets passed=true, blocked=false |
+| set_status(blocked=true) | pending | blocked | Sets passed=false, blocked=true |
+| set_status(reset) | passed/blocked | pending | Sets passed=false, blocked=false |
+
+Invariant: `passed` and `blocked` are mutually exclusive.
+
 #### Aggregates
 
 **DeliverableStatus** - Root aggregate for deliverable tracking
@@ -931,6 +973,14 @@ Retry behavior:
 - Each retry starts a fresh session with `clientFactory.create()`
 - Quota exceeded is NOT counted as a retry error (handled separately)
 - Overall info is logged even on max retries exit
+
+**Session Error Classification:**
+
+| Error Code | Source | Description | Retry Strategy |
+|------------|--------|-------------|----------------|
+| QUOTA_EXCEEDED | SDK | API subscription quota exhausted | Controlled by `waitForQuota` option |
+| SDK_ERROR | SDK | Internal SDK errors (e.g., stream errors) | Count toward `consecutiveErrors` |
+| EXECUTION_ERROR | Session | Runtime errors during execution (timeout, context exhaustion) | Count toward `consecutiveErrors` |
 
 ---
 

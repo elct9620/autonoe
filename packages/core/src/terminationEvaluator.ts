@@ -1,12 +1,12 @@
 import type { LoopState } from './loopState'
 import type { DeliverableStatus } from './deliverableStatus'
 import { ExitReason } from './sessionRunner'
-import { SessionOutcome } from './types'
+import type { SessionOutcome } from './types'
 import {
   allAchievableDeliverablesPassed,
   allDeliverablesBlocked,
 } from './deliverableStatus'
-import { calculateWaitDuration } from './quotaLimit'
+import { calculateWaitDuration } from './quotaManager'
 
 /**
  * Context for termination evaluation
@@ -65,7 +65,7 @@ export class InterruptedEvaluator implements TerminationEvaluator {
  */
 export class QuotaExceededEvaluator implements TerminationEvaluator {
   evaluate(context: TerminationContext): TerminationDecision {
-    if (context.sessionOutcome !== SessionOutcome.QuotaExceeded) {
+    if (context.sessionOutcome !== 'quota_exceeded') {
       return { shouldTerminate: false }
     }
 

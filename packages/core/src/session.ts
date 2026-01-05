@@ -1,8 +1,7 @@
 import type { AgentClient } from './agentClient'
 import { formatStreamEvent } from './eventFormatter'
 import { silentLogger, type Logger } from './logger'
-import { SessionOutcome } from './types'
-import type { SessionEnd } from './types'
+import type { SessionOutcome } from './types'
 import type { SessionEndHandler } from './sessionEndHandler'
 import { DefaultSessionEndHandler } from './sessionEndHandler'
 
@@ -61,7 +60,7 @@ export class Session {
   ): Promise<SessionResult> {
     const startTime = Date.now()
     let costUsd = 0
-    let outcome: SessionOutcome = SessionOutcome.Completed
+    let outcome: SessionOutcome = 'completed'
     let quotaResetTime: Date | undefined
     let sessionEndReceived = false
 
@@ -80,7 +79,8 @@ export class Session {
           costUsd = event.totalCostUsd
         }
         outcome = event.outcome
-        quotaResetTime = event.quotaResetTime
+        quotaResetTime =
+          event.outcome === 'quota_exceeded' ? event.resetTime : undefined
         this.sessionEndHandler.handle(event, logger)
       }
 
@@ -97,7 +97,7 @@ export class Session {
     }
 
     return {
-      success: outcome === SessionOutcome.Completed,
+      success: outcome === 'completed',
       costUsd,
       duration: Date.now() - startTime,
       deliverablesPassedCount: 0,
