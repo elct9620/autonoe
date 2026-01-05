@@ -18,7 +18,7 @@ import { formatDuration } from './duration'
 
 /**
  * Exit reason for session runner loop
- * @see SPEC.md Section 3.9
+ * @see SPEC.md Section 3.10
  */
 export enum ExitReason {
   AllPassed = 'all_passed',
@@ -31,7 +31,7 @@ export enum ExitReason {
 
 /**
  * SessionRunner configuration options
- * @see SPEC.md Section 3.8.4
+ * @see SPEC.md Section 3.9.4
  */
 export interface SessionRunnerOptions {
   projectDir: string
@@ -45,7 +45,7 @@ export interface SessionRunnerOptions {
 
 /**
  * Result of a SessionRunner execution
- * @see SPEC.md Section 3.8.4
+ * @see SPEC.md Section 3.9.4
  */
 export interface SessionRunnerResult {
   success: boolean
@@ -62,7 +62,7 @@ export interface SessionRunnerResult {
 
 /**
  * SessionRunner orchestrates multiple Session executions in a loop
- * @see SPEC.md Section 3.8
+ * @see SPEC.md Section 3.9
  */
 export class SessionRunner {
   private readonly delayBetweenSessions: number
@@ -78,7 +78,7 @@ export class SessionRunner {
   /**
    * Run the session loop with an injected AgentClientFactory and Logger
    * Loop continues until all deliverables pass or max iterations reached
-   * @see SPEC.md Section 3.8.3, 3.8.4, 3.9
+   * @see SPEC.md Section 3.9.3, 3.9.4, 3.10
    */
   async run(
     clientFactory: AgentClientFactory,
@@ -261,7 +261,7 @@ export class SessionRunner {
 
   /**
    * Log the overall summary when session runner completes
-   * @see SPEC.md Section 3.7.1
+   * @see SPEC.md Section 3.8.1
    */
   private logOverall(
     logger: Logger,

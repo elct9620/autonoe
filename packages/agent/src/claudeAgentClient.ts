@@ -139,11 +139,6 @@ export class ClaudeAgentClient implements AgentClient {
       }
     }
 
-    // Add setting sources to load filesystem settings
-    if (options.settingSources && options.settingSources.length > 0) {
-      sdkOptions.settingSources = options.settingSources
-    }
-
     // Add thinking tokens for extended thinking mode
     if (options.maxThinkingTokens) {
       sdkOptions.maxThinkingTokens = options.maxThinkingTokens

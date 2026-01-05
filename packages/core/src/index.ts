@@ -34,7 +34,6 @@ export type {
   PreToolUseHook,
   PreToolUseInput,
   HookResult,
-  SettingSource,
 } from './agentClient'
 
 // Logger exports

@@ -324,12 +324,35 @@ Persistence: `.autonoe/status.json`
 
 #### Repository
 
-**DeliverableRepository** - Interface (Core), Implementation (Infrastructure)
+**DeliverableStatusReader** - Read-only interface for checking deliverable status
+
+```typescript
+interface DeliverableStatusReader {
+  exists(): Promise<boolean>
+  load(): Promise<DeliverableStatus>
+}
+```
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| load | `() => Promise<DeliverableStatus>` | Load or return empty |
+| exists | `() => Promise<boolean>` | Check if status file exists |
+| load | `() => Promise<DeliverableStatus>` | Load status or return empty |
+
+Used by `SessionRunner` to determine loop termination and instruction selection.
+
+**DeliverableRepository** - Full repository interface extending reader
+
+```typescript
+interface DeliverableRepository extends DeliverableStatusReader {
+  save(status: DeliverableStatus): Promise<void>
+}
+```
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
 | save | `(status: DeliverableStatus) => Promise<void>` | Persist to storage |
+
+Implementation lives in infrastructure layer (`packages/agent`).
 
 #### Enums
 
@@ -353,9 +376,18 @@ Persistence: `.autonoe/status.json`
 
 #### Type Aliases
 
-| Alias | Definition | Description |
-|-------|------------|-------------|
-| MessageStream | AsyncIterable\<StreamEvent\> | Async stream of agent events |
+**MessageStream** - Async stream of agent events with interrupt capability
+
+```typescript
+interface MessageStream extends AsyncGenerator<StreamEvent, void> {
+  interrupt(): Promise<void>
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| (generator) | AsyncGenerator\<StreamEvent, void\> | Yields stream events |
+| interrupt | () => Promise\<void\> | Interrupt the ongoing query |
 
 **Type Definitions:** See `packages/core/src/types.ts`
 
@@ -382,6 +414,10 @@ interface AgentClientOptions {
   mcpServers?: Record<string, McpServer>
   permissionLevel?: PermissionLevel
   allowedTools?: string[]
+  sandbox?: SandboxConfig
+  preToolUseHooks?: PreToolUseHook[]
+  model?: string
+  maxThinkingTokens?: number
 }
 ```
 
@@ -442,6 +478,8 @@ interface SessionResult {
   duration: number
   deliverablesPassedCount: number
   deliverablesTotalCount: number
+  outcome: SessionOutcome
+  quotaResetTime?: Date
 }
 ```
 
@@ -578,7 +616,61 @@ type DeliverableStatusCallback = (notification: DeliverableStatusNotification) =
 | blocked | [BLOCKED] | `[BLOCKED] Payment (DL-002)` |
 | pending | [PENDING] | `[PENDING] Dashboard (DL-003)` |
 
-### 3.6 Dependency Injection
+### 3.6 PreToolUse Hook
+
+PreToolUse hooks allow intercepting tool calls before execution for validation or authorization.
+
+```typescript
+// packages/core/src/agentClient.ts
+interface PreToolUseInput {
+  toolName: string
+  toolInput: Record<string, unknown>
+}
+
+interface HookResult {
+  continue: boolean
+  decision?: 'approve' | 'block'
+  reason?: string
+}
+
+interface PreToolUseHook {
+  name: string
+  matcher?: string
+  callback: (input: PreToolUseInput) => Promise<HookResult>
+}
+```
+
+**PreToolUseInput** - Input provided to hook callback
+
+| Field | Type | Description |
+|-------|------|-------------|
+| toolName | string | Name of the tool being called |
+| toolInput | Record\<string, unknown\> | Tool parameters |
+
+**HookResult** - Result returned from hook callback
+
+| Field | Type | Description |
+|-------|------|-------------|
+| continue | boolean | Whether to continue processing (false = stop hook chain) |
+| decision | 'approve' \| 'block' | Final decision (optional) |
+| reason | string | Reason for decision (optional, displayed to agent) |
+
+**PreToolUseHook** - Hook definition
+
+| Field | Type | Description |
+|-------|------|-------------|
+| name | string | Hook identifier for debugging |
+| matcher | string | Tool name pattern to match (optional, undefined = match all) |
+| callback | (input) => Promise\<HookResult\> | Async callback function |
+
+**Built-in Hooks:**
+
+| Hook | Purpose |
+|------|---------|
+| BashSecurity | Validate bash commands against allowlist |
+| AutonoeProtection | Block direct writes to .autonoe/ directory |
+
+### 3.7 Dependency Injection
 
 | Component              | Injected Via              | Purpose                         |
 | ---------------------- | ------------------------- | ------------------------------- |
@@ -594,7 +686,7 @@ SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ─
          Configuration        Dependency          Per-session
 ```
 
-### 3.7 Logger
+### 3.8 Logger
 
 ```typescript
 // packages/core/src/logger.ts
@@ -624,7 +716,7 @@ const silentLogger: Logger
 | Domain       | No direct logging (pure functions)     |
 | Tests        | TestLogger to capture and verify       |
 
-#### 3.7.1 Message Format
+#### 3.8.1 Message Format
 
 **Debug Messages** (--debug flag only):
 
@@ -654,7 +746,7 @@ const silentLogger: Logger
 - Overall: `Overall: 2 session(s), 5/5 deliverables passed, cost=$0.0390, duration=2m 15s`
 - Overall (with blocked): `Overall: 3 session(s), 3/5 deliverables passed (2 blocked), cost=$0.0580, duration=5m 20s`
 
-#### 3.7.2 Duration Format
+#### 3.8.2 Duration Format
 
 All duration displays use human-readable format with zero-value parts omitted:
 
@@ -675,9 +767,9 @@ All duration displays use human-readable format with zero-value parts omitted:
 **Utility Function:**
 - `formatDuration(ms: number): string` in `packages/core/src/duration.ts`
 
-### 3.8 Session Loop
+### 3.9 Session Loop
 
-#### 3.8.1 Architecture
+#### 3.9.1 Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -709,14 +801,14 @@ All duration displays use human-readable format with zero-value parts omitted:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-#### 3.8.2 Loop Types
+#### 3.9.2 Loop Types
 
 | Loop             | Location         | Controller       | Purpose                          |
 | ---------------- | ---------------- | ---------------- | -------------------------------- |
 | Session Loop     | SessionRunner    | --max-iterations | Run multiple agent sessions      |
 | Agent Turn Loop  | Claude Agent SDK | SDK internal     | Process messages within session  |
 
-#### 3.8.3 Client Lifecycle
+#### 3.9.3 Client Lifecycle
 
 ```
 SessionRunner
@@ -742,7 +834,7 @@ SessionRunner
 | Shared       | AgentClientFactory  |
 | Shared       | Client configuration|
 
-#### 3.8.4 SessionRunner Interface
+#### 3.9.4 SessionRunner Interface
 
 ```typescript
 // packages/core/src/sessionRunner.ts
@@ -790,7 +882,7 @@ enum ExitReason {
 }
 ```
 
-### 3.9 Termination Conditions
+### 3.10 Termination Conditions
 
 | Priority | Condition                    | Check                                         | Result              |
 | -------- | ---------------------------- | --------------------------------------------- | ------------------- |
@@ -824,7 +916,7 @@ Quota detection utilities in `quotaLimit.ts`:
 - `isQuotaExceededMessage(text)` - Check if message indicates quota limit
 - `parseQuotaResetTime(text)` - Extract reset time from message
 - `calculateWaitDuration(resetTime)` - Calculate milliseconds to wait
-- `formatDuration(ms)` - Format duration as human-readable string (see Section 3.7.2)
+- `formatDuration(ms)` - Format duration as human-readable string (see Section 3.8.2)
 
 **Session Error Retry:**
 
@@ -2232,3 +2324,54 @@ Instruction Resolution
 | ----------------------- | ---------------------- | -------------------------- |
 | .autonoe/initializer.md | initializerInstruction | Custom initialization flow |
 | .autonoe/coding.md      | codingInstruction      | Custom implementation flow |
+
+### A.5 InstructionResolver Interface
+
+```typescript
+// packages/core/src/instructions.ts
+type InstructionName = 'initializer' | 'coding'
+
+interface InstructionResolver {
+  resolve(name: InstructionName): Promise<string>
+}
+```
+
+**InstructionName** - Available instruction types
+
+| Value | Description |
+|-------|-------------|
+| 'initializer' | Initialization phase instruction |
+| 'coding' | Coding phase instruction |
+
+**InstructionResolver** - Interface for instruction resolution
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| resolve | `(name: InstructionName) => Promise<string>` | Resolve instruction by name |
+
+**Default Implementation:**
+
+```typescript
+function createDefaultInstructionResolver(): InstructionResolver {
+  return {
+    async resolve(name: InstructionName): Promise<string> {
+      return name === 'initializer'
+        ? initializerInstruction
+        : codingInstruction
+    }
+  }
+}
+```
+
+**Instruction Selection Logic:**
+
+```typescript
+async function selectInstruction(
+  statusReader: DeliverableStatusReader,
+  resolver: InstructionResolver
+): Promise<string> {
+  const statusExists = await statusReader.exists()
+  const name = statusExists ? 'coding' : 'initializer'
+  return resolver.resolve(name)
+}
+```

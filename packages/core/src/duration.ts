@@ -1,6 +1,6 @@
 /**
  * Duration formatting utilities
- * @see SPEC.md Section 3.7.2
+ * @see SPEC.md Section 3.8.2
  */
 
 /**

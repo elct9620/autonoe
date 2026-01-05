@@ -1,6 +1,6 @@
 /**
  * Event formatter for debug logging
- * @see SPEC.md Section 3.7.1 Debug Message Format
+ * @see SPEC.md Section 3.8.1 Debug Message Format
  */
 
 import type { StreamEvent } from './types'

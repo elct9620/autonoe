@@ -1,12 +1,12 @@
 /**
  * Log levels for Autonoe output
- * @see SPEC.md Section 3.7
+ * @see SPEC.md Section 3.8
  */
 export type LogLevel = 'info' | 'debug' | 'warning' | 'error'
 
 /**
  * Logger interface for session output
- * @see SPEC.md Section 3.7
+ * @see SPEC.md Section 3.8
  */
 export interface Logger {
   /**

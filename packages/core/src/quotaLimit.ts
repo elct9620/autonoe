@@ -1,6 +1,6 @@
 /**
  * Quota limit detection and handling utilities
- * @see SPEC.md Section 3.9
+ * @see SPEC.md Section 3.10
  */
 
 const QUOTA_PATTERN = /You've hit your limit/i

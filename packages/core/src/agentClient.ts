@@ -11,7 +11,7 @@ export interface AgentClient {
 
 /**
  * Factory for creating fresh AgentClient instances per session
- * @see SPEC.md Section 3.8.3
+ * @see SPEC.md Section 3.9.3
  */
 export interface AgentClientFactory {
   create(): AgentClient
@@ -45,11 +45,6 @@ export interface PreToolUseHook {
 }
 
 /**
- * Setting sources for loading filesystem settings
- */
-export type SettingSource = 'user' | 'project' | 'local'
-
-/**
  * Constructor options for AgentClient implementations
  * @see SPEC.md Section 3.1
  */
@@ -60,7 +55,6 @@ export interface AgentClientOptions {
   allowedTools?: string[]
   sandbox?: SandboxConfig
   preToolUseHooks?: PreToolUseHook[]
-  settingSources?: SettingSource[]
   model?: string
   maxThinkingTokens?: number
 }
