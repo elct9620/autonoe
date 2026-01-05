@@ -1514,6 +1514,8 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | SC-S012 | Partial with blocked               | Overall log shows "(N blocked)"         |
 | SC-S013 | Max iterations reached             | Overall logged before exit              |
 
+SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
+
 ### 8.2 Bash Security
 
 | ID      | Input                       | Expected Output                 |
@@ -1686,17 +1688,7 @@ Integration tests require real SDK, Docker, and external services. They are sepa
 - Reset state     - autonoe run       - Content match
 ```
 
-**Workspace Management:**
-
-```bash
-# Clean workspace (keep only .gitkeep)
-find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
-
-# Copy fixture for test
-cp -r tests/integration/fixtures/hello-world/* ./tmp/
-```
-
-The `./tmp/` directory serves as the Docker volume mount point. Only `.gitkeep` is preserved to ensure the directory exists in version control.
+The `./tmp/` directory serves as the Docker volume mount point for test fixtures.
 
 ### 9.3 Test Separation Strategy
 
@@ -1723,19 +1715,6 @@ The `./tmp/` directory serves as the Docker volume mount point. Only `.gitkeep` 
 | **Fixture**      | `tests/integration/fixtures/hello-world/`   |
 | **Expected**     | `hello.txt` exists, content matches         |
 
-```bash
-# Setup
-find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
-cp -r tests/integration/fixtures/hello-world/* ./tmp/
-
-# Execute
-docker compose run --rm cli autonoe run -n 3
-
-# Verify
-test -f ./tmp/hello.txt
-grep -q "Hello, World!" ./tmp/hello.txt
-```
-
 #### IT-002: Technology Stack Recognition
 
 | Field            | Value                                       |
@@ -1743,19 +1722,6 @@ grep -q "Hello, World!" ./tmp/hello.txt
 | **Scenario**     | Node.js technology stack handling           |
 | **Fixture**      | `tests/integration/fixtures/nodejs/`        |
 | **Expected**     | `hello.js` exists, executes correctly       |
-
-```bash
-# Setup
-find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
-cp -r tests/integration/fixtures/nodejs/* ./tmp/
-
-# Execute
-docker compose run --rm cli autonoe run -n 3
-
-# Verify
-test -f ./tmp/hello.js
-docker compose run --rm cli node /workspace/hello.js | grep -q "Hello, World!"
-```
 
 #### IT-003: Instruction Override
 
@@ -1765,18 +1731,6 @@ docker compose run --rm cli node /workspace/hello.js | grep -q "Hello, World!"
 | **Fixture**      | `tests/integration/fixtures/custom-instruction/` |
 | **Expected**     | Agent outputs custom marker text                 |
 
-```bash
-# Setup
-find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
-cp -r tests/integration/fixtures/custom-instruction/* ./tmp/
-
-# Execute & Capture output
-OUTPUT=$(docker compose run --rm cli autonoe run -d -n 2 2>&1)
-
-# Verify
-echo "$OUTPUT" | grep -q "=== CUSTOM MARKER ==="
-```
-
 #### IT-004: Deliverable Status Persistence
 
 | Field            | Value                                       |
@@ -1784,19 +1738,6 @@ echo "$OUTPUT" | grep -q "=== CUSTOM MARKER ==="
 | **Scenario**     | Status file creation and update             |
 | **Fixture**      | `tests/integration/fixtures/hello-world/`   |
 | **Expected**     | Valid JSON with deliverable marked passed   |
-
-```bash
-# Setup
-find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
-cp -r tests/integration/fixtures/hello-world/* ./tmp/
-
-# Execute
-docker compose run --rm cli autonoe run -n 3
-
-# Verify
-test -f ./tmp/.autonoe/status.json
-jq -e '.deliverables[0].passed == true' ./tmp/.autonoe/status.json
-```
 
 #### IT-005: Session Iteration Limit
 
@@ -1806,35 +1747,11 @@ jq -e '.deliverables[0].passed == true' ./tmp/.autonoe/status.json
 | **Fixture**      | `tests/integration/fixtures/hello-world/`   |
 | **Expected**     | Exits after N iterations                    |
 
-```bash
-# Setup
-find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
-cp -r tests/integration/fixtures/hello-world/* ./tmp/
-
-# Execute with limit
-docker compose run --rm cli autonoe run -n 1
-
-# Verify (exits cleanly regardless of completion)
-test $? -eq 0 || test $? -eq 1
-```
-
 ### 9.6 SDK Sandbox Test Cases
 
 | ID      | Input                     | Expected Output   |
 | ------- | ------------------------- | ----------------- |
 | SC-X003 | File read outside project | Permission denied |
-
-```bash
-# Setup - Create SPEC that requests reading /etc/passwd
-find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
-cp -r tests/integration/fixtures/sandbox-test/* ./tmp/
-
-# Execute
-OUTPUT=$(docker compose run --rm cli autonoe run -d -n 2 2>&1)
-
-# Verify - Agent should be blocked from reading outside project
-echo "$OUTPUT" | grep -qi "permission denied\|not allowed\|blocked"
-```
 
 ### 9.7 Browser Test Cases
 
@@ -1845,70 +1762,7 @@ echo "$OUTPUT" | grep -qi "permission denied\|not allowed\|blocked"
 | SC-B003 | Form submission          | Form submitted, verified          |
 | SC-B004 | Text verification        | Assertion passes/fails            |
 
-```bash
-# Setup - Prepare browser test fixture
-find ./tmp -mindepth 1 ! -name '.gitkeep' -delete
-cp -r tests/integration/fixtures/browser-test/* ./tmp/
-
-# Execute
-docker compose run --rm cli autonoe run -n 5
-
-# Verify - Check browser interaction artifacts
-test -f ./tmp/.autonoe/status.json
-test -f ./tmp/screenshot.png
-jq -e '.deliverables[] | select(.passed == true)' ./tmp/.autonoe/status.json
-```
-
-### 9.8 Makefile Integration
-
-```makefile
-.PHONY: test test-unit test-integration test-all
-
-test: test-unit
-
-test-unit:
-	bun run test
-
-# Run all integration tests or a specific test with TEST=<ID>
-# Examples:
-#   make test-integration            # Run all tests
-#   make test-integration TEST=IT-001  # Run specific test
-#   make test-integration TEST=SC-B001 # Run browser test
-test-integration:
-	@echo "Running integration tests..."
-ifdef TEST
-	./tests/integration/run.sh --test $(TEST)
-else
-	./tests/integration/run.sh
-endif
-
-test-all: test-unit test-integration
-```
-
-### 9.9 Integration Test Directory Structure
-
-```
-tests/
-└── integration/
-    ├── run.sh              # Main test runner script
-    ├── fixtures/
-    │   ├── hello-world/    # IT-001, IT-004, IT-005
-    │   │   └── SPEC.md
-    │   ├── nodejs/         # IT-002
-    │   │   └── SPEC.md
-    │   ├── custom-instruction/  # IT-003
-    │   │   ├── SPEC.md
-    │   │   └── .autonoe/
-    │   │       └── initializer.md
-    │   ├── sandbox-test/   # SC-X003
-    │   │   └── SPEC.md
-    │   └── browser-test/   # SC-B001 ~ SC-B004
-    │       ├── SPEC.md
-    │       └── server/     # Local web server for testing
-    └── README.md
-```
-
-### 9.10 CI Reporting
+### 9.8 CI Reporting
 
 Integration tests generate GitHub Actions Job Summary when running in CI:
 
@@ -1929,30 +1783,6 @@ Summary is generated only when `GITHUB_STEP_SUMMARY` environment variable is set
 | `.autonoe-note.md` | Agent handoff notes (if created) |
 | `.autonoe/status.json` | Deliverable status with pass/block states |
 
-**Summary Format:**
-
-```markdown
-# Autonoe Integration Test Results
-
-## Test Methodology
-[How tests work]
-
-## Summary
-| Test ID | Name | Status |
-|---------|------|--------|
-| IT-001 | Basic Workflow | :white_check_mark: PASS |
-
-## Test Details
-### IT-001: Basic Workflow
-**Status:** :white_check_mark: PASS
-**Verification:** File hello.txt exists and contains 'Hello, World!'
-
-<details>
-<summary>Agent Notes</summary>
-[.autonoe-note.md content]
-</details>
-```
-
 ---
 
 ## 10. Build & Distribution
@@ -1966,75 +1796,9 @@ Summary is generated only when `GITHUB_STEP_SUMMARY` environment variable is set
 | @autonoe/agent | Wraps SDK, implements `AgentClient` interface from core |
 | @autonoe/cli | Creates `ClaudeAgentClient`, injects into `SessionRunner` |
 
-### 10.1 Workspace Configuration
+Package configurations are defined in their respective `package.json` files.
 
-```json
-{
-  "name": "autonoe",
-  "private": true,
-  "workspaces": ["packages/*", "apps/*"],
-  "scripts": {
-    "build": "tsc -b",
-    "test": "vitest",
-    "format": "prettier --write .",
-    "check": "tsc --noEmit",
-    "compile": "bun build apps/cli/bin/autonoe.ts --compile --outfile dist/autonoe"
-  },
-  "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "latest"
-  }
-}
-```
-
-### 10.2 Package: core
-
-```json
-{
-  "name": "@autonoe/core",
-  "version": "0.1.0",
-  "main": "src/index.ts"
-}
-```
-
-### 10.3 Package: agent
-
-```json
-{
-  "name": "@autonoe/agent",
-  "version": "0.1.0",
-  "main": "src/index.ts",
-  "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "*",
-    "@autonoe/core": "workspace:*"
-  }
-}
-```
-
-### 10.4 Package: cli
-
-```json
-{
-  "name": "@autonoe/cli",
-  "version": "0.1.0",
-  "bin": {
-    "autonoe": "./bin/autonoe.ts"
-  },
-  "dependencies": {
-    "@autonoe/core": "workspace:*",
-    "@autonoe/agent": "workspace:*",
-    "cac": "^6.7.14"
-  }
-}
-```
-
-### 10.5 Single Executable
-
-```bash
-bun build apps/cli/bin/autonoe.ts --compile --outfile dist/autonoe
-bun build apps/cli/bin/autonoe.ts --compile --target=bun-linux-x64 --outfile dist/autonoe-linux
-```
-
-### 10.6 Docker Image Configuration
+### 10.1 Docker Image Configuration
 
 **Monorepo Image Strategy:**
 
@@ -2097,7 +1861,7 @@ Each target must include base tools (git, curl, ca-certificates) for Claude Code
 | `GOLANG_VERSION` | X.XX | Go stable (check latest) |
 | `RUBY_VERSION` | X.X | Ruby stable (check latest) |
 
-### 10.7 Version Support Policy
+### 10.2 Version Support Policy
 
 | Language | Policy |
 |----------|--------|
@@ -2110,7 +1874,7 @@ Each target must include base tools (git, curl, ca-certificates) for Claude Code
 - Default versions follow official LTS/stable releases
 - Users can specify versions via Build Args for custom builds
 
-### 10.8 Release Management
+### 10.3 Release Management
 
 | Tool                     | Purpose                            |
 | ------------------------ | ---------------------------------- |
@@ -2125,21 +1889,7 @@ Each target must include base tools (git, curl, ca-certificates) for Claude Code
 | `ci.yml`             | Push to main | Docker latest + Bun snapshot binaries                |
 | `release-please.yml` | Push to main | Release Please + versioned Docker + binary release   |
 
-```yaml
-# .github/workflows/ci.yml
-jobs:
-  docker-latest:    # Uses build-docker.yml reusable workflow
-  build-snapshot:   # Uses build-binaries.yml reusable workflow
-
-# .github/workflows/release-please.yml
-jobs:
-  release-please:   # Create release PR
-  docker-release:   # Uses build-docker.yml reusable workflow
-  binary-build:     # Uses build-binaries.yml reusable workflow
-  binary-release:   # Downloads artifacts, uploads to GitHub Release
-```
-
-### 10.8.1 Reusable Workflow Architecture
+### 10.3.1 Reusable Workflow Architecture
 
 **Unified Approach:**
 
@@ -2147,30 +1897,6 @@ jobs:
 |-----------|------|----------|---------|
 | Docker builds | Reusable Workflow | `.github/workflows/build-docker.yml` | Job-level reuse with matrix strategy |
 | Binary builds | Reusable Workflow | `.github/workflows/build-binaries.yml` | Job-level reuse with matrix strategy |
-
-**Architecture:**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Reusable Workflow Architecture                │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Caller Workflows          Reusable Workflows                   │
-│  ┌──────────────────┐     ┌────────────────┐                    │
-│  │  ci.yml          │     │ build-docker   │                    │
-│  │    docker-latest │────▶│   .yml         │                    │
-│  │    build-snapshot│────▶│ (matrix: 5x)   │                    │
-│  └──────────────────┘     └────────────────┘                    │
-│                                 │                                │
-│  ┌──────────────────┐     ┌────────────────┐                    │
-│  │  release-please  │     │ build-binaries │                    │
-│  │    docker-release│────▶│   .yml         │                    │
-│  │    binary-build  │────▶│ (matrix: 5x)   │                    │
-│  │    binary-release│     └────────────────┘                    │
-│  └──────────────────┘                                           │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
 
 **build-docker.yml Inputs:**
 
