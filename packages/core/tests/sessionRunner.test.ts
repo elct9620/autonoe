@@ -8,6 +8,7 @@ import {
   MockDeliverableStatusReader,
   createMockAgentText,
   createMockSessionEnd,
+  createMockQuotaExceededSessionEnd,
   createMockStatusJson,
   createMockClientFactory,
   TestLogger,
@@ -891,46 +892,15 @@ describe('SessionRunner', () => {
     })
   })
 
-  describe('Custom termination chain', () => {
-    it('uses injected termination chain instead of default', async () => {
+  describe('Quota handling', () => {
+    it('SR-Q001: waits for quota reset when waitForQuota is true', async () => {
       const client = new MockAgentClient()
-      // Set up responses for potentially multiple sessions
+      // First session: quota exceeded with reset time
+      // Second session: success
+      const resetTime = new Date(Date.now() + 10) // 10ms from now
       client.setResponsesPerSession([
-        [createMockSessionEnd('session 1', 0.01)],
-        [createMockSessionEnd('session 2', 0.01)],
-      ])
-      const factory = createMockClientFactory(client)
-
-      // Custom evaluator that always terminates immediately
-      const customEvaluator = {
-        evaluate: () => ({
-          shouldTerminate: true,
-          exitReason: ExitReason.Interrupted,
-        }),
-      }
-
-      const logger = new TestLogger()
-      const runner = new SessionRunner({
-        projectDir: '/test/project',
-        delayBetweenSessions: 0,
-        terminationChain: customEvaluator,
-      })
-
-      const result = await runner.run(factory, logger)
-
-      // Should terminate immediately without running any sessions
-      expect(result.iterations).toBe(0)
-      expect(result.interrupted).toBe(true)
-      expect(logger.hasMessage('User interrupted')).toBe(true)
-    })
-
-    it('custom chain can return waitDuration for quota handling', async () => {
-      const client = new MockAgentClient()
-      let evaluationCount = 0
-
-      client.setResponsesPerSession([
-        [createMockSessionEnd('session 1', 0.01)],
-        [createMockSessionEnd('session 2', 0.01)],
+        [createMockQuotaExceededSessionEnd('Quota exceeded', resetTime)],
+        [createMockSessionEnd('done', 0.01)],
       ])
       const factory = createMockClientFactory(client)
 
@@ -956,35 +926,66 @@ describe('SessionRunner', () => {
         ]),
       ])
 
-      // Custom evaluator that returns waitDuration on first post-session evaluation
-      const customEvaluator = {
-        evaluate: () => {
-          evaluationCount++
-          // First evaluation is pre-session check (pass through)
-          // Second evaluation is post-session, return wait
-          // Third evaluation is pre-session check again (pass through)
-          // Fourth evaluation is post-session, terminate with success
-          if (evaluationCount === 2) {
-            return { shouldTerminate: false, waitDuration: 10 }
-          }
-          if (evaluationCount === 4) {
-            return { shouldTerminate: true, exitReason: ExitReason.AllPassed }
-          }
-          return { shouldTerminate: false }
-        },
-      }
-
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
         delayBetweenSessions: 0,
-        terminationChain: customEvaluator,
+        waitForQuota: true,
       })
 
       const result = await runner.run(factory, logger, statusReader)
 
       expect(result.success).toBe(true)
       expect(logger.hasMessage('Quota exceeded, waiting')).toBe(true)
+    })
+
+    it('SR-Q002: exits immediately when quota exceeded without waitForQuota', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockQuotaExceededSessionEnd('Quota exceeded')])
+      const factory = createMockClientFactory(client)
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+        waitForQuota: false,
+      })
+
+      const result = await runner.run(factory, logger)
+
+      expect(result.success).toBe(false)
+      expect(result.quotaExceeded).toBe(true)
+      expect(logger.hasMessage('Quota exceeded')).toBe(true)
+    })
+  })
+
+  describe('Interrupt handling', () => {
+    it('SR-I001: terminates when signal is aborted before session', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockSessionEnd('done', 0.01)])
+      const factory = createMockClientFactory(client)
+
+      const controller = new AbortController()
+      controller.abort() // Abort before running
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(
+        factory,
+        logger,
+        undefined,
+        undefined,
+        controller.signal,
+      )
+
+      expect(result.success).toBe(false)
+      expect(result.interrupted).toBe(true)
+      expect(result.iterations).toBe(0)
+      expect(logger.hasMessage('User interrupted')).toBe(true)
     })
   })
 })

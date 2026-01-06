@@ -133,22 +133,12 @@ export { realTimer } from './timer'
 // LoopState exports
 export { LoopState } from './loopState'
 
-// TerminationEvaluator exports
+// Termination evaluation exports
 export type {
   TerminationContext,
   TerminationDecision,
-  TerminationEvaluator,
 } from './terminationEvaluator'
-export {
-  InterruptedEvaluator,
-  QuotaExceededEvaluator,
-  AllPassedEvaluator,
-  AllBlockedEvaluator,
-  MaxIterationsEvaluator,
-  MaxRetriesEvaluator,
-  TerminationChain,
-  createDefaultTerminationChain,
-} from './terminationEvaluator'
+export { evaluateTermination } from './terminationEvaluator'
 
 // SessionEndHandler exports
 export type { SessionEndHandler } from './sessionEndHandler'

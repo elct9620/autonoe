@@ -6,11 +6,7 @@ import type {
 import type { Logger } from './logger'
 import type { InstructionResolver } from './instructions'
 import type { Timer } from './timer'
-import type {
-  TerminationEvaluator,
-  TerminationContext,
-  TerminationDecision,
-} from './terminationEvaluator'
+import type { TerminationContext } from './terminationEvaluator'
 import { silentLogger } from './logger'
 import { Session } from './session'
 import {
@@ -23,7 +19,7 @@ import type { SessionOutcome } from './types'
 import { formatDuration } from './duration'
 import { realTimer } from './timer'
 import { LoopState } from './loopState'
-import { createDefaultTerminationChain } from './terminationEvaluator'
+import { evaluateTermination } from './terminationEvaluator'
 
 /**
  * Exit reason for session runner loop
@@ -52,8 +48,6 @@ export interface SessionRunnerOptions {
   maxRetries?: number
   /** Timer for delay operations (default: realTimer) */
   timer?: Timer
-  /** Termination evaluator chain (default: createDefaultTerminationChain()) */
-  terminationChain?: TerminationEvaluator
 }
 
 /**
@@ -82,15 +76,12 @@ export class SessionRunner {
   private readonly maxIterations: number | undefined
   private readonly maxRetries: number
   private readonly timer: Timer
-  private readonly terminationChain: TerminationEvaluator
 
   constructor(private options: SessionRunnerOptions) {
     this.delayBetweenSessions = options.delayBetweenSessions ?? 3000
     this.maxIterations = options.maxIterations
     this.maxRetries = options.maxRetries ?? 3
     this.timer = options.timer ?? realTimer
-    this.terminationChain =
-      options.terminationChain ?? createDefaultTerminationChain()
   }
 
   /**
@@ -111,7 +102,7 @@ export class SessionRunner {
     // Main loop - use break to exit to unified exit point
     while (!state.exitReason) {
       // Pre-session: check interrupt
-      const preDecision = this.evaluateTermination(state, { signal })
+      const preDecision = this.runTerminationEvaluation(state, { signal })
       if (preDecision.shouldTerminate && preDecision.exitReason) {
         this.logTermination(logger, preDecision.exitReason, state)
         state = state.setExitReason(preDecision.exitReason)
@@ -160,7 +151,7 @@ export class SessionRunner {
         )
 
         // Post-session: evaluate all termination conditions
-        const postDecision = this.evaluateTermination(state, {
+        const postDecision = this.runTerminationEvaluation(state, {
           sessionOutcome: result.outcome,
           quotaResetTime: result.quotaResetTime,
           deliverableStatus: statusReader ? status : undefined,
@@ -195,7 +186,7 @@ export class SessionRunner {
         state = state.recordError(errorObj)
 
         // Check if max retries exceeded
-        const errorDecision = this.evaluateTermination(state, { signal })
+        const errorDecision = this.runTerminationEvaluation(state, { signal })
         if (errorDecision.shouldTerminate && errorDecision.exitReason) {
           this.logTermination(logger, errorDecision.exitReason, state)
           state = state.setExitReason(errorDecision.exitReason)
@@ -256,14 +247,14 @@ export class SessionRunner {
   }
 
   /**
-   * Evaluate termination conditions using the termination chain
+   * Evaluate termination conditions
    */
-  private evaluateTermination(
+  private runTerminationEvaluation(
     state: LoopState,
     partial: Partial<Omit<TerminationContext, 'state' | 'options'>>,
-  ): TerminationDecision {
+  ) {
     const context = this.buildTerminationContext(state, partial)
-    return this.terminationChain.evaluate(context)
+    return evaluateTermination(context)
   }
 
   /**

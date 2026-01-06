@@ -1,23 +1,16 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
-  InterruptedEvaluator,
-  QuotaExceededEvaluator,
-  AllPassedEvaluator,
-  AllBlockedEvaluator,
-  MaxIterationsEvaluator,
-  MaxRetriesEvaluator,
-  TerminationChain,
-  createDefaultTerminationChain,
+  evaluateTermination,
   type TerminationContext,
 } from '../src/terminationEvaluator'
 import { LoopState } from '../src/loopState'
 import { ExitReason } from '../src/sessionRunner'
-import type { SessionOutcome } from '../src/types'
 import type { DeliverableStatus } from '../src/deliverableStatus'
 
 /**
- * TerminationEvaluator Tests
- * Tests for the Strategy pattern termination evaluators
+ * evaluateTermination Tests
+ * Tests for the termination evaluation function
+ * @see SPEC.md Section 3.10
  */
 
 function createStateWithIterations(count: number): LoopState {
@@ -46,424 +39,395 @@ function createContext(
   }
 }
 
-describe('InterruptedEvaluator', () => {
-  const evaluator = new InterruptedEvaluator()
+describe('evaluateTermination', () => {
+  describe('Interrupted condition', () => {
+    it('TE-001: returns shouldTerminate when signal is aborted', () => {
+      const controller = new AbortController()
+      controller.abort()
 
-  it('TE-001: returns shouldTerminate when signal is aborted', () => {
-    const controller = new AbortController()
-    controller.abort()
+      const decision = evaluateTermination(
+        createContext({ signal: controller.signal }),
+      )
 
-    const decision = evaluator.evaluate(
-      createContext({ signal: controller.signal }),
-    )
+      expect(decision.shouldTerminate).toBe(true)
+      expect(decision.exitReason).toBe(ExitReason.Interrupted)
+    })
 
-    expect(decision.shouldTerminate).toBe(true)
-    expect(decision.exitReason).toBe(ExitReason.Interrupted)
+    it('TE-002: returns shouldNotTerminate when signal is not aborted', () => {
+      const controller = new AbortController()
+
+      const decision = evaluateTermination(
+        createContext({ signal: controller.signal }),
+      )
+
+      expect(decision.shouldTerminate).toBe(false)
+    })
+
+    it('TE-003: returns shouldNotTerminate when no signal provided', () => {
+      const decision = evaluateTermination(createContext())
+
+      expect(decision.shouldTerminate).toBe(false)
+    })
   })
 
-  it('TE-002: returns shouldNotTerminate when signal is not aborted', () => {
-    const controller = new AbortController()
+  describe('Quota exceeded condition', () => {
+    it('TE-010: returns shouldTerminate when quota exceeded without waitForQuota', () => {
+      const decision = evaluateTermination(
+        createContext({
+          sessionOutcome: 'quota_exceeded',
+          options: { maxRetries: 3, waitForQuota: false },
+        }),
+      )
 
-    const decision = evaluator.evaluate(
-      createContext({ signal: controller.signal }),
-    )
+      expect(decision.shouldTerminate).toBe(true)
+      expect(decision.exitReason).toBe(ExitReason.QuotaExceeded)
+    })
 
-    expect(decision.shouldTerminate).toBe(false)
+    it('TE-011: returns waitDuration when quota exceeded with waitForQuota', () => {
+      const futureTime = new Date(Date.now() + 60000) // 1 minute from now
+
+      const decision = evaluateTermination(
+        createContext({
+          sessionOutcome: 'quota_exceeded',
+          quotaResetTime: futureTime,
+          options: { maxRetries: 3, waitForQuota: true },
+        }),
+      )
+
+      expect(decision.shouldTerminate).toBe(false)
+      expect(decision.waitDuration).toBeGreaterThan(0)
+    })
+
+    it('TE-012: returns shouldNotTerminate when outcome is not quota exceeded', () => {
+      const decision = evaluateTermination(
+        createContext({
+          sessionOutcome: 'completed',
+        }),
+      )
+
+      expect(decision.shouldTerminate).toBe(false)
+    })
   })
 
-  it('TE-003: returns shouldNotTerminate when no signal provided', () => {
-    const decision = evaluator.evaluate(createContext())
+  describe('All passed condition', () => {
+    it('TE-020: returns shouldTerminate when all deliverables passed', () => {
+      const status: DeliverableStatus = {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deliverables: [
+          {
+            id: 'd1',
+            description: 'Task 1',
+            acceptanceCriteria: ['Done'],
+            passed: true,
+            blocked: false,
+          },
+          {
+            id: 'd2',
+            description: 'Task 2',
+            acceptanceCriteria: ['Done'],
+            passed: true,
+            blocked: false,
+          },
+        ],
+      }
 
-    expect(decision.shouldTerminate).toBe(false)
-  })
-})
+      const decision = evaluateTermination(
+        createContext({ deliverableStatus: status }),
+      )
 
-describe('QuotaExceededEvaluator', () => {
-  const evaluator = new QuotaExceededEvaluator()
+      expect(decision.shouldTerminate).toBe(true)
+      expect(decision.exitReason).toBe(ExitReason.AllPassed)
+    })
 
-  it('TE-010: returns shouldTerminate when quota exceeded without waitForQuota', () => {
-    const decision = evaluator.evaluate(
-      createContext({
-        sessionOutcome: 'quota_exceeded',
-        options: { maxRetries: 3, waitForQuota: false },
-      }),
-    )
+    it('TE-021: returns shouldTerminate when achievable deliverables passed (some blocked)', () => {
+      const status: DeliverableStatus = {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deliverables: [
+          {
+            id: 'd1',
+            description: 'Task 1',
+            acceptanceCriteria: ['Done'],
+            passed: true,
+            blocked: false,
+          },
+          {
+            id: 'd2',
+            description: 'Task 2',
+            acceptanceCriteria: ['Done'],
+            passed: false,
+            blocked: true,
+          },
+        ],
+      }
 
-    expect(decision.shouldTerminate).toBe(true)
-    expect(decision.exitReason).toBe(ExitReason.QuotaExceeded)
-  })
+      const decision = evaluateTermination(
+        createContext({ deliverableStatus: status }),
+      )
 
-  it('TE-011: returns waitDuration when quota exceeded with waitForQuota', () => {
-    const futureTime = new Date(Date.now() + 60000) // 1 minute from now
+      expect(decision.shouldTerminate).toBe(true)
+      expect(decision.exitReason).toBe(ExitReason.AllPassed)
+    })
 
-    const decision = evaluator.evaluate(
-      createContext({
-        sessionOutcome: 'quota_exceeded',
-        quotaResetTime: futureTime,
-        options: { maxRetries: 3, waitForQuota: true },
-      }),
-    )
+    it('TE-022: returns shouldNotTerminate when not all deliverables passed', () => {
+      const status: DeliverableStatus = {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deliverables: [
+          {
+            id: 'd1',
+            description: 'Task 1',
+            acceptanceCriteria: ['Done'],
+            passed: true,
+            blocked: false,
+          },
+          {
+            id: 'd2',
+            description: 'Task 2',
+            acceptanceCriteria: ['Done'],
+            passed: false,
+            blocked: false,
+          },
+        ],
+      }
 
-    expect(decision.shouldTerminate).toBe(false)
-    expect(decision.waitDuration).toBeGreaterThan(0)
-  })
+      const decision = evaluateTermination(
+        createContext({ deliverableStatus: status }),
+      )
 
-  it('TE-012: returns shouldNotTerminate when outcome is not quota exceeded', () => {
-    const decision = evaluator.evaluate(
-      createContext({
-        sessionOutcome: 'completed',
-      }),
-    )
+      expect(decision.shouldTerminate).toBe(false)
+    })
 
-    expect(decision.shouldTerminate).toBe(false)
-  })
-})
+    it('TE-023: returns shouldNotTerminate when no deliverable status', () => {
+      const decision = evaluateTermination(createContext())
 
-describe('AllPassedEvaluator', () => {
-  const evaluator = new AllPassedEvaluator()
-
-  it('TE-020: returns shouldTerminate when all deliverables passed', () => {
-    const status: DeliverableStatus = {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deliverables: [
-        {
-          id: 'd1',
-          description: 'Task 1',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'd2',
-          description: 'Task 2',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
-      ],
-    }
-
-    const decision = evaluator.evaluate(
-      createContext({ deliverableStatus: status }),
-    )
-
-    expect(decision.shouldTerminate).toBe(true)
-    expect(decision.exitReason).toBe(ExitReason.AllPassed)
-  })
-
-  it('TE-021: returns shouldTerminate when achievable deliverables passed (some blocked)', () => {
-    const status: DeliverableStatus = {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deliverables: [
-        {
-          id: 'd1',
-          description: 'Task 1',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'd2',
-          description: 'Task 2',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: true,
-        },
-      ],
-    }
-
-    const decision = evaluator.evaluate(
-      createContext({ deliverableStatus: status }),
-    )
-
-    expect(decision.shouldTerminate).toBe(true)
-    expect(decision.exitReason).toBe(ExitReason.AllPassed)
+      expect(decision.shouldTerminate).toBe(false)
+    })
   })
 
-  it('TE-022: returns shouldNotTerminate when not all deliverables passed', () => {
-    const status: DeliverableStatus = {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deliverables: [
-        {
-          id: 'd1',
-          description: 'Task 1',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'd2',
-          description: 'Task 2',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: false,
-        },
-      ],
-    }
+  describe('All blocked condition', () => {
+    it('TE-030: returns shouldTerminate when all deliverables blocked', () => {
+      const status: DeliverableStatus = {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deliverables: [
+          {
+            id: 'd1',
+            description: 'Task 1',
+            acceptanceCriteria: ['Done'],
+            passed: false,
+            blocked: true,
+          },
+          {
+            id: 'd2',
+            description: 'Task 2',
+            acceptanceCriteria: ['Done'],
+            passed: false,
+            blocked: true,
+          },
+        ],
+      }
 
-    const decision = evaluator.evaluate(
-      createContext({ deliverableStatus: status }),
-    )
+      const decision = evaluateTermination(
+        createContext({ deliverableStatus: status }),
+      )
 
-    expect(decision.shouldTerminate).toBe(false)
+      expect(decision.shouldTerminate).toBe(true)
+      expect(decision.exitReason).toBe(ExitReason.AllBlocked)
+    })
+
+    it('TE-031: returns shouldNotTerminate when not all blocked', () => {
+      const status: DeliverableStatus = {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deliverables: [
+          {
+            id: 'd1',
+            description: 'Task 1',
+            acceptanceCriteria: ['Done'],
+            passed: false,
+            blocked: true,
+          },
+          {
+            id: 'd2',
+            description: 'Task 2',
+            acceptanceCriteria: ['Done'],
+            passed: false,
+            blocked: false,
+          },
+        ],
+      }
+
+      const decision = evaluateTermination(
+        createContext({ deliverableStatus: status }),
+      )
+
+      expect(decision.shouldTerminate).toBe(false)
+    })
   })
 
-  it('TE-023: returns shouldNotTerminate when no deliverable status', () => {
-    const decision = evaluator.evaluate(createContext())
+  describe('Max iterations condition', () => {
+    it('TE-040: returns shouldTerminate when max iterations reached', () => {
+      const state = createStateWithIterations(5)
 
-    expect(decision.shouldTerminate).toBe(false)
-  })
-})
+      const decision = evaluateTermination(
+        createContext({
+          state,
+          options: { maxRetries: 3, maxIterations: 5 },
+        }),
+      )
 
-describe('AllBlockedEvaluator', () => {
-  const evaluator = new AllBlockedEvaluator()
+      expect(decision.shouldTerminate).toBe(true)
+      expect(decision.exitReason).toBe(ExitReason.MaxIterations)
+    })
 
-  it('TE-030: returns shouldTerminate when all deliverables blocked', () => {
-    const status: DeliverableStatus = {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deliverables: [
-        {
-          id: 'd1',
-          description: 'Task 1',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: true,
-        },
-        {
-          id: 'd2',
-          description: 'Task 2',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: true,
-        },
-      ],
-    }
+    it('TE-041: returns shouldNotTerminate when below max iterations', () => {
+      const state = createStateWithIterations(3)
 
-    const decision = evaluator.evaluate(
-      createContext({ deliverableStatus: status }),
-    )
+      const decision = evaluateTermination(
+        createContext({
+          state,
+          options: { maxRetries: 3, maxIterations: 5 },
+        }),
+      )
 
-    expect(decision.shouldTerminate).toBe(true)
-    expect(decision.exitReason).toBe(ExitReason.AllBlocked)
-  })
+      expect(decision.shouldTerminate).toBe(false)
+    })
 
-  it('TE-031: returns shouldNotTerminate when not all blocked', () => {
-    const status: DeliverableStatus = {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deliverables: [
-        {
-          id: 'd1',
-          description: 'Task 1',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: true,
-        },
-        {
-          id: 'd2',
-          description: 'Task 2',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: false,
-        },
-      ],
-    }
+    it('TE-042: returns shouldNotTerminate when maxIterations not set', () => {
+      const state = createStateWithIterations(100)
 
-    const decision = evaluator.evaluate(
-      createContext({ deliverableStatus: status }),
-    )
+      const decision = evaluateTermination(
+        createContext({
+          state,
+          options: { maxRetries: 3 },
+        }),
+      )
 
-    expect(decision.shouldTerminate).toBe(false)
-  })
-})
-
-describe('MaxIterationsEvaluator', () => {
-  const evaluator = new MaxIterationsEvaluator()
-
-  it('TE-040: returns shouldTerminate when max iterations reached', () => {
-    const state = createStateWithIterations(5)
-
-    const decision = evaluator.evaluate(
-      createContext({
-        state,
-        options: { maxRetries: 3, maxIterations: 5 },
-      }),
-    )
-
-    expect(decision.shouldTerminate).toBe(true)
-    expect(decision.exitReason).toBe(ExitReason.MaxIterations)
+      expect(decision.shouldTerminate).toBe(false)
+    })
   })
 
-  it('TE-041: returns shouldNotTerminate when below max iterations', () => {
-    const state = createStateWithIterations(3)
+  describe('Max retries condition', () => {
+    it('TE-050: returns shouldTerminate when consecutive errors exceed max retries', () => {
+      const state = createStateWithErrors(4)
 
-    const decision = evaluator.evaluate(
-      createContext({
-        state,
-        options: { maxRetries: 3, maxIterations: 5 },
-      }),
-    )
+      const decision = evaluateTermination(
+        createContext({
+          state,
+          options: { maxRetries: 3 },
+        }),
+      )
 
-    expect(decision.shouldTerminate).toBe(false)
+      expect(decision.shouldTerminate).toBe(true)
+      expect(decision.exitReason).toBe(ExitReason.MaxRetriesExceeded)
+    })
+
+    it('TE-051: returns shouldNotTerminate when errors at max retries', () => {
+      const state = createStateWithErrors(3)
+
+      const decision = evaluateTermination(
+        createContext({
+          state,
+          options: { maxRetries: 3 },
+        }),
+      )
+
+      expect(decision.shouldTerminate).toBe(false)
+    })
+
+    it('TE-052: returns shouldNotTerminate when no errors', () => {
+      const decision = evaluateTermination(createContext())
+
+      expect(decision.shouldTerminate).toBe(false)
+    })
   })
 
-  it('TE-042: returns shouldNotTerminate when maxIterations not set', () => {
-    const state = createStateWithIterations(100)
+  describe('Priority order', () => {
+    it('TE-070: Interrupted has highest priority over other conditions', () => {
+      const controller = new AbortController()
+      controller.abort()
 
-    const decision = evaluator.evaluate(
-      createContext({
-        state,
-        options: { maxRetries: 3 },
-      }),
-    )
+      const state = createStateWithIterations(5)
+      const status: DeliverableStatus = {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deliverables: [
+          {
+            id: 'd1',
+            description: 'Task',
+            acceptanceCriteria: ['Done'],
+            passed: true,
+            blocked: false,
+          },
+        ],
+      }
 
-    expect(decision.shouldTerminate).toBe(false)
-  })
-})
+      const decision = evaluateTermination(
+        createContext({
+          signal: controller.signal,
+          state,
+          deliverableStatus: status,
+          options: { maxRetries: 3, maxIterations: 5 },
+        }),
+      )
 
-describe('MaxRetriesEvaluator', () => {
-  const evaluator = new MaxRetriesEvaluator()
+      // Should return Interrupted even though AllPassed and MaxIterations also match
+      expect(decision.exitReason).toBe(ExitReason.Interrupted)
+    })
 
-  it('TE-050: returns shouldTerminate when consecutive errors exceed max retries', () => {
-    const state = createStateWithErrors(4)
+    it('TE-071: QuotaExceeded has priority over AllPassed', () => {
+      const status: DeliverableStatus = {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deliverables: [
+          {
+            id: 'd1',
+            description: 'Task',
+            acceptanceCriteria: ['Done'],
+            passed: true,
+            blocked: false,
+          },
+        ],
+      }
 
-    const decision = evaluator.evaluate(
-      createContext({
-        state,
-        options: { maxRetries: 3 },
-      }),
-    )
+      const decision = evaluateTermination(
+        createContext({
+          sessionOutcome: 'quota_exceeded',
+          deliverableStatus: status,
+          options: { maxRetries: 3, waitForQuota: false },
+        }),
+      )
 
-    expect(decision.shouldTerminate).toBe(true)
-    expect(decision.exitReason).toBe(ExitReason.MaxRetriesExceeded)
-  })
+      expect(decision.exitReason).toBe(ExitReason.QuotaExceeded)
+    })
 
-  it('TE-051: returns shouldNotTerminate when errors at max retries', () => {
-    const state = createStateWithErrors(3)
+    it('TE-072: AllPassed has priority over MaxIterations', () => {
+      const state = createStateWithIterations(5)
+      const status: DeliverableStatus = {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deliverables: [
+          {
+            id: 'd1',
+            description: 'Task',
+            acceptanceCriteria: ['Done'],
+            passed: true,
+            blocked: false,
+          },
+        ],
+      }
 
-    const decision = evaluator.evaluate(
-      createContext({
-        state,
-        options: { maxRetries: 3 },
-      }),
-    )
+      const decision = evaluateTermination(
+        createContext({
+          state,
+          deliverableStatus: status,
+          options: { maxRetries: 3, maxIterations: 5 },
+        }),
+      )
 
-    expect(decision.shouldTerminate).toBe(false)
-  })
-
-  it('TE-052: returns shouldNotTerminate when no errors', () => {
-    const decision = evaluator.evaluate(createContext())
-
-    expect(decision.shouldTerminate).toBe(false)
-  })
-})
-
-describe('TerminationChain', () => {
-  it('TE-060: returns first termination decision', () => {
-    const chain = new TerminationChain([
-      new InterruptedEvaluator(),
-      new MaxIterationsEvaluator(),
-    ])
-
-    const controller = new AbortController()
-    controller.abort()
-
-    const decision = chain.evaluate(
-      createContext({
-        signal: controller.signal,
-        options: { maxRetries: 3, maxIterations: 1 },
-      }),
-    )
-
-    expect(decision.shouldTerminate).toBe(true)
-    expect(decision.exitReason).toBe(ExitReason.Interrupted)
-  })
-
-  it('TE-061: continues to next evaluator when first returns shouldNotTerminate', () => {
-    const chain = new TerminationChain([
-      new InterruptedEvaluator(),
-      new MaxIterationsEvaluator(),
-    ])
-
-    const state = createStateWithIterations(5)
-
-    const decision = chain.evaluate(
-      createContext({
-        state,
-        options: { maxRetries: 3, maxIterations: 5 },
-      }),
-    )
-
-    expect(decision.shouldTerminate).toBe(true)
-    expect(decision.exitReason).toBe(ExitReason.MaxIterations)
-  })
-
-  it('TE-062: returns shouldNotTerminate when no evaluator triggers', () => {
-    const chain = new TerminationChain([
-      new InterruptedEvaluator(),
-      new MaxIterationsEvaluator(),
-    ])
-
-    const decision = chain.evaluate(createContext())
-
-    expect(decision.shouldTerminate).toBe(false)
-  })
-
-  it('TE-063: returns wait duration when evaluator returns it', () => {
-    const chain = new TerminationChain([new QuotaExceededEvaluator()])
-
-    const futureTime = new Date(Date.now() + 60000)
-
-    const decision = chain.evaluate(
-      createContext({
-        sessionOutcome: 'quota_exceeded',
-        quotaResetTime: futureTime,
-        options: { maxRetries: 3, waitForQuota: true },
-      }),
-    )
-
-    expect(decision.shouldTerminate).toBe(false)
-    expect(decision.waitDuration).toBeGreaterThan(0)
-  })
-})
-
-describe('createDefaultTerminationChain', () => {
-  it('TE-070: creates chain with correct priority order', () => {
-    const chain = createDefaultTerminationChain()
-
-    // Test that Interrupted has highest priority
-    const controller = new AbortController()
-    controller.abort()
-
-    const state = createStateWithIterations(5)
-    const status: DeliverableStatus = {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deliverables: [
-        {
-          id: 'd1',
-          description: 'Task',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
-      ],
-    }
-
-    const decision = chain.evaluate(
-      createContext({
-        signal: controller.signal,
-        state,
-        deliverableStatus: status,
-        options: { maxRetries: 3, maxIterations: 5 },
-      }),
-    )
-
-    // Should return Interrupted even though AllPassed and MaxIterations also match
-    expect(decision.exitReason).toBe(ExitReason.Interrupted)
+      expect(decision.exitReason).toBe(ExitReason.AllPassed)
+    })
   })
 })
