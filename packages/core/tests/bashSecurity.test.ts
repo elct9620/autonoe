@@ -4,7 +4,7 @@ import {
   createBashSecurityHook,
   type BashSecurity,
   type BashSecurityOptions,
-} from '../src/bashSecurity'
+} from '../src/security'
 import type { PreToolUseInput } from '../src/agentClient'
 
 describe('BashSecurity', () => {

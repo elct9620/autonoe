@@ -62,12 +62,12 @@ export type {
   ValidationResult,
   BashSecurityOptions,
   ProfileName,
-} from './bashSecurity'
+} from './security'
 export {
   DefaultBashSecurity,
   createBashSecurityHook,
   ALL_PROFILES,
-} from './bashSecurity'
+} from './security'
 
 // Configuration exports
 export type {

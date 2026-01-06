@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { McpServer } from './types'
-import type { BashSecurityOptions, ProfileName } from './bashSecurity'
+import type { BashSecurityOptions, ProfileName } from './security'
 
 /**
  * Sandbox configuration
