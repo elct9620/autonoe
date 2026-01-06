@@ -26,99 +26,75 @@ export class LoopState {
   }
 
   /**
+   * Create a new LoopState with specified changes
+   */
+  private clone(
+    changes: Partial<{
+      iterations: number
+      totalCostUsd: number
+      consecutiveErrors: number
+      lastError: Error | undefined
+      exitReason: ExitReason | undefined
+      deliverablesPassedCount: number
+      deliverablesTotalCount: number
+      blockedCount: number
+    }>,
+  ): LoopState {
+    return new LoopState(
+      changes.iterations ?? this.iterations,
+      changes.totalCostUsd ?? this.totalCostUsd,
+      changes.consecutiveErrors ?? this.consecutiveErrors,
+      'lastError' in changes ? changes.lastError : this.lastError,
+      'exitReason' in changes ? changes.exitReason : this.exitReason,
+      changes.deliverablesPassedCount ?? this.deliverablesPassedCount,
+      changes.deliverablesTotalCount ?? this.deliverablesTotalCount,
+      changes.blockedCount ?? this.blockedCount,
+    )
+  }
+
+  /**
    * Increment iteration count
    */
   incrementIterations(): LoopState {
-    return new LoopState(
-      this.iterations + 1,
-      this.totalCostUsd,
-      this.consecutiveErrors,
-      this.lastError,
-      this.exitReason,
-      this.deliverablesPassedCount,
-      this.deliverablesTotalCount,
-      this.blockedCount,
-    )
+    return this.clone({ iterations: this.iterations + 1 })
   }
 
   /**
    * Decrement iteration count (minimum 0)
    */
   decrementIterations(): LoopState {
-    return new LoopState(
-      Math.max(0, this.iterations - 1),
-      this.totalCostUsd,
-      this.consecutiveErrors,
-      this.lastError,
-      this.exitReason,
-      this.deliverablesPassedCount,
-      this.deliverablesTotalCount,
-      this.blockedCount,
-    )
+    return this.clone({ iterations: Math.max(0, this.iterations - 1) })
   }
 
   /**
    * Add cost to total
    */
   addCost(cost: number): LoopState {
-    return new LoopState(
-      this.iterations,
-      this.totalCostUsd + cost,
-      this.consecutiveErrors,
-      this.lastError,
-      this.exitReason,
-      this.deliverablesPassedCount,
-      this.deliverablesTotalCount,
-      this.blockedCount,
-    )
+    return this.clone({ totalCostUsd: this.totalCostUsd + cost })
   }
 
   /**
    * Record an error (increments consecutive error count)
    */
   recordError(error: Error): LoopState {
-    return new LoopState(
-      this.iterations,
-      this.totalCostUsd,
-      this.consecutiveErrors + 1,
-      error,
-      this.exitReason,
-      this.deliverablesPassedCount,
-      this.deliverablesTotalCount,
-      this.blockedCount,
-    )
+    return this.clone({
+      consecutiveErrors: this.consecutiveErrors + 1,
+      lastError: error,
+    })
   }
 
   /**
    * Reset consecutive error count to 0
    */
   resetErrors(): LoopState {
-    return new LoopState(
-      this.iterations,
-      this.totalCostUsd,
-      0,
-      this.lastError,
-      this.exitReason,
-      this.deliverablesPassedCount,
-      this.deliverablesTotalCount,
-      this.blockedCount,
-    )
+    return this.clone({ consecutiveErrors: 0 })
   }
 
   /**
    * Set exit reason
    */
   setExitReason(reason: ExitReason): LoopState {
-    return new LoopState(
-      this.iterations,
-      this.totalCostUsd,
-      this.consecutiveErrors,
-      this.lastError,
-      reason,
-      this.deliverablesPassedCount,
-      this.deliverablesTotalCount,
-      this.blockedCount,
-    )
+    return this.clone({ exitReason: reason })
   }
 
   /**
@@ -129,16 +105,11 @@ export class LoopState {
     total: number,
     blocked: number,
   ): LoopState {
-    return new LoopState(
-      this.iterations,
-      this.totalCostUsd,
-      this.consecutiveErrors,
-      this.lastError,
-      this.exitReason,
-      passed,
-      total,
-      blocked,
-    )
+    return this.clone({
+      deliverablesPassedCount: passed,
+      deliverablesTotalCount: total,
+      blockedCount: blocked,
+    })
   }
 
   /**
