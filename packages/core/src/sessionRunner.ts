@@ -17,7 +17,7 @@ import {
   countPassedDeliverables,
   countBlockedDeliverables,
   emptyDeliverableStatus,
-} from './deliverableStatus'
+} from './deliverableService'
 import { initializerInstruction, codingInstruction } from './instructions'
 import type { SessionOutcome } from './types'
 import { formatDuration } from './duration'

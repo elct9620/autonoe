@@ -5,7 +5,7 @@ import type { SessionOutcome } from './types'
 import {
   allAchievableDeliverablesPassed,
   allDeliverablesBlocked,
-} from './deliverableStatus'
+} from './deliverableService'
 import { calculateWaitDuration } from './quotaManager'
 
 /**

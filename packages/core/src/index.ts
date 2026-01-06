@@ -88,7 +88,7 @@ export {
 // Autonoe Protection exports
 export { createAutonoeProtectionHook } from './autonoeProtection'
 
-// DeliverableStatus exports
+// Deliverable domain types
 export type {
   Deliverable,
   DeliverableStatus,
@@ -102,6 +102,8 @@ export type {
   DeliverableStatusReader,
   DeliverableRepository,
 } from './deliverableStatus'
+
+// Deliverable application services
 export {
   createDeliverables,
   setDeliverableStatus,
@@ -113,7 +115,7 @@ export {
   countBlockedDeliverables,
   allDeliverablesBlocked,
   getCurrentDate,
-} from './deliverableStatus'
+} from './deliverableService'
 
 // Instruction exports
 export type { InstructionName, InstructionResolver } from './instructions'

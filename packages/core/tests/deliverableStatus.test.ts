@@ -1,4 +1,9 @@
 import { describe, it, expect } from 'vitest'
+import type {
+  DeliverableStatus,
+  CreateDeliverableInput,
+  SetDeliverableStatusInput,
+} from '../src/deliverableStatus'
 import {
   createDeliverables,
   setDeliverableStatus,
@@ -9,10 +14,7 @@ import {
   hasBlockedDeliverables,
   countBlockedDeliverables,
   allDeliverablesBlocked,
-  type DeliverableStatus,
-  type CreateDeliverableInput,
-  type SetDeliverableStatusInput,
-} from '../src/deliverableStatus'
+} from '../src/deliverableService'
 
 describe('createDeliverables', () => {
   describe('DL-T001: Valid input', () => {
