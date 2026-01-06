@@ -12,7 +12,7 @@ const TRUNCATE_THINKING = 200
 /**
  * Truncate string to specified length with ellipsis
  */
-function truncate(str: string, maxLen: number): string {
+export function truncate(str: string, maxLen: number): string {
   return str.length > maxLen ? `${str.slice(0, maxLen)}...` : str
 }
 

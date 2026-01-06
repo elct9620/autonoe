@@ -1,5 +1,5 @@
 import type { AgentClient } from './agentClient'
-import { formatStreamEvent } from './eventFormatter'
+import { formatStreamEvent, truncate } from './eventFormatter'
 import { silentLogger, type Logger } from './logger'
 import type { SessionOutcome } from './types'
 import type { SessionEndHandler } from './sessionEndHandler'
@@ -28,13 +28,6 @@ export interface SessionResult {
   deliverablesTotalCount: number
   outcome: SessionOutcome
   quotaResetTime?: Date
-}
-
-/**
- * Truncate string to specified length with ellipsis
- */
-function truncate(str: string, maxLen: number): string {
-  return str.length > maxLen ? `${str.slice(0, maxLen)}...` : str
 }
 
 /**
