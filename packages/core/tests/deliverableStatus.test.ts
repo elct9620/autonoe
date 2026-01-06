@@ -4,6 +4,7 @@ import type {
   CreateDeliverableInput,
   SetDeliverableStatusInput,
 } from '../src/deliverableStatus'
+import { nullDeliverableStatusReader } from '../src/deliverableStatus'
 import {
   createDeliverables,
   setDeliverableStatus,
@@ -766,5 +767,18 @@ describe('allDeliverablesBlocked', () => {
 
   it('returns false for empty deliverables', () => {
     expect(allDeliverablesBlocked(emptyDeliverableStatus())).toBe(false)
+  })
+})
+
+describe('nullDeliverableStatusReader', () => {
+  it('exists() always returns false', async () => {
+    expect(await nullDeliverableStatusReader.exists()).toBe(false)
+  })
+
+  it('load() returns empty status with timestamps', async () => {
+    const status = await nullDeliverableStatusReader.load()
+    expect(status.deliverables).toEqual([])
+    expect(status.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(status.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 })

@@ -97,3 +97,17 @@ export interface DeliverableStatusReader {
 export interface DeliverableRepository extends DeliverableStatusReader {
   save(status: DeliverableStatus): Promise<void>
 }
+
+/**
+ * Null object implementation of DeliverableStatusReader
+ * Always returns exists() = false, load() returns empty status
+ */
+export const nullDeliverableStatusReader: DeliverableStatusReader = {
+  async exists(): Promise<boolean> {
+    return false
+  },
+  async load(): Promise<DeliverableStatus> {
+    const now = new Date().toISOString().split('T')[0]!
+    return { createdAt: now, updatedAt: now, deliverables: [] }
+  },
+}

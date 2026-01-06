@@ -102,6 +102,7 @@ export type {
   DeliverableStatusReader,
   DeliverableRepository,
 } from './deliverableStatus'
+export { nullDeliverableStatusReader } from './deliverableStatus'
 
 // Deliverable application services
 export {

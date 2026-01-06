@@ -14,7 +14,11 @@ import {
   countBlockedDeliverables,
   emptyDeliverableStatus,
 } from './deliverableService'
-import { initializerInstruction, codingInstruction } from './instructions'
+import {
+  selectInstruction,
+  createDefaultInstructionResolver,
+} from './instructions'
+import { nullDeliverableStatusReader } from './deliverableStatus'
 import type { SessionOutcome } from './types'
 import { formatDuration } from './duration'
 import { realTimer } from './timer'
@@ -136,13 +140,10 @@ export class SessionRunner {
 
       // Select instruction based on status existence
       // @see SPEC.md Section 7.2
-      const statusExists = statusReader ? await statusReader.exists() : false
-      const instructionName = statusExists ? 'coding' : 'initializer'
-      const instruction = instructionResolver
-        ? await instructionResolver.resolve(instructionName)
-        : statusExists
-          ? codingInstruction
-          : initializerInstruction
+      const instruction = await selectInstruction(
+        statusReader ?? nullDeliverableStatusReader,
+        instructionResolver ?? createDefaultInstructionResolver(),
+      )
 
       state = state.incrementIterations()
       logger.info(`Session ${state.iterations} started`)
