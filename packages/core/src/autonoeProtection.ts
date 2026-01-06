@@ -45,14 +45,6 @@ export function createAutonoeProtectionHook(): PreToolUseHook {
  * Check if a file path targets the protected .autonoe/ directory
  */
 function isAutonoeProtectedPath(filePath: string): boolean {
-  // Normalize path separators
   const normalizedPath = filePath.replace(/\\/g, '/')
-
-  // Check various patterns that indicate .autonoe/ directory
-  return (
-    normalizedPath.includes('.autonoe/') ||
-    normalizedPath.endsWith('/.autonoe') ||
-    normalizedPath.startsWith('.autonoe/') ||
-    normalizedPath === '.autonoe'
-  )
+  return normalizedPath.split('/').includes('.autonoe')
 }
