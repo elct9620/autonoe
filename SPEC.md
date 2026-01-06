@@ -519,8 +519,6 @@ interface SessionResult {
   success: boolean
   costUsd: number
   duration: number
-  deliverablesPassedCount: number
-  deliverablesTotalCount: number
   outcome: SessionOutcome
   quotaResetTime?: Date
 }

@@ -35,8 +35,6 @@ export function createSessionResult(
     success: true,
     costUsd: 0,
     duration: 0,
-    deliverablesPassedCount: 0,
-    deliverablesTotalCount: 0,
     outcome: 'completed',
     ...overrides,
   }

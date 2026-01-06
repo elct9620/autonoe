@@ -24,8 +24,6 @@ export interface SessionResult {
   success: boolean
   costUsd: number
   duration: number
-  deliverablesPassedCount: number
-  deliverablesTotalCount: number
   outcome: SessionOutcome
   quotaResetTime?: Date
 }
@@ -93,8 +91,6 @@ export class Session {
       success: outcome === 'completed',
       costUsd,
       duration: Date.now() - startTime,
-      deliverablesPassedCount: 0,
-      deliverablesTotalCount: 0,
       outcome,
       quotaResetTime,
     }
