@@ -68,6 +68,31 @@ export interface SessionRunnerResult {
 }
 
 /**
+ * Build SessionRunnerResult from LoopState
+ * Separated from LoopState to avoid bidirectional dependency
+ */
+function buildResult(
+  state: LoopState,
+  totalDuration: number,
+): SessionRunnerResult {
+  return {
+    success: state.exitReason === ExitReason.AllPassed,
+    iterations: state.iterations,
+    deliverablesPassedCount: state.deliverablesPassedCount,
+    deliverablesTotalCount: state.deliverablesTotalCount,
+    blockedCount: state.blockedCount,
+    totalDuration,
+    totalCostUsd: state.totalCostUsd,
+    interrupted: state.exitReason === ExitReason.Interrupted,
+    quotaExceeded: state.exitReason === ExitReason.QuotaExceeded,
+    error:
+      state.exitReason === ExitReason.MaxRetriesExceeded
+        ? state.lastError?.message
+        : undefined,
+  }
+}
+
+/**
  * SessionRunner orchestrates multiple Session executions in a loop
  * @see SPEC.md Section 3.9
  */
@@ -204,7 +229,7 @@ export class SessionRunner {
     // Unified exit point - all termination conditions reach here
     // =============================================
     const totalDuration = Date.now() - startTime
-    const result = state.toResult(totalDuration)
+    const result = buildResult(state, totalDuration)
 
     // Log overall summary
     this.logOverall(logger, state, totalDuration)

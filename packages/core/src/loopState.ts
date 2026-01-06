@@ -1,4 +1,3 @@
-import type { SessionRunnerResult } from './sessionRunner'
 import { ExitReason } from './sessionRunner'
 
 /**
@@ -110,26 +109,5 @@ export class LoopState {
       deliverablesTotalCount: total,
       blockedCount: blocked,
     })
-  }
-
-  /**
-   * Build SessionRunnerResult from this state
-   */
-  toResult(totalDuration: number): SessionRunnerResult {
-    return {
-      success: this.exitReason === ExitReason.AllPassed,
-      iterations: this.iterations,
-      deliverablesPassedCount: this.deliverablesPassedCount,
-      deliverablesTotalCount: this.deliverablesTotalCount,
-      blockedCount: this.blockedCount,
-      totalDuration,
-      totalCostUsd: this.totalCostUsd,
-      interrupted: this.exitReason === ExitReason.Interrupted,
-      quotaExceeded: this.exitReason === ExitReason.QuotaExceeded,
-      error:
-        this.exitReason === ExitReason.MaxRetriesExceeded
-          ? this.lastError?.message
-          : undefined,
-    }
   }
 }
