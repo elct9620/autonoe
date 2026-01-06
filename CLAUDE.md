@@ -159,12 +159,28 @@ See `SPEC.md` Section 6 for bash command allowlist and validation rules.
 | `packages/core/src/types.ts` | All domain types (StreamEvent, Deliverable, etc.) |
 | `packages/core/src/sessionRunner.ts` | Session loop orchestration |
 | `packages/core/src/session.ts` | Single session execution |
+| `packages/core/src/loopState.ts` | Session loop state management |
+| `packages/core/src/terminationEvaluator.ts` | Loop termination condition evaluation |
 | `packages/core/src/bashSecurity.ts` | Command allowlist validation |
+| `packages/core/src/autonoeProtection.ts` | .autonoe/ directory write protection hook |
 | `packages/core/src/configuration.ts` | Security baseline and config loading |
+| `packages/core/src/quotaManager.ts` | Quota detection and wait duration utilities |
+| `packages/core/src/duration.ts` | Human-readable duration formatting |
+| `packages/core/src/deliverableService.ts` | Deliverable CRUD operations |
+| `packages/core/src/deliverableStatus.ts` | DeliverableStatus types and repository interface |
 | `packages/agent/src/claudeAgentClient.ts` | SDK wrapper implementation |
 | `packages/agent/src/converters.ts` | SDK ↔ Domain type conversions |
-| `packages/core/src/quotaLimit.ts` | Quota detection and wait duration utilities |
-| `packages/core/src/duration.ts` | Human-readable duration formatting |
+| `apps/cli/bin/autonoe.ts` | CLI entry point |
+| `apps/cli/src/run.ts` | Run command implementation |
+
+### Test Helpers
+
+| File | Purpose |
+|------|---------|
+| `packages/core/tests/helpers/mockAgentClient.ts` | Mock AgentClient for unit tests |
+| `packages/core/tests/helpers/testLogger.ts` | Logger that captures messages for assertions |
+| `packages/core/tests/helpers/fixtures.ts` | StreamEvent factories for test data |
+| `packages/core/tests/helpers/mockDeliverableStatusReader.ts` | Mock DeliverableStatusReader for tests |
 
 ## Extended Thinking Mode
 
