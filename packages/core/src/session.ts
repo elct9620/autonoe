@@ -1,9 +1,8 @@
 import type { AgentClient } from './agentClient'
 import { formatStreamEvent, truncate } from './eventFormatter'
 import { silentLogger, type Logger } from './logger'
+import { logSessionEnd } from './sessionEndHandler'
 import type { SessionOutcome } from './types'
-import type { SessionEndHandler } from './sessionEndHandler'
-import { DefaultSessionEndHandler } from './sessionEndHandler'
 
 /**
  * Session configuration options
@@ -12,8 +11,6 @@ import { DefaultSessionEndHandler } from './sessionEndHandler'
 export interface SessionOptions {
   projectDir: string
   model?: string
-  /** Handler for session end events (default: DefaultSessionEndHandler) */
-  sessionEndHandler?: SessionEndHandler
 }
 
 /**
@@ -32,12 +29,7 @@ export interface SessionResult {
  * @see SPEC.md Section 3.3
  */
 export class Session {
-  private readonly sessionEndHandler: SessionEndHandler
-
-  constructor(private options: SessionOptions) {
-    this.sessionEndHandler =
-      options.sessionEndHandler ?? new DefaultSessionEndHandler()
-  }
+  constructor(private options: SessionOptions) {}
 
   /**
    * Run the session with an injected AgentClient, instruction, and Logger
@@ -71,7 +63,7 @@ export class Session {
         outcome = event.outcome
         quotaResetTime =
           event.outcome === 'quota_exceeded' ? event.resetTime : undefined
-        this.sessionEndHandler.handle(event, logger)
+        logSessionEnd(event, logger)
       }
 
       if (event.type === 'stream_error') {

@@ -1,8 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import {
-  DefaultSessionEndHandler,
-  silentSessionEndHandler,
-} from '../src/sessionEndHandler'
+import { logSessionEnd } from '../src/sessionEndHandler'
 import type {
   SessionEndCompleted,
   SessionEndQuotaExceeded,
@@ -13,8 +10,8 @@ import type {
 import type { Logger } from '../src/logger'
 
 /**
- * SessionEndHandler Tests
- * Tests for session end event handling
+ * logSessionEnd Tests
+ * Tests for session end event logging
  */
 
 function createMockLogger(): Logger {
@@ -26,9 +23,7 @@ function createMockLogger(): Logger {
   }
 }
 
-describe('DefaultSessionEndHandler', () => {
-  const handler = new DefaultSessionEndHandler()
-
+describe('logSessionEnd', () => {
   describe('Completed outcome', () => {
     it('SEH-001: logs result when session completed with result', () => {
       const logger = createMockLogger()
@@ -38,7 +33,7 @@ describe('DefaultSessionEndHandler', () => {
         result: 'Task completed successfully',
       }
 
-      handler.handle(event, logger)
+      logSessionEnd(event, logger)
 
       expect(logger.info).toHaveBeenCalledWith('Task completed successfully')
     })
@@ -50,7 +45,7 @@ describe('DefaultSessionEndHandler', () => {
         outcome: 'completed',
       }
 
-      handler.handle(event, logger)
+      logSessionEnd(event, logger)
 
       expect(logger.info).not.toHaveBeenCalled()
     })
@@ -65,7 +60,7 @@ describe('DefaultSessionEndHandler', () => {
         message: 'Rate limit reached',
       }
 
-      handler.handle(event, logger)
+      logSessionEnd(event, logger)
 
       expect(logger.warn).toHaveBeenCalledWith(
         'Quota exceeded: Rate limit reached',
@@ -79,7 +74,7 @@ describe('DefaultSessionEndHandler', () => {
         outcome: 'quota_exceeded',
       }
 
-      handler.handle(event, logger)
+      logSessionEnd(event, logger)
 
       expect(logger.warn).toHaveBeenCalledWith('Quota exceeded: Unknown')
     })
@@ -94,7 +89,7 @@ describe('DefaultSessionEndHandler', () => {
         messages: ['Error 1', 'Error 2'],
       }
 
-      handler.handle(event, logger)
+      logSessionEnd(event, logger)
 
       expect(logger.error).toHaveBeenCalledTimes(2)
       expect(logger.error).toHaveBeenCalledWith('Error 1')
@@ -109,7 +104,7 @@ describe('DefaultSessionEndHandler', () => {
         messages: [],
       }
 
-      handler.handle(event, logger)
+      logSessionEnd(event, logger)
 
       expect(logger.error).not.toHaveBeenCalled()
     })
@@ -123,7 +118,7 @@ describe('DefaultSessionEndHandler', () => {
         outcome: 'max_iterations',
       }
 
-      handler.handle(event, logger)
+      logSessionEnd(event, logger)
 
       // max_iterations has no special handling
       expect(logger.info).not.toHaveBeenCalled()
@@ -140,30 +135,12 @@ describe('DefaultSessionEndHandler', () => {
         outcome: 'budget_exceeded',
       }
 
-      handler.handle(event, logger)
+      logSessionEnd(event, logger)
 
       // budget_exceeded has no special handling
       expect(logger.info).not.toHaveBeenCalled()
       expect(logger.warn).not.toHaveBeenCalled()
       expect(logger.error).not.toHaveBeenCalled()
     })
-  })
-})
-
-describe('silentSessionEndHandler', () => {
-  it('SEH-030: does not log anything', () => {
-    const logger = createMockLogger()
-    const event: SessionEndCompleted = {
-      type: 'session_end',
-      outcome: 'completed',
-      result: 'Should not be logged',
-    }
-
-    silentSessionEndHandler.handle(event, logger)
-
-    expect(logger.info).not.toHaveBeenCalled()
-    expect(logger.warn).not.toHaveBeenCalled()
-    expect(logger.error).not.toHaveBeenCalled()
-    expect(logger.debug).not.toHaveBeenCalled()
   })
 })

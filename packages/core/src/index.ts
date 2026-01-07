@@ -133,8 +133,4 @@ export type {
 export { evaluateTermination } from './terminationEvaluator'
 
 // SessionEndHandler exports
-export type { SessionEndHandler } from './sessionEndHandler'
-export {
-  DefaultSessionEndHandler,
-  silentSessionEndHandler,
-} from './sessionEndHandler'
+export { logSessionEnd } from './sessionEndHandler'
