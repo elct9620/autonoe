@@ -60,20 +60,12 @@ export function evaluateTermination(
   }
 
   // 3. All achievable deliverables passed
-  if (
-    context.deliverableStatus &&
-    context.deliverableStatus.deliverables.length > 0 &&
-    context.deliverableStatus.allAchievablePassed()
-  ) {
+  if (context.deliverableStatus?.allAchievablePassed()) {
     return { shouldTerminate: true, exitReason: ExitReason.AllPassed }
   }
 
   // 4. All deliverables blocked
-  if (
-    context.deliverableStatus &&
-    context.deliverableStatus.deliverables.length > 0 &&
-    context.deliverableStatus.allBlocked()
-  ) {
+  if (context.deliverableStatus?.allBlocked()) {
     return { shouldTerminate: true, exitReason: ExitReason.AllBlocked }
   }
 
