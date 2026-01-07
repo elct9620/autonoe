@@ -255,13 +255,13 @@ export class SessionRunner {
   }
 
   /**
-   * Build termination context from current state and partial context
+   * Evaluate termination conditions
    */
-  private buildTerminationContext(
+  private runTerminationEvaluation(
     state: LoopState,
     partial: Partial<Omit<TerminationContext, 'state' | 'options'>>,
-  ): TerminationContext {
-    return {
+  ) {
+    return evaluateTermination({
       state,
       options: {
         maxIterations: this.maxIterations,
@@ -269,18 +269,7 @@ export class SessionRunner {
         waitForQuota: this.options.waitForQuota,
       },
       ...partial,
-    }
-  }
-
-  /**
-   * Evaluate termination conditions
-   */
-  private runTerminationEvaluation(
-    state: LoopState,
-    partial: Partial<Omit<TerminationContext, 'state' | 'options'>>,
-  ) {
-    const context = this.buildTerminationContext(state, partial)
-    return evaluateTermination(context)
+    })
   }
 
   /**

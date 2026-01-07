@@ -13,94 +13,6 @@ import type {
 } from './deliverableStatus'
 
 /**
- * Create a single deliverable in the status (internal helper)
- * @returns Updated status and tool result
- */
-function createSingleDeliverable(
-  status: DeliverableStatus,
-  input: DeliverableInput,
-): { status: DeliverableStatus; result: ToolResult } {
-  // Validate input
-  if (!input.id || input.id.trim() === '') {
-    return {
-      status,
-      result: {
-        success: false,
-        message: 'Deliverable ID is required',
-        error: 'VALIDATION_ERROR',
-      },
-    }
-  }
-
-  if (!input.description || input.description.trim() === '') {
-    return {
-      status,
-      result: {
-        success: false,
-        message: 'Deliverable description is required',
-        error: 'VALIDATION_ERROR',
-      },
-    }
-  }
-
-  if (!input.acceptanceCriteria || input.acceptanceCriteria.length === 0) {
-    return {
-      status,
-      result: {
-        success: false,
-        message: 'At least one acceptance criterion is required',
-        error: 'VALIDATION_ERROR',
-      },
-    }
-  }
-
-  // Check for empty acceptance criteria
-  if (input.acceptanceCriteria.some((c) => !c || c.trim() === '')) {
-    return {
-      status,
-      result: {
-        success: false,
-        message: 'Acceptance criteria cannot be empty',
-        error: 'VALIDATION_ERROR',
-      },
-    }
-  }
-
-  // Check for duplicate ID
-  if (status.deliverables.some((d) => d.id === input.id)) {
-    return {
-      status,
-      result: {
-        success: false,
-        message: `Deliverable with ID "${input.id}" already exists`,
-        error: 'DUPLICATE_ID',
-      },
-    }
-  }
-
-  // Create new deliverable
-  const newDeliverable: Deliverable = {
-    id: input.id,
-    description: input.description,
-    acceptanceCriteria: input.acceptanceCriteria,
-    passed: false,
-    blocked: false,
-  }
-
-  return {
-    status: {
-      createdAt: status.createdAt,
-      updatedAt: status.updatedAt,
-      deliverables: [...status.deliverables, newDeliverable],
-    },
-    result: {
-      success: true,
-      message: `Deliverable "${input.description}" (${input.id}) created successfully`,
-    },
-  }
-}
-
-/**
  * Create one or more deliverables in the status (batch)
  * @returns Updated status and tool result
  */
@@ -137,20 +49,90 @@ export function createDeliverables(
   }
 
   // Process each deliverable
-  let currentStatus = status
+  const newDeliverables: Deliverable[] = []
   for (const deliverableInput of input.deliverables) {
-    const singleResult = createSingleDeliverable(
-      currentStatus,
-      deliverableInput,
-    )
-    if (!singleResult.result.success) {
-      return singleResult // Fail fast on first error
+    // Validate input
+    if (!deliverableInput.id || deliverableInput.id.trim() === '') {
+      return {
+        status,
+        result: {
+          success: false,
+          message: 'Deliverable ID is required',
+          error: 'VALIDATION_ERROR',
+        },
+      }
     }
-    currentStatus = singleResult.status
+
+    if (
+      !deliverableInput.description ||
+      deliverableInput.description.trim() === ''
+    ) {
+      return {
+        status,
+        result: {
+          success: false,
+          message: 'Deliverable description is required',
+          error: 'VALIDATION_ERROR',
+        },
+      }
+    }
+
+    if (
+      !deliverableInput.acceptanceCriteria ||
+      deliverableInput.acceptanceCriteria.length === 0
+    ) {
+      return {
+        status,
+        result: {
+          success: false,
+          message: 'At least one acceptance criterion is required',
+          error: 'VALIDATION_ERROR',
+        },
+      }
+    }
+
+    // Check for empty acceptance criteria
+    if (
+      deliverableInput.acceptanceCriteria.some((c) => !c || c.trim() === '')
+    ) {
+      return {
+        status,
+        result: {
+          success: false,
+          message: 'Acceptance criteria cannot be empty',
+          error: 'VALIDATION_ERROR',
+        },
+      }
+    }
+
+    // Check for duplicate ID in existing status
+    if (status.deliverables.some((d) => d.id === deliverableInput.id)) {
+      return {
+        status,
+        result: {
+          success: false,
+          message: `Deliverable with ID "${deliverableInput.id}" already exists`,
+          error: 'DUPLICATE_ID',
+        },
+      }
+    }
+
+    // Create new deliverable
+    newDeliverables.push({
+      id: deliverableInput.id,
+      description: deliverableInput.description,
+      acceptanceCriteria: deliverableInput.acceptanceCriteria,
+      passed: false,
+      blocked: false,
+    })
   }
 
   return {
-    status: currentStatus,
+    status: {
+      createdAt: status.createdAt,
+      updatedAt: status.updatedAt,
+      deliverables: [...status.deliverables, ...newDeliverables],
+    },
     result: {
       success: true,
       message: `Created ${input.deliverables.length} deliverable(s) successfully`,
