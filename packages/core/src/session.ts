@@ -21,7 +21,6 @@ export interface SessionOptions {
  * @see SPEC.md Section 3.3
  */
 export interface SessionResult {
-  success: boolean
   costUsd: number
   duration: number
   outcome: SessionOutcome
@@ -88,7 +87,6 @@ export class Session {
     }
 
     return {
-      success: outcome === 'completed',
       costUsd,
       duration: Date.now() - startTime,
       outcome,

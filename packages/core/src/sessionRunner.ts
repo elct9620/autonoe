@@ -54,7 +54,6 @@ export interface SessionRunnerOptions {
  * @see SPEC.md Section 3.9.4
  */
 export interface SessionRunnerResult {
-  success: boolean
   iterations: number
   deliverablesPassedCount: number
   deliverablesTotalCount: number
@@ -75,7 +74,6 @@ function buildResult(
   totalDuration: number,
 ): SessionRunnerResult {
   return {
-    success: state.exitReason === ExitReason.AllPassed,
     iterations: state.iterations,
     deliverablesPassedCount: state.deliverablesPassedCount,
     deliverablesTotalCount: state.deliverablesTotalCount,

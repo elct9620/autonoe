@@ -32,7 +32,6 @@ export function createSessionResult(
   overrides: Partial<SessionResult> = {},
 ): SessionResult {
   return {
-    success: true,
     costUsd: 0,
     duration: 0,
     outcome: 'completed',

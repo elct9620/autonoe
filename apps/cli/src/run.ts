@@ -245,10 +245,18 @@ export async function handleRunCommand(
     } else if (result.error) {
       logger.error(`Session stopped: ${result.error}`)
       process.exit(1)
-    } else if (result.success) {
-      logger.info('Session completed successfully')
     } else {
-      logger.error('Session completed with errors')
+      // Check if all achievable deliverables passed (AllPassed exit reason)
+      const allAchievablePassed =
+        result.deliverablesTotalCount === 0 ||
+        result.deliverablesPassedCount + result.blockedCount ===
+          result.deliverablesTotalCount
+
+      if (allAchievablePassed) {
+        logger.info('Session completed successfully')
+      } else {
+        logger.error('Session completed with errors')
+      }
     }
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error))

@@ -19,7 +19,6 @@ describe('Session', () => {
       const session = new Session({ projectDir: '/test/project' })
       const result = await session.run(client, 'test instruction')
 
-      expect(result).toHaveProperty('success')
       expect(result).toHaveProperty('costUsd')
       expect(result).toHaveProperty('duration')
       expect(result).toHaveProperty('outcome')
@@ -45,7 +44,7 @@ describe('Session', () => {
       })
       const result = await session.run(client, 'test')
 
-      expect(result.success).toBe(true)
+      expect(result.outcome).toBe('completed')
     })
 
     it('returns costUsd from session end event', async () => {
@@ -157,7 +156,6 @@ describe('Session', () => {
       const result = await session.run(client, 'test', logger)
 
       // Should complete normally with quota exceeded outcome
-      expect(result.success).toBe(false)
       expect(result.outcome).toBe('quota_exceeded')
 
       // Stream error should be logged at debug level

@@ -66,7 +66,6 @@ describe('SessionRunner', () => {
       })
       const result = await runner.run(factory)
 
-      expect(result).toHaveProperty('success')
       expect(result).toHaveProperty('iterations')
       expect(result).toHaveProperty('deliverablesPassedCount')
       expect(result).toHaveProperty('deliverablesTotalCount')
@@ -93,7 +92,7 @@ describe('SessionRunner', () => {
       const factory = createMockClientFactory(client)
 
       // When statusReader is not provided and maxIterations is set,
-      // runner will stop at maxIterations with success=false
+      // runner will stop at maxIterations
       const runner = new SessionRunner({
         projectDir: '/test/project',
         maxIterations: 1,
@@ -102,7 +101,7 @@ describe('SessionRunner', () => {
       })
       const result = await runner.run(factory)
 
-      // Without statusReader, success is false (max iterations reached without deliverables)
+      // Without statusReader, max iterations reached without deliverables
       expect(result.iterations).toBe(1)
     })
 
@@ -187,7 +186,8 @@ describe('SessionRunner', () => {
       const result = await runner.run(factory, silentLogger, statusReader)
 
       expect(result.iterations).toBe(2)
-      expect(result.success).toBe(false)
+      // Max iterations reached with pending deliverables
+      expect(result.deliverablesPassedCount).toBe(0)
       expect(client.getQueryCount()).toBe(2)
     })
   })
@@ -220,7 +220,7 @@ describe('SessionRunner', () => {
       const result = await runner.run(factory, silentLogger, statusReader)
 
       expect(result.iterations).toBe(1)
-      expect(result.success).toBe(true)
+      // All deliverables passed
       expect(result.deliverablesPassedCount).toBe(1)
       expect(result.deliverablesTotalCount).toBe(1)
     })
@@ -297,7 +297,7 @@ describe('SessionRunner', () => {
       const result = await runner.run(factory, silentLogger, statusReader)
 
       expect(result.iterations).toBe(3)
-      expect(result.success).toBe(true)
+      // All deliverables passed
       expect(result.deliverablesPassedCount).toBe(2)
       expect(result.deliverablesTotalCount).toBe(2)
     })
@@ -383,9 +383,9 @@ describe('SessionRunner', () => {
 
       const result = await runner.run(factory, silentLogger, statusReader)
 
-      expect(result.success).toBe(true)
-      expect(result.blockedCount).toBe(1)
+      // All achievable deliverables passed (1 passed + 1 blocked = 2 total)
       expect(result.deliverablesPassedCount).toBe(1)
+      expect(result.blockedCount).toBe(1)
     })
   })
 
@@ -415,8 +415,9 @@ describe('SessionRunner', () => {
 
       const result = await runner.run(factory, silentLogger, statusReader)
 
-      expect(result.success).toBe(false)
+      // All deliverables blocked - no achievable work
       expect(result.blockedCount).toBe(1)
+      expect(result.deliverablesPassedCount).toBe(0)
     })
   })
 
@@ -628,7 +629,8 @@ describe('SessionRunner', () => {
 
       const result = await runner.run(factory, logger, statusReader)
 
-      expect(result.success).toBe(false)
+      // Max iterations reached with pending deliverables
+      expect(result.deliverablesPassedCount).toBe(0)
       expect(result.totalCostUsd).toBeCloseTo(0.03, 4)
       expect(logger.hasMessage('Overall:')).toBe(true)
     })
@@ -685,7 +687,8 @@ describe('SessionRunner', () => {
 
       // Should have called query 3 times (2 errors + 1 success)
       expect(throwingClient.getCallCount()).toBe(3)
-      expect(result.success).toBe(true)
+      // All deliverables passed after retry
+      expect(result.deliverablesPassedCount).toBe(1)
       expect(logger.hasMessage('Session error (1/3)')).toBe(true)
       expect(logger.hasMessage('Session error (2/3)')).toBe(true)
     })
@@ -710,7 +713,7 @@ describe('SessionRunner', () => {
 
       // Should have called query 4 times (3 retries + 1 initial)
       expect(throwingClient.getCallCount()).toBe(4)
-      expect(result.success).toBe(false)
+      // Max retries exceeded - error present
       expect(result.error).toBe('Session error 4')
       expect(
         logger.hasMessage('Session failed after 3 consecutive errors'),
@@ -793,7 +796,8 @@ describe('SessionRunner', () => {
 
       const result = await runner.run(factory, logger, statusReader)
 
-      expect(result.success).toBe(true)
+      // All deliverables passed after error recovery
+      expect(result.deliverablesPassedCount).toBe(1)
       // Error counter should be reset between successful sessions
       // so we should see (1/3) for each retry, not (2/3)
       const entries = logger.getEntries()
@@ -871,7 +875,6 @@ describe('SessionRunner', () => {
       const result = await runner.run(factory, silentLogger)
 
       // All expected properties should be present
-      expect(result).toHaveProperty('success')
       expect(result).toHaveProperty('iterations')
       expect(result).toHaveProperty('deliverablesPassedCount')
       expect(result).toHaveProperty('deliverablesTotalCount')
@@ -935,7 +938,8 @@ describe('SessionRunner', () => {
 
       const result = await runner.run(factory, logger, statusReader)
 
-      expect(result.success).toBe(true)
+      // All deliverables passed after quota wait
+      expect(result.deliverablesPassedCount).toBe(1)
       expect(logger.hasMessage('Quota exceeded, waiting')).toBe(true)
     })
 
@@ -953,7 +957,7 @@ describe('SessionRunner', () => {
 
       const result = await runner.run(factory, logger)
 
-      expect(result.success).toBe(false)
+      // Quota exceeded without wait
       expect(result.quotaExceeded).toBe(true)
       expect(logger.hasMessage('Quota exceeded')).toBe(true)
     })
@@ -982,7 +986,7 @@ describe('SessionRunner', () => {
         controller.signal,
       )
 
-      expect(result.success).toBe(false)
+      // Interrupted before any session ran
       expect(result.interrupted).toBe(true)
       expect(result.iterations).toBe(0)
       expect(logger.hasMessage('User interrupted')).toBe(true)

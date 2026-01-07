@@ -516,7 +516,6 @@ interface SessionOptions {
 }
 
 interface SessionResult {
-  success: boolean
   costUsd: number
   duration: number
   outcome: SessionOutcome
@@ -857,7 +856,6 @@ interface SessionRunnerOptions {
 }
 
 interface SessionRunnerResult {
-  success: boolean
   iterations: number
   deliverablesPassedCount: number
   deliverablesTotalCount: number
