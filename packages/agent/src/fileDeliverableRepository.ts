@@ -1,9 +1,9 @@
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import {
+  Deliverable,
   DeliverableStatus,
   type DeliverableRepository,
-  type Deliverable,
 } from '@autonoe/core'
 
 const AUTONOE_DIR = '.autonoe'
@@ -17,12 +17,23 @@ function getCurrentDate(): string {
 }
 
 /**
+ * JSON structure for deliverable in status file
+ */
+interface DeliverableJson {
+  id: string
+  description: string
+  acceptanceCriteria: string[]
+  passed: boolean
+  blocked: boolean
+}
+
+/**
  * JSON structure for status file
  */
 interface StatusJson {
   createdAt: string
   updatedAt: string
-  deliverables: Deliverable[]
+  deliverables: DeliverableJson[]
 }
 
 /**
@@ -32,7 +43,15 @@ function toDeliverableStatus(data: StatusJson): DeliverableStatus {
   return DeliverableStatus.create(
     data.createdAt,
     data.updatedAt,
-    data.deliverables,
+    data.deliverables.map((d) =>
+      Deliverable.create(
+        d.id,
+        d.description,
+        d.acceptanceCriteria,
+        d.passed,
+        d.blocked,
+      ),
+    ),
   )
 }
 
@@ -94,7 +113,13 @@ export class FileDeliverableRepository implements DeliverableRepository {
     const json: StatusJson = {
       createdAt: statusWithTimestamp.createdAt,
       updatedAt: statusWithTimestamp.updatedAt,
-      deliverables: [...statusWithTimestamp.deliverables],
+      deliverables: statusWithTimestamp.deliverables.map((d) => ({
+        id: d.id,
+        description: d.description,
+        acceptanceCriteria: [...d.acceptanceCriteria],
+        passed: d.passed,
+        blocked: d.blocked,
+      })),
     }
 
     // Write status file with pretty formatting

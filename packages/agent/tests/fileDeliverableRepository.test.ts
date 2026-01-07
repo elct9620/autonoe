@@ -3,7 +3,7 @@ import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import * as os from 'node:os'
 import { FileDeliverableRepository } from '../src/fileDeliverableRepository'
-import { DeliverableStatus } from '@autonoe/core'
+import { Deliverable, DeliverableStatus } from '@autonoe/core'
 
 describe('FileDeliverableRepository', () => {
   let tempDir: string
@@ -111,13 +111,7 @@ describe('FileDeliverableRepository', () => {
 
     it('writes status to file with updated timestamp', async () => {
       const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
-        {
-          id: 'DL-001',
-          description: 'Test',
-          acceptanceCriteria: ['Criterion'],
-          passed: false,
-          blocked: false,
-        },
+        Deliverable.pending('DL-001', 'Test', ['Criterion']),
       ])
 
       await repo.save(status)
@@ -135,22 +129,10 @@ describe('FileDeliverableRepository', () => {
 
     it('overwrites existing file', async () => {
       const initial = DeliverableStatus.create('2025-01-01', '2025-01-01', [
-        {
-          id: 'DL-001',
-          description: 'Initial',
-          acceptanceCriteria: ['Criterion'],
-          passed: false,
-          blocked: false,
-        },
+        Deliverable.pending('DL-001', 'Initial', ['Criterion']),
       ])
       const updated = DeliverableStatus.create('2025-01-01', '2025-01-01', [
-        {
-          id: 'DL-001',
-          description: 'Initial',
-          acceptanceCriteria: ['Criterion'],
-          passed: true,
-          blocked: false,
-        },
+        Deliverable.passed('DL-001', 'Initial', ['Criterion']),
       ])
 
       await repo.save(initial)
@@ -181,20 +163,8 @@ describe('FileDeliverableRepository', () => {
   describe('round-trip', () => {
     it('load after save returns same deliverables with updated timestamp', async () => {
       const original = DeliverableStatus.create('2025-01-01', '2025-01-01', [
-        {
-          id: 'DL-001',
-          description: 'First',
-          acceptanceCriteria: ['Criterion 1', 'Criterion 2'],
-          passed: false,
-          blocked: false,
-        },
-        {
-          id: 'DL-002',
-          description: 'Second',
-          acceptanceCriteria: ['Criterion 3'],
-          passed: true,
-          blocked: false,
-        },
+        Deliverable.pending('DL-001', 'First', ['Criterion 1', 'Criterion 2']),
+        Deliverable.passed('DL-002', 'Second', ['Criterion 3']),
       ])
 
       await repo.save(original)

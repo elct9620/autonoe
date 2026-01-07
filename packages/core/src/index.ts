@@ -88,13 +88,14 @@ export {
 // Autonoe Protection exports
 export { createAutonoeProtectionHook } from './autonoeProtection'
 
-// Deliverable domain types and class
+// Deliverable entity
+export { Deliverable, type DeliverableStatusValue } from './deliverable'
+
+// Deliverable domain types and aggregate
 export type {
-  Deliverable,
   DeliverableInput,
   CreateDeliverableInput,
   SetDeliverableStatusInput,
-  DeliverableStatusValue,
   DeliverableStatusNotification,
   DeliverableStatusCallback,
   ToolResult,

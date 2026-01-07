@@ -3,16 +3,7 @@
  * @see SPEC.md Section 2.3 Domain Model, Section 3.5
  */
 
-/**
- * Deliverable entity - a verifiable work unit with acceptance criteria
- */
-export interface Deliverable {
-  id: string
-  description: string
-  acceptanceCriteria: string[]
-  passed: boolean
-  blocked: boolean // When true, deliverable is blocked due to external constraints
-}
+import { Deliverable, type DeliverableStatusValue } from './deliverable'
 
 /**
  * DeliverableStatus aggregate root - persisted in .autonoe/status.json
@@ -119,14 +110,6 @@ export interface DeliverableInput {
 export interface CreateDeliverableInput {
   deliverables: DeliverableInput[]
 }
-
-/**
- * Deliverable status values
- * - pending: reset state (passed=false, blocked=false)
- * - passed: completed (passed=true, blocked=false)
- * - blocked: external constraints (passed=false, blocked=true)
- */
-export type DeliverableStatusValue = 'pending' | 'passed' | 'blocked'
 
 /**
  * Notification payload for deliverable status changes

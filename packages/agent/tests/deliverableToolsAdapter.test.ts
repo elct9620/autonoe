@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
+  Deliverable,
   DeliverableStatus,
   type DeliverableRepository,
   type DeliverableStatusNotification,
@@ -129,13 +130,7 @@ describe('deliverableToolsAdapter', () => {
         // Setup existing deliverable
         repository.setStatus(
           DeliverableStatus.create('2025-01-01', '2025-01-01', [
-            {
-              id: 'DL-001',
-              description: 'Existing',
-              acceptanceCriteria: ['AC1'],
-              passed: false,
-              blocked: false,
-            },
+            Deliverable.pending('DL-001', 'Existing', ['AC1']),
           ]),
         )
 
@@ -195,13 +190,7 @@ describe('deliverableToolsAdapter', () => {
         // Setup existing deliverable
         repository.setStatus(
           DeliverableStatus.create('2025-01-01', '2025-01-01', [
-            {
-              id: 'DL-001',
-              description: 'Feature',
-              acceptanceCriteria: ['AC1'],
-              passed: false,
-              blocked: false,
-            },
+            Deliverable.pending('DL-001', 'Feature', ['AC1']),
           ]),
         )
 
@@ -257,13 +246,7 @@ describe('deliverableToolsAdapter', () => {
       it('updates status.json with passed=false, blocked=true', async () => {
         repository.setStatus(
           DeliverableStatus.create('2025-01-01', '2025-01-01', [
-            {
-              id: 'DL-001',
-              description: 'Feature',
-              acceptanceCriteria: ['AC1'],
-              passed: false,
-              blocked: false,
-            },
+            Deliverable.pending('DL-001', 'Feature', ['AC1']),
           ]),
         )
 
@@ -288,13 +271,7 @@ describe('deliverableToolsAdapter', () => {
       it('updates status.json with passed=false, blocked=false', async () => {
         repository.setStatus(
           DeliverableStatus.create('2025-01-01', '2025-01-01', [
-            {
-              id: 'DL-001',
-              description: 'Feature',
-              acceptanceCriteria: ['AC1'],
-              passed: true,
-              blocked: false,
-            },
+            Deliverable.passed('DL-001', 'Feature', ['AC1']),
           ]),
         )
 
@@ -319,13 +296,7 @@ describe('deliverableToolsAdapter', () => {
       it('resets blocked deliverable to pending', async () => {
         repository.setStatus(
           DeliverableStatus.create('2025-01-01', '2025-01-01', [
-            {
-              id: 'DL-001',
-              description: 'Feature',
-              acceptanceCriteria: ['AC1'],
-              passed: false,
-              blocked: true,
-            },
+            Deliverable.blocked('DL-001', 'Feature', ['AC1']),
           ]),
         )
 
@@ -349,13 +320,7 @@ describe('deliverableToolsAdapter', () => {
       it('invokes callback with correct notification data', async () => {
         repository.setStatus(
           DeliverableStatus.create('2025-01-01', '2025-01-01', [
-            {
-              id: 'DL-001',
-              description: 'User Authentication',
-              acceptanceCriteria: ['AC1'],
-              passed: false,
-              blocked: false,
-            },
+            Deliverable.pending('DL-001', 'User Authentication', ['AC1']),
           ]),
         )
 
@@ -379,13 +344,7 @@ describe('deliverableToolsAdapter', () => {
       it('reports correct previous status when blocked', async () => {
         repository.setStatus(
           DeliverableStatus.create('2025-01-01', '2025-01-01', [
-            {
-              id: 'DL-001',
-              description: 'Feature',
-              acceptanceCriteria: ['AC1'],
-              passed: false,
-              blocked: true,
-            },
+            Deliverable.blocked('DL-001', 'Feature', ['AC1']),
           ]),
         )
 

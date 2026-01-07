@@ -12,6 +12,7 @@ import {
   createMockStatusJson,
   createMockClientFactory,
   TestLogger,
+  Deliverable,
 } from './helpers'
 
 /**
@@ -149,33 +150,9 @@ describe('SessionRunner', () => {
       // Status reader that never returns all passed
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC1'],
-            passed: false,
-            blocked: false,
-          },
-        ]),
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC1'],
-            passed: false,
-            blocked: false,
-          },
-        ]),
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC1'],
-            passed: false,
-            blocked: false,
-          },
-        ]),
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC1'])]),
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC1'])]),
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC1'])]),
       ])
 
       const runner = new SessionRunner({
@@ -201,15 +178,7 @@ describe('SessionRunner', () => {
       // Status with all passed deliverables after first session
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC1'],
-            passed: true,
-            blocked: false,
-          },
-        ]),
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC1'])]),
       ])
 
       const runner = new SessionRunner({
@@ -240,52 +209,16 @@ describe('SessionRunner', () => {
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
         createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test1',
-            acceptanceCriteria: ['AC1'],
-            passed: false,
-            blocked: false,
-          },
-          {
-            id: 'DL-002',
-            description: 'Test2',
-            acceptanceCriteria: ['AC2'],
-            passed: false,
-            blocked: false,
-          },
+          Deliverable.pending('DL-001', 'Test1', ['AC1']),
+          Deliverable.pending('DL-002', 'Test2', ['AC2']),
         ]),
         createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test1',
-            acceptanceCriteria: ['AC1'],
-            passed: true,
-            blocked: false,
-          },
-          {
-            id: 'DL-002',
-            description: 'Test2',
-            acceptanceCriteria: ['AC2'],
-            passed: false,
-            blocked: false,
-          },
+          Deliverable.passed('DL-001', 'Test1', ['AC1']),
+          Deliverable.pending('DL-002', 'Test2', ['AC2']),
         ]),
         createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test1',
-            acceptanceCriteria: ['AC1'],
-            passed: true,
-            blocked: false,
-          },
-          {
-            id: 'DL-002',
-            description: 'Test2',
-            acceptanceCriteria: ['AC2'],
-            passed: true,
-            blocked: false,
-          },
+          Deliverable.passed('DL-001', 'Test1', ['AC1']),
+          Deliverable.passed('DL-002', 'Test2', ['AC2']),
         ]),
       ])
 
@@ -314,24 +247,8 @@ describe('SessionRunner', () => {
 
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: false,
-          },
-        ]),
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: true,
-            blocked: false,
-          },
-        ]),
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
       ])
 
       const delayMs = 100
@@ -359,20 +276,8 @@ describe('SessionRunner', () => {
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
         createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Passed',
-            acceptanceCriteria: ['AC'],
-            passed: true,
-            blocked: false,
-          },
-          {
-            id: 'DL-002',
-            description: 'Blocked',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: true,
-          },
+          Deliverable.passed('DL-001', 'Passed', ['AC']),
+          Deliverable.blocked('DL-002', 'Blocked', ['AC']),
         ]),
       ])
 
@@ -398,13 +303,7 @@ describe('SessionRunner', () => {
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
         createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Blocked',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: true,
-          },
+          Deliverable.blocked('DL-001', 'Blocked', ['AC']),
         ]),
       ])
 
@@ -430,27 +329,9 @@ describe('SessionRunner', () => {
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
         createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Passed',
-            acceptanceCriteria: ['AC'],
-            passed: true,
-            blocked: false,
-          },
-          {
-            id: 'DL-002',
-            description: 'Blocked1',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: true,
-          },
-          {
-            id: 'DL-003',
-            description: 'Blocked2',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: true,
-          },
+          Deliverable.passed('DL-001', 'Passed', ['AC']),
+          Deliverable.blocked('DL-002', 'Blocked1', ['AC']),
+          Deliverable.blocked('DL-003', 'Blocked2', ['AC']),
         ]),
       ])
 
@@ -478,50 +359,14 @@ describe('SessionRunner', () => {
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
         createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test1',
-            acceptanceCriteria: ['AC1'],
-            passed: false,
-            blocked: false,
-          },
-          {
-            id: 'DL-002',
-            description: 'Test2',
-            acceptanceCriteria: ['AC2'],
-            passed: false,
-            blocked: false,
-          },
-          {
-            id: 'DL-003',
-            description: 'Test3',
-            acceptanceCriteria: ['AC3'],
-            passed: false,
-            blocked: false,
-          },
+          Deliverable.pending('DL-001', 'Test1', ['AC1']),
+          Deliverable.pending('DL-002', 'Test2', ['AC2']),
+          Deliverable.pending('DL-003', 'Test3', ['AC3']),
         ]),
         createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test1',
-            acceptanceCriteria: ['AC1'],
-            passed: true,
-            blocked: false,
-          },
-          {
-            id: 'DL-002',
-            description: 'Test2',
-            acceptanceCriteria: ['AC2'],
-            passed: true,
-            blocked: false,
-          },
-          {
-            id: 'DL-003',
-            description: 'Test3',
-            acceptanceCriteria: ['AC3'],
-            passed: true,
-            blocked: false,
-          },
+          Deliverable.passed('DL-001', 'Test1', ['AC1']),
+          Deliverable.passed('DL-002', 'Test2', ['AC2']),
+          Deliverable.passed('DL-003', 'Test3', ['AC3']),
         ]),
       ])
 
@@ -552,27 +397,9 @@ describe('SessionRunner', () => {
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
         createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Passed',
-            acceptanceCriteria: ['AC'],
-            passed: true,
-            blocked: false,
-          },
-          {
-            id: 'DL-002',
-            description: 'Blocked1',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: true,
-          },
-          {
-            id: 'DL-003',
-            description: 'Blocked2',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: true,
-          },
+          Deliverable.passed('DL-001', 'Passed', ['AC']),
+          Deliverable.blocked('DL-002', 'Blocked1', ['AC']),
+          Deliverable.blocked('DL-003', 'Blocked2', ['AC']),
         ]),
       ])
 
@@ -600,24 +427,8 @@ describe('SessionRunner', () => {
 
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: false,
-          },
-        ]),
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: false,
-          },
-        ]),
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
       ])
 
       const logger = new TestLogger()
@@ -661,15 +472,7 @@ describe('SessionRunner', () => {
 
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: true,
-            blocked: false,
-          },
-        ]),
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
       ])
 
       const factory: AgentClientFactory = {
@@ -758,33 +561,9 @@ describe('SessionRunner', () => {
 
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: false,
-          },
-        ]),
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: false,
-          },
-        ]),
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: true,
-            blocked: false,
-          },
-        ]),
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
       ])
 
       const logger = new TestLogger()
@@ -836,15 +615,7 @@ describe('SessionRunner', () => {
 
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: true,
-            blocked: false,
-          },
-        ]),
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
       ])
 
       const logger = new TestLogger()
@@ -909,24 +680,8 @@ describe('SessionRunner', () => {
 
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: false,
-            blocked: false,
-          },
-        ]),
-        createMockStatusJson([
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['AC'],
-            passed: true,
-            blocked: false,
-          },
-        ]),
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
       ])
 
       const logger = new TestLogger()

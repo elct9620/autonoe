@@ -1,4 +1,5 @@
 import {
+  Deliverable,
   DeliverableStatus,
   type SessionOptions,
   type SessionResult,
@@ -10,7 +11,6 @@ import {
   type SessionEndExecutionError,
   type SessionEndQuotaExceeded,
   type StreamError,
-  type Deliverable,
 } from '../../src/index'
 
 /**
@@ -54,27 +54,51 @@ export function createMockStatusJson(
  * Default mock deliverables for testing
  */
 export const mockDeliverables: Deliverable[] = [
-  {
-    id: 'DL-001',
-    description: 'User Authentication',
-    acceptanceCriteria: [
-      'User can login with email and password',
-      'Invalid credentials show error message',
-    ],
-    passed: false,
-    blocked: false,
-  },
-  {
-    id: 'DL-002',
-    description: 'Dashboard',
-    acceptanceCriteria: [
-      'Dashboard loads within 2 seconds',
-      'All widgets display correctly',
-    ],
-    passed: false,
-    blocked: false,
-  },
+  Deliverable.pending('DL-001', 'User Authentication', [
+    'User can login with email and password',
+    'Invalid credentials show error message',
+  ]),
+  Deliverable.pending('DL-002', 'Dashboard', [
+    'Dashboard loads within 2 seconds',
+    'All widgets display correctly',
+  ]),
 ]
+
+/**
+ * Create a pending deliverable for testing
+ */
+export function createPendingDeliverable(
+  id: string,
+  description: string,
+  acceptanceCriteria: string[] = ['AC'],
+): Deliverable {
+  return Deliverable.pending(id, description, acceptanceCriteria)
+}
+
+/**
+ * Create a passed deliverable for testing
+ */
+export function createPassedDeliverable(
+  id: string,
+  description: string,
+  acceptanceCriteria: string[] = ['AC'],
+): Deliverable {
+  return Deliverable.passed(id, description, acceptanceCriteria)
+}
+
+/**
+ * Create a blocked deliverable for testing
+ */
+export function createBlockedDeliverable(
+  id: string,
+  description: string,
+  acceptanceCriteria: string[] = ['AC'],
+): Deliverable {
+  return Deliverable.blocked(id, description, acceptanceCriteria)
+}
+
+// Re-export Deliverable for convenience in tests
+export { Deliverable }
 
 /**
  * Create a mock AgentText event for testing

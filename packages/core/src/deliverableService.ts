@@ -3,9 +3,9 @@
  * @see SPEC.md Section 3.5
  */
 
+import { Deliverable } from './deliverable'
 import {
   DeliverableStatus,
-  type Deliverable,
   type CreateDeliverableInput,
   type SetDeliverableStatusInput,
   type ToolResult,
@@ -117,13 +117,13 @@ export function createDeliverables(
     }
 
     // Create new deliverable
-    newDeliverables.push({
-      id: deliverableInput.id,
-      description: deliverableInput.description,
-      acceptanceCriteria: deliverableInput.acceptanceCriteria,
-      passed: false,
-      blocked: false,
-    })
+    newDeliverables.push(
+      Deliverable.pending(
+        deliverableInput.id,
+        deliverableInput.description,
+        deliverableInput.acceptanceCriteria,
+      ),
+    )
   }
 
   return {
@@ -188,33 +188,20 @@ export function setDeliverableStatus(
     }
   }
 
-  // Determine passed and blocked values based on status
-  let passed: boolean
-  let blocked: boolean
+  // Update deliverable using transition methods
+  const existing = status.deliverables[index]!
+  let updated: Deliverable
 
   switch (input.status) {
     case 'pending':
-      passed = false
-      blocked = false
+      updated = existing.reset()
       break
     case 'passed':
-      passed = true
-      blocked = false
+      updated = existing.markPassed()
       break
     case 'blocked':
-      passed = false
-      blocked = true
+      updated = existing.markBlocked()
       break
-  }
-
-  // Update deliverable (index is guaranteed to be valid after findIndex check)
-  const existing = status.deliverables[index]!
-  const updated: Deliverable = {
-    id: existing.id,
-    description: existing.description,
-    acceptanceCriteria: existing.acceptanceCriteria,
-    passed,
-    blocked,
   }
 
   const updatedDeliverables = [

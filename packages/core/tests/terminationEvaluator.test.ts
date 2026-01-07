@@ -6,6 +6,7 @@ import {
 import { LoopState } from '../src/loopState'
 import { ExitReason } from '../src/sessionRunner'
 import { DeliverableStatus } from '../src/deliverableStatus'
+import { Deliverable } from '../src/deliverable'
 
 /**
  * evaluateTermination Tests
@@ -113,20 +114,8 @@ describe('evaluateTermination', () => {
     it('TE-020: returns shouldTerminate when all deliverables passed', () => {
       const now = new Date().toISOString()
       const status = DeliverableStatus.create(now, now, [
-        {
-          id: 'd1',
-          description: 'Task 1',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'd2',
-          description: 'Task 2',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
+        Deliverable.passed('d1', 'Task 1', ['Done']),
+        Deliverable.passed('d2', 'Task 2', ['Done']),
       ])
 
       const decision = evaluateTermination(
@@ -140,20 +129,8 @@ describe('evaluateTermination', () => {
     it('TE-021: returns shouldTerminate when achievable deliverables passed (some blocked)', () => {
       const now = new Date().toISOString()
       const status = DeliverableStatus.create(now, now, [
-        {
-          id: 'd1',
-          description: 'Task 1',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'd2',
-          description: 'Task 2',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: true,
-        },
+        Deliverable.passed('d1', 'Task 1', ['Done']),
+        Deliverable.blocked('d2', 'Task 2', ['Done']),
       ])
 
       const decision = evaluateTermination(
@@ -167,20 +144,8 @@ describe('evaluateTermination', () => {
     it('TE-022: returns shouldNotTerminate when not all deliverables passed', () => {
       const now = new Date().toISOString()
       const status = DeliverableStatus.create(now, now, [
-        {
-          id: 'd1',
-          description: 'Task 1',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'd2',
-          description: 'Task 2',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: false,
-        },
+        Deliverable.passed('d1', 'Task 1', ['Done']),
+        Deliverable.pending('d2', 'Task 2', ['Done']),
       ])
 
       const decision = evaluateTermination(
@@ -201,20 +166,8 @@ describe('evaluateTermination', () => {
     it('TE-030: returns shouldTerminate when all deliverables blocked', () => {
       const now = new Date().toISOString()
       const status = DeliverableStatus.create(now, now, [
-        {
-          id: 'd1',
-          description: 'Task 1',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: true,
-        },
-        {
-          id: 'd2',
-          description: 'Task 2',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: true,
-        },
+        Deliverable.blocked('d1', 'Task 1', ['Done']),
+        Deliverable.blocked('d2', 'Task 2', ['Done']),
       ])
 
       const decision = evaluateTermination(
@@ -228,20 +181,8 @@ describe('evaluateTermination', () => {
     it('TE-031: returns shouldNotTerminate when not all blocked', () => {
       const now = new Date().toISOString()
       const status = DeliverableStatus.create(now, now, [
-        {
-          id: 'd1',
-          description: 'Task 1',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: true,
-        },
-        {
-          id: 'd2',
-          description: 'Task 2',
-          acceptanceCriteria: ['Done'],
-          passed: false,
-          blocked: false,
-        },
+        Deliverable.blocked('d1', 'Task 1', ['Done']),
+        Deliverable.pending('d2', 'Task 2', ['Done']),
       ])
 
       const decision = evaluateTermination(
@@ -337,13 +278,7 @@ describe('evaluateTermination', () => {
       const state = createStateWithIterations(5)
       const now = new Date().toISOString()
       const status = DeliverableStatus.create(now, now, [
-        {
-          id: 'd1',
-          description: 'Task',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
+        Deliverable.passed('d1', 'Task', ['Done']),
       ])
 
       const decision = evaluateTermination(
@@ -362,13 +297,7 @@ describe('evaluateTermination', () => {
     it('TE-071: QuotaExceeded has priority over AllPassed', () => {
       const now = new Date().toISOString()
       const status = DeliverableStatus.create(now, now, [
-        {
-          id: 'd1',
-          description: 'Task',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
+        Deliverable.passed('d1', 'Task', ['Done']),
       ])
 
       const decision = evaluateTermination(
@@ -386,13 +315,7 @@ describe('evaluateTermination', () => {
       const state = createStateWithIterations(5)
       const now = new Date().toISOString()
       const status = DeliverableStatus.create(now, now, [
-        {
-          id: 'd1',
-          description: 'Task',
-          acceptanceCriteria: ['Done'],
-          passed: true,
-          blocked: false,
-        },
+        Deliverable.passed('d1', 'Task', ['Done']),
       ])
 
       const decision = evaluateTermination(
