@@ -239,16 +239,6 @@ export function setDeliverableStatus(
 }
 
 /**
- * Check if all deliverables have passed
- */
-export function allDeliverablesPassed(status: DeliverableStatus): boolean {
-  if (status.deliverables.length === 0) {
-    return false
-  }
-  return status.deliverables.every((d) => d.passed)
-}
-
-/**
  * Count passed deliverables
  */
 export function countPassedDeliverables(status: DeliverableStatus): number {
@@ -281,13 +271,6 @@ export function allAchievableDeliverablesPassed(
     return false
   }
   return achievable.every((d) => d.passed)
-}
-
-/**
- * Check if there are any blocked deliverables
- */
-export function hasBlockedDeliverables(status: DeliverableStatus): boolean {
-  return status.deliverables.some((d) => d.blocked)
 }
 
 /**

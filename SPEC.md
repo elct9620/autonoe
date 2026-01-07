@@ -797,7 +797,7 @@ All duration displays use human-readable format with zero-value parts omitted:
 │  │   │  while (not terminated):                 │              │  │
 │  │   │    session = new Session(options)        │              │  │
 │  │   │    result = session.run(client, prompt)  │              │  │
-│  │   │    if (allDeliverablesPassed) break       │              │  │
+│  │   │    if (allAchievableDeliverablesPassed) break│             │  │
 │  │   │    if (maxIterations reached) break      │              │  │
 │  │   │    delay(delayBetweenSessions)           │              │  │
 │  │   └──────────────────────────────────────────┘              │  │

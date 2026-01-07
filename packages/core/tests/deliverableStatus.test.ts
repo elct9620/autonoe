@@ -8,11 +8,9 @@ import { nullDeliverableStatusReader } from '../src/deliverableStatus'
 import {
   createDeliverables,
   setDeliverableStatus,
-  allDeliverablesPassed,
   countPassedDeliverables,
   emptyDeliverableStatus,
   allAchievableDeliverablesPassed,
-  hasBlockedDeliverables,
   countBlockedDeliverables,
   allDeliverablesBlocked,
 } from '../src/deliverableService'
@@ -472,61 +470,6 @@ describe('setDeliverableStatus', () => {
   })
 })
 
-describe('allDeliverablesPassed', () => {
-  it('returns false for empty status', () => {
-    const status = emptyDeliverableStatus()
-    expect(allDeliverablesPassed(status)).toBe(false)
-  })
-
-  it('returns false when some deliverables not passed', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'First',
-          acceptanceCriteria: ['Criterion'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'DL-002',
-          description: 'Second',
-          acceptanceCriteria: ['Criterion'],
-          passed: false,
-          blocked: false,
-        },
-      ],
-    }
-    expect(allDeliverablesPassed(status)).toBe(false)
-  })
-
-  it('returns true when all deliverables passed', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'First',
-          acceptanceCriteria: ['Criterion'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'DL-002',
-          description: 'Second',
-          acceptanceCriteria: ['Criterion'],
-          passed: true,
-          blocked: false,
-        },
-      ],
-    }
-    expect(allDeliverablesPassed(status)).toBe(true)
-  })
-})
-
 describe('countPassedDeliverables', () => {
   it('returns 0 for empty status', () => {
     const status = emptyDeliverableStatus()
@@ -644,42 +587,6 @@ describe('allAchievableDeliverablesPassed', () => {
     expect(allAchievableDeliverablesPassed(emptyDeliverableStatus())).toBe(
       false,
     )
-  })
-})
-
-describe('hasBlockedDeliverables', () => {
-  it('returns true when there are blocked deliverables', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'A',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: true,
-        },
-      ],
-    }
-    expect(hasBlockedDeliverables(status)).toBe(true)
-  })
-
-  it('returns false when there are no blocked deliverables', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'A',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: false,
-        },
-      ],
-    }
-    expect(hasBlockedDeliverables(status)).toBe(false)
   })
 })
 

@@ -108,11 +108,9 @@ export { nullDeliverableStatusReader } from './deliverableStatus'
 export {
   createDeliverables,
   setDeliverableStatus,
-  allDeliverablesPassed,
   countPassedDeliverables,
   emptyDeliverableStatus,
   allAchievableDeliverablesPassed,
-  hasBlockedDeliverables,
   countBlockedDeliverables,
   allDeliverablesBlocked,
   getCurrentDate,
