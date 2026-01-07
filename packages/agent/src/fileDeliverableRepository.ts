@@ -1,10 +1,40 @@
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
-import type { DeliverableRepository, DeliverableStatus } from '@autonoe/core'
-import { emptyDeliverableStatus, getCurrentDate } from '@autonoe/core'
+import {
+  DeliverableStatus,
+  type DeliverableRepository,
+  type Deliverable,
+} from '@autonoe/core'
 
 const AUTONOE_DIR = '.autonoe'
 const STATUS_FILE = 'status.json'
+
+/**
+ * Get current date in YYYY-MM-DD format
+ */
+function getCurrentDate(): string {
+  return new Date().toISOString().split('T')[0]!
+}
+
+/**
+ * JSON structure for status file
+ */
+interface StatusJson {
+  createdAt: string
+  updatedAt: string
+  deliverables: Deliverable[]
+}
+
+/**
+ * Convert JSON data to DeliverableStatus class instance
+ */
+function toDeliverableStatus(data: StatusJson): DeliverableStatus {
+  return DeliverableStatus.create(
+    data.createdAt,
+    data.updatedAt,
+    data.deliverables,
+  )
+}
 
 /**
  * File-based implementation of DeliverableRepository
@@ -35,16 +65,16 @@ export class FileDeliverableRepository implements DeliverableRepository {
   async load(): Promise<DeliverableStatus> {
     try {
       const content = await fs.readFile(this.statusPath, 'utf-8')
-      const data = JSON.parse(content) as DeliverableStatus
+      const data = JSON.parse(content) as StatusJson
 
       // Validate structure
       if (!data.deliverables || !Array.isArray(data.deliverables)) {
-        return emptyDeliverableStatus()
+        return DeliverableStatus.empty()
       }
 
-      return data
+      return toDeliverableStatus(data)
     } catch {
-      return emptyDeliverableStatus()
+      return DeliverableStatus.empty()
     }
   }
 
@@ -58,15 +88,17 @@ export class FileDeliverableRepository implements DeliverableRepository {
     // Ensure .autonoe directory exists
     await fs.mkdir(dir, { recursive: true })
 
-    // Update timestamp
+    // Update timestamp and serialize to JSON
     const now = getCurrentDate()
-    const statusWithTimestamp: DeliverableStatus = {
-      ...status,
-      updatedAt: now,
+    const statusWithTimestamp = status.withUpdatedAt(now)
+    const json: StatusJson = {
+      createdAt: statusWithTimestamp.createdAt,
+      updatedAt: statusWithTimestamp.updatedAt,
+      deliverables: [...statusWithTimestamp.deliverables],
     }
 
     // Write status file with pretty formatting
-    const content = JSON.stringify(statusWithTimestamp, null, 2)
+    const content = JSON.stringify(json, null, 2)
     await fs.writeFile(this.statusPath, content, 'utf-8')
   }
 }

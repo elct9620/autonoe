@@ -1,16 +1,16 @@
-import type {
-  SessionOptions,
-  SessionResult,
-  StreamEvent,
-  AgentText,
-  ToolInvocation,
-  ToolResponse,
-  SessionEndCompleted,
-  SessionEndExecutionError,
-  SessionEndQuotaExceeded,
-  StreamError,
-  Deliverable,
+import {
   DeliverableStatus,
+  type SessionOptions,
+  type SessionResult,
+  type StreamEvent,
+  type AgentText,
+  type ToolInvocation,
+  type ToolResponse,
+  type SessionEndCompleted,
+  type SessionEndExecutionError,
+  type SessionEndQuotaExceeded,
+  type StreamError,
+  type Deliverable,
 } from '../../src/index'
 
 /**
@@ -48,11 +48,7 @@ export function createMockStatusJson(
   createdAt = '2025-01-01',
   updatedAt = '2025-01-01',
 ): DeliverableStatus {
-  return {
-    createdAt,
-    updatedAt,
-    deliverables,
-  }
+  return DeliverableStatus.create(createdAt, updatedAt, deliverables)
 }
 
 /**

@@ -1,8 +1,7 @@
-import type {
-  DeliverableStatusReader,
+import {
   DeliverableStatus,
+  type DeliverableStatusReader,
 } from '../../src/index'
-import { emptyDeliverableStatus } from '../../src/index'
 
 /**
  * Mock implementation of DeliverableStatusReader for testing
@@ -26,14 +25,14 @@ export class MockDeliverableStatusReader implements DeliverableStatusReader {
 
   async load(): Promise<DeliverableStatus> {
     if (this.statusSequence.length === 0) {
-      return emptyDeliverableStatus()
+      return DeliverableStatus.empty()
     }
     const status =
       this.statusSequence[
         Math.min(this.callIndex, this.statusSequence.length - 1)
       ]
     this.callIndex++
-    return status ?? emptyDeliverableStatus()
+    return status ?? DeliverableStatus.empty()
   }
 
   /**

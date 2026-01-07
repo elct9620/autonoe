@@ -2,10 +2,6 @@ import type { LoopState } from './loopState'
 import type { DeliverableStatus } from './deliverableStatus'
 import { ExitReason } from './sessionRunner'
 import type { SessionOutcome } from './types'
-import {
-  allAchievableDeliverablesPassed,
-  allDeliverablesBlocked,
-} from './deliverableService'
 import { calculateWaitDuration } from './quotaManager'
 
 /**
@@ -67,7 +63,7 @@ export function evaluateTermination(
   if (
     context.deliverableStatus &&
     context.deliverableStatus.deliverables.length > 0 &&
-    allAchievableDeliverablesPassed(context.deliverableStatus)
+    context.deliverableStatus.allAchievablePassed()
   ) {
     return { shouldTerminate: true, exitReason: ExitReason.AllPassed }
   }
@@ -76,7 +72,7 @@ export function evaluateTermination(
   if (
     context.deliverableStatus &&
     context.deliverableStatus.deliverables.length > 0 &&
-    allDeliverablesBlocked(context.deliverableStatus)
+    context.deliverableStatus.allBlocked()
   ) {
     return { shouldTerminate: true, exitReason: ExitReason.AllBlocked }
   }

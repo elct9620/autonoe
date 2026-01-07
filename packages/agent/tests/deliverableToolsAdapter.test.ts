@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import type {
-  DeliverableRepository,
+import {
   DeliverableStatus,
-  DeliverableStatusNotification,
+  type DeliverableRepository,
+  type DeliverableStatusNotification,
 } from '@autonoe/core'
 import {
   handleCreateDeliverables,
@@ -13,11 +13,11 @@ import {
  * Mock implementation of DeliverableRepository for testing
  */
 class MockDeliverableRepository implements DeliverableRepository {
-  private status: DeliverableStatus = {
-    createdAt: '2025-01-01',
-    updatedAt: '2025-01-01',
-    deliverables: [],
-  }
+  private status: DeliverableStatus = DeliverableStatus.create(
+    '2025-01-01',
+    '2025-01-01',
+    [],
+  )
   public loadCalls = 0
   public saveCalls = 0
   public savedStatus: DeliverableStatus | null = null
@@ -42,11 +42,7 @@ class MockDeliverableRepository implements DeliverableRepository {
   }
 
   reset(): void {
-    this.status = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [],
-    }
+    this.status = DeliverableStatus.create('2025-01-01', '2025-01-01', [])
     this.loadCalls = 0
     this.saveCalls = 0
     this.savedStatus = null
@@ -131,10 +127,8 @@ describe('deliverableToolsAdapter', () => {
     describe('DL-T002: Duplicate deliverable ID', () => {
       it('returns error for duplicate in existing status and does not save', async () => {
         // Setup existing deliverable
-        repository.setStatus({
-          createdAt: '2025-01-01',
-          updatedAt: '2025-01-01',
-          deliverables: [
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
             {
               id: 'DL-001',
               description: 'Existing',
@@ -142,8 +136,8 @@ describe('deliverableToolsAdapter', () => {
               passed: false,
               blocked: false,
             },
-          ],
-        })
+          ]),
+        )
 
         const input = {
           deliverables: [
@@ -199,10 +193,8 @@ describe('deliverableToolsAdapter', () => {
     describe('DL-T003: status=passed', () => {
       it('updates status.json with passed=true, blocked=false', async () => {
         // Setup existing deliverable
-        repository.setStatus({
-          createdAt: '2025-01-01',
-          updatedAt: '2025-01-01',
-          deliverables: [
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
             {
               id: 'DL-001',
               description: 'Feature',
@@ -210,8 +202,8 @@ describe('deliverableToolsAdapter', () => {
               passed: false,
               blocked: false,
             },
-          ],
-        })
+          ]),
+        )
 
         const input = {
           deliverableId: 'DL-001',
@@ -239,11 +231,9 @@ describe('deliverableToolsAdapter', () => {
     describe('DL-T004: Invalid deliverable ID', () => {
       it('returns error: deliverable not found', async () => {
         // Empty repository
-        repository.setStatus({
-          createdAt: '2025-01-01',
-          updatedAt: '2025-01-01',
-          deliverables: [],
-        })
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', []),
+        )
 
         const input = {
           deliverableId: 'DL-999',
@@ -265,10 +255,8 @@ describe('deliverableToolsAdapter', () => {
 
     describe('DL-T005: status=blocked', () => {
       it('updates status.json with passed=false, blocked=true', async () => {
-        repository.setStatus({
-          createdAt: '2025-01-01',
-          updatedAt: '2025-01-01',
-          deliverables: [
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
             {
               id: 'DL-001',
               description: 'Feature',
@@ -276,8 +264,8 @@ describe('deliverableToolsAdapter', () => {
               passed: false,
               blocked: false,
             },
-          ],
-        })
+          ]),
+        )
 
         const input = {
           deliverableId: 'DL-001',
@@ -298,10 +286,8 @@ describe('deliverableToolsAdapter', () => {
 
     describe('DL-T006: status=pending', () => {
       it('updates status.json with passed=false, blocked=false', async () => {
-        repository.setStatus({
-          createdAt: '2025-01-01',
-          updatedAt: '2025-01-01',
-          deliverables: [
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
             {
               id: 'DL-001',
               description: 'Feature',
@@ -309,8 +295,8 @@ describe('deliverableToolsAdapter', () => {
               passed: true,
               blocked: false,
             },
-          ],
-        })
+          ]),
+        )
 
         const input = {
           deliverableId: 'DL-001',
@@ -331,10 +317,8 @@ describe('deliverableToolsAdapter', () => {
 
     describe('DL-T007: pending resets blocked state', () => {
       it('resets blocked deliverable to pending', async () => {
-        repository.setStatus({
-          createdAt: '2025-01-01',
-          updatedAt: '2025-01-01',
-          deliverables: [
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
             {
               id: 'DL-001',
               description: 'Feature',
@@ -342,8 +326,8 @@ describe('deliverableToolsAdapter', () => {
               passed: false,
               blocked: true,
             },
-          ],
-        })
+          ]),
+        )
 
         const input = {
           deliverableId: 'DL-001',
@@ -363,10 +347,8 @@ describe('deliverableToolsAdapter', () => {
 
     describe('DL-T008: Callback invoked on successful status change', () => {
       it('invokes callback with correct notification data', async () => {
-        repository.setStatus({
-          createdAt: '2025-01-01',
-          updatedAt: '2025-01-01',
-          deliverables: [
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
             {
               id: 'DL-001',
               description: 'User Authentication',
@@ -374,8 +356,8 @@ describe('deliverableToolsAdapter', () => {
               passed: false,
               blocked: false,
             },
-          ],
-        })
+          ]),
+        )
 
         const callback = vi.fn()
         const input = {
@@ -395,10 +377,8 @@ describe('deliverableToolsAdapter', () => {
       })
 
       it('reports correct previous status when blocked', async () => {
-        repository.setStatus({
-          createdAt: '2025-01-01',
-          updatedAt: '2025-01-01',
-          deliverables: [
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
             {
               id: 'DL-001',
               description: 'Feature',
@@ -406,8 +386,8 @@ describe('deliverableToolsAdapter', () => {
               passed: false,
               blocked: true,
             },
-          ],
-        })
+          ]),
+        )
 
         const callback = vi.fn()
         const input = {
@@ -428,11 +408,9 @@ describe('deliverableToolsAdapter', () => {
 
     describe('DL-T009: Callback not invoked on failure', () => {
       it('does not invoke callback when deliverable not found', async () => {
-        repository.setStatus({
-          createdAt: '2025-01-01',
-          updatedAt: '2025-01-01',
-          deliverables: [],
-        })
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', []),
+        )
 
         const callback = vi.fn()
         const input = {

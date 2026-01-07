@@ -1,7 +1,7 @@
 import type { AgentClientFactory } from './agentClient'
-import type {
-  DeliverableStatusReader,
+import {
   DeliverableStatus,
+  type DeliverableStatusReader,
 } from './deliverableStatus'
 import type { Logger } from './logger'
 import type { InstructionResolver } from './instructions'
@@ -9,11 +9,6 @@ import type { Timer } from './timer'
 import type { TerminationContext } from './terminationEvaluator'
 import { silentLogger } from './logger'
 import { Session } from './session'
-import {
-  countPassedDeliverables,
-  countBlockedDeliverables,
-  emptyDeliverableStatus,
-} from './deliverableService'
 import {
   selectInstruction,
   createDefaultInstructionResolver,
@@ -168,12 +163,12 @@ export class SessionRunner {
         // Read deliverable status after session
         const status = statusReader
           ? await statusReader.load()
-          : emptyDeliverableStatus()
+          : DeliverableStatus.empty()
 
         state = state.updateDeliverableCounts(
-          countPassedDeliverables(status),
+          status.countPassed(),
           status.deliverables.length,
-          countBlockedDeliverables(status),
+          status.countBlocked(),
         )
 
         // Post-session: evaluate all termination conditions

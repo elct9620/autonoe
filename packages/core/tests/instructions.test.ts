@@ -5,6 +5,7 @@ import {
   createDefaultInstructionResolver,
   selectInstruction,
 } from '../src/instructions'
+import { DeliverableStatus } from '../src/deliverableStatus'
 import { MockDeliverableStatusReader } from './helpers'
 
 describe('instructions', () => {
@@ -60,7 +61,7 @@ describe('instructions', () => {
       const statusReader = new MockDeliverableStatusReader()
       // Setting any status makes exists() return true
       statusReader.setStatusSequence([
-        { createdAt: '2025-01-01', updatedAt: '2025-01-01', deliverables: [] },
+        DeliverableStatus.create('2025-01-01', '2025-01-01', []),
       ])
       const resolver = createDefaultInstructionResolver()
 

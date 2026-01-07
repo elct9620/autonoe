@@ -1,24 +1,19 @@
 import { describe, it, expect } from 'vitest'
-import type {
+import {
   DeliverableStatus,
-  CreateDeliverableInput,
-  SetDeliverableStatusInput,
+  nullDeliverableStatusReader,
+  type CreateDeliverableInput,
+  type SetDeliverableStatusInput,
 } from '../src/deliverableStatus'
-import { nullDeliverableStatusReader } from '../src/deliverableStatus'
 import {
   createDeliverables,
   setDeliverableStatus,
-  countPassedDeliverables,
-  emptyDeliverableStatus,
-  allAchievableDeliverablesPassed,
-  countBlockedDeliverables,
-  allDeliverablesBlocked,
 } from '../src/deliverableService'
 
 describe('createDeliverables', () => {
   describe('DL-T001: Valid input', () => {
     it('creates deliverable with acceptance criteria', () => {
-      const status = emptyDeliverableStatus()
+      const status = DeliverableStatus.empty()
       const input: CreateDeliverableInput = {
         deliverables: [
           {
@@ -50,7 +45,7 @@ describe('createDeliverables', () => {
     })
 
     it('creates multiple deliverables in batch', () => {
-      const status = emptyDeliverableStatus()
+      const status = DeliverableStatus.empty()
       const input: CreateDeliverableInput = {
         deliverables: [
           {
@@ -76,19 +71,15 @@ describe('createDeliverables', () => {
     })
 
     it('appends to existing deliverables', () => {
-      const status: DeliverableStatus = {
-        createdAt: '2025-01-01',
-        updatedAt: '2025-01-01',
-        deliverables: [
-          {
-            id: 'DL-001',
-            description: 'First',
-            acceptanceCriteria: ['Criterion 1'],
-            passed: false,
-            blocked: false,
-          },
-        ],
-      }
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        {
+          id: 'DL-001',
+          description: 'First',
+          acceptanceCriteria: ['Criterion 1'],
+          passed: false,
+          blocked: false,
+        },
+      ])
       const input: CreateDeliverableInput = {
         deliverables: [
           {
@@ -108,19 +99,15 @@ describe('createDeliverables', () => {
 
   describe('DL-T002: Duplicate ID', () => {
     it('returns error for duplicate deliverable ID in existing status', () => {
-      const status: DeliverableStatus = {
-        createdAt: '2025-01-01',
-        updatedAt: '2025-01-01',
-        deliverables: [
-          {
-            id: 'DL-001',
-            description: 'Existing',
-            acceptanceCriteria: ['Criterion'],
-            passed: false,
-            blocked: false,
-          },
-        ],
-      }
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        {
+          id: 'DL-001',
+          description: 'Existing',
+          acceptanceCriteria: ['Criterion'],
+          passed: false,
+          blocked: false,
+        },
+      ])
       const input: CreateDeliverableInput = {
         deliverables: [
           {
@@ -140,7 +127,7 @@ describe('createDeliverables', () => {
     })
 
     it('returns error for duplicate ID within batch', () => {
-      const status = emptyDeliverableStatus()
+      const status = DeliverableStatus.empty()
       const input: CreateDeliverableInput = {
         deliverables: [
           {
@@ -166,7 +153,7 @@ describe('createDeliverables', () => {
 
   describe('Validation errors', () => {
     it('returns error for empty deliverables array', () => {
-      const status = emptyDeliverableStatus()
+      const status = DeliverableStatus.empty()
       const input: CreateDeliverableInput = {
         deliverables: [],
       }
@@ -179,7 +166,7 @@ describe('createDeliverables', () => {
     })
 
     it('returns error for empty ID', () => {
-      const status = emptyDeliverableStatus()
+      const status = DeliverableStatus.empty()
       const input: CreateDeliverableInput = {
         deliverables: [
           {
@@ -197,7 +184,7 @@ describe('createDeliverables', () => {
     })
 
     it('returns error for empty description', () => {
-      const status = emptyDeliverableStatus()
+      const status = DeliverableStatus.empty()
       const input: CreateDeliverableInput = {
         deliverables: [
           {
@@ -215,7 +202,7 @@ describe('createDeliverables', () => {
     })
 
     it('returns error for empty acceptance criteria array', () => {
-      const status = emptyDeliverableStatus()
+      const status = DeliverableStatus.empty()
       const input: CreateDeliverableInput = {
         deliverables: [
           {
@@ -233,7 +220,7 @@ describe('createDeliverables', () => {
     })
 
     it('returns error for empty acceptance criterion string', () => {
-      const status = emptyDeliverableStatus()
+      const status = DeliverableStatus.empty()
       const input: CreateDeliverableInput = {
         deliverables: [
           {
@@ -255,19 +242,15 @@ describe('createDeliverables', () => {
 describe('setDeliverableStatus', () => {
   describe('DL-T003: status=passed', () => {
     it('updates deliverable status to passed', () => {
-      const status: DeliverableStatus = {
-        createdAt: '2025-01-01',
-        updatedAt: '2025-01-01',
-        deliverables: [
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['Criterion'],
-            passed: false,
-            blocked: false,
-          },
-        ],
-      }
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        {
+          id: 'DL-001',
+          description: 'Test',
+          acceptanceCriteria: ['Criterion'],
+          passed: false,
+          blocked: false,
+        },
+      ])
       const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-001',
         status: 'passed',
@@ -282,26 +265,22 @@ describe('setDeliverableStatus', () => {
     })
 
     it('preserves other deliverables', () => {
-      const status: DeliverableStatus = {
-        createdAt: '2025-01-01',
-        updatedAt: '2025-01-01',
-        deliverables: [
-          {
-            id: 'DL-001',
-            description: 'First',
-            acceptanceCriteria: ['Criterion'],
-            passed: false,
-            blocked: false,
-          },
-          {
-            id: 'DL-002',
-            description: 'Second',
-            acceptanceCriteria: ['Criterion'],
-            passed: false,
-            blocked: false,
-          },
-        ],
-      }
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        {
+          id: 'DL-001',
+          description: 'First',
+          acceptanceCriteria: ['Criterion'],
+          passed: false,
+          blocked: false,
+        },
+        {
+          id: 'DL-002',
+          description: 'Second',
+          acceptanceCriteria: ['Criterion'],
+          passed: false,
+          blocked: false,
+        },
+      ])
       const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-001',
         status: 'passed',
@@ -316,19 +295,15 @@ describe('setDeliverableStatus', () => {
 
   describe('DL-T004: Invalid deliverable ID', () => {
     it('returns error for non-existent deliverable', () => {
-      const status: DeliverableStatus = {
-        createdAt: '2025-01-01',
-        updatedAt: '2025-01-01',
-        deliverables: [
-          {
-            id: 'DL-001',
-            description: 'Existing',
-            acceptanceCriteria: ['Criterion'],
-            passed: false,
-            blocked: false,
-          },
-        ],
-      }
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        {
+          id: 'DL-001',
+          description: 'Existing',
+          acceptanceCriteria: ['Criterion'],
+          passed: false,
+          blocked: false,
+        },
+      ])
       const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-999',
         status: 'passed',
@@ -343,7 +318,7 @@ describe('setDeliverableStatus', () => {
     })
 
     it('handles empty status', () => {
-      const status = emptyDeliverableStatus()
+      const status = DeliverableStatus.empty()
       const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-001',
         status: 'passed',
@@ -358,19 +333,15 @@ describe('setDeliverableStatus', () => {
 
   describe('DL-T005: status=blocked', () => {
     it('sets deliverable to blocked state', () => {
-      const status: DeliverableStatus = {
-        createdAt: '2025-01-01',
-        updatedAt: '2025-01-01',
-        deliverables: [
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['Criterion'],
-            passed: false,
-            blocked: false,
-          },
-        ],
-      }
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        {
+          id: 'DL-001',
+          description: 'Test',
+          acceptanceCriteria: ['Criterion'],
+          passed: false,
+          blocked: false,
+        },
+      ])
       const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-001',
         status: 'blocked',
@@ -387,19 +358,15 @@ describe('setDeliverableStatus', () => {
 
   describe('DL-T006: status=pending', () => {
     it('sets deliverable to pending state', () => {
-      const status: DeliverableStatus = {
-        createdAt: '2025-01-01',
-        updatedAt: '2025-01-01',
-        deliverables: [
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['Criterion'],
-            passed: true,
-            blocked: false,
-          },
-        ],
-      }
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        {
+          id: 'DL-001',
+          description: 'Test',
+          acceptanceCriteria: ['Criterion'],
+          passed: true,
+          blocked: false,
+        },
+      ])
       const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-001',
         status: 'pending',
@@ -416,19 +383,15 @@ describe('setDeliverableStatus', () => {
 
   describe('DL-T007: pending resets blocked state', () => {
     it('resets blocked deliverable to pending', () => {
-      const status: DeliverableStatus = {
-        createdAt: '2025-01-01',
-        updatedAt: '2025-01-01',
-        deliverables: [
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['Criterion'],
-            passed: false,
-            blocked: true,
-          },
-        ],
-      }
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        {
+          id: 'DL-001',
+          description: 'Test',
+          acceptanceCriteria: ['Criterion'],
+          passed: false,
+          blocked: true,
+        },
+      ])
       const input: SetDeliverableStatusInput = {
         deliverableId: 'DL-001',
         status: 'pending',
@@ -444,19 +407,15 @@ describe('setDeliverableStatus', () => {
 
   describe('Validation errors', () => {
     it('returns error for empty deliverable ID', () => {
-      const status: DeliverableStatus = {
-        createdAt: '2025-01-01',
-        updatedAt: '2025-01-01',
-        deliverables: [
-          {
-            id: 'DL-001',
-            description: 'Test',
-            acceptanceCriteria: ['Criterion'],
-            passed: false,
-            blocked: false,
-          },
-        ],
-      }
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        {
+          id: 'DL-001',
+          description: 'Test',
+          acceptanceCriteria: ['Criterion'],
+          passed: false,
+          blocked: false,
+        },
+      ])
       const input: SetDeliverableStatusInput = {
         deliverableId: '',
         status: 'passed',
@@ -470,210 +429,180 @@ describe('setDeliverableStatus', () => {
   })
 })
 
-describe('countPassedDeliverables', () => {
+describe('DeliverableStatus.countPassed', () => {
   it('returns 0 for empty status', () => {
-    const status = emptyDeliverableStatus()
-    expect(countPassedDeliverables(status)).toBe(0)
+    const status = DeliverableStatus.empty()
+    expect(status.countPassed()).toBe(0)
   })
 
   it('counts passed deliverables correctly', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'First',
-          acceptanceCriteria: ['Criterion'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'DL-002',
-          description: 'Second',
-          acceptanceCriteria: ['Criterion'],
-          passed: false,
-          blocked: false,
-        },
-        {
-          id: 'DL-003',
-          description: 'Third',
-          acceptanceCriteria: ['Criterion'],
-          passed: true,
-          blocked: false,
-        },
-      ],
-    }
-    expect(countPassedDeliverables(status)).toBe(2)
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      {
+        id: 'DL-001',
+        description: 'First',
+        acceptanceCriteria: ['Criterion'],
+        passed: true,
+        blocked: false,
+      },
+      {
+        id: 'DL-002',
+        description: 'Second',
+        acceptanceCriteria: ['Criterion'],
+        passed: false,
+        blocked: false,
+      },
+      {
+        id: 'DL-003',
+        description: 'Third',
+        acceptanceCriteria: ['Criterion'],
+        passed: true,
+        blocked: false,
+      },
+    ])
+    expect(status.countPassed()).toBe(2)
   })
 })
 
-describe('emptyDeliverableStatus', () => {
+describe('DeliverableStatus.empty', () => {
   it('creates empty status with timestamps', () => {
-    const status = emptyDeliverableStatus()
-    expect(status.deliverables).toEqual([])
+    const status = DeliverableStatus.empty()
+    expect([...status.deliverables]).toEqual([])
     expect(status.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     expect(status.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 })
 
-describe('allAchievableDeliverablesPassed', () => {
+describe('DeliverableStatus.allAchievablePassed', () => {
   it('returns true when all non-blocked deliverables pass', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'A',
-          acceptanceCriteria: ['C'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'DL-002',
-          description: 'B',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: true,
-        },
-      ],
-    }
-    expect(allAchievableDeliverablesPassed(status)).toBe(true)
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      {
+        id: 'DL-001',
+        description: 'A',
+        acceptanceCriteria: ['C'],
+        passed: true,
+        blocked: false,
+      },
+      {
+        id: 'DL-002',
+        description: 'B',
+        acceptanceCriteria: ['C'],
+        passed: false,
+        blocked: true,
+      },
+    ])
+    expect(status.allAchievablePassed()).toBe(true)
   })
 
   it('returns false when a non-blocked deliverable is not passed', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'A',
-          acceptanceCriteria: ['C'],
-          passed: true,
-          blocked: false,
-        },
-        {
-          id: 'DL-002',
-          description: 'B',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: false,
-        },
-      ],
-    }
-    expect(allAchievableDeliverablesPassed(status)).toBe(false)
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      {
+        id: 'DL-001',
+        description: 'A',
+        acceptanceCriteria: ['C'],
+        passed: true,
+        blocked: false,
+      },
+      {
+        id: 'DL-002',
+        description: 'B',
+        acceptanceCriteria: ['C'],
+        passed: false,
+        blocked: false,
+      },
+    ])
+    expect(status.allAchievablePassed()).toBe(false)
   })
 
   it('returns false when all deliverables are blocked', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'A',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: true,
-        },
-      ],
-    }
-    expect(allAchievableDeliverablesPassed(status)).toBe(false)
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      {
+        id: 'DL-001',
+        description: 'A',
+        acceptanceCriteria: ['C'],
+        passed: false,
+        blocked: true,
+      },
+    ])
+    expect(status.allAchievablePassed()).toBe(false)
   })
 
   it('returns false for empty deliverables', () => {
-    expect(allAchievableDeliverablesPassed(emptyDeliverableStatus())).toBe(
-      false,
-    )
+    expect(DeliverableStatus.empty().allAchievablePassed()).toBe(false)
   })
 })
 
-describe('countBlockedDeliverables', () => {
+describe('DeliverableStatus.countBlocked', () => {
   it('counts blocked deliverables correctly', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'A',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: false,
-        },
-        {
-          id: 'DL-002',
-          description: 'B',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: true,
-        },
-        {
-          id: 'DL-003',
-          description: 'C',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: true,
-        },
-      ],
-    }
-    expect(countBlockedDeliverables(status)).toBe(2)
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      {
+        id: 'DL-001',
+        description: 'A',
+        acceptanceCriteria: ['C'],
+        passed: false,
+        blocked: false,
+      },
+      {
+        id: 'DL-002',
+        description: 'B',
+        acceptanceCriteria: ['C'],
+        passed: false,
+        blocked: true,
+      },
+      {
+        id: 'DL-003',
+        description: 'C',
+        acceptanceCriteria: ['C'],
+        passed: false,
+        blocked: true,
+      },
+    ])
+    expect(status.countBlocked()).toBe(2)
   })
 })
 
-describe('allDeliverablesBlocked', () => {
+describe('DeliverableStatus.allBlocked', () => {
   it('returns true when all deliverables are blocked', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'A',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: true,
-        },
-        {
-          id: 'DL-002',
-          description: 'B',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: true,
-        },
-      ],
-    }
-    expect(allDeliverablesBlocked(status)).toBe(true)
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      {
+        id: 'DL-001',
+        description: 'A',
+        acceptanceCriteria: ['C'],
+        passed: false,
+        blocked: true,
+      },
+      {
+        id: 'DL-002',
+        description: 'B',
+        acceptanceCriteria: ['C'],
+        passed: false,
+        blocked: true,
+      },
+    ])
+    expect(status.allBlocked()).toBe(true)
   })
 
   it('returns false when some deliverables are not blocked', () => {
-    const status: DeliverableStatus = {
-      createdAt: '2025-01-01',
-      updatedAt: '2025-01-01',
-      deliverables: [
-        {
-          id: 'DL-001',
-          description: 'A',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: true,
-        },
-        {
-          id: 'DL-002',
-          description: 'B',
-          acceptanceCriteria: ['C'],
-          passed: false,
-          blocked: false,
-        },
-      ],
-    }
-    expect(allDeliverablesBlocked(status)).toBe(false)
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      {
+        id: 'DL-001',
+        description: 'A',
+        acceptanceCriteria: ['C'],
+        passed: false,
+        blocked: true,
+      },
+      {
+        id: 'DL-002',
+        description: 'B',
+        acceptanceCriteria: ['C'],
+        passed: false,
+        blocked: false,
+      },
+    ])
+    expect(status.allBlocked()).toBe(false)
   })
 
   it('returns false for empty deliverables', () => {
-    expect(allDeliverablesBlocked(emptyDeliverableStatus())).toBe(false)
+    expect(DeliverableStatus.empty().allBlocked()).toBe(false)
   })
 })
 
@@ -684,7 +613,7 @@ describe('nullDeliverableStatusReader', () => {
 
   it('load() returns empty status with timestamps', async () => {
     const status = await nullDeliverableStatusReader.load()
-    expect(status.deliverables).toEqual([])
+    expect([...status.deliverables]).toEqual([])
     expect(status.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     expect(status.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })

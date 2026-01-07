@@ -16,11 +16,92 @@ export interface Deliverable {
 
 /**
  * DeliverableStatus aggregate root - persisted in .autonoe/status.json
+ * Immutable class with query methods for deliverable state
  */
-export interface DeliverableStatus {
-  createdAt: string
-  updatedAt: string
-  deliverables: Deliverable[]
+export class DeliverableStatus {
+  readonly createdAt: string
+  readonly updatedAt: string
+  readonly deliverables: readonly Deliverable[]
+
+  constructor(
+    createdAt: string,
+    updatedAt: string,
+    deliverables: Deliverable[],
+  ) {
+    this.createdAt = createdAt
+    this.updatedAt = updatedAt
+    this.deliverables = deliverables
+  }
+
+  /**
+   * Factory method to create an empty status with current date
+   */
+  static empty(): DeliverableStatus {
+    const now = new Date().toISOString().split('T')[0]!
+    return new DeliverableStatus(now, now, [])
+  }
+
+  /**
+   * Factory method to create a status from data
+   */
+  static create(
+    createdAt: string,
+    updatedAt: string,
+    deliverables: Deliverable[],
+  ): DeliverableStatus {
+    return new DeliverableStatus(createdAt, updatedAt, deliverables)
+  }
+
+  /**
+   * Count passed deliverables
+   */
+  countPassed(): number {
+    return this.deliverables.filter((d) => d.passed).length
+  }
+
+  /**
+   * Count blocked deliverables
+   */
+  countBlocked(): number {
+    return this.deliverables.filter((d) => d.blocked).length
+  }
+
+  /**
+   * Check if all achievable (non-blocked) deliverables have passed
+   */
+  allAchievablePassed(): boolean {
+    const achievable = this.deliverables.filter((d) => !d.blocked)
+    if (achievable.length === 0) {
+      return false
+    }
+    return achievable.every((d) => d.passed)
+  }
+
+  /**
+   * Check if all deliverables are blocked
+   */
+  allBlocked(): boolean {
+    if (this.deliverables.length === 0) {
+      return false
+    }
+    return this.deliverables.every((d) => d.blocked)
+  }
+
+  /**
+   * Create a new status with updated deliverables
+   */
+  withDeliverables(deliverables: Deliverable[]): DeliverableStatus {
+    return new DeliverableStatus(this.createdAt, this.updatedAt, deliverables)
+  }
+
+  /**
+   * Create a new status with updated timestamp
+   */
+  withUpdatedAt(updatedAt: string): DeliverableStatus {
+    return new DeliverableStatus(this.createdAt, updatedAt, [
+      ...this.deliverables,
+    ])
+  }
 }
 
 /**
@@ -107,7 +188,6 @@ export const nullDeliverableStatusReader: DeliverableStatusReader = {
     return false
   },
   async load(): Promise<DeliverableStatus> {
-    const now = new Date().toISOString().split('T')[0]!
-    return { createdAt: now, updatedAt: now, deliverables: [] }
+    return DeliverableStatus.empty()
   },
 }

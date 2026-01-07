@@ -88,10 +88,9 @@ export {
 // Autonoe Protection exports
 export { createAutonoeProtectionHook } from './autonoeProtection'
 
-// Deliverable domain types
+// Deliverable domain types and class
 export type {
   Deliverable,
-  DeliverableStatus,
   DeliverableInput,
   CreateDeliverableInput,
   SetDeliverableStatusInput,
@@ -102,19 +101,13 @@ export type {
   DeliverableStatusReader,
   DeliverableRepository,
 } from './deliverableStatus'
-export { nullDeliverableStatusReader } from './deliverableStatus'
+export {
+  DeliverableStatus,
+  nullDeliverableStatusReader,
+} from './deliverableStatus'
 
 // Deliverable application services
-export {
-  createDeliverables,
-  setDeliverableStatus,
-  countPassedDeliverables,
-  emptyDeliverableStatus,
-  allAchievableDeliverablesPassed,
-  countBlockedDeliverables,
-  allDeliverablesBlocked,
-  getCurrentDate,
-} from './deliverableService'
+export { createDeliverables, setDeliverableStatus } from './deliverableService'
 
 // Instruction exports
 export type { InstructionName, InstructionResolver } from './instructions'

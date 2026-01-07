@@ -1,15 +1,14 @@
 /**
- * Deliverable application services and query predicates
+ * Deliverable application services
  * @see SPEC.md Section 3.5
  */
 
-import type {
-  Deliverable,
+import {
   DeliverableStatus,
-  DeliverableInput,
-  CreateDeliverableInput,
-  SetDeliverableStatusInput,
-  ToolResult,
+  type Deliverable,
+  type CreateDeliverableInput,
+  type SetDeliverableStatusInput,
+  type ToolResult,
 } from './deliverableStatus'
 
 /**
@@ -128,11 +127,10 @@ export function createDeliverables(
   }
 
   return {
-    status: {
-      createdAt: status.createdAt,
-      updatedAt: status.updatedAt,
-      deliverables: [...status.deliverables, ...newDeliverables],
-    },
+    status: status.withDeliverables([
+      ...status.deliverables,
+      ...newDeliverables,
+    ]),
     result: {
       success: true,
       message: `Created ${input.deliverables.length} deliverable(s) successfully`,
@@ -226,66 +224,10 @@ export function setDeliverableStatus(
   ]
 
   return {
-    status: {
-      createdAt: status.createdAt,
-      updatedAt: status.updatedAt,
-      deliverables: updatedDeliverables,
-    },
+    status: status.withDeliverables(updatedDeliverables),
     result: {
       success: true,
       message: `Deliverable "${updated.description}" (${updated.id}) marked as ${input.status}`,
     },
   }
-}
-
-/**
- * Count passed deliverables
- */
-export function countPassedDeliverables(status: DeliverableStatus): number {
-  return status.deliverables.filter((d) => d.passed).length
-}
-
-/**
- * Get current date in YYYY-MM-DD format
- */
-export function getCurrentDate(): string {
-  return new Date().toISOString().split('T')[0]!
-}
-
-/**
- * Create an empty DeliverableStatus
- */
-export function emptyDeliverableStatus(): DeliverableStatus {
-  const now = getCurrentDate()
-  return { createdAt: now, updatedAt: now, deliverables: [] }
-}
-
-/**
- * Check if all achievable (non-blocked) deliverables have passed
- */
-export function allAchievableDeliverablesPassed(
-  status: DeliverableStatus,
-): boolean {
-  const achievable = status.deliverables.filter((d) => !d.blocked)
-  if (achievable.length === 0) {
-    return false
-  }
-  return achievable.every((d) => d.passed)
-}
-
-/**
- * Count blocked deliverables
- */
-export function countBlockedDeliverables(status: DeliverableStatus): number {
-  return status.deliverables.filter((d) => d.blocked).length
-}
-
-/**
- * Check if all deliverables are blocked
- */
-export function allDeliverablesBlocked(status: DeliverableStatus): boolean {
-  if (status.deliverables.length === 0) {
-    return false
-  }
-  return status.deliverables.every((d) => d.blocked)
 }
