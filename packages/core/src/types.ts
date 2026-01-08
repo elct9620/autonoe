@@ -14,38 +14,19 @@ export type SessionOutcome =
   | 'quota_exceeded'
 
 /**
- * StreamEventEnd variants - discriminated union by outcome
+ * StreamEventEnd - discriminated union by outcome
  * @see SPEC.md Section 2.3 Domain Model
  */
-
-interface StreamEventEndBase {
+export type StreamEventEnd = {
   type: 'stream_end'
   totalCostUsd?: number
-}
-
-export interface StreamEventEndCompleted extends StreamEventEndBase {
-  outcome: 'completed'
-  result?: string
-}
-
-export interface StreamEventEndExecutionError extends StreamEventEndBase {
-  outcome: 'execution_error'
-  messages: string[]
-}
-
-export interface StreamEventEndMaxIterations extends StreamEventEndBase {
-  outcome: 'max_iterations'
-}
-
-export interface StreamEventEndBudgetExceeded extends StreamEventEndBase {
-  outcome: 'budget_exceeded'
-}
-
-export interface StreamEventEndQuotaExceeded extends StreamEventEndBase {
-  outcome: 'quota_exceeded'
-  message?: string
-  resetTime?: Date
-}
+} & (
+  | { outcome: 'completed'; result?: string }
+  | { outcome: 'execution_error'; messages: string[] }
+  | { outcome: 'max_iterations' }
+  | { outcome: 'budget_exceeded' }
+  | { outcome: 'quota_exceeded'; message?: string; resetTime?: Date }
+)
 
 // StreamEventText - Agent's text response
 export interface StreamEventText {
@@ -73,14 +54,6 @@ export interface StreamEventToolResponse {
   content: string
   isError: boolean
 }
-
-// StreamEventEnd - discriminated union of all session end variants
-export type StreamEventEnd =
-  | StreamEventEndCompleted
-  | StreamEventEndExecutionError
-  | StreamEventEndMaxIterations
-  | StreamEventEndBudgetExceeded
-  | StreamEventEndQuotaExceeded
 
 // StreamEventError - Error event from stream (SDK errors wrapped as events)
 export interface StreamEventError {

@@ -226,13 +226,13 @@ Thinking events are:
 
 **StreamEventEnd** - Discriminated union for session termination
 
-| Variant | Fields | Description |
-|---------|--------|-------------|
-| StreamEventEndCompleted | result?: string | Normal completion |
-| StreamEventEndExecutionError | messages: string[] | Execution errors |
-| StreamEventEndMaxIterations | - | Hit iteration limit |
-| StreamEventEndBudgetExceeded | - | API cost limit hit |
-| StreamEventEndQuotaExceeded | message?: string, resetTime?: Date | Subscription quota hit |
+| Outcome | Variant Fields | Description |
+|---------|----------------|-------------|
+| completed | result?: string | Normal completion |
+| execution_error | messages: string[] | Execution errors |
+| max_iterations | - | Hit iteration limit |
+| budget_exceeded | - | API cost limit hit |
+| quota_exceeded | message?: string, resetTime?: Date | Subscription quota hit |
 
 Common fields: `type: 'stream_end'`, `outcome: SessionOutcome`, `totalCostUsd?: number`
 

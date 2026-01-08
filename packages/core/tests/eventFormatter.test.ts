@@ -5,11 +5,7 @@ import type {
   StreamEventThinking,
   StreamEventToolInvocation,
   StreamEventToolResponse,
-  StreamEventEndCompleted,
-  StreamEventEndExecutionError,
-  StreamEventEndMaxIterations,
-  StreamEventEndBudgetExceeded,
-  StreamEventEndQuotaExceeded,
+  StreamEventEnd,
   StreamEventError,
 } from '../src/types'
 
@@ -132,7 +128,7 @@ describe('formatStreamEvent', () => {
 
   describe('StreamEventEnd', () => {
     it('formats completed with result text', () => {
-      const event: StreamEventEndCompleted = {
+      const event: StreamEventEnd = {
         type: 'stream_end',
         outcome: 'completed',
         result: 'Task completed',
@@ -143,7 +139,7 @@ describe('formatStreamEvent', () => {
     })
 
     it('formats error with error messages', () => {
-      const event: StreamEventEndExecutionError = {
+      const event: StreamEventEnd = {
         type: 'stream_end',
         outcome: 'execution_error',
         messages: ['Error 1', 'Error 2'],
@@ -154,7 +150,7 @@ describe('formatStreamEvent', () => {
     })
 
     it('formats without result or errors', () => {
-      const event: StreamEventEndMaxIterations = {
+      const event: StreamEventEnd = {
         type: 'stream_end',
         outcome: 'max_iterations',
       }
@@ -162,7 +158,7 @@ describe('formatStreamEvent', () => {
     })
 
     it('formats budget exceeded', () => {
-      const event: StreamEventEndBudgetExceeded = {
+      const event: StreamEventEnd = {
         type: 'stream_end',
         outcome: 'budget_exceeded',
       }
@@ -170,7 +166,7 @@ describe('formatStreamEvent', () => {
     })
 
     it('formats quota exceeded', () => {
-      const event: StreamEventEndQuotaExceeded = {
+      const event: StreamEventEnd = {
         type: 'stream_end',
         outcome: 'quota_exceeded',
         message: "You've hit your limit",

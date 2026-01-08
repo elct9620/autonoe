@@ -4,9 +4,7 @@ import {
   type StreamEventText,
   type StreamEventToolInvocation,
   type StreamEventToolResponse,
-  type StreamEventEndCompleted,
-  type StreamEventEndExecutionError,
-  type StreamEventEndQuotaExceeded,
+  type StreamEventEnd,
   type StreamEventError,
 } from '../../src/index'
 
@@ -117,7 +115,7 @@ export function createMockToolResponse(
 export function createMockStreamEnd(
   result?: string,
   totalCostUsd?: number,
-): StreamEventEndCompleted {
+): StreamEventEnd {
   return {
     type: 'stream_end',
     outcome: 'completed',
@@ -129,9 +127,7 @@ export function createMockStreamEnd(
 /**
  * Create a mock StreamEventEnd event with error outcome
  */
-export function createMockErrorStreamEnd(
-  messages: string[],
-): StreamEventEndExecutionError {
+export function createMockErrorStreamEnd(messages: string[]): StreamEventEnd {
   return {
     type: 'stream_end',
     outcome: 'execution_error',
@@ -145,7 +141,7 @@ export function createMockErrorStreamEnd(
 export function createMockQuotaExceededStreamEnd(
   message: string,
   resetTime?: Date,
-): StreamEventEndQuotaExceeded {
+): StreamEventEnd {
   return {
     type: 'stream_end',
     outcome: 'quota_exceeded',
