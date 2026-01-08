@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { LoopState } from '../src/loopState'
-import { ExitReason } from '../src/sessionRunner'
 
 /**
  * LoopState Tests
@@ -134,21 +133,21 @@ describe('LoopState', () => {
   describe('setExitReason', () => {
     it('LS-050: sets exit reason', () => {
       const initial = LoopState.create()
-      const next = initial.setExitReason(ExitReason.AllPassed)
-      expect(next.exitReason).toBe(ExitReason.AllPassed)
+      const next = initial.setExitReason('all_passed')
+      expect(next.exitReason).toBe('all_passed')
     })
 
     it('LS-051: can set different exit reasons', () => {
       const initial = LoopState.create()
 
-      expect(initial.setExitReason(ExitReason.Interrupted).exitReason).toBe(
-        ExitReason.Interrupted,
+      expect(initial.setExitReason('interrupted').exitReason).toBe(
+        'interrupted',
       )
-      expect(initial.setExitReason(ExitReason.QuotaExceeded).exitReason).toBe(
-        ExitReason.QuotaExceeded,
+      expect(initial.setExitReason('quota_exceeded').exitReason).toBe(
+        'quota_exceeded',
       )
-      expect(initial.setExitReason(ExitReason.MaxIterations).exitReason).toBe(
-        ExitReason.MaxIterations,
+      expect(initial.setExitReason('max_iterations').exitReason).toBe(
+        'max_iterations',
       )
     })
   })

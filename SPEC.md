@@ -866,15 +866,14 @@ interface SessionRunnerResult {
   error?: string             // error message when maxRetries exceeded
 }
 
-// Exit reason enum for unified exit point
-enum ExitReason {
-  AllPassed = 'all_passed',
-  AllBlocked = 'all_blocked',
-  MaxIterations = 'max_iterations',
-  QuotaExceeded = 'quota_exceeded',
-  Interrupted = 'interrupted',
-  MaxRetriesExceeded = 'max_retries_exceeded',
-}
+// Exit reason type for unified exit point
+type ExitReason =
+  | 'all_passed'
+  | 'all_blocked'
+  | 'max_iterations'
+  | 'quota_exceeded'
+  | 'interrupted'
+  | 'max_retries_exceeded'
 ```
 
 ### 3.10 Termination Conditions

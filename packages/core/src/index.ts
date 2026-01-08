@@ -51,10 +51,10 @@ export { Session, type SessionOptions, type SessionResult } from './session'
 // SessionRunner exports
 export {
   SessionRunner,
-  ExitReason,
   type SessionRunnerOptions,
   type SessionRunnerResult,
 } from './sessionRunner'
+export type { ExitReason } from './exitReason'
 
 // BashSecurity exports
 export type {

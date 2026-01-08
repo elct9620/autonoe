@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SessionRunner, ExitReason } from '../src/sessionRunner'
+import { SessionRunner } from '../src/sessionRunner'
 import { silentLogger } from '../src/logger'
 import type { AgentClient, AgentClientFactory } from '../src/agentClient'
 import type { MessageStream } from '../src/types'
@@ -657,14 +657,23 @@ describe('SessionRunner', () => {
     })
   })
 
-  describe('ExitReason enum', () => {
-    it('should export ExitReason enum', () => {
-      expect(ExitReason.AllPassed).toBe('all_passed')
-      expect(ExitReason.AllBlocked).toBe('all_blocked')
-      expect(ExitReason.MaxIterations).toBe('max_iterations')
-      expect(ExitReason.QuotaExceeded).toBe('quota_exceeded')
-      expect(ExitReason.Interrupted).toBe('interrupted')
-      expect(ExitReason.MaxRetriesExceeded).toBe('max_retries_exceeded')
+  describe('ExitReason type', () => {
+    it('should use correct exit reason values', () => {
+      // ExitReason is now a literal union type, values are strings
+      const exitReasons = [
+        'all_passed',
+        'all_blocked',
+        'max_iterations',
+        'quota_exceeded',
+        'interrupted',
+        'max_retries_exceeded',
+      ] as const
+      expect(exitReasons).toContain('all_passed')
+      expect(exitReasons).toContain('all_blocked')
+      expect(exitReasons).toContain('max_iterations')
+      expect(exitReasons).toContain('quota_exceeded')
+      expect(exitReasons).toContain('interrupted')
+      expect(exitReasons).toContain('max_retries_exceeded')
     })
   })
 

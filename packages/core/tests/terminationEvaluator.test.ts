@@ -4,7 +4,6 @@ import {
   type TerminationContext,
 } from '../src/terminationEvaluator'
 import { LoopState } from '../src/loopState'
-import { ExitReason } from '../src/sessionRunner'
 import { DeliverableStatus } from '../src/deliverableStatus'
 import { Deliverable } from '../src/deliverable'
 
@@ -53,7 +52,7 @@ describe('evaluateTermination', () => {
       expect(decision.action).toBe('terminate')
       expect(decision).toEqual({
         action: 'terminate',
-        exitReason: ExitReason.Interrupted,
+        exitReason: 'interrupted',
       })
     })
 
@@ -85,7 +84,7 @@ describe('evaluateTermination', () => {
 
       expect(decision).toEqual({
         action: 'terminate',
-        exitReason: ExitReason.QuotaExceeded,
+        exitReason: 'quota_exceeded',
       })
     })
 
@@ -131,7 +130,7 @@ describe('evaluateTermination', () => {
 
       expect(decision).toEqual({
         action: 'terminate',
-        exitReason: ExitReason.AllPassed,
+        exitReason: 'all_passed',
       })
     })
 
@@ -148,7 +147,7 @@ describe('evaluateTermination', () => {
 
       expect(decision).toEqual({
         action: 'terminate',
-        exitReason: ExitReason.AllPassed,
+        exitReason: 'all_passed',
       })
     })
 
@@ -187,7 +186,7 @@ describe('evaluateTermination', () => {
 
       expect(decision).toEqual({
         action: 'terminate',
-        exitReason: ExitReason.AllBlocked,
+        exitReason: 'all_blocked',
       })
     })
 
@@ -219,7 +218,7 @@ describe('evaluateTermination', () => {
 
       expect(decision).toEqual({
         action: 'terminate',
-        exitReason: ExitReason.MaxIterations,
+        exitReason: 'max_iterations',
       })
     })
 
@@ -263,7 +262,7 @@ describe('evaluateTermination', () => {
 
       expect(decision).toEqual({
         action: 'terminate',
-        exitReason: ExitReason.MaxRetriesExceeded,
+        exitReason: 'max_retries_exceeded',
       })
     })
 
@@ -310,7 +309,7 @@ describe('evaluateTermination', () => {
       // Should return Interrupted even though AllPassed and MaxIterations also match
       expect(decision).toEqual({
         action: 'terminate',
-        exitReason: ExitReason.Interrupted,
+        exitReason: 'interrupted',
       })
     })
 
@@ -330,7 +329,7 @@ describe('evaluateTermination', () => {
 
       expect(decision).toEqual({
         action: 'terminate',
-        exitReason: ExitReason.QuotaExceeded,
+        exitReason: 'quota_exceeded',
       })
     })
 
@@ -351,7 +350,7 @@ describe('evaluateTermination', () => {
 
       expect(decision).toEqual({
         action: 'terminate',
-        exitReason: ExitReason.AllPassed,
+        exitReason: 'all_passed',
       })
     })
   })

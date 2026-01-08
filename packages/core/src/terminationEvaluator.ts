@@ -1,6 +1,6 @@
 import type { LoopState } from './loopState'
 import type { DeliverableStatus } from './deliverableStatus'
-import { ExitReason } from './exitReason'
+import type { ExitReason } from './exitReason'
 import type { SessionOutcome } from './types'
 import { calculateWaitDuration } from './quotaManager'
 
@@ -49,7 +49,7 @@ export function evaluateTermination(
 ): TerminationDecision {
   // 1. Interrupted (highest priority)
   if (context.signal?.aborted) {
-    return { action: 'terminate', exitReason: ExitReason.Interrupted }
+    return { action: 'terminate', exitReason: 'interrupted' }
   }
 
   // 2. Quota exceeded
@@ -58,17 +58,17 @@ export function evaluateTermination(
       const waitMs = calculateWaitDuration(context.quotaResetTime)
       return { action: 'wait', durationMs: waitMs }
     }
-    return { action: 'terminate', exitReason: ExitReason.QuotaExceeded }
+    return { action: 'terminate', exitReason: 'quota_exceeded' }
   }
 
   // 3. All achievable deliverables passed
   if (context.deliverableStatus?.allAchievablePassed()) {
-    return { action: 'terminate', exitReason: ExitReason.AllPassed }
+    return { action: 'terminate', exitReason: 'all_passed' }
   }
 
   // 4. All deliverables blocked
   if (context.deliverableStatus?.allBlocked()) {
-    return { action: 'terminate', exitReason: ExitReason.AllBlocked }
+    return { action: 'terminate', exitReason: 'all_blocked' }
   }
 
   // 5. Max iterations reached
@@ -76,12 +76,12 @@ export function evaluateTermination(
     context.options.maxIterations !== undefined &&
     context.state.iterations >= context.options.maxIterations
   ) {
-    return { action: 'terminate', exitReason: ExitReason.MaxIterations }
+    return { action: 'terminate', exitReason: 'max_iterations' }
   }
 
   // 6. Max retries exceeded
   if (context.state.consecutiveErrors > context.options.maxRetries) {
-    return { action: 'terminate', exitReason: ExitReason.MaxRetriesExceeded }
+    return { action: 'terminate', exitReason: 'max_retries_exceeded' }
   }
 
   return { action: 'continue' }

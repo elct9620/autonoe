@@ -19,10 +19,10 @@ import { formatDuration } from './duration'
 import { realTimer } from './timer'
 import { LoopState } from './loopState'
 import { evaluateTermination } from './terminationEvaluator'
-import { ExitReason } from './exitReason'
+import type { ExitReason } from './exitReason'
 
 // Re-export for API compatibility
-export { ExitReason } from './exitReason'
+export type { ExitReason } from './exitReason'
 
 /**
  * SessionRunner configuration options
@@ -71,10 +71,10 @@ function buildResult(
     blockedCount: state.blockedCount,
     totalDuration,
     totalCostUsd: state.totalCostUsd,
-    interrupted: state.exitReason === ExitReason.Interrupted,
-    quotaExceeded: state.exitReason === ExitReason.QuotaExceeded,
+    interrupted: state.exitReason === 'interrupted',
+    quotaExceeded: state.exitReason === 'quota_exceeded',
     error:
-      state.exitReason === ExitReason.MaxRetriesExceeded
+      state.exitReason === 'max_retries_exceeded'
         ? state.lastError?.message
         : undefined,
   }
@@ -310,27 +310,27 @@ export class SessionRunner {
     state: LoopState,
   ): void {
     switch (reason) {
-      case ExitReason.Interrupted:
+      case 'interrupted':
         logger.info('User interrupted')
         break
-      case ExitReason.QuotaExceeded:
+      case 'quota_exceeded':
         logger.error('Quota exceeded')
         break
-      case ExitReason.AllPassed: {
+      case 'all_passed': {
         const blockedMsg =
           state.blockedCount > 0 ? ` (${state.blockedCount} blocked)` : ''
         logger.info(`All achievable deliverables passed${blockedMsg}`)
         break
       }
-      case ExitReason.AllBlocked:
+      case 'all_blocked':
         logger.info(
           `All ${state.deliverablesTotalCount} deliverables are blocked`,
         )
         break
-      case ExitReason.MaxIterations:
+      case 'max_iterations':
         logger.info(`Max iterations (${this.maxIterations}) reached`)
         break
-      case ExitReason.MaxRetriesExceeded:
+      case 'max_retries_exceeded':
         logger.error(
           `Session failed after ${this.maxRetries} consecutive errors`,
         )
