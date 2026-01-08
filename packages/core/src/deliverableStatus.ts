@@ -89,9 +89,11 @@ export class DeliverableStatus {
    * Create a new status with updated timestamp
    */
   withUpdatedAt(updatedAt: string): DeliverableStatus {
-    return new DeliverableStatus(this.createdAt, updatedAt, [
-      ...this.deliverables,
-    ])
+    return new DeliverableStatus(
+      this.createdAt,
+      updatedAt,
+      this.deliverables as Deliverable[],
+    )
   }
 }
 
