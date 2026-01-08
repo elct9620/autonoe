@@ -1,4 +1,4 @@
-import { ExitReason } from './sessionRunner'
+import { ExitReason } from './exitReason'
 
 /**
  * Immutable value object representing session runner loop state

@@ -19,19 +19,10 @@ import { formatDuration } from './duration'
 import { realTimer } from './timer'
 import { LoopState } from './loopState'
 import { evaluateTermination } from './terminationEvaluator'
+import { ExitReason } from './exitReason'
 
-/**
- * Exit reason for session runner loop
- * @see SPEC.md Section 3.10
- */
-export enum ExitReason {
-  AllPassed = 'all_passed',
-  AllBlocked = 'all_blocked',
-  MaxIterations = 'max_iterations',
-  QuotaExceeded = 'quota_exceeded',
-  Interrupted = 'interrupted',
-  MaxRetriesExceeded = 'max_retries_exceeded',
-}
+// Re-export for API compatibility
+export { ExitReason } from './exitReason'
 
 /**
  * SessionRunner configuration options

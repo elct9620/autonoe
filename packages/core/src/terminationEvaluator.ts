@@ -1,6 +1,6 @@
 import type { LoopState } from './loopState'
 import type { DeliverableStatus } from './deliverableStatus'
-import { ExitReason } from './sessionRunner'
+import { ExitReason } from './exitReason'
 import type { SessionOutcome } from './types'
 import { calculateWaitDuration } from './quotaManager'
 
