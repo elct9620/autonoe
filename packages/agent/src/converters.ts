@@ -6,10 +6,6 @@ import type {
 } from '@anthropic-ai/claude-agent-sdk'
 import type {
   StreamEvent,
-  StreamEventText,
-  StreamEventThinking,
-  StreamEventToolInvocation,
-  StreamEventToolResponse,
   StreamEventEnd,
   McpServer,
   PreToolUseHook,
@@ -71,20 +67,20 @@ export function toStreamEvent(block: SDKContentBlock): StreamEvent | null {
       return {
         type: 'stream_thinking',
         thinking: block.thinking ?? '',
-      } as StreamEventThinking
+      }
 
     case 'text':
       return {
         type: 'stream_text',
         text: block.text ?? '',
-      } as StreamEventText
+      }
 
     case 'tool_use':
       return {
         type: 'stream_tool_invocation',
         name: block.name ?? '',
         input: block.input ?? {},
-      } as StreamEventToolInvocation
+      }
 
     case 'tool_result': {
       // Normalize content: array of text blocks to single string
@@ -99,7 +95,7 @@ export function toStreamEvent(block: SDKContentBlock): StreamEvent | null {
         toolUseId: block.tool_use_id ?? '',
         content,
         isError: block.is_error ?? false,
-      } as StreamEventToolResponse
+      }
     }
 
     default:
