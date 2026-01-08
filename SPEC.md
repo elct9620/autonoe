@@ -285,7 +285,7 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 | deliverableId | string | Deliverable ID to update |
 | status | 'pending' \| 'passed' \| 'blocked' | New status (pending=reset, passed=completed, blocked=external constraints) |
 
-**ToolResult** - Result returned by tool handlers
+**OperationResult** - Result returned by application services
 
 | Field | Type | Description |
 |-------|------|-------------|

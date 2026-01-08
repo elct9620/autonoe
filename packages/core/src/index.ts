@@ -98,7 +98,7 @@ export type {
   SetDeliverableStatusInput,
   DeliverableStatusNotification,
   DeliverableStatusCallback,
-  ToolResult,
+  OperationResult,
   DeliverableStatusReader,
   DeliverableRepository,
 } from './deliverableStatus'

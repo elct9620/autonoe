@@ -8,7 +8,7 @@ import {
   DeliverableStatus,
   type CreateDeliverableInput,
   type SetDeliverableStatusInput,
-  type ToolResult,
+  type OperationResult,
 } from './deliverableStatus'
 
 /**
@@ -19,7 +19,7 @@ type ServiceErrorCode = 'VALIDATION_ERROR' | 'DUPLICATE_ID' | 'NOT_FOUND'
 /**
  * Service result type alias
  */
-type ServiceResult = { status: DeliverableStatus; result: ToolResult }
+type ServiceResult = { status: DeliverableStatus; result: OperationResult }
 
 /**
  * Create a failure result with unchanged status
@@ -46,7 +46,7 @@ function success(status: DeliverableStatus, message: string): ServiceResult {
 export function createDeliverables(
   status: DeliverableStatus,
   input: CreateDeliverableInput,
-): { status: DeliverableStatus; result: ToolResult } {
+): { status: DeliverableStatus; result: OperationResult } {
   // Validate batch is not empty
   if (!input.deliverables || input.deliverables.length === 0) {
     return failure(
@@ -141,7 +141,7 @@ export function createDeliverables(
 export function setDeliverableStatus(
   status: DeliverableStatus,
   input: SetDeliverableStatusInput,
-): { status: DeliverableStatus; result: ToolResult } {
+): { status: DeliverableStatus; result: OperationResult } {
   // Validate input
   if (!input.deliverableId || input.deliverableId.trim() === '') {
     return failure(status, 'Deliverable ID is required', 'VALIDATION_ERROR')

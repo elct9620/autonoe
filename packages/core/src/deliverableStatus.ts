@@ -137,9 +137,9 @@ export type SetDeliverableStatusInput = {
 }
 
 /**
- * Tool result returned to the agent
+ * Operation result returned by application services
  */
-export type ToolResult = {
+export type OperationResult = {
   success: boolean
   message: string
   error?: string

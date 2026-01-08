@@ -7,4 +7,3 @@ export {
   handleCreateDeliverables,
   handleSetDeliverableStatus,
 } from './deliverableToolsAdapter'
-export type { ToolResult } from './deliverableToolsAdapter'

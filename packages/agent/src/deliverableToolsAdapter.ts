@@ -10,11 +10,9 @@ import type {
 import { createDeliverables, setDeliverableStatus } from '@autonoe/core'
 
 /**
- * Tool result format for MCP tools
+ * MCP tool output format (SDK required structure)
  */
-export interface ToolResult {
-  content: Array<{ type: 'text'; text: string }>
-}
+type McpToolOutput = { content: Array<{ type: 'text'; text: string }> }
 
 /**
  * Handler for create_deliverable tool (batch)
@@ -23,7 +21,7 @@ export interface ToolResult {
 export async function handleCreateDeliverables(
   repository: DeliverableRepository,
   input: CreateDeliverableInput,
-): Promise<ToolResult> {
+): Promise<McpToolOutput> {
   const status = await repository.load()
   const { status: newStatus, result } = createDeliverables(status, input)
 
@@ -56,7 +54,7 @@ export async function handleSetDeliverableStatus(
   repository: DeliverableRepository,
   input: SetDeliverableStatusInput,
   onStatusChange?: DeliverableStatusCallback,
-): Promise<ToolResult> {
+): Promise<McpToolOutput> {
   const status = await repository.load()
 
   // Find deliverable to get previous status
