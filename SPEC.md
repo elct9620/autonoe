@@ -302,8 +302,7 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 | id | string | Unique identifier (e.g., DL-001) |
 | description | string | Clear description of the deliverable |
 | acceptanceCriteria | string[] | Verifiable conditions for completion |
-| passed | boolean | Verification status |
-| blocked | boolean | When true, deliverable is blocked due to external constraints (mutually exclusive with passed=true) |
+| status | 'pending' \| 'passed' \| 'blocked' | Current status (pending=not started/reset, passed=completed, blocked=external constraints) |
 
 | Type | acceptanceCriteria Examples |
 |------|----------------------------|
@@ -323,21 +322,21 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 │   └────┬─────┘                                              │
 │        │                                                    │
 │        ▼                                                    │
-│   ┌──────────┐    set_status(passed=true)    ┌──────────┐  │
+│   ┌──────────┐    set_status('passed')       ┌──────────┐  │
 │   │ pending  │ ─────────────────────────────▶│  passed  │  │
-│   │passed=F  │                               │passed=T  │  │
-│   │blocked=F │◀─────────────────────────────│blocked=F │  │
-│   └────┬─────┘    set_status(reset)          └──────────┘  │
+│   │ status=  │                               │ status=  │  │
+│   │'pending' │◀─────────────────────────────│ 'passed' │  │
+│   └────┬─────┘    set_status('pending')      └──────────┘  │
 │        │                                           ▲        │
-│        │ set_status(blocked=true)                  │        │
+│        │ set_status('blocked')                     │        │
 │        ▼                                           │        │
 │   ┌──────────┐                                     │        │
 │   │ blocked  │─────────────────────────────────────┘        │
-│   │passed=F  │    set_status(passed=true)                   │
-│   │blocked=T │                                              │
+│   │ status=  │    set_status('passed')                      │
+│   │'blocked' │                                              │
 │   └────┬─────┘                                              │
 │        │                                                    │
-│        └──────────────── set_status(reset) ─────────────────┤
+│        └─────────────── set_status('pending') ──────────────┤
 │                                    │                        │
 │                                    ▼                        │
 │                              (back to pending)              │
@@ -347,11 +346,11 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 | Transition | From | To | Constraint |
 |------------|------|-----|------------|
 | create | - | pending | Initial state |
-| set_status(passed=true) | pending/blocked | passed | Sets passed=true, blocked=false |
-| set_status(blocked=true) | pending | blocked | Sets passed=false, blocked=true |
-| set_status(reset) | passed/blocked | pending | Sets passed=false, blocked=false |
+| set_status('passed') | pending/blocked | passed | Sets status='passed' |
+| set_status('blocked') | pending | blocked | Sets status='blocked' |
+| set_status('pending') | passed/blocked | pending | Sets status='pending' |
 
-Invariant: `passed` and `blocked` are mutually exclusive.
+Invariant: Single `status` field eliminates invalid state combinations.
 
 #### Aggregates
 
@@ -1023,11 +1022,17 @@ project/
         "Invalid credentials show error message",
         "Session persists across page refresh"
       ],
-      "passed": false
+      "passed": false,
+      "blocked": false
     }
   ]
 }
 ```
+
+**Note:** For backward compatibility, the JSON file uses `passed` (boolean) and `blocked` (boolean) fields. The domain model internally uses a single `status` field that maps to these values:
+- `status='pending'` → `passed=false, blocked=false`
+- `status='passed'` → `passed=true, blocked=false`
+- `status='blocked'` → `passed=false, blocked=true`
 
 ### 5.3 State Persistence
 
