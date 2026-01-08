@@ -23,13 +23,15 @@ export interface TerminationContext {
 
 /**
  * Decision returned by termination evaluator
+ * Discriminated union with three possible actions:
+ * - terminate: stop loop with exit reason
+ * - wait: pause before retry (quota wait)
+ * - continue: proceed to next iteration
  */
-export interface TerminationDecision {
-  shouldTerminate: boolean
-  exitReason?: ExitReason
-  /** Wait duration in ms before retrying (for quota wait) */
-  waitDuration?: number
-}
+export type TerminationDecision =
+  | { action: 'terminate'; exitReason: ExitReason }
+  | { action: 'wait'; durationMs: number }
+  | { action: 'continue' }
 
 /**
  * Evaluate termination conditions with priority order:
@@ -47,26 +49,26 @@ export function evaluateTermination(
 ): TerminationDecision {
   // 1. Interrupted (highest priority)
   if (context.signal?.aborted) {
-    return { shouldTerminate: true, exitReason: ExitReason.Interrupted }
+    return { action: 'terminate', exitReason: ExitReason.Interrupted }
   }
 
   // 2. Quota exceeded
   if (context.sessionOutcome === 'quota_exceeded') {
     if (context.options.waitForQuota && context.quotaResetTime) {
       const waitMs = calculateWaitDuration(context.quotaResetTime)
-      return { shouldTerminate: false, waitDuration: waitMs }
+      return { action: 'wait', durationMs: waitMs }
     }
-    return { shouldTerminate: true, exitReason: ExitReason.QuotaExceeded }
+    return { action: 'terminate', exitReason: ExitReason.QuotaExceeded }
   }
 
   // 3. All achievable deliverables passed
   if (context.deliverableStatus?.allAchievablePassed()) {
-    return { shouldTerminate: true, exitReason: ExitReason.AllPassed }
+    return { action: 'terminate', exitReason: ExitReason.AllPassed }
   }
 
   // 4. All deliverables blocked
   if (context.deliverableStatus?.allBlocked()) {
-    return { shouldTerminate: true, exitReason: ExitReason.AllBlocked }
+    return { action: 'terminate', exitReason: ExitReason.AllBlocked }
   }
 
   // 5. Max iterations reached
@@ -74,13 +76,13 @@ export function evaluateTermination(
     context.options.maxIterations !== undefined &&
     context.state.iterations >= context.options.maxIterations
   ) {
-    return { shouldTerminate: true, exitReason: ExitReason.MaxIterations }
+    return { action: 'terminate', exitReason: ExitReason.MaxIterations }
   }
 
   // 6. Max retries exceeded
   if (context.state.consecutiveErrors > context.options.maxRetries) {
-    return { shouldTerminate: true, exitReason: ExitReason.MaxRetriesExceeded }
+    return { action: 'terminate', exitReason: ExitReason.MaxRetriesExceeded }
   }
 
-  return { shouldTerminate: false }
+  return { action: 'continue' }
 }

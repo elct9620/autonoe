@@ -116,7 +116,7 @@ export class SessionRunner {
     while (!state.exitReason) {
       // Pre-session: check interrupt
       const preDecision = this.runTerminationEvaluation(state, { signal })
-      if (preDecision.shouldTerminate && preDecision.exitReason) {
+      if (preDecision.action === 'terminate') {
         this.logTermination(logger, preDecision.exitReason, state)
         state = state.setExitReason(preDecision.exitReason)
         break
@@ -168,21 +168,27 @@ export class SessionRunner {
           signal,
         })
 
-        // Handle quota wait (special case: not terminating, but waiting)
-        if (postDecision.waitDuration !== undefined) {
-          logger.info(
-            `Quota exceeded, waiting ${formatDuration(postDecision.waitDuration)} until reset...`,
-          )
-          await this.timer.delay(postDecision.waitDuration)
-          // Retry same session (don't count this iteration)
-          state = state.decrementIterations()
-          continue
+        // Handle decision with switch for type safety
+        switch (postDecision.action) {
+          case 'terminate':
+            this.logTermination(logger, postDecision.exitReason, state)
+            state = state.setExitReason(postDecision.exitReason)
+            break
+          case 'wait':
+            logger.info(
+              `Quota exceeded, waiting ${formatDuration(postDecision.durationMs)} until reset...`,
+            )
+            await this.timer.delay(postDecision.durationMs)
+            // Retry same session (don't count this iteration)
+            state = state.decrementIterations()
+            continue
+          case 'continue':
+            // Proceed to next iteration
+            break
         }
 
-        // Handle termination
-        if (postDecision.shouldTerminate && postDecision.exitReason) {
-          this.logTermination(logger, postDecision.exitReason, state)
-          state = state.setExitReason(postDecision.exitReason)
+        // Exit loop if terminated
+        if (postDecision.action === 'terminate') {
           break
         }
 
@@ -197,7 +203,7 @@ export class SessionRunner {
 
         // Check if max retries exceeded
         const errorDecision = this.runTerminationEvaluation(state, { signal })
-        if (errorDecision.shouldTerminate && errorDecision.exitReason) {
+        if (errorDecision.action === 'terminate') {
           this.logTermination(logger, errorDecision.exitReason, state)
           state = state.setExitReason(errorDecision.exitReason)
           break
