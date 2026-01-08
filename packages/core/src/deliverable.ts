@@ -116,7 +116,7 @@ export class Deliverable {
     return new Deliverable(
       this.id,
       this.description,
-      [...this.acceptanceCriteria],
+      this.acceptanceCriteria as string[],
       'passed',
     )
   }
@@ -129,7 +129,7 @@ export class Deliverable {
     return new Deliverable(
       this.id,
       this.description,
-      [...this.acceptanceCriteria],
+      this.acceptanceCriteria as string[],
       'blocked',
     )
   }
@@ -142,7 +142,7 @@ export class Deliverable {
     return new Deliverable(
       this.id,
       this.description,
-      [...this.acceptanceCriteria],
+      this.acceptanceCriteria as string[],
       'pending',
     )
   }
