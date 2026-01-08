@@ -12,6 +12,34 @@ import {
 } from './deliverableStatus'
 
 /**
+ * Error codes for deliverable service operations
+ */
+type ServiceErrorCode = 'VALIDATION_ERROR' | 'DUPLICATE_ID' | 'NOT_FOUND'
+
+/**
+ * Service result type alias
+ */
+type ServiceResult = { status: DeliverableStatus; result: ToolResult }
+
+/**
+ * Create a failure result with unchanged status
+ */
+function failure(
+  status: DeliverableStatus,
+  message: string,
+  error: ServiceErrorCode,
+): ServiceResult {
+  return { status, result: { success: false, message, error } }
+}
+
+/**
+ * Create a success result with updated status
+ */
+function success(status: DeliverableStatus, message: string): ServiceResult {
+  return { status, result: { success: true, message } }
+}
+
+/**
  * Create one or more deliverables in the status (batch)
  * @returns Updated status and tool result
  */
@@ -21,28 +49,18 @@ export function createDeliverables(
 ): { status: DeliverableStatus; result: ToolResult } {
   // Validate batch is not empty
   if (!input.deliverables || input.deliverables.length === 0) {
-    return {
+    return failure(
       status,
-      result: {
-        success: false,
-        message: 'At least one deliverable is required',
-        error: 'VALIDATION_ERROR',
-      },
-    }
+      'At least one deliverable is required',
+      'VALIDATION_ERROR',
+    )
   }
 
   // Check for duplicate IDs within batch
   const batchIds = new Set<string>()
   for (const d of input.deliverables) {
     if (batchIds.has(d.id)) {
-      return {
-        status,
-        result: {
-          success: false,
-          message: `Duplicate ID "${d.id}" in batch`,
-          error: 'DUPLICATE_ID',
-        },
-      }
+      return failure(status, `Duplicate ID "${d.id}" in batch`, 'DUPLICATE_ID')
     }
     batchIds.add(d.id)
   }
@@ -52,68 +70,49 @@ export function createDeliverables(
   for (const deliverableInput of input.deliverables) {
     // Validate input
     if (!deliverableInput.id || deliverableInput.id.trim() === '') {
-      return {
-        status,
-        result: {
-          success: false,
-          message: 'Deliverable ID is required',
-          error: 'VALIDATION_ERROR',
-        },
-      }
+      return failure(status, 'Deliverable ID is required', 'VALIDATION_ERROR')
     }
 
     if (
       !deliverableInput.description ||
       deliverableInput.description.trim() === ''
     ) {
-      return {
+      return failure(
         status,
-        result: {
-          success: false,
-          message: 'Deliverable description is required',
-          error: 'VALIDATION_ERROR',
-        },
-      }
+        'Deliverable description is required',
+        'VALIDATION_ERROR',
+      )
     }
 
     if (
       !deliverableInput.acceptanceCriteria ||
       deliverableInput.acceptanceCriteria.length === 0
     ) {
-      return {
+      return failure(
         status,
-        result: {
-          success: false,
-          message: 'At least one acceptance criterion is required',
-          error: 'VALIDATION_ERROR',
-        },
-      }
+        'At least one acceptance criterion is required',
+        'VALIDATION_ERROR',
+      )
     }
 
     // Check for empty acceptance criteria
     if (
       deliverableInput.acceptanceCriteria.some((c) => !c || c.trim() === '')
     ) {
-      return {
+      return failure(
         status,
-        result: {
-          success: false,
-          message: 'Acceptance criteria cannot be empty',
-          error: 'VALIDATION_ERROR',
-        },
-      }
+        'Acceptance criteria cannot be empty',
+        'VALIDATION_ERROR',
+      )
     }
 
     // Check for duplicate ID in existing status
     if (status.deliverables.some((d) => d.id === deliverableInput.id)) {
-      return {
+      return failure(
         status,
-        result: {
-          success: false,
-          message: `Deliverable with ID "${deliverableInput.id}" already exists`,
-          error: 'DUPLICATE_ID',
-        },
-      }
+        `Deliverable with ID "${deliverableInput.id}" already exists`,
+        'DUPLICATE_ID',
+      )
     }
 
     // Create new deliverable
@@ -126,16 +125,10 @@ export function createDeliverables(
     )
   }
 
-  return {
-    status: status.withDeliverables([
-      ...status.deliverables,
-      ...newDeliverables,
-    ]),
-    result: {
-      success: true,
-      message: `Created ${input.deliverables.length} deliverable(s) successfully`,
-    },
-  }
+  return success(
+    status.withDeliverables([...status.deliverables, ...newDeliverables]),
+    `Created ${input.deliverables.length} deliverable(s) successfully`,
+  )
 }
 
 /**
@@ -151,26 +144,16 @@ export function setDeliverableStatus(
 ): { status: DeliverableStatus; result: ToolResult } {
   // Validate input
   if (!input.deliverableId || input.deliverableId.trim() === '') {
-    return {
-      status,
-      result: {
-        success: false,
-        message: 'Deliverable ID is required',
-        error: 'VALIDATION_ERROR',
-      },
-    }
+    return failure(status, 'Deliverable ID is required', 'VALIDATION_ERROR')
   }
 
   // Validate status value
   if (!['pending', 'passed', 'blocked'].includes(input.status)) {
-    return {
+    return failure(
       status,
-      result: {
-        success: false,
-        message: `Invalid status "${input.status}". Must be pending, passed, or blocked`,
-        error: 'VALIDATION_ERROR',
-      },
-    }
+      `Invalid status "${input.status}". Must be pending, passed, or blocked`,
+      'VALIDATION_ERROR',
+    )
   }
 
   // Find deliverable
@@ -178,14 +161,11 @@ export function setDeliverableStatus(
     (d) => d.id === input.deliverableId,
   )
   if (index === -1) {
-    return {
+    return failure(
       status,
-      result: {
-        success: false,
-        message: `Deliverable with ID "${input.deliverableId}" not found`,
-        error: 'NOT_FOUND',
-      },
-    }
+      `Deliverable with ID "${input.deliverableId}" not found`,
+      'NOT_FOUND',
+    )
   }
 
   // Update deliverable using transition methods
@@ -210,11 +190,8 @@ export function setDeliverableStatus(
     ...status.deliverables.slice(index + 1),
   ]
 
-  return {
-    status: status.withDeliverables(updatedDeliverables),
-    result: {
-      success: true,
-      message: `Deliverable "${updated.description}" (${updated.id}) marked as ${input.status}`,
-    },
-  }
+  return success(
+    status.withDeliverables(updatedDeliverables),
+    `Deliverable "${updated.description}" (${updated.id}) marked as ${input.status}`,
+  )
 }
