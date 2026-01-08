@@ -50,32 +50,36 @@ export class Session {
 
     const query = client.query(instruction)
 
-    for await (const event of query) {
-      logger.debug(
-        `[Recv] ${event.type}: ${truncate(formatStreamEvent(event), 200)}`,
-      )
+    try {
+      for await (const event of query) {
+        logger.debug(
+          `[Recv] ${event.type}: ${truncate(formatStreamEvent(event), 200)}`,
+        )
 
-      if (event.type === 'session_end') {
-        sessionEndReceived = true
-        if (event.totalCostUsd !== undefined) {
-          costUsd = event.totalCostUsd
+        if (event.type === 'session_end') {
+          sessionEndReceived = true
+          if (event.totalCostUsd !== undefined) {
+            costUsd = event.totalCostUsd
+          }
+          outcome = event.outcome
+          quotaResetTime =
+            event.outcome === 'quota_exceeded' ? event.resetTime : undefined
+          logSessionEnd(event, logger)
         }
-        outcome = event.outcome
-        quotaResetTime =
-          event.outcome === 'quota_exceeded' ? event.resetTime : undefined
-        logSessionEnd(event, logger)
-      }
 
-      if (event.type === 'stream_error') {
-        if (sessionEndReceived) {
-          // Error after session_end - expected for some outcomes (e.g., quota exceeded)
-          logger.debug(`Stream error after session end: ${event.message}`)
-        } else {
-          // Error without session_end - this is a real error
-          logger.error('Stream error', new Error(event.message))
-          throw new Error(event.message)
+        if (event.type === 'stream_error') {
+          if (sessionEndReceived) {
+            // Error after session_end - expected for some outcomes (e.g., quota exceeded)
+            logger.debug(`Stream error after session end: ${event.message}`)
+          } else {
+            // Error without session_end - this is a real error
+            logger.error('Stream error', new Error(event.message))
+            throw new Error(event.message)
+          }
         }
       }
+    } finally {
+      await client.dispose()
     }
 
     return {

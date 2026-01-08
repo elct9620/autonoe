@@ -35,6 +35,8 @@ class ThrowingMockClient implements AgentClient {
     return this.callCount
   }
 
+  async dispose(): Promise<void> {}
+
   query(): MessageStream {
     this.callCount++
     if (this.callCount <= this.throwCount) {

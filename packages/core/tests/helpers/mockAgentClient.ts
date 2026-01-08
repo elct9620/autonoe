@@ -9,6 +9,7 @@ export class MockAgentClient implements AgentClient {
   private responseSets: StreamEvent[][] = []
   private callIndex = 0
   private lastMessage: string | null = null
+  private disposeCount = 0
 
   /**
    * Set the responses that will be yielded by query()
@@ -47,6 +48,20 @@ export class MockAgentClient implements AgentClient {
    */
   reset(): void {
     this.callIndex = 0
+  }
+
+  /**
+   * Get the number of times dispose() has been called
+   */
+  getDisposeCount(): number {
+    return this.disposeCount
+  }
+
+  /**
+   * Dispose the client (mock implementation)
+   */
+  async dispose(): Promise<void> {
+    this.disposeCount++
   }
 
   query(message: string): MessageStream {

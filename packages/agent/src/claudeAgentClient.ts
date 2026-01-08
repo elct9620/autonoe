@@ -154,6 +154,14 @@ export class ClaudeAgentClient implements AgentClient {
   }
 
   /**
+   * Dispose the client and release resources
+   * Currently a placeholder until SDK v2 supports resource cleanup
+   */
+  async dispose(): Promise<void> {
+    // TODO: Implement resource cleanup when SDK v2 is available
+  }
+
+  /**
    * Wrap SDK Query to convert SDK messages to domain StreamEvents
    * Flattens batched SDK messages into individual events
    * Wraps SDK errors as StreamError events instead of throwing

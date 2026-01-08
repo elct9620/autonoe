@@ -196,4 +196,39 @@ describe('Session', () => {
       expect(errorEntries.some((e) => e.message === 'Stream error')).toBe(true)
     })
   })
+
+  describe('dispose lifecycle', () => {
+    it('calls dispose after successful session', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockSessionEnd('done', 0.01)])
+
+      const session = new Session({ projectDir: '/test/project' })
+      await session.run(client, 'test')
+
+      expect(client.getDisposeCount()).toBe(1)
+    })
+
+    it('calls dispose even when stream error occurs', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamError('test error')])
+
+      const session = new Session({ projectDir: '/test/project' })
+
+      await expect(session.run(client, 'test')).rejects.toThrow()
+      expect(client.getDisposeCount()).toBe(1)
+    })
+
+    it('calls dispose only once per session', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockAgentText('processing'),
+        createMockSessionEnd('done', 0.01),
+      ])
+
+      const session = new Session({ projectDir: '/test/project' })
+      await session.run(client, 'test')
+
+      expect(client.getDisposeCount()).toBe(1)
+    })
+  })
 })

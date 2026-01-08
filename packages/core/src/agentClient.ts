@@ -7,6 +7,7 @@ import type { SandboxConfig } from './configuration'
  */
 export interface AgentClient {
   query(instruction: string): MessageStream
+  dispose(): Promise<void>
 }
 
 /**
