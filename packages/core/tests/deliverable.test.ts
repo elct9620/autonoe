@@ -15,7 +15,7 @@ describe('Deliverable', () => {
 
     it('returns pending status', () => {
       const d = Deliverable.pending('DL-001', 'Test', ['Criterion 1'])
-      expect(d.getStatus()).toBe('pending')
+      expect(d.status).toBe('pending')
     })
   })
 
@@ -29,7 +29,7 @@ describe('Deliverable', () => {
 
     it('returns passed status', () => {
       const d = Deliverable.passed('DL-001', 'Test', ['Criterion 1'])
-      expect(d.getStatus()).toBe('passed')
+      expect(d.status).toBe('passed')
     })
   })
 
@@ -43,7 +43,7 @@ describe('Deliverable', () => {
 
     it('returns blocked status', () => {
       const d = Deliverable.blocked('DL-001', 'Test', ['Criterion 1'])
-      expect(d.getStatus()).toBe('blocked')
+      expect(d.status).toBe('blocked')
     })
   })
 
@@ -163,23 +163,6 @@ describe('Deliverable', () => {
       original.reset()
 
       expect(original.passed).toBe(true)
-    })
-  })
-
-  describe('getStatus()', () => {
-    it('returns pending for pending deliverable', () => {
-      const d = Deliverable.pending('DL-001', 'Test', ['Criterion 1'])
-      expect(d.getStatus()).toBe('pending')
-    })
-
-    it('returns passed for passed deliverable', () => {
-      const d = Deliverable.passed('DL-001', 'Test', ['Criterion 1'])
-      expect(d.getStatus()).toBe('passed')
-    })
-
-    it('returns blocked for blocked deliverable', () => {
-      const d = Deliverable.blocked('DL-001', 'Test', ['Criterion 1'])
-      expect(d.getStatus()).toBe('blocked')
     })
   })
 

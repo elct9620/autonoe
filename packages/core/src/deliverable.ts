@@ -146,12 +146,4 @@ export class Deliverable {
       'pending',
     )
   }
-
-  /**
-   * Get the current status as a semantic value
-   * @deprecated Use the `status` getter instead
-   */
-  getStatus(): DeliverableStatusValue {
-    return this._status
-  }
 }
