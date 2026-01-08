@@ -5,15 +5,6 @@ import { logSessionEnd } from './sessionEndHandler'
 import type { SessionOutcome } from './types'
 
 /**
- * Session configuration options
- * @see SPEC.md Section 3.3
- */
-export interface SessionOptions {
-  projectDir: string
-  model?: string
-}
-
-/**
  * Result of a session execution
  * @see SPEC.md Section 3.3
  */
@@ -26,11 +17,10 @@ export interface SessionResult {
 
 /**
  * Session handles a single agent query execution
+ * Stateless service - configuration belongs to AgentClient
  * @see SPEC.md Section 3.3
  */
 export class Session {
-  constructor(private options: SessionOptions) {}
-
   /**
    * Run the session with an injected AgentClient, instruction, and Logger
    * @see SPEC.md Section 3.3, 3.7.2

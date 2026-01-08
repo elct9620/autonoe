@@ -46,7 +46,7 @@ export type { Logger, LogLevel } from './logger'
 export { silentLogger } from './logger'
 
 // Session exports
-export { Session, type SessionOptions, type SessionResult } from './session'
+export { Session, type SessionResult } from './session'
 
 // SessionRunner exports
 export {

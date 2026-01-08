@@ -16,7 +16,7 @@ describe('Session', () => {
       const client = new MockAgentClient()
       client.setResponses([createMockStreamText('2')])
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       const result = await session.run(client, 'test instruction')
 
       expect(result).toHaveProperty('costUsd')
@@ -28,30 +28,17 @@ describe('Session', () => {
       const client = new MockAgentClient()
       client.setResponses([])
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       await session.run(client, 'custom instruction')
 
       expect(client.getLastMessage()).toBe('custom instruction')
-    })
-
-    it('accepts session options', async () => {
-      const client = new MockAgentClient()
-      client.setResponses([])
-
-      const session = new Session({
-        projectDir: '/test/project',
-        model: 'claude-3',
-      })
-      const result = await session.run(client, 'test')
-
-      expect(result.outcome).toBe('completed')
     })
 
     it('returns costUsd from session end event', async () => {
       const client = new MockAgentClient()
       client.setResponses([createMockStreamEnd('Result', 0.0567)])
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       const result = await session.run(client, 'test')
 
       expect(result.costUsd).toBe(0.0567)
@@ -61,7 +48,7 @@ describe('Session', () => {
       const client = new MockAgentClient()
       client.setResponses([createMockStreamEnd('Result')])
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       const result = await session.run(client, 'test')
 
       expect(result.costUsd).toBe(0)
@@ -71,7 +58,7 @@ describe('Session', () => {
       const client = new MockAgentClient()
       client.setResponses([createMockStreamText('done')])
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       const result = await session.run(client, 'test')
 
       expect(result.duration).toBeGreaterThanOrEqual(0)
@@ -84,7 +71,7 @@ describe('Session', () => {
       client.setResponses([createMockStreamText('done')])
       const logger = new TestLogger()
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       await session.run(client, 'test', logger)
 
       expect(logger.hasMessage('[Send]')).toBe(true)
@@ -101,7 +88,7 @@ describe('Session', () => {
       client.setResponses([createMockStreamEnd('The answer is 2', 0.0123)])
       const logger = new TestLogger()
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       await session.run(client, 'test', logger)
 
       expect(logger.hasMessage('The answer is 2')).toBe(true)
@@ -116,7 +103,7 @@ describe('Session', () => {
       client.setResponses([createMockStreamEnd(undefined as any)])
       const logger = new TestLogger()
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       await session.run(client, 'test', logger)
 
       // Should not crash, no result text logged
@@ -131,7 +118,7 @@ describe('Session', () => {
       client.setResponses([createMockErrorStreamEnd(['Error 1', 'Error 2'])])
       const logger = new TestLogger()
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       await session.run(client, 'test', logger)
 
       expect(logger.hasMessage('Error 1')).toBe(true)
@@ -152,7 +139,7 @@ describe('Session', () => {
       ])
       const logger = new TestLogger()
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       const result = await session.run(client, 'test', logger)
 
       // Should complete normally with quota exceeded outcome
@@ -172,7 +159,7 @@ describe('Session', () => {
         createMockStreamError('Connection lost'),
       ])
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
 
       await expect(session.run(client, 'test')).rejects.toThrow(
         'Connection lost',
@@ -184,7 +171,7 @@ describe('Session', () => {
       client.setResponses([createMockStreamError('Unexpected failure')])
       const logger = new TestLogger()
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
 
       try {
         await session.run(client, 'test', logger)
@@ -202,7 +189,7 @@ describe('Session', () => {
       const client = new MockAgentClient()
       client.setResponses([createMockStreamEnd('done', 0.01)])
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       await session.run(client, 'test')
 
       expect(client.getDisposeCount()).toBe(1)
@@ -212,7 +199,7 @@ describe('Session', () => {
       const client = new MockAgentClient()
       client.setResponses([createMockStreamError('test error')])
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
 
       await expect(session.run(client, 'test')).rejects.toThrow()
       expect(client.getDisposeCount()).toBe(1)
@@ -225,7 +212,7 @@ describe('Session', () => {
         createMockStreamEnd('done', 0.01),
       ])
 
-      const session = new Session({ projectDir: '/test/project' })
+      const session = new Session()
       await session.run(client, 'test')
 
       expect(client.getDisposeCount()).toBe(1)

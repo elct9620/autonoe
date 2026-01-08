@@ -135,10 +135,7 @@ export class SessionRunner {
       try {
         // Create fresh client per session to avoid SDK child process accumulation
         const client = clientFactory.create()
-        const session = new Session({
-          projectDir: this.options.projectDir,
-          model: this.options.model,
-        })
+        const session = new Session()
         const result = await session.run(client, instruction, logger)
 
         // Reset error counter on successful session and add cost

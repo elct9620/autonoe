@@ -505,13 +505,9 @@ class MockAgentClient implements AgentClient {
 
 ```typescript
 // packages/core/src/session.ts
+// Session is a stateless service - configuration belongs to AgentClient
 interface Session {
   run(client: AgentClient, instruction: string, logger?: Logger): Promise<SessionResult>
-}
-
-interface SessionOptions {
-  projectDir: string
-  model?: string
 }
 
 interface SessionResult {
