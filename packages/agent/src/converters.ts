@@ -1,4 +1,9 @@
-import type { McpServerConfig as SDKMcpServerConfig } from '@anthropic-ai/claude-agent-sdk'
+import type {
+  McpServerConfig as SDKMcpServerConfig,
+  HookCallbackMatcher,
+  HookInput,
+  SyncHookJSONOutput,
+} from '@anthropic-ai/claude-agent-sdk'
 import type {
   StreamEvent,
   StreamEventText,
@@ -7,6 +12,8 @@ import type {
   StreamEventToolResponse,
   StreamEventEnd,
   McpServer,
+  PreToolUseHook,
+  PreToolUseInput,
 } from '@autonoe/core'
 import { isQuotaExceededMessage, parseQuotaResetTime } from '@autonoe/core'
 
@@ -173,4 +180,43 @@ export function* toStreamEvents(
       }
     }
   }
+}
+
+/**
+ * Convert domain PreToolUseHook array to SDK HookCallbackMatcher format
+ * Wraps each hook callback to transform domain types to SDK types
+ */
+export function toSdkHookCallbackMatchers(
+  hooks: PreToolUseHook[],
+): HookCallbackMatcher[] {
+  return hooks.map((hook) => ({
+    matcher: hook.matcher,
+    hooks: [
+      async (
+        input: HookInput,
+        _toolUseId: string | undefined,
+        _options: { signal: AbortSignal },
+      ): Promise<SyncHookJSONOutput> => {
+        // Extract PreToolUse-specific fields from HookInput
+        const hookInput = input as {
+          hook_event_name: string
+          tool_name?: string
+          tool_input?: Record<string, unknown>
+        }
+
+        const preToolInput: PreToolUseInput = {
+          toolName: hookInput.tool_name ?? '',
+          toolInput: hookInput.tool_input ?? {},
+        }
+
+        const result = await hook.callback(preToolInput)
+
+        return {
+          continue: result.continue,
+          decision: result.decision,
+          reason: result.reason,
+        }
+      },
+    ],
+  }))
 }

@@ -4,20 +4,19 @@ import type {
   Options as SDKOptions,
   PermissionMode as SDKPermissionMode,
   SandboxSettings as SDKSandboxSettings,
-  HookCallbackMatcher,
-  HookInput,
-  SyncHookJSONOutput,
   McpSdkServerConfigWithInstance,
 } from '@anthropic-ai/claude-agent-sdk'
 import type {
   AgentClient,
   MessageStream,
   AgentClientOptions,
-  PreToolUseHook,
-  PreToolUseInput,
 } from '@autonoe/core'
 import { detectClaudeCodePath } from './claudeCodePath'
-import { toSdkMcpServers, toStreamEvents } from './converters'
+import {
+  toSdkMcpServers,
+  toStreamEvents,
+  toSdkHookCallbackMatchers,
+} from './converters'
 
 /**
  * Extended options for ClaudeAgentClient
@@ -29,45 +28,6 @@ export interface ClaudeAgentClientOptions extends AgentClientOptions {
    * These run in-process and are merged with external mcpServers
    */
   sdkMcpServers?: McpSdkServerConfigWithInstance[]
-}
-
-/**
- * Convert domain PreToolUseHook array to SDK HookCallbackMatcher format
- * Wraps each hook callback to transform domain types to SDK types
- */
-function toSdkHookCallbackMatchers(
-  hooks: PreToolUseHook[],
-): HookCallbackMatcher[] {
-  return hooks.map((hook) => ({
-    matcher: hook.matcher,
-    hooks: [
-      async (
-        input: HookInput,
-        _toolUseId: string | undefined,
-        _options: { signal: AbortSignal },
-      ): Promise<SyncHookJSONOutput> => {
-        // Extract PreToolUse-specific fields from HookInput
-        const hookInput = input as {
-          hook_event_name: string
-          tool_name?: string
-          tool_input?: Record<string, unknown>
-        }
-
-        const preToolInput: PreToolUseInput = {
-          toolName: hookInput.tool_name ?? '',
-          toolInput: hookInput.tool_input ?? {},
-        }
-
-        const result = await hook.callback(preToolInput)
-
-        return {
-          continue: result.continue,
-          decision: result.decision,
-          reason: result.reason,
-        }
-      },
-    ],
-  }))
 }
 
 /**
