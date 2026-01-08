@@ -5,7 +5,6 @@ import type {
   CreateDeliverableInput,
   SetDeliverableStatusInput,
   DeliverableStatusCallback,
-  DeliverableStatusValue,
 } from '@autonoe/core'
 import { createDeliverables, setDeliverableStatus } from '@autonoe/core'
 
@@ -35,18 +34,6 @@ export async function handleCreateDeliverables(
 }
 
 /**
- * Get deliverable status value from passed/blocked flags
- */
-function getStatusValue(
-  passed: boolean,
-  blocked: boolean,
-): DeliverableStatusValue {
-  if (passed) return 'passed'
-  if (blocked) return 'blocked'
-  return 'pending'
-}
-
-/**
  * Handler for set_deliverable_status tool
  * Extracted for testability
  */
@@ -61,9 +48,7 @@ export async function handleSetDeliverableStatus(
   const existingDeliverable = status.deliverables.find(
     (d) => d.id === input.deliverableId,
   )
-  const previousStatus = existingDeliverable
-    ? getStatusValue(existingDeliverable.passed, existingDeliverable.blocked)
-    : null
+  const previousStatus = existingDeliverable?.status ?? null
 
   const { status: newStatus, result } = setDeliverableStatus(status, input)
 
