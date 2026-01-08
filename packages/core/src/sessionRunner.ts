@@ -133,15 +133,12 @@ export class SessionRunner {
       logger.info(`Session ${state.iterations} started`)
 
       try {
-        // Create fresh client per session to avoid SDK child process accumulation
-        const client = clientFactory.create()
-
-        const session = new Session({
-          projectDir: this.options.projectDir,
-          model: this.options.model,
-        })
-
-        const result = await session.run(client, instruction, logger)
+        // Execute session
+        const result = await this.executeSession(
+          clientFactory,
+          instruction,
+          logger,
+        )
 
         // Reset error counter on successful session and add cost
         state = state.resetErrors().addCost(result.costUsd)
@@ -149,11 +146,8 @@ export class SessionRunner {
           `Session ${state.iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${formatDuration(result.duration)}`,
         )
 
-        // Read deliverable status after session
-        const status = statusReader
-          ? await statusReader.load()
-          : DeliverableStatus.empty()
-
+        // Load deliverable status and update counts
+        const status = await this.loadDeliverableStatus(statusReader)
         state = state.updateDeliverableCounts(
           status.countPassed(),
           status.deliverables.length,
@@ -168,28 +162,19 @@ export class SessionRunner {
           signal,
         })
 
-        // Handle decision with switch for type safety
-        switch (postDecision.action) {
-          case 'terminate':
-            this.logTermination(logger, postDecision.exitReason, state)
-            state = state.setExitReason(postDecision.exitReason)
-            break
-          case 'wait':
-            logger.info(
-              `Quota exceeded, waiting ${formatDuration(postDecision.durationMs)} until reset...`,
-            )
-            await this.timer.delay(postDecision.durationMs)
-            // Retry same session (don't count this iteration)
-            state = state.decrementIterations()
-            continue
-          case 'continue':
-            // Proceed to next iteration
-            break
-        }
+        // Handle decision
+        const decisionResult = await this.handleTerminationDecision(
+          postDecision,
+          state,
+          logger,
+        )
+        state = decisionResult.state
 
-        // Exit loop if terminated
-        if (postDecision.action === 'terminate') {
+        if (decisionResult.action === 'break') {
           break
+        }
+        if (decisionResult.action === 'continue') {
+          continue
         }
 
         // Delay before next session
@@ -197,22 +182,16 @@ export class SessionRunner {
           await this.timer.delay(this.delayBetweenSessions)
         }
       } catch (error) {
-        const errorObj =
-          error instanceof Error ? error : new Error(String(error))
-        state = state.recordError(errorObj)
-
-        // Check if max retries exceeded
-        const errorDecision = this.runTerminationEvaluation(state, { signal })
-        if (errorDecision.action === 'terminate') {
-          this.logTermination(logger, errorDecision.exitReason, state)
-          state = state.setExitReason(errorDecision.exitReason)
+        const errorResult = await this.handleSessionError(
+          error,
+          state,
+          signal,
+          logger,
+        )
+        state = errorResult.state
+        if (errorResult.shouldBreak) {
           break
         }
-
-        logger.warn(
-          `Session error (${state.consecutiveErrors}/${this.maxRetries}), starting new session...`,
-        )
-        await this.timer.delay(this.delayBetweenSessions)
       }
     }
 
@@ -260,6 +239,88 @@ export class SessionRunner {
       },
       ...partial,
     })
+  }
+
+  /**
+   * Execute a single session and return the result
+   */
+  private async executeSession(
+    clientFactory: AgentClientFactory,
+    instruction: string,
+    logger: Logger,
+  ) {
+    const client = clientFactory.create()
+    const session = new Session({
+      projectDir: this.options.projectDir,
+      model: this.options.model,
+    })
+    return session.run(client, instruction, logger)
+  }
+
+  /**
+   * Load deliverable status from reader or return empty status
+   */
+  private async loadDeliverableStatus(
+    statusReader: DeliverableStatusReader | undefined,
+  ): Promise<DeliverableStatus> {
+    return statusReader ? await statusReader.load() : DeliverableStatus.empty()
+  }
+
+  /**
+   * Handle termination decision and return updated state with control flow signal
+   */
+  private async handleTerminationDecision(
+    decision: ReturnType<typeof evaluateTermination>,
+    state: LoopState,
+    logger: Logger,
+  ): Promise<{ state: LoopState; action: 'break' | 'continue' | 'next' }> {
+    switch (decision.action) {
+      case 'terminate':
+        this.logTermination(logger, decision.exitReason, state)
+        return {
+          state: state.setExitReason(decision.exitReason),
+          action: 'break',
+        }
+      case 'wait':
+        logger.info(
+          `Quota exceeded, waiting ${formatDuration(decision.durationMs)} until reset...`,
+        )
+        await this.timer.delay(decision.durationMs)
+        return {
+          state: state.decrementIterations(),
+          action: 'continue',
+        }
+      case 'continue':
+        return { state, action: 'next' }
+    }
+  }
+
+  /**
+   * Handle session error with retry logic
+   */
+  private async handleSessionError(
+    error: unknown,
+    state: LoopState,
+    signal: AbortSignal | undefined,
+    logger: Logger,
+  ): Promise<{ state: LoopState; shouldBreak: boolean }> {
+    const errorObj = error instanceof Error ? error : new Error(String(error))
+    const newState = state.recordError(errorObj)
+
+    const decision = this.runTerminationEvaluation(newState, { signal })
+    if (decision.action === 'terminate') {
+      this.logTermination(logger, decision.exitReason, newState)
+      return {
+        state: newState.setExitReason(decision.exitReason),
+        shouldBreak: true,
+      }
+    }
+
+    logger.warn(
+      `Session error (${newState.consecutiveErrors}/${this.maxRetries}), starting new session...`,
+    )
+    await this.timer.delay(this.delayBetweenSessions)
+    return { state: newState, shouldBreak: false }
   }
 
   /**
