@@ -56,7 +56,7 @@ export class Session {
           `[Recv] ${event.type}: ${truncate(formatStreamEvent(event), 200)}`,
         )
 
-        if (event.type === 'session_end') {
+        if (event.type === 'stream_end') {
           sessionEndReceived = true
           if (event.totalCostUsd !== undefined) {
             costUsd = event.totalCostUsd

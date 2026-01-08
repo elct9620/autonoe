@@ -21,23 +21,23 @@ export function truncate(str: string, maxLen: number): string {
  */
 export function formatStreamEvent(event: StreamEvent): string {
   switch (event.type) {
-    case 'agent_text':
+    case 'stream_text':
       return event.text
 
-    case 'agent_thinking':
+    case 'stream_thinking':
       return `[thinking] ${truncate(event.thinking, TRUNCATE_THINKING)}`
 
-    case 'tool_invocation': {
+    case 'stream_tool_invocation': {
       const input = JSON.stringify(event.input)
       return `[tool: ${event.name}] ${truncate(input, TRUNCATE_INPUT)}`
     }
 
-    case 'tool_response': {
+    case 'stream_tool_response': {
       const error = event.isError ? ' ERROR' : ''
       return `[result${error}] ${truncate(event.content, TRUNCATE_CONTENT)}`
     }
 
-    case 'session_end': {
+    case 'stream_end': {
       if (event.outcome === 'completed' && event.result) {
         return `[session: completed] ${event.result}`
       }

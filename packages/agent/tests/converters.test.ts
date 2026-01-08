@@ -50,7 +50,7 @@ describe('converters', () => {
       const block = { type: 'text', text: 'Hello' }
       const result = toStreamEvent(block)
       expect(result).toEqual({
-        type: 'agent_text',
+        type: 'stream_text',
         text: 'Hello',
       })
     })
@@ -59,7 +59,7 @@ describe('converters', () => {
       const block = { type: 'text' }
       const result = toStreamEvent(block)
       expect(result).toEqual({
-        type: 'agent_text',
+        type: 'stream_text',
         text: '',
       })
     })
@@ -72,7 +72,7 @@ describe('converters', () => {
       }
       const result = toStreamEvent(block)
       expect(result).toEqual({
-        type: 'tool_invocation',
+        type: 'stream_tool_invocation',
         name: 'bash',
         input: { command: 'ls' },
       })
@@ -82,7 +82,7 @@ describe('converters', () => {
       const block = { type: 'tool_use' }
       const result = toStreamEvent(block)
       expect(result).toEqual({
-        type: 'tool_invocation',
+        type: 'stream_tool_invocation',
         name: '',
         input: {},
       })
@@ -97,7 +97,7 @@ describe('converters', () => {
       }
       const result = toStreamEvent(block)
       expect(result).toEqual({
-        type: 'tool_response',
+        type: 'stream_tool_response',
         toolUseId: 'id-123',
         content: 'output',
         isError: false,
@@ -116,7 +116,7 @@ describe('converters', () => {
       }
       const result = toStreamEvent(block)
       expect(result).toEqual({
-        type: 'tool_response',
+        type: 'stream_tool_response',
         toolUseId: 'id-123',
         content: 'part1part2',
         isError: false,
@@ -132,7 +132,7 @@ describe('converters', () => {
       }
       const result = toStreamEvent(block)
       expect(result).toEqual({
-        type: 'tool_response',
+        type: 'stream_tool_response',
         toolUseId: 'id-123',
         content: 'error message',
         isError: true,
@@ -149,7 +149,7 @@ describe('converters', () => {
       const block = { type: 'thinking', thinking: 'Let me analyze this...' }
       const result = toStreamEvent(block)
       expect(result).toEqual({
-        type: 'agent_thinking',
+        type: 'stream_thinking',
         thinking: 'Let me analyze this...',
       })
     })
@@ -158,7 +158,7 @@ describe('converters', () => {
       const block = { type: 'thinking' }
       const result = toStreamEvent(block)
       expect(result).toEqual({
-        type: 'agent_thinking',
+        type: 'stream_thinking',
         thinking: '',
       })
     })
@@ -174,7 +174,7 @@ describe('converters', () => {
       }
       const result = toSessionEnd(sdkMessage)
       expect(result).toEqual({
-        type: 'session_end',
+        type: 'stream_end',
         outcome: 'completed',
         result: 'Done',
         totalCostUsd: 0.05,
@@ -189,7 +189,7 @@ describe('converters', () => {
       }
       const result = toSessionEnd(sdkMessage)
       expect(result).toEqual({
-        type: 'session_end',
+        type: 'stream_end',
         outcome: 'execution_error',
         messages: ['Error 1', 'Error 2'],
         totalCostUsd: undefined,
@@ -203,7 +203,7 @@ describe('converters', () => {
       }
       const result = toSessionEnd(sdkMessage)
       expect(result).toEqual({
-        type: 'session_end',
+        type: 'stream_end',
         outcome: 'max_iterations',
         totalCostUsd: undefined,
       })
@@ -216,7 +216,7 @@ describe('converters', () => {
       }
       const result = toSessionEnd(sdkMessage)
       expect(result).toEqual({
-        type: 'session_end',
+        type: 'stream_end',
         outcome: 'budget_exceeded',
         totalCostUsd: undefined,
       })
@@ -270,7 +270,7 @@ describe('converters', () => {
       const events = [...toStreamEvents(sdkMessage)]
       expect(events).toHaveLength(1)
       expect(events[0]).toEqual({
-        type: 'session_end',
+        type: 'stream_end',
         outcome: 'completed',
         result: 'Done',
         totalCostUsd: undefined,
@@ -289,9 +289,9 @@ describe('converters', () => {
       }
       const events = [...toStreamEvents(sdkMessage)]
       expect(events).toHaveLength(2)
-      expect(events[0]).toEqual({ type: 'agent_text', text: 'Hello' })
+      expect(events[0]).toEqual({ type: 'stream_text', text: 'Hello' })
       expect(events[1]).toEqual({
-        type: 'tool_invocation',
+        type: 'stream_tool_invocation',
         name: 'bash',
         input: { cmd: 'ls' },
       })
@@ -340,11 +340,11 @@ describe('converters', () => {
       const events = [...toStreamEvents(sdkMessage)]
       expect(events).toHaveLength(2)
       expect(events[0]).toEqual({
-        type: 'agent_thinking',
+        type: 'stream_thinking',
         thinking: 'Let me think about this...',
       })
       expect(events[1]).toEqual({
-        type: 'agent_text',
+        type: 'stream_text',
         text: 'Based on my analysis...',
       })
     })

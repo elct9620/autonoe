@@ -1,35 +1,38 @@
 import { describe, it, expect } from 'vitest'
 import { formatStreamEvent } from '../src/eventFormatter'
 import type {
-  AgentText,
-  AgentThinking,
-  ToolInvocation,
-  ToolResponse,
-  SessionEndCompleted,
-  SessionEndExecutionError,
-  SessionEndMaxIterations,
-  SessionEndBudgetExceeded,
-  SessionEndQuotaExceeded,
-  StreamError,
+  StreamEventText,
+  StreamEventThinking,
+  StreamEventToolInvocation,
+  StreamEventToolResponse,
+  StreamEventEndCompleted,
+  StreamEventEndExecutionError,
+  StreamEventEndMaxIterations,
+  StreamEventEndBudgetExceeded,
+  StreamEventEndQuotaExceeded,
+  StreamEventError,
 } from '../src/types'
 
 describe('formatStreamEvent', () => {
-  describe('AgentText', () => {
+  describe('StreamEventText', () => {
     it('returns the text content', () => {
-      const event: AgentText = { type: 'agent_text', text: 'Hello world' }
+      const event: StreamEventText = {
+        type: 'stream_text',
+        text: 'Hello world',
+      }
       expect(formatStreamEvent(event)).toBe('Hello world')
     })
 
     it('handles empty text', () => {
-      const event: AgentText = { type: 'agent_text', text: '' }
+      const event: StreamEventText = { type: 'stream_text', text: '' }
       expect(formatStreamEvent(event)).toBe('')
     })
   })
 
-  describe('AgentThinking', () => {
+  describe('StreamEventThinking', () => {
     it('formats thinking content with prefix', () => {
-      const event: AgentThinking = {
-        type: 'agent_thinking',
+      const event: StreamEventThinking = {
+        type: 'stream_thinking',
         thinking: 'Let me analyze this step by step...',
       }
       expect(formatStreamEvent(event)).toBe(
@@ -39,8 +42,8 @@ describe('formatStreamEvent', () => {
 
     it('truncates long thinking content to 200 chars', () => {
       const longThinking = 'a'.repeat(250)
-      const event: AgentThinking = {
-        type: 'agent_thinking',
+      const event: StreamEventThinking = {
+        type: 'stream_thinking',
         thinking: longThinking,
       }
       const result = formatStreamEvent(event)
@@ -50,15 +53,18 @@ describe('formatStreamEvent', () => {
     })
 
     it('handles empty thinking', () => {
-      const event: AgentThinking = { type: 'agent_thinking', thinking: '' }
+      const event: StreamEventThinking = {
+        type: 'stream_thinking',
+        thinking: '',
+      }
       expect(formatStreamEvent(event)).toBe('[thinking] ')
     })
   })
 
-  describe('ToolInvocation', () => {
+  describe('StreamEventToolInvocation', () => {
     it('formats tool name and input', () => {
-      const event: ToolInvocation = {
-        type: 'tool_invocation',
+      const event: StreamEventToolInvocation = {
+        type: 'stream_tool_invocation',
         name: 'bash',
         input: { command: 'ls' },
       }
@@ -67,8 +73,8 @@ describe('formatStreamEvent', () => {
 
     it('truncates long input to 100 chars', () => {
       const longInput = 'a'.repeat(150)
-      const event: ToolInvocation = {
-        type: 'tool_invocation',
+      const event: StreamEventToolInvocation = {
+        type: 'stream_tool_invocation',
         name: 'bash',
         input: { command: longInput },
       }
@@ -79,8 +85,8 @@ describe('formatStreamEvent', () => {
     })
 
     it('handles empty input', () => {
-      const event: ToolInvocation = {
-        type: 'tool_invocation',
+      const event: StreamEventToolInvocation = {
+        type: 'stream_tool_invocation',
         name: 'bash',
         input: {},
       }
@@ -88,10 +94,10 @@ describe('formatStreamEvent', () => {
     })
   })
 
-  describe('ToolResponse', () => {
+  describe('StreamEventToolResponse', () => {
     it('formats success result', () => {
-      const event: ToolResponse = {
-        type: 'tool_response',
+      const event: StreamEventToolResponse = {
+        type: 'stream_tool_response',
         toolUseId: 'id-123',
         content: 'file1.txt\nfile2.txt',
         isError: false,
@@ -100,8 +106,8 @@ describe('formatStreamEvent', () => {
     })
 
     it('formats error result with ERROR suffix', () => {
-      const event: ToolResponse = {
-        type: 'tool_response',
+      const event: StreamEventToolResponse = {
+        type: 'stream_tool_response',
         toolUseId: 'id-123',
         content: 'command not found',
         isError: true,
@@ -111,8 +117,8 @@ describe('formatStreamEvent', () => {
 
     it('truncates long content to 100 chars', () => {
       const longContent = 'x'.repeat(150)
-      const event: ToolResponse = {
-        type: 'tool_response',
+      const event: StreamEventToolResponse = {
+        type: 'stream_tool_response',
         toolUseId: 'id-123',
         content: longContent,
         isError: false,
@@ -124,10 +130,10 @@ describe('formatStreamEvent', () => {
     })
   })
 
-  describe('SessionEnd', () => {
+  describe('StreamEventEnd', () => {
     it('formats completed with result text', () => {
-      const event: SessionEndCompleted = {
-        type: 'session_end',
+      const event: StreamEventEndCompleted = {
+        type: 'stream_end',
         outcome: 'completed',
         result: 'Task completed',
       }
@@ -137,8 +143,8 @@ describe('formatStreamEvent', () => {
     })
 
     it('formats error with error messages', () => {
-      const event: SessionEndExecutionError = {
-        type: 'session_end',
+      const event: StreamEventEndExecutionError = {
+        type: 'stream_end',
         outcome: 'execution_error',
         messages: ['Error 1', 'Error 2'],
       }
@@ -148,24 +154,24 @@ describe('formatStreamEvent', () => {
     })
 
     it('formats without result or errors', () => {
-      const event: SessionEndMaxIterations = {
-        type: 'session_end',
+      const event: StreamEventEndMaxIterations = {
+        type: 'stream_end',
         outcome: 'max_iterations',
       }
       expect(formatStreamEvent(event)).toBe('[session: max_iterations]')
     })
 
     it('formats budget exceeded', () => {
-      const event: SessionEndBudgetExceeded = {
-        type: 'session_end',
+      const event: StreamEventEndBudgetExceeded = {
+        type: 'stream_end',
         outcome: 'budget_exceeded',
       }
       expect(formatStreamEvent(event)).toBe('[session: budget_exceeded]')
     })
 
     it('formats quota exceeded', () => {
-      const event: SessionEndQuotaExceeded = {
-        type: 'session_end',
+      const event: StreamEventEndQuotaExceeded = {
+        type: 'stream_end',
         outcome: 'quota_exceeded',
         message: "You've hit your limit",
       }
@@ -175,9 +181,9 @@ describe('formatStreamEvent', () => {
     })
   })
 
-  describe('StreamError', () => {
+  describe('StreamEventError', () => {
     it('formats error message', () => {
-      const event: StreamError = {
+      const event: StreamEventError = {
         type: 'stream_error',
         message: 'Connection lost',
       }
@@ -185,7 +191,7 @@ describe('formatStreamEvent', () => {
     })
 
     it('formats error message with stack', () => {
-      const event: StreamError = {
+      const event: StreamEventError = {
         type: 'stream_error',
         message: 'Connection lost',
         stack: 'at Function.run ()',

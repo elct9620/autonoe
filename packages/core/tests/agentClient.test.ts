@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { MockAgentClient, createMockAgentText } from './helpers'
+import { MockAgentClient, createMockStreamText } from './helpers'
 
 describe('MockAgentClient', () => {
   let client: MockAgentClient
@@ -9,7 +9,10 @@ describe('MockAgentClient', () => {
   })
 
   it('yields pre-set responses in order', async () => {
-    const events = [createMockAgentText('Hello'), createMockAgentText('World')]
+    const events = [
+      createMockStreamText('Hello'),
+      createMockStreamText('World'),
+    ]
     client.setResponses(events)
 
     const results: unknown[] = []
@@ -42,8 +45,8 @@ describe('MockAgentClient', () => {
   })
 
   it('can be reset with new responses', async () => {
-    const firstEvents = [createMockAgentText('First')]
-    const secondEvents = [createMockAgentText('Second')]
+    const firstEvents = [createMockStreamText('First')]
+    const secondEvents = [createMockStreamText('Second')]
 
     client.setResponses(firstEvents)
     let results: unknown[] = []

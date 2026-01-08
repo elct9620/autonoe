@@ -4,13 +4,13 @@ import {
   type SessionOptions,
   type SessionResult,
   type StreamEvent,
-  type AgentText,
-  type ToolInvocation,
-  type ToolResponse,
-  type SessionEndCompleted,
-  type SessionEndExecutionError,
-  type SessionEndQuotaExceeded,
-  type StreamError,
+  type StreamEventText,
+  type StreamEventToolInvocation,
+  type StreamEventToolResponse,
+  type StreamEventEndCompleted,
+  type StreamEventEndExecutionError,
+  type StreamEventEndQuotaExceeded,
+  type StreamEventError,
 } from '../../src/index'
 
 /**
@@ -101,39 +101,39 @@ export function createBlockedDeliverable(
 export { Deliverable }
 
 /**
- * Create a mock AgentText event for testing
+ * Create a mock StreamEventText event for testing
  */
-export function createMockAgentText(text: string): AgentText {
+export function createMockStreamText(text: string): StreamEventText {
   return {
-    type: 'agent_text',
+    type: 'stream_text',
     text,
   }
 }
 
 /**
- * Create a mock ToolInvocation event for testing
+ * Create a mock StreamEventToolInvocation event for testing
  */
 export function createMockToolInvocation(
   name: string,
   input: Record<string, unknown> = {},
-): ToolInvocation {
+): StreamEventToolInvocation {
   return {
-    type: 'tool_invocation',
+    type: 'stream_tool_invocation',
     name,
     input,
   }
 }
 
 /**
- * Create a mock ToolResponse event for testing
+ * Create a mock StreamEventToolResponse event for testing
  */
 export function createMockToolResponse(
   content: string,
   isError = false,
   toolUseId = 'test-id',
-): ToolResponse {
+): StreamEventToolResponse {
   return {
-    type: 'tool_response',
+    type: 'stream_tool_response',
     toolUseId,
     content,
     isError,
@@ -141,14 +141,14 @@ export function createMockToolResponse(
 }
 
 /**
- * Create a mock SessionEnd event with completed outcome
+ * Create a mock StreamEventEnd event with completed outcome
  */
-export function createMockSessionEnd(
+export function createMockStreamEnd(
   result?: string,
   totalCostUsd?: number,
-): SessionEndCompleted {
+): StreamEventEndCompleted {
   return {
-    type: 'session_end',
+    type: 'stream_end',
     outcome: 'completed',
     result,
     totalCostUsd,
@@ -156,27 +156,27 @@ export function createMockSessionEnd(
 }
 
 /**
- * Create a mock SessionEnd event with error outcome
+ * Create a mock StreamEventEnd event with error outcome
  */
-export function createMockErrorSessionEnd(
+export function createMockErrorStreamEnd(
   messages: string[],
-): SessionEndExecutionError {
+): StreamEventEndExecutionError {
   return {
-    type: 'session_end',
+    type: 'stream_end',
     outcome: 'execution_error',
     messages,
   }
 }
 
 /**
- * Create a mock SessionEnd event with quota exceeded outcome
+ * Create a mock StreamEventEnd event with quota exceeded outcome
  */
-export function createMockQuotaExceededSessionEnd(
+export function createMockQuotaExceededStreamEnd(
   message: string,
   resetTime?: Date,
-): SessionEndQuotaExceeded {
+): StreamEventEndQuotaExceeded {
   return {
-    type: 'session_end',
+    type: 'stream_end',
     outcome: 'quota_exceeded',
     message,
     resetTime,
@@ -184,12 +184,12 @@ export function createMockQuotaExceededSessionEnd(
 }
 
 /**
- * Create a mock StreamError event for testing
+ * Create a mock StreamEventError event for testing
  */
 export function createMockStreamError(
   message: string,
   stack?: string,
-): StreamError {
+): StreamEventError {
   return {
     type: 'stream_error',
     message,

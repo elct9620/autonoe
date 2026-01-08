@@ -86,12 +86,12 @@ apps/cli
 ### Domain Model
 
 **StreamEvent** - Discriminated union processed by Session:
-- `AgentText` - Text output from agent
-- `AgentThinking` - Agent's internal reasoning (displayed in debug mode, truncated to 200 chars)
-- `ToolInvocation` - Agent requesting tool execution
-- `ToolResponse` - Result returned to agent
-- `SessionEnd` - Terminal state with result/errors/cost
-- `StreamError` - SDK error wrapped as event
+- `StreamEventText` - Text output from agent
+- `StreamEventThinking` - Agent's internal reasoning (displayed in debug mode, truncated to 200 chars)
+- `StreamEventToolInvocation` - Agent requesting tool execution
+- `StreamEventToolResponse` - Result returned to agent
+- `StreamEventEnd` - Terminal state with result/errors/cost
+- `StreamEventError` - SDK error wrapped as event
 
 **DeliverableStatus** - Aggregate tracking work completion (persisted to `.autonoe/status.json`)
 

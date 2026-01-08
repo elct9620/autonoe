@@ -184,21 +184,21 @@ autonoe/
 **StreamEvent** - Discriminated union of all event types
 
 ```typescript
-type StreamEvent = AgentText | AgentThinking | ToolInvocation | ToolResponse | SessionEnd | StreamError
+type StreamEvent = StreamEventText | StreamEventThinking | StreamEventToolInvocation | StreamEventToolResponse | StreamEventEnd | StreamEventError
 ```
 
-**AgentText** - Agent's text response
+**StreamEventText** - Agent's text response
 
 | Field | Type | Description |
 |-------|------|-------------|
-| type | 'agent_text' | Event type discriminator |
+| type | 'stream_text' | Event type discriminator |
 | text | string | Text content |
 
-**AgentThinking** - Agent's internal reasoning (summarized in Claude 4 models)
+**StreamEventThinking** - Agent's internal reasoning (summarized in Claude 4 models)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| type | 'agent_thinking' | Event type discriminator |
+| type | 'stream_thinking' | Event type discriminator |
 | thinking | string | Thinking/reasoning content |
 
 Thinking events are:
@@ -207,36 +207,36 @@ Thinking events are:
 - Displayed in debug mode only (via `logger.debug`)
 - Truncated to 200 characters in debug output
 
-**ToolInvocation** - Agent's tool call request
+**StreamEventToolInvocation** - Agent's tool call request
 
 | Field | Type | Description |
 |-------|------|-------------|
-| type | 'tool_invocation' | Event type discriminator |
+| type | 'stream_tool_invocation' | Event type discriminator |
 | name | string | Tool name |
 | input | Record\<string, unknown\> | Tool parameters |
 
-**ToolResponse** - Tool execution result (returned to Agent)
+**StreamEventToolResponse** - Tool execution result (returned to Agent)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| type | 'tool_response' | Event type discriminator |
+| type | 'stream_tool_response' | Event type discriminator |
 | toolUseId | string | Corresponding tool use ID |
 | content | string | Result content |
 | isError | boolean | Whether the tool execution failed |
 
-**SessionEnd** - Discriminated union for session termination
+**StreamEventEnd** - Discriminated union for session termination
 
 | Variant | Fields | Description |
 |---------|--------|-------------|
-| SessionEndCompleted | result?: string | Normal completion |
-| SessionEndExecutionError | messages: string[] | Execution errors |
-| SessionEndMaxIterations | - | Hit iteration limit |
-| SessionEndBudgetExceeded | - | API cost limit hit |
-| SessionEndQuotaExceeded | message?: string, resetTime?: Date | Subscription quota hit |
+| StreamEventEndCompleted | result?: string | Normal completion |
+| StreamEventEndExecutionError | messages: string[] | Execution errors |
+| StreamEventEndMaxIterations | - | Hit iteration limit |
+| StreamEventEndBudgetExceeded | - | API cost limit hit |
+| StreamEventEndQuotaExceeded | message?: string, resetTime?: Date | Subscription quota hit |
 
-Common fields: `type: 'session_end'`, `outcome: SessionOutcome`, `totalCostUsd?: number`
+Common fields: `type: 'stream_end'`, `outcome: SessionOutcome`, `totalCostUsd?: number`
 
-**StreamError** - SDK error wrapped as event
+**StreamEventError** - SDK error wrapped as event
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -246,10 +246,10 @@ Common fields: `type: 'session_end'`, `outcome: SessionOutcome`, `totalCostUsd?:
 
 **MessageStream Error Handling:**
 
-The SDK may throw errors after yielding `session_end` for certain outcomes (e.g., quota exceeded causes Claude Code to exit with code 1). The `ClaudeAgentClient` wrapper handles this by:
+The SDK may throw errors after yielding `stream_end` for certain outcomes (e.g., quota exceeded causes Claude Code to exit with code 1). The `ClaudeAgentClient` wrapper handles this by:
 
-1. Wrap SDK errors as `StreamError` events (yield instead of throw)
-2. Session checks if `session_end` was already received:
+1. Wrap SDK errors as `StreamEventError` events (yield instead of throw)
+2. Session checks if `stream_end` was already received:
    - If yes: Log error at debug level and continue (expected behavior)
    - If no: Throw the error (real failure)
 
@@ -737,7 +737,7 @@ const silentLogger: Logger
 | ------------------ | --------------------------------------------------------- |
 | Send instruction   | `[Send] {instruction (truncated to 200)}`                 |
 | Receive message    | `[Recv] {type}: {content (truncated to 200)}`             |
-| Thinking           | `[Recv] agent_thinking: [thinking] {thinking (truncated to 200)}` |
+| Thinking           | `[Recv] stream_thinking: [thinking] {thinking (truncated to 200)}` |
 | Error with stack   | `{message}\n{stack}`                                      |
 
 **Session Messages** (info level):
@@ -1606,12 +1606,12 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | -------- | -------------------- | -------------------------- | ---------------------------------- |
 | SC-AC001 | toSdkMcpServers      | Empty record               | Empty record                       |
 | SC-AC002 | toSdkMcpServers      | Server with args           | SDK format preserved               |
-| SC-AC003 | toStreamEvent        | text block                 | AgentText                          |
-| SC-AC004 | toStreamEvent        | tool_use block             | ToolInvocation                     |
-| SC-AC005 | toStreamEvent        | tool_result block          | ToolResponse                       |
-| SC-AC016 | toStreamEvent        | thinking block             | AgentThinking                      |
+| SC-AC003 | toStreamEvent        | text block                 | StreamEventText                    |
+| SC-AC004 | toStreamEvent        | tool_use block             | StreamEventToolInvocation          |
+| SC-AC005 | toStreamEvent        | tool_result block          | StreamEventToolResponse            |
+| SC-AC016 | toStreamEvent        | thinking block             | StreamEventThinking                |
 | SC-AC011 | toStreamEvents       | SDK message with content   | Generator\<StreamEvent\>             |
-| SC-AC012 | toSessionEnd         | Result with total_cost_usd | SessionEnd with totalCostUsd       |
+| SC-AC012 | toSessionEnd         | Result with total_cost_usd | StreamEventEnd with totalCostUsd   |
 | SC-AC013 | detectClaudeCodePath | claude found               | Path string                        |
 | SC-AC014 | detectClaudeCodePath | claude not found           | undefined                          |
 

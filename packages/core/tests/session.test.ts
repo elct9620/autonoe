@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { Session } from '../src/session'
 import {
   MockAgentClient,
-  createMockAgentText,
-  createMockSessionEnd,
-  createMockErrorSessionEnd,
-  createMockQuotaExceededSessionEnd,
+  createMockStreamText,
+  createMockStreamEnd,
+  createMockErrorStreamEnd,
+  createMockQuotaExceededStreamEnd,
   createMockStreamError,
   TestLogger,
 } from './helpers'
@@ -14,7 +14,7 @@ describe('Session', () => {
   describe('run()', () => {
     it('returns a SessionResult', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockAgentText('2')])
+      client.setResponses([createMockStreamText('2')])
 
       const session = new Session({ projectDir: '/test/project' })
       const result = await session.run(client, 'test instruction')
@@ -49,7 +49,7 @@ describe('Session', () => {
 
     it('returns costUsd from session end event', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('Result', 0.0567)])
+      client.setResponses([createMockStreamEnd('Result', 0.0567)])
 
       const session = new Session({ projectDir: '/test/project' })
       const result = await session.run(client, 'test')
@@ -59,7 +59,7 @@ describe('Session', () => {
 
     it('returns zero costUsd when no cost in result', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('Result')])
+      client.setResponses([createMockStreamEnd('Result')])
 
       const session = new Session({ projectDir: '/test/project' })
       const result = await session.run(client, 'test')
@@ -69,7 +69,7 @@ describe('Session', () => {
 
     it('tracks execution duration', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockAgentText('done')])
+      client.setResponses([createMockStreamText('done')])
 
       const session = new Session({ projectDir: '/test/project' })
       const result = await session.run(client, 'test')
@@ -81,7 +81,7 @@ describe('Session', () => {
   describe('SC-L004: Debug logging', () => {
     it('logs debug messages with injected logger', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockAgentText('done')])
+      client.setResponses([createMockStreamText('done')])
       const logger = new TestLogger()
 
       const session = new Session({ projectDir: '/test/project' })
@@ -98,7 +98,7 @@ describe('Session', () => {
   describe('SC-S006: Session end event (success)', () => {
     it('displays result text via logger.info', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('The answer is 2', 0.0123)])
+      client.setResponses([createMockStreamEnd('The answer is 2', 0.0123)])
       const logger = new TestLogger()
 
       const session = new Session({ projectDir: '/test/project' })
@@ -113,7 +113,7 @@ describe('Session', () => {
 
     it('handles result without text gracefully', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd(undefined as any)])
+      client.setResponses([createMockStreamEnd(undefined as any)])
       const logger = new TestLogger()
 
       const session = new Session({ projectDir: '/test/project' })
@@ -128,7 +128,7 @@ describe('Session', () => {
   describe('SC-S007: Session end event (error)', () => {
     it('displays error messages via logger.error', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockErrorSessionEnd(['Error 1', 'Error 2'])])
+      client.setResponses([createMockErrorStreamEnd(['Error 1', 'Error 2'])])
       const logger = new TestLogger()
 
       const session = new Session({ projectDir: '/test/project' })
@@ -147,7 +147,7 @@ describe('Session', () => {
     it('ignores stream error after session_end (expected for quota exceeded)', async () => {
       const client = new MockAgentClient()
       client.setResponses([
-        createMockQuotaExceededSessionEnd("You've hit your limit"),
+        createMockQuotaExceededStreamEnd("You've hit your limit"),
         createMockStreamError('Claude Code process exited with code 1'),
       ])
       const logger = new TestLogger()
@@ -168,7 +168,7 @@ describe('Session', () => {
     it('throws when stream error occurs without session_end', async () => {
       const client = new MockAgentClient()
       client.setResponses([
-        createMockAgentText('Processing...'),
+        createMockStreamText('Processing...'),
         createMockStreamError('Connection lost'),
       ])
 
@@ -200,7 +200,7 @@ describe('Session', () => {
   describe('dispose lifecycle', () => {
     it('calls dispose after successful session', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('done', 0.01)])
+      client.setResponses([createMockStreamEnd('done', 0.01)])
 
       const session = new Session({ projectDir: '/test/project' })
       await session.run(client, 'test')
@@ -221,8 +221,8 @@ describe('Session', () => {
     it('calls dispose only once per session', async () => {
       const client = new MockAgentClient()
       client.setResponses([
-        createMockAgentText('processing'),
-        createMockSessionEnd('done', 0.01),
+        createMockStreamText('processing'),
+        createMockStreamEnd('done', 0.01),
       ])
 
       const session = new Session({ projectDir: '/test/project' })

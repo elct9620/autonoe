@@ -1,11 +1,11 @@
 import type { McpServerConfig as SDKMcpServerConfig } from '@anthropic-ai/claude-agent-sdk'
 import type {
   StreamEvent,
-  AgentText,
-  AgentThinking,
-  ToolInvocation,
-  ToolResponse,
-  SessionEnd,
+  StreamEventText,
+  StreamEventThinking,
+  StreamEventToolInvocation,
+  StreamEventToolResponse,
+  StreamEventEnd,
   McpServer,
 } from '@autonoe/core'
 import { isQuotaExceededMessage, parseQuotaResetTime } from '@autonoe/core'
@@ -62,22 +62,22 @@ export function toStreamEvent(block: SDKContentBlock): StreamEvent | null {
   switch (block.type) {
     case 'thinking':
       return {
-        type: 'agent_thinking',
+        type: 'stream_thinking',
         thinking: block.thinking ?? '',
-      } as AgentThinking
+      } as StreamEventThinking
 
     case 'text':
       return {
-        type: 'agent_text',
+        type: 'stream_text',
         text: block.text ?? '',
-      } as AgentText
+      } as StreamEventText
 
     case 'tool_use':
       return {
-        type: 'tool_invocation',
+        type: 'stream_tool_invocation',
         name: block.name ?? '',
         input: block.input ?? {},
-      } as ToolInvocation
+      } as StreamEventToolInvocation
 
     case 'tool_result': {
       // Normalize content: array of text blocks to single string
@@ -88,11 +88,11 @@ export function toStreamEvent(block: SDKContentBlock): StreamEvent | null {
         content = block.content.map((c) => c.text ?? '').join('')
       }
       return {
-        type: 'tool_response',
+        type: 'stream_tool_response',
         toolUseId: block.tool_use_id ?? '',
         content,
         isError: block.is_error ?? false,
-      } as ToolResponse
+      } as StreamEventToolResponse
     }
 
     default:
@@ -101,17 +101,17 @@ export function toStreamEvent(block: SDKContentBlock): StreamEvent | null {
 }
 
 /**
- * Convert SDK result message to SessionEnd
+ * Convert SDK result message to StreamEventEnd
  * Returns appropriate variant based on SDK subtype and result text
  */
-export function toSessionEnd(sdkMessage: SDKMessage): SessionEnd {
+export function toSessionEnd(sdkMessage: SDKMessage): StreamEventEnd {
   const subtype = sdkMessage.subtype ?? ''
   const costUsd = sdkMessage.total_cost_usd
 
   // Check for quota exceeded first (SDK reports as 'success' with limit message)
   if (sdkMessage.result && isQuotaExceededMessage(sdkMessage.result)) {
     return {
-      type: 'session_end',
+      type: 'stream_end',
       outcome: 'quota_exceeded',
       message: sdkMessage.result,
       resetTime: parseQuotaResetTime(sdkMessage.result) ?? undefined,
@@ -122,20 +122,20 @@ export function toSessionEnd(sdkMessage: SDKMessage): SessionEnd {
   switch (subtype) {
     case 'success':
       return {
-        type: 'session_end',
+        type: 'stream_end',
         outcome: 'completed',
         result: sdkMessage.result,
         totalCostUsd: costUsd,
       }
     case 'error_max_turns':
       return {
-        type: 'session_end',
+        type: 'stream_end',
         outcome: 'max_iterations',
         totalCostUsd: costUsd,
       }
     case 'error_max_budget_usd':
       return {
-        type: 'session_end',
+        type: 'stream_end',
         outcome: 'budget_exceeded',
         totalCostUsd: costUsd,
       }
@@ -143,7 +143,7 @@ export function toSessionEnd(sdkMessage: SDKMessage): SessionEnd {
     case 'error_max_structured_output_retries':
     default:
       return {
-        type: 'session_end',
+        type: 'stream_end',
         outcome: 'execution_error',
         messages: sdkMessage.errors ?? [],
         totalCostUsd: costUsd,

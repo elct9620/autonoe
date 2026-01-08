@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 import { logSessionEnd } from '../src/sessionEndHandler'
 import type {
-  SessionEndCompleted,
-  SessionEndQuotaExceeded,
-  SessionEndExecutionError,
-  SessionEndMaxIterations,
-  SessionEndBudgetExceeded,
+  StreamEventEndCompleted,
+  StreamEventEndQuotaExceeded,
+  StreamEventEndExecutionError,
+  StreamEventEndMaxIterations,
+  StreamEventEndBudgetExceeded,
 } from '../src/types'
 import type { Logger } from '../src/logger'
 
@@ -27,8 +27,8 @@ describe('logSessionEnd', () => {
   describe('Completed outcome', () => {
     it('SEH-001: logs result when session completed with result', () => {
       const logger = createMockLogger()
-      const event: SessionEndCompleted = {
-        type: 'session_end',
+      const event: StreamEventEndCompleted = {
+        type: 'stream_end',
         outcome: 'completed',
         result: 'Task completed successfully',
       }
@@ -40,8 +40,8 @@ describe('logSessionEnd', () => {
 
     it('SEH-002: does not log when session completed without result', () => {
       const logger = createMockLogger()
-      const event: SessionEndCompleted = {
-        type: 'session_end',
+      const event: StreamEventEndCompleted = {
+        type: 'stream_end',
         outcome: 'completed',
       }
 
@@ -54,8 +54,8 @@ describe('logSessionEnd', () => {
   describe('QuotaExceeded outcome', () => {
     it('SEH-010: logs warning with message', () => {
       const logger = createMockLogger()
-      const event: SessionEndQuotaExceeded = {
-        type: 'session_end',
+      const event: StreamEventEndQuotaExceeded = {
+        type: 'stream_end',
         outcome: 'quota_exceeded',
         message: 'Rate limit reached',
       }
@@ -69,8 +69,8 @@ describe('logSessionEnd', () => {
 
     it('SEH-011: logs warning with Unknown when no message', () => {
       const logger = createMockLogger()
-      const event: SessionEndQuotaExceeded = {
-        type: 'session_end',
+      const event: StreamEventEndQuotaExceeded = {
+        type: 'stream_end',
         outcome: 'quota_exceeded',
       }
 
@@ -83,8 +83,8 @@ describe('logSessionEnd', () => {
   describe('ExecutionError outcome', () => {
     it('SEH-020: logs each error message', () => {
       const logger = createMockLogger()
-      const event: SessionEndExecutionError = {
-        type: 'session_end',
+      const event: StreamEventEndExecutionError = {
+        type: 'stream_end',
         outcome: 'execution_error',
         messages: ['Error 1', 'Error 2'],
       }
@@ -98,8 +98,8 @@ describe('logSessionEnd', () => {
 
     it('SEH-021: handles empty messages array', () => {
       const logger = createMockLogger()
-      const event: SessionEndExecutionError = {
-        type: 'session_end',
+      const event: StreamEventEndExecutionError = {
+        type: 'stream_end',
         outcome: 'execution_error',
         messages: [],
       }
@@ -113,8 +113,8 @@ describe('logSessionEnd', () => {
   describe('MaxIterations outcome', () => {
     it('SEH-022: handles max_iterations without special logging', () => {
       const logger = createMockLogger()
-      const event: SessionEndMaxIterations = {
-        type: 'session_end',
+      const event: StreamEventEndMaxIterations = {
+        type: 'stream_end',
         outcome: 'max_iterations',
       }
 
@@ -130,8 +130,8 @@ describe('logSessionEnd', () => {
   describe('BudgetExceeded outcome', () => {
     it('SEH-023: handles budget_exceeded without special logging', () => {
       const logger = createMockLogger()
-      const event: SessionEndBudgetExceeded = {
-        type: 'session_end',
+      const event: StreamEventEndBudgetExceeded = {
+        type: 'stream_end',
         outcome: 'budget_exceeded',
       }
 

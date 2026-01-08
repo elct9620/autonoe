@@ -1,11 +1,11 @@
 import type { Logger } from './logger'
-import type { SessionEnd } from './types'
+import type { StreamEventEnd } from './types'
 
 /**
  * Logs session end events based on outcome
  * @see SPEC.md Section 3.3
  */
-export function logSessionEnd(event: SessionEnd, logger: Logger): void {
+export function logSessionEnd(event: StreamEventEnd, logger: Logger): void {
   switch (event.outcome) {
     case 'completed':
       if (event.result) {

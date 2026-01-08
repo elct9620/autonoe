@@ -6,9 +6,9 @@ import type { MessageStream } from '../src/types'
 import {
   MockAgentClient,
   MockDeliverableStatusReader,
-  createMockAgentText,
-  createMockSessionEnd,
-  createMockQuotaExceededSessionEnd,
+  createMockStreamText,
+  createMockStreamEnd,
+  createMockQuotaExceededStreamEnd,
   createMockStatusJson,
   createMockClientFactory,
   TestLogger,
@@ -21,11 +21,11 @@ import {
 class ThrowingMockClient implements AgentClient {
   private throwCount: number
   private callCount = 0
-  private successResponses: ReturnType<typeof createMockSessionEnd>[]
+  private successResponses: ReturnType<typeof createMockStreamEnd>[]
 
   constructor(
     throwCount: number,
-    successResponses: ReturnType<typeof createMockSessionEnd>[],
+    successResponses: ReturnType<typeof createMockStreamEnd>[],
   ) {
     this.throwCount = throwCount
     this.successResponses = successResponses
@@ -60,7 +60,7 @@ describe('SessionRunner', () => {
   describe('run()', () => {
     it('returns a SessionRunnerResult', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockAgentText('done')])
+      client.setResponses([createMockStreamText('done')])
       const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
@@ -77,7 +77,7 @@ describe('SessionRunner', () => {
 
     it('runs at least one session', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('done', 0.01)])
+      client.setResponses([createMockStreamEnd('done', 0.01)])
       const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
@@ -91,7 +91,7 @@ describe('SessionRunner', () => {
 
     it('accepts runner options', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockAgentText('done')])
+      client.setResponses([createMockStreamText('done')])
       const factory = createMockClientFactory(client)
 
       // When statusReader is not provided and maxIterations is set,
@@ -110,7 +110,7 @@ describe('SessionRunner', () => {
 
     it('SC-L004: uses injected logger for session status', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('done', 0.0123)])
+      client.setResponses([createMockStreamEnd('done', 0.0123)])
       const factory = createMockClientFactory(client)
       const logger = new TestLogger()
 
@@ -126,7 +126,7 @@ describe('SessionRunner', () => {
 
     it('tracks total duration across sessions', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockAgentText('done')])
+      client.setResponses([createMockStreamText('done')])
       const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
@@ -143,9 +143,9 @@ describe('SessionRunner', () => {
     it('stops after maxIterations sessions', async () => {
       const client = new MockAgentClient()
       client.setResponsesPerSession([
-        [createMockSessionEnd('session 1', 0.01)],
-        [createMockSessionEnd('session 2', 0.01)],
-        [createMockSessionEnd('session 3', 0.01)],
+        [createMockStreamEnd('session 1', 0.01)],
+        [createMockStreamEnd('session 2', 0.01)],
+        [createMockStreamEnd('session 3', 0.01)],
       ])
       const factory = createMockClientFactory(client)
 
@@ -174,7 +174,7 @@ describe('SessionRunner', () => {
   describe('SC-S008: Early exit on all deliverables pass', () => {
     it('exits immediately when all deliverables pass', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('done', 0.01)])
+      client.setResponses([createMockStreamEnd('done', 0.01)])
       const factory = createMockClientFactory(client)
 
       // Status with all passed deliverables after first session
@@ -201,9 +201,9 @@ describe('SessionRunner', () => {
     it('continues until all deliverables pass when no maxIterations', async () => {
       const client = new MockAgentClient()
       client.setResponsesPerSession([
-        [createMockSessionEnd('session 1', 0.01)],
-        [createMockSessionEnd('session 2', 0.01)],
-        [createMockSessionEnd('session 3', 0.01)],
+        [createMockStreamEnd('session 1', 0.01)],
+        [createMockStreamEnd('session 2', 0.01)],
+        [createMockStreamEnd('session 3', 0.01)],
       ])
       const factory = createMockClientFactory(client)
 
@@ -242,8 +242,8 @@ describe('SessionRunner', () => {
     it('waits delayBetweenSessions before next session', async () => {
       const client = new MockAgentClient()
       client.setResponsesPerSession([
-        [createMockSessionEnd('session 1', 0.01)],
-        [createMockSessionEnd('session 2', 0.01)],
+        [createMockStreamEnd('session 1', 0.01)],
+        [createMockStreamEnd('session 2', 0.01)],
       ])
       const factory = createMockClientFactory(client)
 
@@ -272,7 +272,7 @@ describe('SessionRunner', () => {
   describe('SC-S020: All achievable passed (some blocked)', () => {
     it('exits with success when all non-blocked deliverables pass', async () => {
       const client = new MockAgentClient()
-      client.setResponsesPerSession([[createMockSessionEnd('done', 0.01)]])
+      client.setResponsesPerSession([[createMockStreamEnd('done', 0.01)]])
       const factory = createMockClientFactory(client)
 
       const statusReader = new MockDeliverableStatusReader()
@@ -299,7 +299,7 @@ describe('SessionRunner', () => {
   describe('SC-S021: All deliverables blocked', () => {
     it('exits with failure when all deliverables are blocked', async () => {
       const client = new MockAgentClient()
-      client.setResponsesPerSession([[createMockSessionEnd('blocked', 0.01)]])
+      client.setResponsesPerSession([[createMockStreamEnd('blocked', 0.01)]])
       const factory = createMockClientFactory(client)
 
       const statusReader = new MockDeliverableStatusReader()
@@ -325,7 +325,7 @@ describe('SessionRunner', () => {
   describe('SC-S023: blockedCount in result', () => {
     it('includes correct blockedCount in result', async () => {
       const client = new MockAgentClient()
-      client.setResponsesPerSession([[createMockSessionEnd('done', 0.01)]])
+      client.setResponsesPerSession([[createMockStreamEnd('done', 0.01)]])
       const factory = createMockClientFactory(client)
 
       const statusReader = new MockDeliverableStatusReader()
@@ -353,8 +353,8 @@ describe('SessionRunner', () => {
     it('logs Overall with accumulated cost after all passed', async () => {
       const client = new MockAgentClient()
       client.setResponsesPerSession([
-        [createMockSessionEnd('session 1', 0.0123)],
-        [createMockSessionEnd('session 2', 0.0234)],
+        [createMockStreamEnd('session 1', 0.0123)],
+        [createMockStreamEnd('session 2', 0.0234)],
       ])
       const factory = createMockClientFactory(client)
 
@@ -393,7 +393,7 @@ describe('SessionRunner', () => {
   describe('SC-S012: Overall output with blocked', () => {
     it('logs Overall with blocked count', async () => {
       const client = new MockAgentClient()
-      client.setResponsesPerSession([[createMockSessionEnd('done', 0.01)]])
+      client.setResponsesPerSession([[createMockStreamEnd('done', 0.01)]])
       const factory = createMockClientFactory(client)
 
       const statusReader = new MockDeliverableStatusReader()
@@ -422,8 +422,8 @@ describe('SessionRunner', () => {
     it('logs Overall when max iterations reached', async () => {
       const client = new MockAgentClient()
       client.setResponsesPerSession([
-        [createMockSessionEnd('session 1', 0.01)],
-        [createMockSessionEnd('session 2', 0.02)],
+        [createMockStreamEnd('session 1', 0.01)],
+        [createMockStreamEnd('session 2', 0.02)],
       ])
       const factory = createMockClientFactory(client)
 
@@ -452,7 +452,7 @@ describe('SessionRunner', () => {
   describe('totalCostUsd in result', () => {
     it('returns totalCostUsd in SessionRunnerResult', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('done', 0.0123)])
+      client.setResponses([createMockStreamEnd('done', 0.0123)])
       const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
@@ -469,7 +469,7 @@ describe('SessionRunner', () => {
   describe('Retry on session error', () => {
     it('should retry on session error and create new session', async () => {
       const throwingClient = new ThrowingMockClient(2, [
-        createMockSessionEnd('success', 0.01),
+        createMockStreamEnd('success', 0.01),
       ])
 
       const statusReader = new MockDeliverableStatusReader()
@@ -500,7 +500,7 @@ describe('SessionRunner', () => {
 
     it('should return result with error after maxRetries consecutive errors', async () => {
       const throwingClient = new ThrowingMockClient(5, [
-        createMockSessionEnd('never reached', 0.01),
+        createMockStreamEnd('never reached', 0.01),
       ])
 
       const factory: AgentClientFactory = {
@@ -552,11 +552,11 @@ describe('SessionRunner', () => {
           callCount++
           if (callCount === 1 || callCount === 3) {
             return new ThrowingMockClient(1, [
-              createMockSessionEnd('retry success', 0.01),
+              createMockStreamEnd('retry success', 0.01),
             ])
           }
           return new ThrowingMockClient(0, [
-            createMockSessionEnd('direct success', 0.01),
+            createMockStreamEnd('direct success', 0.01),
           ])
         },
       }
@@ -612,7 +612,7 @@ describe('SessionRunner', () => {
   describe('Unified exit point', () => {
     it('should call logOverall exactly once for all exit reasons', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('done', 0.01)])
+      client.setResponses([createMockStreamEnd('done', 0.01)])
       const factory = createMockClientFactory(client)
 
       const statusReader = new MockDeliverableStatusReader()
@@ -636,7 +636,7 @@ describe('SessionRunner', () => {
 
     it('should return consistent result structure regardless of exit reason', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('done', 0.01)])
+      client.setResponses([createMockStreamEnd('done', 0.01)])
       const factory = createMockClientFactory(client)
 
       const runner = new SessionRunner({
@@ -675,8 +675,8 @@ describe('SessionRunner', () => {
       // Second session: success
       const resetTime = new Date(Date.now() + 10) // 10ms from now
       client.setResponsesPerSession([
-        [createMockQuotaExceededSessionEnd('Quota exceeded', resetTime)],
-        [createMockSessionEnd('done', 0.01)],
+        [createMockQuotaExceededStreamEnd('Quota exceeded', resetTime)],
+        [createMockStreamEnd('done', 0.01)],
       ])
       const factory = createMockClientFactory(client)
 
@@ -702,7 +702,7 @@ describe('SessionRunner', () => {
 
     it('SR-Q002: exits immediately when quota exceeded without waitForQuota', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockQuotaExceededSessionEnd('Quota exceeded')])
+      client.setResponses([createMockQuotaExceededStreamEnd('Quota exceeded')])
       const factory = createMockClientFactory(client)
 
       const logger = new TestLogger()
@@ -723,7 +723,7 @@ describe('SessionRunner', () => {
   describe('Interrupt handling', () => {
     it('SR-I001: terminates when signal is aborted before session', async () => {
       const client = new MockAgentClient()
-      client.setResponses([createMockSessionEnd('done', 0.01)])
+      client.setResponses([createMockStreamEnd('done', 0.01)])
       const factory = createMockClientFactory(client)
 
       const controller = new AbortController()
