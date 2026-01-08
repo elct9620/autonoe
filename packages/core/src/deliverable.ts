@@ -14,34 +14,51 @@ export type DeliverableStatusValue = 'pending' | 'passed' | 'blocked'
 /**
  * Deliverable entity - an immutable verifiable work unit with acceptance criteria
  *
- * Invariant: passed and blocked are mutually exclusive
- * - pending: passed=false, blocked=false
- * - passed: passed=true, blocked=false
- * - blocked: passed=false, blocked=true
+ * Uses single status field to eliminate invalid state combinations.
+ * Provides `passed` and `blocked` getters for backward compatibility.
  */
 export class Deliverable {
   readonly id: string
   readonly description: string
   readonly acceptanceCriteria: readonly string[]
-  readonly passed: boolean
-  readonly blocked: boolean
+  private readonly _status: DeliverableStatusValue
 
   private constructor(
     id: string,
     description: string,
     acceptanceCriteria: string[],
-    passed: boolean,
-    blocked: boolean,
+    status: DeliverableStatusValue,
   ) {
     this.id = id
     this.description = description
     this.acceptanceCriteria = acceptanceCriteria
-    this.passed = passed
-    this.blocked = blocked
+    this._status = status
+  }
+
+  /**
+   * Whether the deliverable has passed (backward compatibility getter)
+   */
+  get passed(): boolean {
+    return this._status === 'passed'
+  }
+
+  /**
+   * Whether the deliverable is blocked (backward compatibility getter)
+   */
+  get blocked(): boolean {
+    return this._status === 'blocked'
+  }
+
+  /**
+   * Get the current status value
+   */
+  get status(): DeliverableStatusValue {
+    return this._status
   }
 
   /**
    * Factory method for deserialization (backward compatibility with JSON)
+   * Converts legacy (passed, blocked) booleans to status value
    */
   static create(
     id: string,
@@ -50,7 +67,12 @@ export class Deliverable {
     passed: boolean,
     blocked: boolean,
   ): Deliverable {
-    return new Deliverable(id, description, acceptanceCriteria, passed, blocked)
+    const status: DeliverableStatusValue = passed
+      ? 'passed'
+      : blocked
+        ? 'blocked'
+        : 'pending'
+    return new Deliverable(id, description, acceptanceCriteria, status)
   }
 
   /**
@@ -61,7 +83,7 @@ export class Deliverable {
     description: string,
     acceptanceCriteria: string[],
   ): Deliverable {
-    return new Deliverable(id, description, acceptanceCriteria, false, false)
+    return new Deliverable(id, description, acceptanceCriteria, 'pending')
   }
 
   /**
@@ -72,7 +94,7 @@ export class Deliverable {
     description: string,
     acceptanceCriteria: string[],
   ): Deliverable {
-    return new Deliverable(id, description, acceptanceCriteria, true, false)
+    return new Deliverable(id, description, acceptanceCriteria, 'passed')
   }
 
   /**
@@ -83,57 +105,53 @@ export class Deliverable {
     description: string,
     acceptanceCriteria: string[],
   ): Deliverable {
-    return new Deliverable(id, description, acceptanceCriteria, false, true)
+    return new Deliverable(id, description, acceptanceCriteria, 'blocked')
   }
 
   /**
    * Transition to passed state
-   * @returns New Deliverable instance with passed=true, blocked=false
+   * @returns New Deliverable instance with status='passed'
    */
   markPassed(): Deliverable {
     return new Deliverable(
       this.id,
       this.description,
       [...this.acceptanceCriteria],
-      true,
-      false,
+      'passed',
     )
   }
 
   /**
    * Transition to blocked state
-   * @returns New Deliverable instance with passed=false, blocked=true
+   * @returns New Deliverable instance with status='blocked'
    */
   markBlocked(): Deliverable {
     return new Deliverable(
       this.id,
       this.description,
       [...this.acceptanceCriteria],
-      false,
-      true,
+      'blocked',
     )
   }
 
   /**
    * Reset to pending state
-   * @returns New Deliverable instance with passed=false, blocked=false
+   * @returns New Deliverable instance with status='pending'
    */
   reset(): Deliverable {
     return new Deliverable(
       this.id,
       this.description,
       [...this.acceptanceCriteria],
-      false,
-      false,
+      'pending',
     )
   }
 
   /**
    * Get the current status as a semantic value
+   * @deprecated Use the `status` getter instead
    */
   getStatus(): DeliverableStatusValue {
-    if (this.passed) return 'passed'
-    if (this.blocked) return 'blocked'
-    return 'pending'
+    return this._status
   }
 }

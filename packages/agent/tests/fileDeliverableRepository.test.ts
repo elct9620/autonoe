@@ -73,7 +73,13 @@ describe('FileDeliverableRepository', () => {
       const status = await repo.load()
       expect(status.createdAt).toBe(expectedJson.createdAt)
       expect(status.updatedAt).toBe(expectedJson.updatedAt)
-      expect([...status.deliverables]).toEqual(expectedJson.deliverables)
+      expect(status.deliverables.length).toBe(1)
+      const d = status.deliverables[0]!
+      expect(d.id).toBe('DL-001')
+      expect(d.description).toBe('Test Deliverable')
+      expect([...d.acceptanceCriteria]).toEqual(['Criterion 1', 'Criterion 2'])
+      expect(d.passed).toBe(true)
+      expect(d.blocked).toBe(false)
     })
 
     it('returns empty status for malformed JSON', async () => {
@@ -124,7 +130,10 @@ describe('FileDeliverableRepository', () => {
       // updatedAt is refreshed on save
       expect(saved.createdAt).toBe(status.createdAt)
       expect(saved.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-      expect(saved.deliverables).toEqual([...status.deliverables])
+      expect(saved.deliverables.length).toBe(1)
+      expect(saved.deliverables[0].id).toBe('DL-001')
+      expect(saved.deliverables[0].passed).toBe(false)
+      expect(saved.deliverables[0].blocked).toBe(false)
     })
 
     it('overwrites existing file', async () => {
@@ -143,7 +152,10 @@ describe('FileDeliverableRepository', () => {
         'utf-8',
       )
       const saved = JSON.parse(content)
-      expect(saved.deliverables).toEqual([...updated.deliverables])
+      expect(saved.deliverables.length).toBe(1)
+      expect(saved.deliverables[0].id).toBe('DL-001')
+      expect(saved.deliverables[0].passed).toBe(true)
+      expect(saved.deliverables[0].blocked).toBe(false)
       expect(saved.createdAt).toBe(updated.createdAt)
     })
 
