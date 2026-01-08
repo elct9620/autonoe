@@ -1,9 +1,6 @@
 import {
   Deliverable,
   DeliverableStatus,
-  type SessionOptions,
-  type SessionResult,
-  type StreamEvent,
   type StreamEventText,
   type StreamEventToolInvocation,
   type StreamEventToolResponse,
@@ -12,32 +9,6 @@ import {
   type StreamEventEndQuotaExceeded,
   type StreamEventError,
 } from '../../src/index'
-
-/**
- * Create a minimal valid SessionOptions for testing
- */
-export function createSessionOptions(
-  overrides: Partial<SessionOptions> = {},
-): SessionOptions {
-  return {
-    projectDir: '/test/project',
-    ...overrides,
-  }
-}
-
-/**
- * Create a minimal valid SessionResult for testing
- */
-export function createSessionResult(
-  overrides: Partial<SessionResult> = {},
-): SessionResult {
-  return {
-    costUsd: 0,
-    duration: 0,
-    outcome: 'completed',
-    ...overrides,
-  }
-}
 
 /**
  * Create mock status.json content
@@ -195,11 +166,4 @@ export function createMockStreamError(
     message,
     stack,
   }
-}
-
-/**
- * Helper to cast StreamEvent types for tests
- */
-export function asStreamEvent(event: StreamEvent): StreamEvent {
-  return event
 }
