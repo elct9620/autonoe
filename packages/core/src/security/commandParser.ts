@@ -2,7 +2,7 @@
  * Shell command parsing utilities
  */
 
-export interface ParsedCommand {
+export type ParsedCommand = {
   base: string
   fullCommand: string
   args: string[]

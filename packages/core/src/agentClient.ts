@@ -21,7 +21,7 @@ export interface AgentClientFactory {
 /**
  * Input for PreToolUse hook callback
  */
-export interface PreToolUseInput {
+export type PreToolUseInput = {
   toolName: string
   toolInput: Record<string, unknown>
 }
@@ -29,7 +29,7 @@ export interface PreToolUseInput {
 /**
  * Result from PreToolUse hook callback
  */
-export interface HookResult {
+export type HookResult = {
   continue: boolean
   decision?: 'approve' | 'block'
   reason?: string

@@ -98,7 +98,7 @@ export class DeliverableStatus {
 /**
  * Single deliverable input for batch creation
  */
-export interface DeliverableInput {
+export type DeliverableInput = {
   id: string
   description: string
   acceptanceCriteria: string[]
@@ -107,14 +107,14 @@ export interface DeliverableInput {
 /**
  * Input for create_deliverable tool (batch creation)
  */
-export interface CreateDeliverableInput {
+export type CreateDeliverableInput = {
   deliverables: DeliverableInput[]
 }
 
 /**
  * Notification payload for deliverable status changes
  */
-export interface DeliverableStatusNotification {
+export type DeliverableStatusNotification = {
   deliverableId: string
   deliverableDescription: string
   previousStatus: DeliverableStatusValue | null
@@ -131,7 +131,7 @@ export type DeliverableStatusCallback = (
 /**
  * Input for set_deliverable_status tool
  */
-export interface SetDeliverableStatusInput {
+export type SetDeliverableStatusInput = {
   deliverableId: string
   status: DeliverableStatusValue
 }
@@ -139,7 +139,7 @@ export interface SetDeliverableStatusInput {
 /**
  * Tool result returned to the agent
  */
-export interface ToolResult {
+export type ToolResult = {
   success: boolean
   message: string
   error?: string
