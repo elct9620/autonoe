@@ -5,7 +5,6 @@ import type {
   PermissionMode as SDKPermissionMode,
   SandboxSettings as SDKSandboxSettings,
   HookCallbackMatcher,
-  HookCallback,
   HookInput,
   SyncHookJSONOutput,
   McpSdkServerConfigWithInstance,
@@ -16,7 +15,6 @@ import type {
   AgentClientOptions,
   PreToolUseHook,
   PreToolUseInput,
-  HookResult,
 } from '@autonoe/core'
 import { detectClaudeCodePath } from './claudeCodePath'
 import { toSdkMcpServers, toStreamEvents } from './converters'
@@ -34,48 +32,42 @@ export interface ClaudeAgentClientOptions extends AgentClientOptions {
 }
 
 /**
- * Convert domain PreToolUseHook to SDK HookCallbackMatcher format
+ * Convert domain PreToolUseHook array to SDK HookCallbackMatcher format
+ * Wraps each hook callback to transform domain types to SDK types
  */
 function toSdkHookCallbackMatchers(
   hooks: PreToolUseHook[],
 ): HookCallbackMatcher[] {
   return hooks.map((hook) => ({
     matcher: hook.matcher,
-    hooks: [wrapHookCallback(hook.callback)],
+    hooks: [
+      async (
+        input: HookInput,
+        _toolUseId: string | undefined,
+        _options: { signal: AbortSignal },
+      ): Promise<SyncHookJSONOutput> => {
+        // Extract PreToolUse-specific fields from HookInput
+        const hookInput = input as {
+          hook_event_name: string
+          tool_name?: string
+          tool_input?: Record<string, unknown>
+        }
+
+        const preToolInput: PreToolUseInput = {
+          toolName: hookInput.tool_name ?? '',
+          toolInput: hookInput.tool_input ?? {},
+        }
+
+        const result = await hook.callback(preToolInput)
+
+        return {
+          continue: result.continue,
+          decision: result.decision,
+          reason: result.reason,
+        }
+      },
+    ],
   }))
-}
-
-/**
- * Wrap domain hook callback to SDK HookCallback format
- */
-function wrapHookCallback(
-  callback: (input: PreToolUseInput) => Promise<HookResult>,
-): HookCallback {
-  return async (
-    input: HookInput,
-    _toolUseId: string | undefined,
-    _options: { signal: AbortSignal },
-  ): Promise<SyncHookJSONOutput> => {
-    // Extract PreToolUse-specific fields from HookInput
-    const hookInput = input as {
-      hook_event_name: string
-      tool_name?: string
-      tool_input?: Record<string, unknown>
-    }
-
-    const preToolInput: PreToolUseInput = {
-      toolName: hookInput.tool_name ?? '',
-      toolInput: hookInput.tool_input ?? {},
-    }
-
-    const result = await callback(preToolInput)
-
-    return {
-      continue: result.continue,
-      decision: result.decision,
-      reason: result.reason,
-    }
-  }
 }
 
 /**
