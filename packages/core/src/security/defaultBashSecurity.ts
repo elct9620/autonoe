@@ -31,6 +31,32 @@ import {
 } from './validators'
 
 /**
+ * Collect items from profile mappings and optional user extensions
+ */
+function collectFromProfiles<T>(
+  profiles: ProfileName[],
+  profileMapping: Record<ProfileName, Set<T>>,
+  extensions?: T[],
+): Set<T> {
+  const result = new Set<T>()
+
+  for (const profile of profiles) {
+    const items = profileMapping[profile]
+    for (const item of items) {
+      result.add(item)
+    }
+  }
+
+  if (extensions) {
+    for (const item of extensions) {
+      result.add(item)
+    }
+  }
+
+  return result
+}
+
+/**
  * Create a PreToolUse hook for bash command security
  *
  * @param securityOrOptions - BashSecurity instance or options to create one
@@ -79,8 +105,19 @@ export class DefaultBashSecurity implements BashSecurity {
 
   constructor(options: BashSecurityOptions = {}) {
     const profiles = this.resolveActiveProfiles(options.activeProfiles)
-    this.allowedCommands = this.buildAllowedCommands(profiles, options)
-    this.allowedPkillTargets = this.buildAllowedPkillTargets(profiles, options)
+
+    this.allowedCommands = collectFromProfiles(
+      profiles,
+      PROFILE_COMMANDS,
+      options.allowCommands,
+    )
+
+    this.allowedPkillTargets = collectFromProfiles(
+      profiles,
+      PROFILE_PKILL_TARGETS,
+      options.allowPkillTargets,
+    )
+
     this.allowDestructive = options.allowDestructive ?? false
     this.projectDir = options.projectDir
   }
@@ -101,59 +138,6 @@ export class DefaultBashSecurity implements BashSecurity {
       profiles.add(profile)
     }
     return [...profiles]
-  }
-
-  /**
-   * Build the effective command allowlist from active profiles + extensions
-   */
-  private buildAllowedCommands(
-    profiles: ProfileName[],
-    options: BashSecurityOptions,
-  ): Set<string> {
-    const commands = new Set<string>()
-
-    // Add commands from each active profile
-    for (const profile of profiles) {
-      const profileCommands = PROFILE_COMMANDS[profile]
-      for (const cmd of profileCommands) {
-        commands.add(cmd)
-      }
-    }
-
-    // Add user extensions
-    if (options.allowCommands) {
-      for (const cmd of options.allowCommands) {
-        commands.add(cmd)
-      }
-    }
-
-    return commands
-  }
-
-  /**
-   * Build the effective pkill targets from active profiles + extensions
-   */
-  private buildAllowedPkillTargets(
-    profiles: ProfileName[],
-    options: BashSecurityOptions,
-  ): Set<string> {
-    const targets = new Set<string>()
-
-    for (const profile of profiles) {
-      const profileTargets = PROFILE_PKILL_TARGETS[profile]
-      for (const target of profileTargets) {
-        targets.add(target)
-      }
-    }
-
-    // Add user extensions
-    if (options.allowPkillTargets) {
-      for (const target of options.allowPkillTargets) {
-        targets.add(target)
-      }
-    }
-
-    return targets
   }
 
   isCommandAllowed(command: string): ValidationResult {
