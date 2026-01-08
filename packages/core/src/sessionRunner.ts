@@ -133,12 +133,13 @@ export class SessionRunner {
       logger.info(`Session ${state.iterations} started`)
 
       try {
-        // Execute session
-        const result = await this.executeSession(
-          clientFactory,
-          instruction,
-          logger,
-        )
+        // Create fresh client per session to avoid SDK child process accumulation
+        const client = clientFactory.create()
+        const session = new Session({
+          projectDir: this.options.projectDir,
+          model: this.options.model,
+        })
+        const result = await session.run(client, instruction, logger)
 
         // Reset error counter on successful session and add cost
         state = state.resetErrors().addCost(result.costUsd)
@@ -147,7 +148,9 @@ export class SessionRunner {
         )
 
         // Load deliverable status and update counts
-        const status = await this.loadDeliverableStatus(statusReader)
+        const status = statusReader
+          ? await statusReader.load()
+          : DeliverableStatus.empty()
         state = state.updateDeliverableCounts(
           status.countPassed(),
           status.deliverables.length,
@@ -239,31 +242,6 @@ export class SessionRunner {
       },
       ...partial,
     })
-  }
-
-  /**
-   * Execute a single session and return the result
-   */
-  private async executeSession(
-    clientFactory: AgentClientFactory,
-    instruction: string,
-    logger: Logger,
-  ) {
-    const client = clientFactory.create()
-    const session = new Session({
-      projectDir: this.options.projectDir,
-      model: this.options.model,
-    })
-    return session.run(client, instruction, logger)
-  }
-
-  /**
-   * Load deliverable status from reader or return empty status
-   */
-  private async loadDeliverableStatus(
-    statusReader: DeliverableStatusReader | undefined,
-  ): Promise<DeliverableStatus> {
-    return statusReader ? await statusReader.load() : DeliverableStatus.empty()
   }
 
   /**
