@@ -42,19 +42,24 @@ export interface SessionRunnerOptions {
 
 /**
  * Result of a SessionRunner execution
+ * Discriminated union by exitReason
  * @see SPEC.md Section 3.9.4
  */
-export interface SessionRunnerResult {
+export type SessionRunnerResult = {
   iterations: number
   deliverablesPassedCount: number
   deliverablesTotalCount: number
   blockedCount: number
   totalDuration: number
   totalCostUsd: number
-  interrupted?: boolean
-  quotaExceeded?: boolean
-  error?: string
-}
+} & (
+  | { exitReason: 'all_passed' }
+  | { exitReason: 'all_blocked' }
+  | { exitReason: 'max_iterations' }
+  | { exitReason: 'quota_exceeded' }
+  | { exitReason: 'interrupted' }
+  | { exitReason: 'max_retries_exceeded'; error: string }
+)
 
 /**
  * Build SessionRunnerResult from LoopState
@@ -64,20 +69,27 @@ function buildResult(
   state: LoopState,
   totalDuration: number,
 ): SessionRunnerResult {
-  return {
+  // exitReason is guaranteed to be set when run() returns
+  const exitReason = state.exitReason!
+
+  const base = {
     iterations: state.iterations,
     deliverablesPassedCount: state.deliverablesPassedCount,
     deliverablesTotalCount: state.deliverablesTotalCount,
     blockedCount: state.blockedCount,
     totalDuration,
     totalCostUsd: state.totalCostUsd,
-    interrupted: state.exitReason === 'interrupted',
-    quotaExceeded: state.exitReason === 'quota_exceeded',
-    error:
-      state.exitReason === 'max_retries_exceeded'
-        ? state.lastError?.message
-        : undefined,
   }
+
+  if (exitReason === 'max_retries_exceeded') {
+    return {
+      ...base,
+      exitReason,
+      error: state.lastError?.message ?? 'Unknown error',
+    }
+  }
+
+  return { ...base, exitReason }
 }
 
 /**

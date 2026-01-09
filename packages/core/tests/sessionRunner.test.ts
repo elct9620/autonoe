@@ -519,7 +519,10 @@ describe('SessionRunner', () => {
       // Should have called query 4 times (3 retries + 1 initial)
       expect(throwingClient.getCallCount()).toBe(4)
       // Max retries exceeded - error present
-      expect(result.error).toBe('Session error 4')
+      expect(result.exitReason).toBe('max_retries_exceeded')
+      if (result.exitReason === 'max_retries_exceeded') {
+        expect(result.error).toBe('Session error 4')
+      }
       expect(
         logger.hasMessage('Session failed after 3 consecutive errors'),
       ).toBe(true)
@@ -605,7 +608,10 @@ describe('SessionRunner', () => {
 
       // Default is 3, so 4 calls total (3 retries + 1 initial)
       expect(throwingClient.getCallCount()).toBe(4)
-      expect(result.error).toBeDefined()
+      expect(result.exitReason).toBe('max_retries_exceeded')
+      if (result.exitReason === 'max_retries_exceeded') {
+        expect(result.error).toBeDefined()
+      }
     })
   })
 
@@ -724,7 +730,7 @@ describe('SessionRunner', () => {
       const result = await runner.run(factory, logger)
 
       // Quota exceeded without wait
-      expect(result.quotaExceeded).toBe(true)
+      expect(result.exitReason).toBe('quota_exceeded')
       expect(logger.hasMessage('Quota exceeded')).toBe(true)
     })
   })
@@ -753,7 +759,7 @@ describe('SessionRunner', () => {
       )
 
       // Interrupted before any session ran
-      expect(result.interrupted).toBe(true)
+      expect(result.exitReason).toBe('interrupted')
       expect(result.iterations).toBe(0)
       expect(logger.hasMessage('User interrupted')).toBe(true)
     })

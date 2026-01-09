@@ -237,26 +237,23 @@ export async function handleRunCommand(
     )
 
     logger.info('')
-    if (result.interrupted) {
-      logger.info('Session interrupted by user')
-    } else if (result.quotaExceeded) {
-      logger.error('Session stopped: quota exceeded')
-      process.exit(1)
-    } else if (result.error) {
-      logger.error(`Session stopped: ${result.error}`)
-      process.exit(1)
-    } else {
-      // Check if all achievable deliverables passed (AllPassed exit reason)
-      const allAchievablePassed =
-        result.deliverablesTotalCount === 0 ||
-        result.deliverablesPassedCount + result.blockedCount ===
-          result.deliverablesTotalCount
-
-      if (allAchievablePassed) {
+    switch (result.exitReason) {
+      case 'interrupted':
+        logger.info('Session interrupted by user')
+        break
+      case 'quota_exceeded':
+        logger.error('Session stopped: quota exceeded')
+        process.exit(1)
+      case 'max_retries_exceeded':
+        logger.error(`Session stopped: ${result.error}`)
+        process.exit(1)
+      case 'all_passed':
+      case 'all_blocked':
         logger.info('Session completed successfully')
-      } else {
+        break
+      case 'max_iterations':
         logger.error('Session completed with errors')
-      }
+        break
     }
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error))
