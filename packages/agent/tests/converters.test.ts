@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+import type { HookInput } from '@anthropic-ai/claude-agent-sdk'
+import type { PreToolUseHook } from '@autonoe/core'
 import {
   toSdkMcpServers,
   toStreamEvent,
   toSessionEnd,
   toStreamEvents,
+  toSdkHookCallbackMatchers,
 } from '../src/converters'
 
 describe('converters', () => {
@@ -346,6 +349,191 @@ describe('converters', () => {
       expect(events[1]).toEqual({
         type: 'stream_text',
         text: 'Based on my analysis...',
+      })
+    })
+  })
+
+  describe('toSdkHookCallbackMatchers', () => {
+    it('SC-AC010: returns empty array for empty input', () => {
+      const result = toSdkHookCallbackMatchers([])
+      expect(result).toEqual([])
+    })
+
+    it('SC-AC011: converts single hook preserving matcher', () => {
+      const hook: PreToolUseHook = {
+        name: 'test-hook',
+        matcher: 'Bash|Edit',
+        callback: vi.fn().mockResolvedValue({ continue: true }),
+      }
+
+      const result = toSdkHookCallbackMatchers([hook])
+
+      expect(result).toHaveLength(1)
+      expect(result[0]!.matcher).toBe('Bash|Edit')
+      expect(result[0]!.hooks).toHaveLength(1)
+    })
+
+    it('SC-AC012: converts multiple hooks preserving order', () => {
+      const hooks: PreToolUseHook[] = [
+        {
+          name: 'hook1',
+          matcher: 'Bash',
+          callback: vi.fn().mockResolvedValue({ continue: true }),
+        },
+        {
+          name: 'hook2',
+          matcher: 'Edit',
+          callback: vi.fn().mockResolvedValue({ continue: true }),
+        },
+      ]
+
+      const result = toSdkHookCallbackMatchers(hooks)
+
+      expect(result).toHaveLength(2)
+      expect(result[0]!.matcher).toBe('Bash')
+      expect(result[1]!.matcher).toBe('Edit')
+    })
+
+    describe('wrapped callback behavior', () => {
+      const baseHookInput = {
+        session_id: 'test-session',
+        transcript_path: '/tmp/transcript',
+        cwd: '/tmp/project',
+        tool_use_id: 'tool-use-123',
+      }
+
+      it('SC-AC013: transforms HookInput to PreToolUseInput', async () => {
+        const mockCallback = vi.fn().mockResolvedValue({
+          continue: true,
+          decision: 'approve',
+        })
+
+        const hook: PreToolUseHook = {
+          name: 'test-hook',
+          callback: mockCallback,
+        }
+
+        const [matcher] = toSdkHookCallbackMatchers([hook])
+        const wrappedCallback = matcher!.hooks[0]!
+
+        const sdkInput = {
+          ...baseHookInput,
+          hook_event_name: 'PreToolUse' as const,
+          tool_name: 'Bash',
+          tool_input: { command: 'ls -la' },
+        }
+
+        await wrappedCallback(sdkInput, 'tool-123', {
+          signal: new AbortController().signal,
+        })
+
+        expect(mockCallback).toHaveBeenCalledWith({
+          toolName: 'Bash',
+          toolInput: { command: 'ls -la' },
+        })
+      })
+
+      it('SC-AC014: defaults tool_name to empty string when missing', async () => {
+        const mockCallback = vi.fn().mockResolvedValue({ continue: true })
+        const hook: PreToolUseHook = { name: 'test', callback: mockCallback }
+
+        const [matcher] = toSdkHookCallbackMatchers([hook])
+        const wrappedCallback = matcher!.hooks[0]!
+
+        // Test defensive handling when SDK passes incomplete input
+        await wrappedCallback(
+          {
+            ...baseHookInput,
+            hook_event_name: 'PreToolUse' as const,
+          } as HookInput,
+          undefined,
+          { signal: new AbortController().signal },
+        )
+
+        expect(mockCallback).toHaveBeenCalledWith({
+          toolName: '',
+          toolInput: {},
+        })
+      })
+
+      it('SC-AC015: defaults tool_input to empty object when missing', async () => {
+        const mockCallback = vi.fn().mockResolvedValue({ continue: true })
+        const hook: PreToolUseHook = { name: 'test', callback: mockCallback }
+
+        const [matcher] = toSdkHookCallbackMatchers([hook])
+        const wrappedCallback = matcher!.hooks[0]!
+
+        // Test defensive handling when SDK passes incomplete input
+        await wrappedCallback(
+          {
+            ...baseHookInput,
+            hook_event_name: 'PreToolUse' as const,
+            tool_name: 'Bash',
+          } as HookInput,
+          'tool-id',
+          { signal: new AbortController().signal },
+        )
+
+        expect(mockCallback).toHaveBeenCalledWith({
+          toolName: 'Bash',
+          toolInput: {},
+        })
+      })
+
+      it('SC-AC016: transforms HookResult to SyncHookJSONOutput', async () => {
+        const mockCallback = vi.fn().mockResolvedValue({
+          continue: true,
+          decision: 'approve',
+          reason: 'Allowed command',
+        })
+
+        const hook: PreToolUseHook = { name: 'test', callback: mockCallback }
+        const [matcher] = toSdkHookCallbackMatchers([hook])
+
+        const result = await matcher!.hooks[0]!(
+          {
+            ...baseHookInput,
+            hook_event_name: 'PreToolUse' as const,
+            tool_name: 'Bash',
+            tool_input: {},
+          },
+          'tool-id',
+          { signal: new AbortController().signal },
+        )
+
+        expect(result).toEqual({
+          continue: true,
+          decision: 'approve',
+          reason: 'Allowed command',
+        })
+      })
+
+      it('SC-AC017: correctly propagates block decision with reason', async () => {
+        const mockCallback = vi.fn().mockResolvedValue({
+          continue: false,
+          decision: 'block',
+          reason: 'Security violation',
+        })
+
+        const hook: PreToolUseHook = { name: 'test', callback: mockCallback }
+        const [matcher] = toSdkHookCallbackMatchers([hook])
+
+        const result = await matcher!.hooks[0]!(
+          {
+            ...baseHookInput,
+            hook_event_name: 'PreToolUse' as const,
+            tool_name: 'Bash',
+            tool_input: {},
+          },
+          'tool-id',
+          { signal: new AbortController().signal },
+        )
+
+        expect(result).toEqual({
+          continue: false,
+          decision: 'block',
+          reason: 'Security violation',
+        })
       })
     })
   })

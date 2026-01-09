@@ -8,6 +8,7 @@ import {
 import {
   handleCreateDeliverables,
   handleSetDeliverableStatus,
+  createDeliverableMcpServer,
 } from '../src/deliverableToolsAdapter'
 
 /**
@@ -404,6 +405,37 @@ describe('deliverableToolsAdapter', () => {
       expect(result.content[0]).toHaveProperty('type', 'text')
       expect(result.content[0]).toHaveProperty('text')
       expect(typeof result.content[0]?.text).toBe('string')
+    })
+  })
+
+  describe('createDeliverableMcpServer', () => {
+    describe('DL-T010: Server structure', () => {
+      it('returns SDK MCP server configuration with required properties', () => {
+        const server = createDeliverableMcpServer(repository)
+
+        // McpSdkServerConfigWithInstance has: type, name, instance
+        expect(server).toHaveProperty('type', 'sdk')
+        expect(server).toHaveProperty('name')
+        expect(server).toHaveProperty('instance')
+      })
+    })
+
+    describe('DL-T011: Server configuration', () => {
+      it('has correct server name', () => {
+        const server = createDeliverableMcpServer(repository)
+
+        expect(server.name).toBe('autonoe-deliverable')
+      })
+    })
+
+    describe('DL-T012: Server instance', () => {
+      it('provides valid MCP server instance', () => {
+        const server = createDeliverableMcpServer(repository)
+
+        // SDK MCP server instance should be a valid object
+        expect(server.instance).toBeDefined()
+        expect(typeof server.instance).toBe('object')
+      })
     })
   })
 })
