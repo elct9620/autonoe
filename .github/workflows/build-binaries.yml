@@ -62,7 +62,7 @@ jobs:
           done
 
       - name: Upload platform artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: binary-${{ matrix.target }}
           path: apps/cli/dist/autonoe-${{ matrix.target }}.*
