@@ -43,13 +43,13 @@ export class ConsoleLogger implements Logger {
   }
 
   warn(message: string): void {
-    console.log(`${colors.yellow}${message}${colors.reset}`)
+    console.error(`${colors.yellow}${message}${colors.reset}`)
   }
 
   error(message: string, error?: Error): void {
-    console.log(`${colors.red}${message}${colors.reset}`)
+    console.error(`${colors.red}${message}${colors.reset}`)
     if (this.showDebug && error?.stack) {
-      console.log(`${colors.gray}${error.stack}${colors.reset}`)
+      console.error(`${colors.gray}${error.stack}${colors.reset}`)
     }
   }
 }
