@@ -156,26 +156,20 @@ export function toSessionEnd(sdkMessage: SDKMessage): StreamEventEnd {
 
 /**
  * Flatten a single SDK message into multiple StreamEvents
- * SDK messages may contain multiple content blocks; this generator yields each as a separate event
+ * SDK messages may contain multiple content blocks; returns each as a separate event
  */
-export function* toStreamEvents(
-  sdkMessage: SDKMessage,
-): Generator<StreamEvent> {
-  // Handle result messages
+export function toStreamEvents(sdkMessage: SDKMessage): StreamEvent[] {
   if (sdkMessage.type === 'result') {
-    yield toSessionEnd(sdkMessage)
-    return
+    return [toSessionEnd(sdkMessage)]
   }
 
-  // Handle text messages with content blocks
-  if (sdkMessage.message?.content) {
-    for (const block of sdkMessage.message.content) {
-      const event = toStreamEvent(block)
-      if (event !== null) {
-        yield event
-      }
-    }
+  if (!sdkMessage.message?.content) {
+    return []
   }
+
+  return sdkMessage.message.content
+    .map((block) => toStreamEvent(block))
+    .filter((event): event is StreamEvent => event !== null)
 }
 
 /**
