@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { existsSync, statSync } from 'node:fs'
+import type { Logger } from '@autonoe/core'
 
 /**
  * CLI options passed from argument parsing
@@ -173,23 +174,24 @@ export function validateRunOptions(
  * Outputs to stderr as per SPEC.md Section 6.4.6
  */
 export function logSecurityWarnings(
+  logger: Logger,
   sandboxMode: SandboxMode,
   allowDestructive: boolean,
 ): void {
   if (sandboxMode.disabled) {
     if (sandboxMode.source === 'cli') {
-      console.error(
+      logger.warn(
         'Warning: SDK sandbox is disabled. System-level isolation is not enforced.',
       )
     } else if (sandboxMode.source === 'env') {
-      console.error(
+      logger.warn(
         'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.',
       )
     }
   }
 
   if (allowDestructive) {
-    console.error(
+    logger.warn(
       'Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.',
     )
   }

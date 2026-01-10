@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { Logger } from '@autonoe/core'
 import {
   validateProjectDir,
   parseNumericOption,
@@ -10,6 +11,17 @@ import {
   validateRunOptions,
   logSecurityWarnings,
 } from '../src/options'
+
+function createMockLogger(): Logger & { warnMessages: string[] } {
+  const warnMessages: string[] = []
+  return {
+    warnMessages,
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn((msg: string) => warnMessages.push(msg)),
+    error: vi.fn(),
+  }
+}
 
 describe('validateProjectDir', () => {
   let tempDir: string
@@ -208,44 +220,39 @@ describe('validateRunOptions', () => {
 })
 
 describe('logSecurityWarnings', () => {
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
-
-  beforeEach(() => {
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    consoleErrorSpy.mockRestore()
-  })
-
   it('OPT-050: logs CLI sandbox warning when disabled via CLI', () => {
-    logSecurityWarnings({ disabled: true, source: 'cli' }, false)
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
+    const logger = createMockLogger()
+    logSecurityWarnings(logger, { disabled: true, source: 'cli' }, false)
+    expect(logger.warn).toHaveBeenCalledWith(
       'Warning: SDK sandbox is disabled. System-level isolation is not enforced.',
     )
   })
 
   it('OPT-051: logs env sandbox warning when disabled via env', () => {
-    logSecurityWarnings({ disabled: true, source: 'env' }, false)
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
+    const logger = createMockLogger()
+    logSecurityWarnings(logger, { disabled: true, source: 'env' }, false)
+    expect(logger.warn).toHaveBeenCalledWith(
       'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.',
     )
   })
 
   it('OPT-052: logs destructive warning when enabled', () => {
-    logSecurityWarnings({ disabled: false, source: 'default' }, true)
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
+    const logger = createMockLogger()
+    logSecurityWarnings(logger, { disabled: false, source: 'default' }, true)
+    expect(logger.warn).toHaveBeenCalledWith(
       'Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.',
     )
   })
 
   it('OPT-053: logs nothing when sandbox enabled and no destructive', () => {
-    logSecurityWarnings({ disabled: false, source: 'default' }, false)
-    expect(consoleErrorSpy).not.toHaveBeenCalled()
+    const logger = createMockLogger()
+    logSecurityWarnings(logger, { disabled: false, source: 'default' }, false)
+    expect(logger.warn).not.toHaveBeenCalled()
   })
 
   it('OPT-054: logs both warnings when sandbox disabled and destructive enabled', () => {
-    logSecurityWarnings({ disabled: true, source: 'cli' }, true)
-    expect(consoleErrorSpy).toHaveBeenCalledTimes(2)
+    const logger = createMockLogger()
+    logSecurityWarnings(logger, { disabled: true, source: 'cli' }, true)
+    expect(logger.warn).toHaveBeenCalledTimes(2)
   })
 })

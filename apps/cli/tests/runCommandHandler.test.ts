@@ -82,12 +82,10 @@ function createTestInstructionResolver(): InstructionResolver {
 
 describe('RunCommandHandler', () => {
   let tempDir: string
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
   let processExitSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     tempDir = mkdtempSync(join(tmpdir(), 'autonoe-test-'))
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     processExitSpy = vi
       .spyOn(process, 'exit')
       .mockImplementation(() => undefined as never)
@@ -95,7 +93,6 @@ describe('RunCommandHandler', () => {
 
   afterEach(() => {
     rmSync(tempDir, { recursive: true, force: true })
-    consoleErrorSpy.mockRestore()
     processExitSpy.mockRestore()
   })
 
@@ -434,7 +431,7 @@ describe('RunCommandHandler', () => {
 
       await handler.execute()
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(logger.warnMessages).toContain(
         'Warning: SDK sandbox is disabled. System-level isolation is not enforced.',
       )
     })
@@ -465,7 +462,7 @@ describe('RunCommandHandler', () => {
 
       await handler.execute()
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(logger.warnMessages).toContain(
         'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.',
       )
     })
@@ -496,7 +493,7 @@ describe('RunCommandHandler', () => {
 
       await handler.execute()
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(logger.warnMessages).toContain(
         'Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.',
       )
     })
@@ -524,7 +521,7 @@ describe('RunCommandHandler', () => {
 
       await handler.execute()
 
-      expect(consoleErrorSpy).not.toHaveBeenCalled()
+      expect(logger.warnMessages).toHaveLength(0)
     })
   })
 })

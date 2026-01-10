@@ -51,7 +51,11 @@ export class RunCommandHandler {
   }
 
   private logSecurityWarnings(): void {
-    logSecurityWarnings(this.options.sandboxMode, this.options.allowDestructive)
+    logSecurityWarnings(
+      this.logger,
+      this.options.sandboxMode,
+      this.options.allowDestructive,
+    )
   }
 
   private logStartupInfo(): void {
