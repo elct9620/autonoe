@@ -150,6 +150,21 @@ export class SessionRunner {
         const session = new Session()
         const result = await session.run(client, instruction, logger)
 
+        // Handle session failure (Result Pattern)
+        if (!result.success) {
+          const errorResult = await this.handleSessionError(
+            new Error(result.error),
+            state,
+            signal,
+            logger,
+          )
+          state = errorResult.state
+          if (errorResult.shouldBreak) {
+            break
+          }
+          continue
+        }
+
         // Reset error counter on successful session and add cost
         state = state.resetErrors().addCost(result.costUsd)
         logger.info(

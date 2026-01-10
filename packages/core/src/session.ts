@@ -6,14 +6,22 @@ import type { SessionOutcome } from './types'
 
 /**
  * Result of a session execution
+ * Discriminated union: success or failure
  * @see SPEC.md Section 3.3
  */
-export interface SessionResult {
-  costUsd: number
-  duration: number
-  outcome: SessionOutcome
-  quotaResetTime?: Date
-}
+export type SessionResult =
+  | {
+      success: true
+      costUsd: number
+      duration: number
+      outcome: SessionOutcome
+      quotaResetTime?: Date
+    }
+  | {
+      success: false
+      error: string
+      duration: number
+    }
 
 /**
  * Session handles a single agent query execution
@@ -64,7 +72,11 @@ export class Session {
           } else {
             // Error without session_end - this is a real error
             logger.error('Stream error', new Error(event.message))
-            throw new Error(event.message)
+            return {
+              success: false,
+              error: event.message,
+              duration: Date.now() - startTime,
+            }
           }
         }
       }
@@ -73,6 +85,7 @@ export class Session {
     }
 
     return {
+      success: true,
       costUsd,
       duration: Date.now() - startTime,
       outcome,

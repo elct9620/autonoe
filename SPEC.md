@@ -510,12 +510,20 @@ interface Session {
   run(client: AgentClient, instruction: string, logger?: Logger): Promise<SessionResult>
 }
 
-interface SessionResult {
-  costUsd: number
-  duration: number
-  outcome: SessionOutcome
-  quotaResetTime?: Date
-}
+// Discriminated union: success or failure
+type SessionResult =
+  | {
+      success: true
+      costUsd: number
+      duration: number
+      outcome: SessionOutcome
+      quotaResetTime?: Date
+    }
+  | {
+      success: false
+      error: string
+      duration: number
+    }
 ```
 
 ### 3.4 BashSecurity

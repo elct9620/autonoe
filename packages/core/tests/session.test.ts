@@ -41,7 +41,10 @@ describe('Session', () => {
       const session = new Session()
       const result = await session.run(client, 'test')
 
-      expect(result.costUsd).toBe(0.0567)
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.costUsd).toBe(0.0567)
+      }
     })
 
     it('returns zero costUsd when no cost in result', async () => {
@@ -51,7 +54,10 @@ describe('Session', () => {
       const session = new Session()
       const result = await session.run(client, 'test')
 
-      expect(result.costUsd).toBe(0)
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.costUsd).toBe(0)
+      }
     })
 
     it('tracks execution duration', async () => {
@@ -143,7 +149,10 @@ describe('Session', () => {
       const result = await session.run(client, 'test', logger)
 
       // Should complete normally with quota exceeded outcome
-      expect(result.outcome).toBe('quota_exceeded')
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.outcome).toBe('quota_exceeded')
+      }
 
       // Stream error should be logged at debug level
       const debugEntries = logger.getEntriesByLevel('debug')
@@ -152,7 +161,7 @@ describe('Session', () => {
       ).toBe(true)
     })
 
-    it('throws when stream error occurs without session_end', async () => {
+    it('returns failure result when stream error occurs without session_end', async () => {
       const client = new MockAgentClient()
       client.setResponses([
         createMockStreamText('Processing...'),
@@ -160,10 +169,12 @@ describe('Session', () => {
       ])
 
       const session = new Session()
+      const result = await session.run(client, 'test')
 
-      await expect(session.run(client, 'test')).rejects.toThrow(
-        'Connection lost',
-      )
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toBe('Connection lost')
+      }
     })
 
     it('logs stream error at error level when no session_end', async () => {
@@ -172,12 +183,7 @@ describe('Session', () => {
       const logger = new TestLogger()
 
       const session = new Session()
-
-      try {
-        await session.run(client, 'test', logger)
-      } catch {
-        // Expected to throw
-      }
+      await session.run(client, 'test', logger)
 
       const errorEntries = logger.getEntriesByLevel('error')
       expect(errorEntries.some((e) => e.message === 'Stream error')).toBe(true)
@@ -200,8 +206,9 @@ describe('Session', () => {
       client.setResponses([createMockStreamError('test error')])
 
       const session = new Session()
+      const result = await session.run(client, 'test')
 
-      await expect(session.run(client, 'test')).rejects.toThrow()
+      expect(result.success).toBe(false)
       expect(client.getDisposeCount()).toBe(1)
     })
 
