@@ -557,17 +557,7 @@ See Section 6 for security layer architecture.
 
 ## 6. Security `[Design]`
 
-### 6.1 Autonoe Security Controls
-
-| Control              | Implementation              | Enforcement     |
-| -------------------- | --------------------------- | --------------- |
-| OS-Level Sandbox     | SandboxSettings.enabled     | SDK (hardcoded) |
-| Bash Auto-Allow      | autoAllowBashIfSandboxed    | SDK (hardcoded) |
-| Filesystem Scope     | permissions: ["./**"]       | SDK             |
-| Bash Allowlist       | BashSecurity hook           | PreToolUse      |
-| .autonoe/ Protection | PreToolUse hook             | PreToolUse      |
-
-**Security Layers:**
+### 6.1 Security Layers
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -586,79 +576,64 @@ See Section 6 for security layer architecture.
 └─────────────────────────────────────────────────────┘
 ```
 
-### 6.2 Coding Agent Restrictions
+| Control              | Implementation              | Enforcement     |
+| -------------------- | --------------------------- | --------------- |
+| OS-Level Sandbox     | SandboxSettings.enabled     | SDK (hardcoded) |
+| Bash Auto-Allow      | autoAllowBashIfSandboxed    | SDK (hardcoded) |
+| Filesystem Scope     | permissions: ["./**"]       | SDK             |
+| Bash Allowlist       | BashSecurity hook           | PreToolUse      |
+| .autonoe/ Protection | PreToolUse hook             | PreToolUse      |
 
-| Resource      | Direct Access | Tool Access            | Enforcement                       |
-| ------------- | ------------- | ---------------------- | --------------------------------- |
-| Project Files | R/W           | -                      | SDK permissions                   |
-| .autonoe/     | Read-only     | Write (status tools)   | PreToolUse hook blocks direct W/E |
-| Bash Commands | -             | Limited allowlist      | BashSecurity hook                 |
+### 6.2 Base Security
 
-### 6.3 Bash Command Security
+Base security capabilities shared by all execution modes:
 
-#### 6.3.1 Language Profile Architecture
+| Category            | Capability | Scope                    |
+| ------------------- | ---------- | ------------------------ |
+| File Read           | YES        | All files                |
+| Git                 | YES        | Full access              |
+| autonoe-deliverable | YES        | status.json management   |
+| Bash                | LIMITED    | Status commands only     |
+| .autonoe/ Write     | NO         | Block direct writes      |
 
-Bash command allowlist is organized by language profiles. By default, ALL profiles are enabled.
+**Base Bash Commands:** `ls`, `pwd`, `cat`, `head`, `tail`, `wc`, `find`, `grep`, `tree`, `sort`, `diff`, `date`
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    DEFAULT (All Profiles)                        │
-│  ┌─────────┬─────────┬─────────┬─────────┬─────────┐           │
-│  │  BASE   │  NODE   │ PYTHON  │  RUBY   │   GO    │           │
-│  └─────────┴─────────┴─────────┴─────────┴─────────┘           │
-│                           │                                      │
-│                           ▼                                      │
-│              USER EXTENSIONS (agent.json)                        │
-│              allowCommands: [...]                                │
-└─────────────────────────────────────────────────────────────────┘
-```
+See [Security Details - Base Security](docs/security.md#base-security) for validation flow and command chain handling.
 
-Users may restrict to specific profiles via `agent.json`:
+### 6.3 Run Command Security
 
-| agent.json profile     | Active Profiles                       |
-| ---------------------- | ------------------------------------- |
-| (not set)              | ALL (base + node + python + ruby + go)|
-| `"node"`               | base + node                           |
-| `"python"`             | base + python                         |
-| `["node", "python"]`   | base + node + python                  |
+Run mode extends Base Security with additional capabilities for implementation:
 
-For detailed command allowlists, argument validation rules, and runtime security options, see [Security Details](docs/security.md).
+| Addition         | Description                          |
+| ---------------- | ------------------------------------ |
+| File Write       | Full project access                  |
+| Playwright       | Browser automation via MCP           |
+| Profile Commands | Node.js, Python, Ruby, Go allowlists |
+| User Extensions  | Custom commands via agent.json       |
+| Runtime Options  | --allow-destructive, --no-sandbox    |
+
+**Profile Selection:**
+
+| agent.json profile   | Active Profiles                        |
+| -------------------- | -------------------------------------- |
+| (not set)            | ALL (base + node + python + ruby + go) |
+| `"node"`             | base + node                            |
+| `"python"`           | base + python                          |
+| `["node", "python"]` | base + node + python                   |
+
+See [Security Details - Run Command](docs/security.md#run-command-security) for command allowlists and runtime options.
 
 ### 6.4 Sync Command Security
 
-The `sync` command uses a restricted toolset that prevents modification of project source code while allowing status management operations.
+Sync mode restricts Base Security for verification-only operations:
 
-**Allowed Tools:**
+| Restriction | Base               | Sync                    |
+| ----------- | ------------------ | ----------------------- |
+| File Write  | None               | .autonoe-note.md only   |
+| Bash        | Status commands    | Test/lint/build only    |
+| Playwright  | N/A                | Disabled                |
 
-| Tool Category        | Available | Notes                                    |
-|---------------------|-----------|------------------------------------------|
-| File Read           | YES       | All files                                |
-| File Write          | LIMITED   | Only .autonoe-note.md                    |
-| File Edit           | LIMITED   | Only .autonoe-note.md                    |
-| Bash                | LIMITED   | Read-only/validation commands only       |
-| Git                 | YES       | Full access (commit sync results)        |
-| Playwright          | NO        | Not needed for verification              |
-| autonoe-deliverable | YES       | Required for status updates              |
-
-**Bash Command Restrictions (Sync Mode):**
-
-Allowed commands for verification:
-- Test runners: `npm test`, `bun test`, `pytest`, `rspec`, `go test`
-- Type checking: `tsc --noEmit`, `mypy`, `pyright`
-- Linting: `eslint`, `prettier --check`, `rubocop`
-- Build check: `npm run build`, `bun run build`, `go build`
-- Status commands: `ls`, `cat`, `head`, `tail`
-
-Blocked commands:
-- File modification: `echo >`, `sed -i`, `rm`, `mv`, `cp`
-- Package installation: `npm install`, `pip install`, `gem install`
-- Any command that modifies source files
-
-**Protected Scope:**
-- Project source files: Write/Edit blocked
-- `.autonoe/status.json`: Write only via deliverable tools
-- `.autonoe-note.md`: Write allowed (status reporting)
-- Git: Full access allowed (commit sync results)
+See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.
 
 ---
 
@@ -857,6 +832,8 @@ Tools available to the Coding Agent (configured by Autonoe):
 | Bash                | LIMITED   | Test/lint/build commands only      |
 | Git                 | YES       | Full access                        |
 | autonoe-deliverable | YES       | status.json updates                |
+
+See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.
 
 ---
 
