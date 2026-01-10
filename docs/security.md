@@ -98,48 +98,57 @@ Run mode extends Base Security with additional capabilities for implementation.
 
 ### Language Profile Commands
 
+Each profile contains two command layers:
+
+- **Verification**: Test, type check, lint commands (used by `sync`)
+- **Development**: Full toolchain including verification (used by `run`)
+
 #### Node.js Profile
 
-| Category  | Commands                            |
-| --------- | ----------------------------------- |
-| Runtime   | node, bun, deno                     |
-| Package   | npm, npx, yarn, pnpm                |
-| Build     | tsc, esbuild, vite, webpack, rollup |
-| Test      | jest, vitest, playwright, mocha     |
-| Lint      | eslint, prettier, biome             |
-| Framework | next, nuxt, astro, remix            |
+| Category  | Verification                                        | Development                         |
+| --------- | --------------------------------------------------- | ----------------------------------- |
+| Runtime   | -                                                   | node, bun, deno                     |
+| Package   | -                                                   | npm, npx, yarn, pnpm                |
+| Build     | npm run build, bun run build                        | tsc, esbuild, vite, webpack, rollup |
+| Test      | npm test, bun test, vitest, jest, playwright, mocha | -                                   |
+| Type      | tsc --noEmit                                        | -                                   |
+| Lint      | eslint, prettier --check, biome check               | prettier --write, biome format      |
+| Framework | -                                                   | next, nuxt, astro, remix            |
 
 #### Python Profile
 
-| Category  | Commands                               |
-| --------- | -------------------------------------- |
-| Runtime   | python, python3                        |
-| Package   | pip, pip3, pipx, uv                    |
-| Venv      | venv, virtualenv, conda                |
-| Build     | poetry, pdm, hatch, flit               |
-| Test      | pytest, tox, nox                       |
-| Lint      | ruff, black, mypy, flake8, pylint      |
-| Framework | django-admin, flask, uvicorn, gunicorn |
+| Category  | Verification               | Development                            |
+| --------- | -------------------------- | -------------------------------------- |
+| Runtime   | -                          | python, python3                        |
+| Package   | -                          | pip, pip3, pipx, uv                    |
+| Venv      | -                          | venv, virtualenv, conda                |
+| Build     | -                          | poetry, pdm, hatch, flit               |
+| Test      | pytest, tox, nox           | -                                      |
+| Type      | mypy, pyright              | -                                      |
+| Lint      | ruff check, flake8, pylint | ruff format, black                     |
+| Framework | -                          | django-admin, flask, uvicorn, gunicorn |
 
 #### Ruby Profile
 
-| Category  | Commands                     |
-| --------- | ---------------------------- |
-| Runtime   | ruby, irb                    |
-| Package   | gem, bundle, bundler         |
-| Build     | rake, thor                   |
-| Test      | rspec, minitest, cucumber    |
-| Lint      | rubocop, standard            |
-| Framework | rails, hanami, puma, unicorn |
+| Category  | Verification              | Development                  |
+| --------- | ------------------------- | ---------------------------- |
+| Runtime   | -                         | ruby, irb                    |
+| Package   | -                         | gem, bundle, bundler         |
+| Build     | -                         | rake, thor                   |
+| Test      | rspec, minitest, cucumber | -                            |
+| Lint      | rubocop, standard         | rubocop -a, rubocop -A       |
+| Framework | -                         | rails, hanami, puma, unicorn |
 
 #### Go Profile
 
-| Category | Commands                           |
-| -------- | ---------------------------------- |
-| Runtime  | go                                 |
-| Format   | gofmt, goimports                   |
-| Lint     | golint, golangci-lint, staticcheck |
-| Tools    | gopls, dlv, goreleaser             |
+| Category | Verification                       | Development            |
+| -------- | ---------------------------------- | ---------------------- |
+| Runtime  | -                                  | go run                 |
+| Build    | go build                           | go install             |
+| Test     | go test                            | -                      |
+| Format   | gofmt -d                           | gofmt -w, goimports    |
+| Lint     | golint, golangci-lint, staticcheck | -                      |
+| Tools    | -                                  | gopls, dlv, goreleaser |
 
 ### Argument Validation
 
@@ -286,15 +295,25 @@ Sync mode restricts Base Security for verification-only operations. Prevents mod
 
 ### Allowed Bash Commands
 
-Verification commands only:
+Sync uses the **verification layer** from each active profile. Only verification commands are allowed:
 
-| Category      | Commands                                             |
-| ------------- | ---------------------------------------------------- |
-| Test runners  | `npm test`, `bun test`, `pytest`, `rspec`, `go test` |
-| Type checking | `tsc --noEmit`, `mypy`, `pyright`                    |
-| Linting       | `eslint`, `prettier --check`, `rubocop`              |
-| Build check   | `npm run build`, `bun run build`, `go build`         |
-| Status        | `ls`, `cat`, `head`, `tail`                          |
+| Profile | Verification Commands                                                                                  |
+| ------- | ------------------------------------------------------------------------------------------------------ |
+| node    | npm test, bun test, vitest, jest, tsc --noEmit, eslint, prettier --check, npm run build, bun run build |
+| python  | pytest, tox, nox, mypy, pyright, ruff check, flake8, pylint                                            |
+| ruby    | rspec, minitest, cucumber, rubocop, standard                                                           |
+| go      | go test, go build, gofmt -d, golangci-lint, staticcheck                                                |
+
+**Base status commands** (always available): `ls`, `cat`, `head`, `tail`
+
+**Profile × Command Behavior:**
+
+| agent.json profile | Sync Allowed Commands                             |
+| ------------------ | ------------------------------------------------- |
+| (not set)          | Base.status + All profiles' verification          |
+| `"node"`           | Base.status + Node.verification                   |
+| `"python"`         | Base.status + Python.verification                 |
+| `["node", "go"]`   | Base.status + Node.verification + Go.verification |
 
 ### Blocked Commands
 
@@ -302,6 +321,7 @@ Verification commands only:
 | -------------------- | ------------------------------------------- | --------------------------- |
 | File modification    | `echo >`, `sed -i`, `rm`, `mv`, `cp`        | Prevents source changes     |
 | Package installation | `npm install`, `pip install`, `gem install` | Prevents dependency changes |
+| Auto-fix             | `prettier --write`, `rubocop -a`, `black`   | Modifies source code        |
 
 ### Protected Scope
 

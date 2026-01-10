@@ -478,6 +478,33 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 | hooks            | baseline + user   | Hook  | Merge          |
 | mcpServers       | Hardcoded + user  | SDK   | User priority  |
 
+**Profile Command Layers:**
+
+Each language profile contains two command layers:
+
+| Layer | Purpose | Used By |
+|-------|---------|---------|
+| verification | Test, type check, lint, build check | `sync` command |
+| development | Full toolchain (includes verification) | `run` command |
+
+```
+Profile Structure
+├── base (always included)
+│   ├── status: ls, pwd, cat, head, tail, ...
+│   └── operations: mkdir, cp, git, ...
+│
+└── language (node, python, ruby, go)
+    ├── verification: test runners, type checkers, linters
+    └── development: package managers, frameworks, runtimes
+```
+
+**Mode × Profile → Commands:**
+
+| Command | Base | Profile Layer |
+|---------|------|---------------|
+| `run`   | full | development (includes verification) |
+| `sync`  | restricted | verification only |
+
 **MCP Servers User Priority:**
 
 | agent.json mcpServers | Result                           |
@@ -608,7 +635,7 @@ Run mode extends Base Security with additional capabilities for implementation:
 | ---------------- | ------------------------------------ |
 | File Write       | Full project access                  |
 | Playwright       | Browser automation via MCP           |
-| Profile Commands | Node.js, Python, Ruby, Go allowlists |
+| Profile Commands | Development layer (full toolchain)   |
 | User Extensions  | Custom commands via agent.json       |
 | Runtime Options  | --allow-destructive, --no-sandbox    |
 
@@ -621,6 +648,8 @@ Run mode extends Base Security with additional capabilities for implementation:
 | `"python"`           | base + python                          |
 | `["node", "python"]` | base + node + python                   |
 
+**Command Layer:** Run uses `development` layer which includes all verification commands plus package managers, frameworks, and runtimes.
+
 See [Security Details - Run Command](docs/security.md#run-command-security) for command allowlists and runtime options.
 
 ### 6.4 Sync Command Security
@@ -630,8 +659,19 @@ Sync mode restricts Base Security for verification-only operations:
 | Restriction | Base               | Sync                    |
 | ----------- | ------------------ | ----------------------- |
 | File Write  | None               | .autonoe-note.md only   |
-| Bash        | Status commands    | Test/lint/build only    |
+| Bash        | Status commands    | Verification layer only |
 | Playwright  | N/A                | Disabled                |
+
+**Command Layer:** Sync uses `verification` layer from each active profile:
+
+| Profile | Verification Commands |
+|---------|----------------------|
+| node    | npm test, bun test, vitest, jest, tsc --noEmit, eslint, prettier --check |
+| python  | pytest, tox, mypy, pyright, ruff check, flake8, pylint |
+| ruby    | rspec, minitest, cucumber, rubocop, standard |
+| go      | go test, go build, golangci-lint, staticcheck, gofmt -d |
+
+**Note:** Build commands (e.g., `npm run build`, `go build`) are allowed for compilation verification. Auto-fix commands (e.g., `prettier --write`, `rubocop -a`) are excluded as they modify source code.
 
 See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.
 
@@ -804,6 +844,13 @@ Tools available to the Coding Agent (configured by Autonoe):
 | `"ruby"`               | base + ruby                            | Ruby only               |
 | `"go"`                 | base + go                              | Go only                 |
 | `["node", "python"]`   | base + node + python                   | Specific combination    |
+
+**Profile × Command → Command Layer:**
+
+| Command | Profile Layer | Description |
+|---------|---------------|-------------|
+| `run`   | development   | Full toolchain (includes verification) |
+| `sync`  | verification  | Test, type check, lint, build only |
 
 ### 9.5 Sync Command Behavior
 
