@@ -20,9 +20,6 @@
 - [7. Decision Table](#7-decision-table-consistency)
 - [8. Test Scenarios](docs/testing.md) `[External]`
 
-### Implementation Standards (Optional)
-- [Appendix B: Implementation Standards](#appendix-b-implementation-standards-implementation)
-
 ---
 
 ## 0. Intent `[Intent]`
@@ -127,68 +124,7 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 
 ### 1.4 Coding Conventions
 
-See [Appendix B: Implementation Standards](#appendix-b-implementation-standards) for TypeScript coding conventions used in this project.
-
-### 1.5 Project Structure
-
-```
-autonoe/
-├── package.json
-├── bun.lock
-├── tsconfig.json
-├── .prettierrc
-├── Dockerfile
-├── packages/
-│   ├── core/
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   ├── vitest.config.ts
-│   │   ├── markdown.d.ts
-│   │   ├── src/
-│   │   │   ├── index.ts
-│   │   │   ├── agentClient.ts      # Interface only
-│   │   │   ├── session.ts          # Single execution
-│   │   │   ├── sessionRunner.ts    # Loop orchestration
-│   │   │   ├── logger.ts
-│   │   │   ├── deliverableStatus.ts # Deliverable domain model + repository interface
-│   │   │   ├── bashSecurity.ts
-│   │   │   ├── instructions.ts
-│   │   │   └── instructions/
-│   │   │       ├── initializer.md
-│   │   │       └── coding.md
-│   │   └── tests/
-│   │       ├── *.test.ts
-│   │       └── helpers/
-│   │           ├── index.ts
-│   │           ├── mockAgentClient.ts
-│   │           ├── testLogger.ts
-│   │           └── fixtures.ts
-│   └── agent/
-│       ├── package.json
-│       ├── tsconfig.json
-│       ├── vitest.config.ts
-│       └── src/
-│           ├── index.ts
-│           ├── claudeAgentClient.ts
-│           ├── claudeCodePath.ts
-│           ├── converters.ts
-│           └── deliverableToolsAdapter.ts  # SDK MCP Server implementation
-└── apps/
-    └── cli/
-        ├── package.json
-        ├── tsconfig.json
-        ├── src/
-        │   ├── index.ts
-        │   ├── run.ts
-        │   └── consoleLogger.ts
-        └── bin/
-            └── autonoe.ts
-
-# Project .autonoe/ Directory (Generated)
-.autonoe/
-├── status.json
-└── agent.json      # Optional, user custom settings (permissions, hooks, mcpServers)
-```
+See `CLAUDE.md` for TypeScript coding conventions used in this project.
 
 ---
 
@@ -1610,32 +1546,3 @@ cli.parse()
 |--------|-----------|-------------|
 | resolve | `(name: InstructionName) => Promise<string>` | Resolve instruction by name |
 
----
-
-## Appendix B: Implementation Standards `[Implementation]`
-
-### B.1 Private Field Naming
-
-- Use underscore prefix (`_fieldName`) when a public getter with the same logical name exists
-- No underscore when the field is accessed directly or only used internally
-
-### B.2 Factory Methods
-
-- Use `create*()` prefix for public factory methods that create domain objects
-- Use semantic names like `static pending()`, `static enabled()` for specific state factories
-
-### B.3 Optional Values
-
-- Use `undefined` instead of `null` for absent values
-- Use `?: Type` for optional interface properties
-- Use `Type | undefined` in explicit union types
-
-### B.4 Value Objects
-
-- Use private constructor with static factory methods
-- Make objects immutable (readonly fields, return new instances for mutations)
-
-### B.5 Result Pattern
-
-- Use discriminated unions for operation results
-- Use `success: boolean` or `type: string` as discriminator
