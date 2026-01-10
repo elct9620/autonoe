@@ -48,12 +48,12 @@ export interface SandboxMode {
 }
 
 /**
- * Thinking option parse result
+ * Thinking option parse result - discriminated union
  */
 export type ThinkingParseResult =
-  | { tokens: number }
-  | { error: string }
-  | { tokens: undefined }
+  | { type: 'enabled'; tokens: number }
+  | { type: 'disabled' }
+  | { type: 'error'; error: string }
 
 const DEFAULT_THINKING_TOKENS = 8192
 const MIN_THINKING_TOKENS = 1024
@@ -86,25 +86,26 @@ export function parseThinkingOption(
   thinking: string | boolean | undefined,
 ): ThinkingParseResult {
   if (thinking === undefined || thinking === false) {
-    return { tokens: undefined }
+    return { type: 'disabled' }
   }
 
   if (thinking === true) {
-    return { tokens: DEFAULT_THINKING_TOKENS }
+    return { type: 'enabled', tokens: DEFAULT_THINKING_TOKENS }
   }
 
   const tokens = parseInt(thinking, 10)
   if (Number.isNaN(tokens)) {
-    return { error: `Invalid thinking budget: ${thinking}` }
+    return { type: 'error', error: `Invalid thinking budget: ${thinking}` }
   }
 
   if (tokens < MIN_THINKING_TOKENS) {
     return {
+      type: 'error',
       error: `Thinking budget must be at least ${MIN_THINKING_TOKENS} tokens`,
     }
   }
 
-  return { tokens }
+  return { type: 'enabled', tokens }
 }
 
 /**
@@ -145,7 +146,7 @@ export function validateRunOptions(
   }
 
   const thinkingResult = parseThinkingOption(options.thinking)
-  if ('error' in thinkingResult) {
+  if (thinkingResult.type === 'error') {
     return { success: false, error: thinkingResult.error }
   }
 
@@ -163,7 +164,8 @@ export function validateRunOptions(
       sandboxSource: sandboxMode.source,
       waitForQuota: options.waitForQuota ?? false,
       allowDestructive: options.allowDestructive ?? false,
-      maxThinkingTokens: thinkingResult.tokens,
+      maxThinkingTokens:
+        thinkingResult.type === 'enabled' ? thinkingResult.tokens : undefined,
     },
   }
 }

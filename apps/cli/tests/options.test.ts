@@ -64,41 +64,45 @@ describe('parseNumericOption', () => {
 })
 
 describe('parseThinkingOption', () => {
-  it('OPT-020: returns 8192 for boolean true', () => {
+  it('OPT-020: returns enabled with 8192 for boolean true', () => {
     const result = parseThinkingOption(true)
-    expect(result).toEqual({ tokens: 8192 })
+    expect(result).toEqual({ type: 'enabled', tokens: 8192 })
   })
 
-  it('OPT-021: returns parsed number for string', () => {
+  it('OPT-021: returns enabled with parsed number for string', () => {
     const result = parseThinkingOption('16384')
-    expect(result).toEqual({ tokens: 16384 })
+    expect(result).toEqual({ type: 'enabled', tokens: 16384 })
   })
 
   it('OPT-022: returns error for value below minimum', () => {
     const result = parseThinkingOption('512')
     expect(result).toEqual({
+      type: 'error',
       error: 'Thinking budget must be at least 1024 tokens',
     })
   })
 
-  it('OPT-023: returns undefined tokens for undefined', () => {
+  it('OPT-023: returns disabled for undefined', () => {
     const result = parseThinkingOption(undefined)
-    expect(result).toEqual({ tokens: undefined })
+    expect(result).toEqual({ type: 'disabled' })
   })
 
-  it('OPT-024: returns undefined tokens for false', () => {
+  it('OPT-024: returns disabled for false', () => {
     const result = parseThinkingOption(false)
-    expect(result).toEqual({ tokens: undefined })
+    expect(result).toEqual({ type: 'disabled' })
   })
 
   it('OPT-025: returns error for non-numeric string', () => {
     const result = parseThinkingOption('abc')
-    expect(result).toEqual({ error: 'Invalid thinking budget: abc' })
+    expect(result).toEqual({
+      type: 'error',
+      error: 'Invalid thinking budget: abc',
+    })
   })
 
   it('OPT-026: accepts minimum value 1024', () => {
     const result = parseThinkingOption('1024')
-    expect(result).toEqual({ tokens: 1024 })
+    expect(result).toEqual({ type: 'enabled', tokens: 1024 })
   })
 })
 
