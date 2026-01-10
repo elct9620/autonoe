@@ -200,18 +200,6 @@ export function parseThinkingOption(
 }
 
 /**
- * Determine sandbox mode from CLI flag and environment variable
- * Priority: CLI flag > env var > default (enabled)
- * @deprecated Use SandboxMode.fromCliAndEnv() directly
- */
-export function determineSandboxMode(
-  cliSandbox: boolean | undefined,
-  env: NodeJS.ProcessEnv,
-): SandboxMode {
-  return SandboxMode.fromCliAndEnv(cliSandbox, env)
-}
-
-/**
  * Validate all run options and return validated result
  */
 export function validateRunOptions(
@@ -234,7 +222,7 @@ export function validateRunOptions(
     return { success: false, error: thinkingResult.error }
   }
 
-  const sandboxMode = determineSandboxMode(options.sandbox, env)
+  const sandboxMode = SandboxMode.fromCliAndEnv(options.sandbox, env)
 
   return {
     success: true,

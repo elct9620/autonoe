@@ -7,7 +7,6 @@ import {
   validateProjectDir,
   parseNumericOption,
   parseThinkingOption,
-  determineSandboxMode,
   validateRunOptions,
   logSecurityWarnings,
   SandboxMode,
@@ -198,34 +197,6 @@ describe('SandboxMode', () => {
         'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.',
       )
     })
-  })
-})
-
-describe('determineSandboxMode (deprecated)', () => {
-  it('OPT-030: CLI flag takes priority over env', () => {
-    const result = determineSandboxMode(false, { AUTONOE_NO_SANDBOX: '1' })
-    expect(result.disabled).toBe(true)
-    expect(result.source).toBe('cli')
-  })
-
-  it('OPT-031: uses env when no CLI flag', () => {
-    const result = determineSandboxMode(undefined, { AUTONOE_NO_SANDBOX: '1' })
-    expect(result.disabled).toBe(true)
-    expect(result.source).toBe('env')
-  })
-
-  it('OPT-032: returns default when neither set', () => {
-    const result = determineSandboxMode(undefined, {})
-    expect(result.disabled).toBe(false)
-    expect(result.source).toBe('default')
-  })
-
-  it('OPT-033: env value must be exactly "1"', () => {
-    const result = determineSandboxMode(undefined, {
-      AUTONOE_NO_SANDBOX: 'true',
-    })
-    expect(result.disabled).toBe(false)
-    expect(result.source).toBe('default')
   })
 })
 

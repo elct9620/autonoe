@@ -86,7 +86,7 @@ describe('createStatusChangeCallback', () => {
     callback({
       deliverableId: 'DL-001',
       deliverableDescription: 'Test deliverable',
-      previousStatus: null,
+      previousStatus: undefined,
       newStatus: 'passed',
     })
 

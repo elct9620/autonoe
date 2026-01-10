@@ -14,7 +14,7 @@ export class DeliverableStatus {
   readonly updatedAt: string
   readonly deliverables: readonly Deliverable[]
 
-  constructor(
+  private constructor(
     createdAt: string,
     updatedAt: string,
     deliverables: Deliverable[],
@@ -119,7 +119,7 @@ export type CreateDeliverableInput = {
 export type DeliverableStatusNotification = {
   deliverableId: string
   deliverableDescription: string
-  previousStatus: DeliverableStatusValue | null
+  previousStatus: DeliverableStatusValue | undefined
   newStatus: DeliverableStatusValue
 }
 

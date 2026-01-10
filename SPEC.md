@@ -615,7 +615,7 @@ interface ValidationResult {
 |-------|------|-------------|
 | deliverableId | string | Deliverable ID |
 | deliverableDescription | string | Deliverable description |
-| previousStatus | DeliverableStatusValue \| null | Previous status |
+| previousStatus | DeliverableStatusValue \| undefined | Previous status (undefined if new) |
 | newStatus | DeliverableStatusValue | New status |
 
 **DeliverableStatusCallback** - Callback type

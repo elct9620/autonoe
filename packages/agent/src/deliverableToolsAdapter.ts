@@ -48,7 +48,7 @@ export async function handleSetDeliverableStatus(
   const existingDeliverable = status.deliverables.find(
     (d) => d.id === input.deliverableId,
   )
-  const previousStatus = existingDeliverable?.status ?? null
+  const previousStatus = existingDeliverable?.status
 
   const { status: newStatus, result } = setDeliverableStatus(status, input)
 
