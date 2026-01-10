@@ -69,49 +69,42 @@ export function validatePathWithinProject(
   inputPath: string,
   projectDir: string,
 ): ValidationResult {
-  try {
-    // Step 1: Resolve against projectDir
-    const resolved = resolve(projectDir, inputPath)
+  // Step 1: Resolve against projectDir
+  const resolved = resolve(projectDir, inputPath)
 
-    // Step 2: Resolve symlinks (only if path exists)
-    let realPath: string
-    if (existsSync(resolved)) {
-      try {
-        realPath = realpathSync(resolved)
-      } catch {
-        // If symlink resolution fails, treat as escape
-        return {
-          allowed: false,
-          reason: 'Symlink target escapes project directory',
-        }
-      }
-    } else {
-      // For non-existent paths, just use resolved
-      realPath = resolved
-    }
-
-    // Step 3: Normalize (remove . and ..)
-    const normalizedPath = normalize(realPath)
-    const normalizedProjectDir = normalize(projectDir)
-
-    // Step 4: Verify starts with projectDir
-    if (
-      !normalizedPath.startsWith(normalizedProjectDir + '/') &&
-      normalizedPath !== normalizedProjectDir
-    ) {
+  // Step 2: Resolve symlinks (only if path exists)
+  let realPath: string
+  if (existsSync(resolved)) {
+    try {
+      realPath = realpathSync(resolved)
+    } catch {
+      // If symlink resolution fails, treat as escape
       return {
         allowed: false,
-        reason: `Path '${inputPath}' escapes project directory`,
+        reason: 'Symlink target escapes project directory',
       }
     }
+  } else {
+    // For non-existent paths, just use resolved
+    realPath = resolved
+  }
 
-    return { allowed: true }
-  } catch {
+  // Step 3: Normalize (remove . and ..)
+  const normalizedPath = normalize(realPath)
+  const normalizedProjectDir = normalize(projectDir)
+
+  // Step 4: Verify starts with projectDir
+  if (
+    !normalizedPath.startsWith(normalizedProjectDir + '/') &&
+    normalizedPath !== normalizedProjectDir
+  ) {
     return {
       allowed: false,
-      reason: 'Symlink target escapes project directory',
+      reason: `Path '${inputPath}' escapes project directory`,
     }
   }
+
+  return { allowed: true }
 }
 
 /**
