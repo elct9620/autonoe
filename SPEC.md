@@ -1,6 +1,32 @@
 # Autonoe Specification
 
-## 0. Intent
+## Table of Contents
+
+### Intent Layer
+- [0. Intent](#0-intent-intent)
+
+### Design Layer
+- [1. System Overview](#1-system-overview-design)
+- [2. Clean Architecture](#2-clean-architecture-design)
+- [3. Core Interfaces](#3-core-interfaces-design)
+- [4. Browser Automation](#4-browser-automation-coding-agent-design)
+- [5. State Management](#5-state-management-design)
+- [6. Security](#6-security-design)
+- [10. Build & Distribution](#10-build--distribution-design)
+- [11. CLI](#11-cli-design)
+- [Appendix A: Instructions](#appendix-a-instructions-design)
+
+### Consistency Layer
+- [7. Decision Table](#7-decision-table-consistency)
+- [8. Unit Test Scenarios](#8-unit-test-scenarios-consistency)
+- [9. Integration Test Scenarios](#9-integration-test-scenarios-consistency)
+
+### Implementation Standards (Optional)
+- [Appendix B: Implementation Standards](#appendix-b-implementation-standards-implementation)
+
+---
+
+## 0. Intent `[Intent]`
 
 ### 0.1 Purpose
 
@@ -32,7 +58,7 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 
 ---
 
-## 1. System Overview
+## 1. System Overview `[Design]`
 
 ### 1.1 Architecture
 
@@ -167,7 +193,7 @@ autonoe/
 
 ---
 
-## 2. Clean Architecture
+## 2. Clean Architecture `[Design]`
 
 ### 2.1 Layer Diagram
 
@@ -471,7 +497,7 @@ interface MessageStream extends AsyncGenerator<StreamEvent, void> {
 
 ---
 
-## 3. Core Interfaces
+## 3. Core Interfaces `[Design]`
 
 ### 3.1 AgentClient
 
@@ -561,6 +587,17 @@ type SessionResult =
       duration: number
     }
 ```
+
+**Error Responses:**
+
+| Condition | Result | Error Field |
+|-----------|--------|-------------|
+| Normal completion | success=true, outcome='completed' | - |
+| SDK execution error | success=true, outcome='execution_error' | messages[] in StreamEventEnd |
+| Max iterations hit | success=true, outcome='max_iterations' | - |
+| Budget exceeded | success=true, outcome='budget_exceeded' | - |
+| Quota exceeded | success=true, outcome='quota_exceeded' | message in StreamEventEnd |
+| Unhandled exception | success=false | error string |
 
 ### 3.4 BashSecurity
 
@@ -974,7 +1011,7 @@ Retry behavior:
 
 ---
 
-## 4. Browser Automation (Coding Agent)
+## 4. Browser Automation (Coding Agent) `[Design]`
 
 ### 4.1 Playwright MCP Tools
 
@@ -1035,7 +1072,7 @@ navigate ──▶ snapshot ──▶ interact ──▶ wait_for ──▶ veri
 
 ---
 
-## 5. State Management
+## 5. State Management `[Design]`
 
 ### 5.1 Directory Structure
 
@@ -1197,7 +1234,7 @@ See Section 6 for security layer architecture.
 
 ---
 
-## 6. Security
+## 6. Security `[Design]`
 
 ### 6.1 Autonoe Security Controls
 
@@ -1475,7 +1512,7 @@ Pattern: `Warning: [what is enabled/disabled]. [consequence/risk].`
 
 ---
 
-## 7. Decision Table
+## 7. Decision Table `[Consistency]`
 
 ### 7.1 Session Loop Behavior
 
@@ -1534,7 +1571,7 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 
 ---
 
-## 8. Unit Test Scenarios
+## 8. Unit Test Scenarios `[Consistency]`
 
 ### 8.1 SessionRunner
 
@@ -1686,7 +1723,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 
 ---
 
-## 9. Integration Test Scenarios
+## 9. Integration Test Scenarios `[Consistency]`
 
 Integration tests require real SDK, Docker, and external services. They are separated from unit tests due to execution time and API costs.
 
@@ -1825,7 +1862,7 @@ Summary is generated only when `GITHUB_STEP_SUMMARY` environment variable is set
 
 ---
 
-## 10. Build & Distribution
+## 10. Build & Distribution `[Design]`
 
 **Package Overview:**
 
@@ -1971,7 +2008,7 @@ autonoe-darwin-arm64.tar.gz.sha256
 
 ---
 
-## 11. CLI
+## 11. CLI `[Design]`
 
 ### 11.1 Usage
 
@@ -2037,7 +2074,7 @@ cli.parse()
 
 ---
 
-## Appendix A: Instructions
+## Appendix A: Instructions `[Design]`
 
 ### A.1 Instruction Selection
 
@@ -2063,7 +2100,7 @@ cli.parse()
 
 ---
 
-## Appendix B: Implementation Standards
+## Appendix B: Implementation Standards `[Implementation]`
 
 ### B.1 Private Field Naming
 
