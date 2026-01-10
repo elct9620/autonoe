@@ -185,9 +185,15 @@ Never modify or delete deliverables.
 
 ## STEP 8: Commit Work (MANDATORY)
 
-**You MUST commit after marking each deliverable as passed.** Make a conventional commit to explain why you did the work, avoid mentioning deliverable IDs in commit messages. For example:
+**You MUST commit after marking each deliverable as passed.** Make a conventional commit to explain why you did the work, avoid mentioning deliverable IDs in commit messages.
+
+**CRITICAL: Before committing, you MUST delete any temporary files you created during this session.** These files pollute the codebase and should never be committed.
 
 ```bash
+# 1. Check for any temporary files you created and delete them
+git status
+
+# 2. Commit only project-related files
 git add .
 git commit -m "feat: make user login form functional with validation and tests
 
