@@ -64,9 +64,9 @@ export function createStatusChangeCallback(
 }
 
 /**
- * Build SessionRunnerOptions from validated options
+ * Create SessionRunnerOptions from validated options
  */
-export function buildRunnerOptions(
+export function createRunnerOptions(
   options: ValidatedRunOptions,
 ): SessionRunnerOptions {
   return {

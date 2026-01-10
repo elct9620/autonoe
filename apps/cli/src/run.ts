@@ -17,7 +17,7 @@ import { ConsoleLogger } from './consoleLogger'
 import {
   createInstructionResolver,
   createStatusChangeCallback,
-  buildRunnerOptions,
+  createRunnerOptions,
 } from './factories'
 
 // Re-export for backward compatibility
@@ -89,7 +89,7 @@ export async function handleRunCommand(
       }),
   }
 
-  const runnerOptions = buildRunnerOptions(validatedOptions)
+  const runnerOptions = createRunnerOptions(validatedOptions)
   const sessionRunner = new SessionRunner(runnerOptions)
 
   const instructionResolver = createInstructionResolver(

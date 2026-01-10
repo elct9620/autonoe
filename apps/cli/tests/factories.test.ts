@@ -7,7 +7,7 @@ import {
   createInstructionResolver,
   formatStatusIcon,
   createStatusChangeCallback,
-  buildRunnerOptions,
+  createRunnerOptions,
 } from '../src/factories'
 import { SandboxMode, type ValidatedRunOptions } from '../src/options'
 
@@ -117,7 +117,7 @@ describe('createStatusChangeCallback', () => {
   })
 })
 
-describe('buildRunnerOptions', () => {
+describe('createRunnerOptions', () => {
   const baseOptions: ValidatedRunOptions = {
     projectDir: '/test/project',
     debug: false,
@@ -127,7 +127,7 @@ describe('buildRunnerOptions', () => {
   }
 
   it('FAC-030: builds options with required fields only', () => {
-    const result = buildRunnerOptions(baseOptions)
+    const result = createRunnerOptions(baseOptions)
 
     expect(result).toEqual({
       projectDir: '/test/project',
@@ -149,7 +149,7 @@ describe('buildRunnerOptions', () => {
       maxThinkingTokens: 16384,
     }
 
-    const result = buildRunnerOptions(options)
+    const result = createRunnerOptions(options)
 
     expect(result).toEqual({
       projectDir: '/test/project',
@@ -169,7 +169,7 @@ describe('buildRunnerOptions', () => {
       allowDestructive: true,
     }
 
-    const result = buildRunnerOptions(options)
+    const result = createRunnerOptions(options)
 
     expect(result).not.toHaveProperty('debug')
     expect(result).not.toHaveProperty('sandboxMode')
