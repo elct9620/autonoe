@@ -1,5 +1,37 @@
 # Autonoe Specification
 
+## 0. Intent
+
+### 0.1 Purpose
+
+Autonoe is an autonomous coding agent orchestrator that enables iterative, self-correcting software development through Claude's Agent SDK.
+
+### 0.2 Target Users
+
+| User Type | Use Case |
+|-----------|----------|
+| Solo Developers | Reduce human-in-loop overhead for coding tasks |
+| Development Teams | Accelerate feature development with minimal supervision |
+
+### 0.3 Impacts
+
+| Impact | Measure |
+|--------|---------|
+| Developer Productivity | Reduce time-to-feature delivery |
+| Code Quality | Maintain acceptance criteria verification |
+| Operational Safety | Enforce security boundaries |
+
+### 0.4 Success Criteria
+
+| Criterion | Verification |
+|-----------|--------------|
+| All deliverables pass | status.json shows all passed=true |
+| Security maintained | No unauthorized file access or command execution |
+| Reproducibility | Same SPEC.md produces consistent results |
+| Graceful degradation | Blocked deliverables documented, non-blocked pass |
+
+---
+
 ## 1. System Overview
 
 ### 1.1 Architecture
@@ -70,31 +102,7 @@
 
 ### 1.4 Coding Conventions
 
-#### Private Field Naming
-
-- Use underscore prefix (`_fieldName`) when a public getter with the same logical name exists
-- No underscore when the field is accessed directly or only used internally
-
-#### Factory Methods
-
-- Use `create*()` prefix for public factory methods that create domain objects
-- Use semantic names like `static pending()`, `static enabled()` for specific state factories
-
-#### Optional Values
-
-- Use `undefined` instead of `null` for absent values
-- Use `?: Type` for optional interface properties
-- Use `Type | undefined` in explicit union types
-
-#### Value Objects
-
-- Use private constructor with static factory methods
-- Make objects immutable (readonly fields, return new instances for mutations)
-
-#### Result Pattern
-
-- Use discriminated unions for operation results
-- Use `success: boolean` or `type: string` as discriminator
+See [Appendix B: Implementation Standards](#appendix-b-implementation-standards) for TypeScript coding conventions used in this project.
 
 ### 1.5 Project Structure
 
@@ -2052,3 +2060,33 @@ cli.parse()
 | Method | Signature | Description |
 |--------|-----------|-------------|
 | resolve | `(name: InstructionName) => Promise<string>` | Resolve instruction by name |
+
+---
+
+## Appendix B: Implementation Standards
+
+### B.1 Private Field Naming
+
+- Use underscore prefix (`_fieldName`) when a public getter with the same logical name exists
+- No underscore when the field is accessed directly or only used internally
+
+### B.2 Factory Methods
+
+- Use `create*()` prefix for public factory methods that create domain objects
+- Use semantic names like `static pending()`, `static enabled()` for specific state factories
+
+### B.3 Optional Values
+
+- Use `undefined` instead of `null` for absent values
+- Use `?: Type` for optional interface properties
+- Use `Type | undefined` in explicit union types
+
+### B.4 Value Objects
+
+- Use private constructor with static factory methods
+- Make objects immutable (readonly fields, return new instances for mutations)
+
+### B.5 Result Pattern
+
+- Use discriminated unions for operation results
+- Use `success: boolean` or `type: string` as discriminator
