@@ -252,6 +252,39 @@ Quota detection utilities in `quotaManager.ts`:
 - `parseQuotaResetTime(text)` - Extract reset time from message
 - `calculateWaitDuration(resetTime)` - Calculate milliseconds to wait
 
+**Quota Wait Progress Feedback:**
+
+When `--wait-for-quota` is enabled and waiting for quota reset, the system provides periodic progress feedback.
+
+| Component | Description |
+|-----------|-------------|
+| WaitProgressReporter | Interface for progress reporting during wait |
+| Update interval | 60 seconds |
+| Display mode | Single-line overwrite (carriage return) |
+
+Output format:
+```
+Quota exceeded, waiting 2h 45m 30s until reset...
+Quota resets at: 6:00 PM UTC
+⏳ Waiting... 2h 44m remaining
+```
+
+The progress line is updated every 60 seconds using recursive `setTimeout`, overwriting the previous line to keep terminal output clean.
+
+WaitProgressReporter interface:
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| startWait | `(totalMs: number, resetTime?: Date) => () => void` | Start progress reporting, returns cleanup function |
+
+Dependency injection follows existing pattern:
+
+| Component | Injected Via | Purpose |
+|-----------|--------------|---------|
+| WaitProgressReporter | SessionRunnerOptions | Enable progress testing with mocks |
+
+Default implementation: `silentWaitProgressReporter` (no output, for testing)
+
 **Session Error Retry:**
 
 When a session throws an error (e.g., context window exhaustion, SDK errors):

@@ -10,6 +10,7 @@ import {
   createRunnerOptions,
 } from '../src/factories'
 import { SandboxMode, type ValidatedRunOptions } from '../src/options'
+import { ConsoleWaitProgressReporter } from '../src/consoleWaitProgressReporter'
 
 describe('createInstructionResolver', () => {
   let tempDir: string
@@ -151,7 +152,7 @@ describe('createRunnerOptions', () => {
 
     const result = createRunnerOptions(options)
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       projectDir: '/test/project',
       maxIterations: 10,
       maxRetries: 5,
@@ -159,6 +160,9 @@ describe('createRunnerOptions', () => {
       waitForQuota: true,
       maxThinkingTokens: 16384,
     })
+    expect(result.waitProgressReporter).toBeInstanceOf(
+      ConsoleWaitProgressReporter,
+    )
   })
 
   it('FAC-032: excludes debug, sandboxMode, allowDestructive', () => {

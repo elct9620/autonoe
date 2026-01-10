@@ -30,7 +30,7 @@ export interface TerminationContext {
  */
 export type TerminationDecision =
   | { action: 'terminate'; exitReason: ExitReason }
-  | { action: 'wait'; durationMs: number }
+  | { action: 'wait'; durationMs: number; resetTime?: Date }
   | { action: 'continue' }
 
 /**
@@ -56,7 +56,11 @@ export function evaluateTermination(
   if (context.sessionOutcome === 'quota_exceeded') {
     if (context.options.waitForQuota && context.quotaResetTime) {
       const waitMs = calculateWaitDuration(context.quotaResetTime)
-      return { action: 'wait', durationMs: waitMs }
+      return {
+        action: 'wait',
+        durationMs: waitMs,
+        resetTime: context.quotaResetTime,
+      }
     }
     return { action: 'terminate', exitReason: 'quota_exceeded' }
   }

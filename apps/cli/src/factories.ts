@@ -11,6 +11,7 @@ import {
   type Logger,
 } from '@autonoe/core'
 import type { ValidatedRunOptions } from './options'
+import { ConsoleWaitProgressReporter } from './consoleWaitProgressReporter'
 
 /**
  * Create an instruction resolver with override support
@@ -76,5 +77,8 @@ export function createRunnerOptions(
     model: options.model,
     waitForQuota: options.waitForQuota,
     maxThinkingTokens: options.maxThinkingTokens,
+    waitProgressReporter: options.waitForQuota
+      ? new ConsoleWaitProgressReporter()
+      : undefined,
   }
 }

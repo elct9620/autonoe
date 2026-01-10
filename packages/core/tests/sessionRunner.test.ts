@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { SessionRunner } from '../src/sessionRunner'
 import { silentLogger } from '../src/logger'
 import type { AgentClient, AgentClientFactory } from '../src/agentClient'
 import type { MessageStream } from '../src/types'
+import type { WaitProgressReporter } from '../src/waitProgressReporter'
 import {
   MockAgentClient,
   MockDeliverableStatusReader,
@@ -732,6 +733,73 @@ describe('SessionRunner', () => {
       // Quota exceeded without wait
       expect(result.exitReason).toBe('quota_exceeded')
       expect(logger.hasMessage('Quota exceeded')).toBe(true)
+    })
+
+    it('SR-Q003: calls waitProgressReporter.startWait during quota wait', async () => {
+      const client = new MockAgentClient()
+      const resetTime = new Date(Date.now() + 10)
+      client.setResponsesPerSession([
+        [createMockQuotaExceededStreamEnd('Quota exceeded', resetTime)],
+        [createMockStreamEnd('done', 0.01)],
+      ])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
+      ])
+
+      const mockCleanup = vi.fn()
+      const mockWaitProgressReporter: WaitProgressReporter = {
+        startWait: vi.fn().mockReturnValue(mockCleanup),
+      }
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+        waitForQuota: true,
+        waitProgressReporter: mockWaitProgressReporter,
+      })
+
+      await runner.run(factory, silentLogger, statusReader)
+
+      expect(mockWaitProgressReporter.startWait).toHaveBeenCalledWith(
+        expect.any(Number),
+        resetTime,
+      )
+      expect(mockCleanup).toHaveBeenCalled()
+    })
+
+    it('SR-Q004: calls cleanup even if delay throws', async () => {
+      const client = new MockAgentClient()
+      const resetTime = new Date(Date.now() + 10)
+      client.setResponses([
+        createMockQuotaExceededStreamEnd('Quota exceeded', resetTime),
+      ])
+      const factory = createMockClientFactory(client)
+
+      const mockCleanup = vi.fn()
+      const mockWaitProgressReporter: WaitProgressReporter = {
+        startWait: vi.fn().mockReturnValue(mockCleanup),
+      }
+
+      const mockTimer = {
+        delay: vi.fn().mockRejectedValue(new Error('Timer error')),
+      }
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+        waitForQuota: true,
+        waitProgressReporter: mockWaitProgressReporter,
+        timer: mockTimer,
+      })
+
+      await expect(runner.run(factory, silentLogger)).rejects.toThrow(
+        'Timer error',
+      )
+      expect(mockCleanup).toHaveBeenCalled()
     })
   })
 

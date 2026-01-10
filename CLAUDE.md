@@ -177,6 +177,7 @@ See `SPEC.md` Section 6 for bash command allowlist and validation rules.
 | `packages/core/src/autonoeProtection.ts` | .autonoe/ directory write protection hook |
 | `packages/core/src/configuration.ts` | Security baseline and config loading |
 | `packages/core/src/quotaManager.ts` | Quota detection and wait duration utilities |
+| `packages/core/src/waitProgressReporter.ts` | Progress feedback during quota wait |
 | `packages/core/src/duration.ts` | Human-readable duration formatting |
 | `packages/core/src/deliverableService.ts` | Deliverable CRUD operations |
 | `packages/core/src/deliverableStatus.ts` | DeliverableStatus types and repository interface |

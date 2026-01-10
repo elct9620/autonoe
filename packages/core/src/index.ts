@@ -118,6 +118,10 @@ export {
 export type { Timer } from './timer'
 export { realTimer } from './timer'
 
+// WaitProgressReporter exports
+export type { WaitProgressReporter } from './waitProgressReporter'
+export { silentWaitProgressReporter } from './waitProgressReporter'
+
 // LoopState exports
 export { LoopState } from './loopState'
 

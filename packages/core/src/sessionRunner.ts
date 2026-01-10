@@ -6,8 +6,10 @@ import {
 import type { Logger } from './logger'
 import type { InstructionResolver } from './instructions'
 import type { Timer } from './timer'
+import type { WaitProgressReporter } from './waitProgressReporter'
 import type { TerminationContext } from './terminationEvaluator'
 import { silentLogger } from './logger'
+import { silentWaitProgressReporter } from './waitProgressReporter'
 import { Session } from './session'
 import {
   selectInstruction,
@@ -38,6 +40,8 @@ export interface SessionRunnerOptions {
   maxRetries?: number
   /** Timer for delay operations (default: realTimer) */
   timer?: Timer
+  /** Progress reporter for quota wait (default: silentWaitProgressReporter) */
+  waitProgressReporter?: WaitProgressReporter
 }
 
 /**
@@ -101,12 +105,15 @@ export class SessionRunner {
   private readonly maxIterations: number | undefined
   private readonly maxRetries: number
   private readonly timer: Timer
+  private readonly waitProgressReporter: WaitProgressReporter
 
   constructor(private options: SessionRunnerOptions) {
     this.delayBetweenSessions = options.delayBetweenSessions ?? 3000
     this.maxIterations = options.maxIterations
     this.maxRetries = options.maxRetries ?? 3
     this.timer = options.timer ?? realTimer
+    this.waitProgressReporter =
+      options.waitProgressReporter ?? silentWaitProgressReporter
   }
 
   /**
@@ -283,15 +290,24 @@ export class SessionRunner {
           state: state.setExitReason(decision.exitReason),
           action: 'break',
         }
-      case 'wait':
+      case 'wait': {
         logger.info(
           `Quota exceeded, waiting ${formatDuration(decision.durationMs)} until reset...`,
         )
-        await this.timer.delay(decision.durationMs)
+        const stopProgress = this.waitProgressReporter.startWait(
+          decision.durationMs,
+          decision.resetTime,
+        )
+        try {
+          await this.timer.delay(decision.durationMs)
+        } finally {
+          stopProgress()
+        }
         return {
           state: state.decrementIterations(),
           action: 'continue',
         }
+      }
       case 'continue':
         return { state, action: 'next' }
     }
