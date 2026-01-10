@@ -3,6 +3,7 @@
 Autonomous coding agent orchestrator powered by Claude's Agent SDK.
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/elct9620/autonoe)
 [![codecov](https://codecov.io/github/elct9620/autonoe/graph/badge.svg?token=A681DA03X2)](https://codecov.io/github/elct9620/autonoe)
 
 ## Inspiration
