@@ -15,11 +15,11 @@ export function isQuotaExceededMessage(text: string): boolean {
 
 /**
  * Parse the quota reset time from a message
- * @returns Date object for reset time in UTC, or null if not found
+ * @returns Date object for reset time in UTC, or undefined if not found
  */
-export function parseQuotaResetTime(text: string): Date | null {
+export function parseQuotaResetTime(text: string): Date | undefined {
   const match = text.match(RESET_TIME_PATTERN)
-  if (!match || !match[1] || !match[2]) return null
+  if (!match || !match[1] || !match[2]) return undefined
 
   const hour = parseInt(match[1], 10)
   const isPM = match[2].toLowerCase() === 'pm'

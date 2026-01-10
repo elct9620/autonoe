@@ -76,8 +76,8 @@ describe('parseQuotaResetTime', () => {
       expect(result!.getUTCHours()).toBe(10)
     })
 
-    it('QM-015: returns null for no match', () => {
-      expect(parseQuotaResetTime('no reset time here')).toBeNull()
+    it('QM-015: returns undefined for no match', () => {
+      expect(parseQuotaResetTime('no reset time here')).toBeUndefined()
     })
   })
 

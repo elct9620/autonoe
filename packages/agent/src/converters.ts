@@ -117,7 +117,7 @@ export function toSessionEnd(sdkMessage: SDKMessage): StreamEventEnd {
       type: 'stream_end',
       outcome: 'quota_exceeded',
       message: sdkMessage.result,
-      resetTime: parseQuotaResetTime(sdkMessage.result) ?? undefined,
+      resetTime: parseQuotaResetTime(sdkMessage.result),
       totalCostUsd: costUsd,
     }
   }
