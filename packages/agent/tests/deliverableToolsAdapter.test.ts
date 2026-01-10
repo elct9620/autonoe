@@ -22,7 +22,7 @@ class MockDeliverableRepository implements DeliverableRepository {
   )
   public loadCalls = 0
   public saveCalls = 0
-  public savedStatus: DeliverableStatus | null = null
+  public savedStatus: DeliverableStatus | undefined
 
   setStatus(status: DeliverableStatus): void {
     this.status = status
@@ -47,7 +47,7 @@ class MockDeliverableRepository implements DeliverableRepository {
     this.status = DeliverableStatus.create('2025-01-01', '2025-01-01', [])
     this.loadCalls = 0
     this.saveCalls = 0
-    this.savedStatus = null
+    this.savedStatus = undefined
   }
 }
 

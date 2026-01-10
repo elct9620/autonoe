@@ -142,10 +142,10 @@ describe('converters', () => {
       })
     })
 
-    it('returns null for unknown block type', () => {
+    it('returns undefined for unknown block type', () => {
       const block = { type: 'unknown' }
       const result = toStreamEvent(block)
-      expect(result).toBeNull()
+      expect(result).toBeUndefined()
     })
 
     it('converts thinking block to AgentThinking', () => {

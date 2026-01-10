@@ -59,9 +59,9 @@ export function toSdkMcpServers(
 
 /**
  * Convert a single SDK content block to a StreamEvent
- * Returns null for unknown block types
+ * Returns undefined for unknown block types
  */
-export function toStreamEvent(block: SDKContentBlock): StreamEvent | null {
+export function toStreamEvent(block: SDKContentBlock): StreamEvent | undefined {
   switch (block.type) {
     case 'thinking':
       return {
@@ -99,7 +99,7 @@ export function toStreamEvent(block: SDKContentBlock): StreamEvent | null {
     }
 
     default:
-      return null
+      return undefined
   }
 }
 
@@ -169,7 +169,7 @@ export function toStreamEvents(sdkMessage: SDKMessage): StreamEvent[] {
 
   return sdkMessage.message.content
     .map((block) => toStreamEvent(block))
-    .filter((event): event is StreamEvent => event !== null)
+    .filter((event): event is StreamEvent => event !== undefined)
 }
 
 /**

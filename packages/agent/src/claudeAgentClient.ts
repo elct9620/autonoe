@@ -34,7 +34,7 @@ export interface ClaudeAgentClientOptions extends AgentClientOptions {
  * Real implementation of AgentClient that wraps the Claude Agent SDK
  */
 export class ClaudeAgentClient implements AgentClient {
-  private abortController: AbortController | null = null
+  private abortController: AbortController | undefined
 
   constructor(private options: ClaudeAgentClientOptions) {}
 

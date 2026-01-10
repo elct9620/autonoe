@@ -8,7 +8,7 @@ import type { StreamEvent, MessageStream } from '../../src/types'
 export class MockAgentClient implements AgentClient {
   private responseSets: StreamEvent[][] = []
   private callIndex = 0
-  private lastMessage: string | null = null
+  private lastMessage: string | undefined
   private disposeCount = 0
 
   /**
@@ -32,7 +32,7 @@ export class MockAgentClient implements AgentClient {
   /**
    * Get the last message sent to query()
    */
-  getLastMessage(): string | null {
+  getLastMessage(): string | undefined {
     return this.lastMessage
   }
 
