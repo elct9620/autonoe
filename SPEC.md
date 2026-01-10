@@ -68,7 +68,35 @@
 | File System | SDK Built-in   | Read/Write project files |
 | Bash        | SDK Built-in   | Execute allowed commands |
 
-### 1.4 Project Structure
+### 1.4 Coding Conventions
+
+#### Private Field Naming
+
+- Use underscore prefix (`_fieldName`) when a public getter with the same logical name exists
+- No underscore when the field is accessed directly or only used internally
+
+#### Factory Methods
+
+- Use `create*()` prefix for public factory methods that create domain objects
+- Use semantic names like `static pending()`, `static enabled()` for specific state factories
+
+#### Optional Values
+
+- Use `undefined` instead of `null` for absent values
+- Use `?: Type` for optional interface properties
+- Use `Type | undefined` in explicit union types
+
+#### Value Objects
+
+- Use private constructor with static factory methods
+- Make objects immutable (readonly fields, return new instances for mutations)
+
+#### Result Pattern
+
+- Use discriminated unions for operation results
+- Use `success: boolean` or `type: string` as discriminator
+
+### 1.5 Project Structure
 
 ```
 autonoe/
