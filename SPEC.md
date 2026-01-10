@@ -235,6 +235,11 @@ SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ─
 - When all deliverables are blocked, the session fails
 - Reasons for blocking should be documented in `.autonoe-note.md`
 
+**Deprecated Deliverable Rules:**
+- Deliverables with `deprecatedAt` are excluded from termination evaluation
+- Only applies to `sync` command results
+- `run` command does not create deprecated deliverables
+
 **Quota Handling:**
 
 When Claude Code Subscription quota is exceeded:
@@ -406,6 +411,25 @@ project/
 - `status='pending'` → `passed=false, blocked=false`
 - `status='passed'` → `passed=true, blocked=false`
 - `status='blocked'` → `passed=false, blocked=true`
+
+**Deprecated Deliverables:**
+
+When a deliverable is removed from SPEC.md, it is not deleted but marked with `deprecatedAt`:
+
+```json
+{
+  "id": "DL-002",
+  "description": "Legacy Feature",
+  "acceptanceCriteria": ["..."],
+  "passed": true,
+  "blocked": false,
+  "deprecatedAt": "2025-01-10"
+}
+```
+
+- `deprecatedAt` field marks features removed from the specification
+- Records are retained for tracking and auditing purposes
+- Deprecated deliverables are excluded from termination evaluation
 
 ### 5.3 State Persistence
 
@@ -600,6 +624,42 @@ Users may restrict to specific profiles via `agent.json`:
 
 For detailed command allowlists, argument validation rules, and runtime security options, see [Security Details](docs/security.md).
 
+### 6.4 Sync Command Security
+
+The `sync` command uses a restricted toolset that prevents modification of project source code while allowing status management operations.
+
+**Allowed Tools:**
+
+| Tool Category        | Available | Notes                                    |
+|---------------------|-----------|------------------------------------------|
+| File Read           | YES       | All files                                |
+| File Write          | LIMITED   | Only .autonoe-note.md                    |
+| File Edit           | LIMITED   | Only .autonoe-note.md                    |
+| Bash                | LIMITED   | Read-only/validation commands only       |
+| Git                 | YES       | Full access (commit sync results)        |
+| Playwright          | NO        | Not needed for verification              |
+| autonoe-deliverable | YES       | Required for status updates              |
+
+**Bash Command Restrictions (Sync Mode):**
+
+Allowed commands for verification:
+- Test runners: `npm test`, `bun test`, `pytest`, `rspec`, `go test`
+- Type checking: `tsc --noEmit`, `mypy`, `pyright`
+- Linting: `eslint`, `prettier --check`, `rubocop`
+- Build check: `npm run build`, `bun run build`, `go build`
+- Status commands: `ls`, `cat`, `head`, `tail`
+
+Blocked commands:
+- File modification: `echo >`, `sed -i`, `rm`, `mv`, `cp`
+- Package installation: `npm install`, `pip install`, `gem install`
+- Any command that modifies source files
+
+**Protected Scope:**
+- Project source files: Write/Edit blocked
+- `.autonoe/status.json`: Write only via deliverable tools
+- `.autonoe-note.md`: Write allowed (status reporting)
+- Git: Full access allowed (commit sync results)
+
 ---
 
 ## 7. Build & Distribution `[Design]`
@@ -675,6 +735,49 @@ Options:
 | relative path     | YES              | Resolve to absolute|
 | any path          | NO               | Exit with error    |
 
+### 8.3 sync Command
+
+#### 8.3.1 Usage
+
+```
+autonoe sync [options]
+
+Options:
+  --project-dir, -p       Project directory (default: cwd)
+  --debug, -d             Show debug output
+  --model, -m             Claude model to use
+  --thinking [budget]     Enable extended thinking mode (default: 8192)
+```
+
+#### 8.3.2 Behavior
+
+- Reads SPEC.md and uses Coding Agent to parse deliverables
+- Creates or updates `.autonoe/status.json`
+- Uses verify instruction to validate existing code against deliverables
+- **Read-only operation: does not modify any project files**
+
+**Status Sync Strategy:**
+
+| Condition | Action |
+|-----------|--------|
+| status.json not exists | Create new file, all deliverables as pending |
+| New deliverable in SPEC | Add to status.json with pending status |
+| Removed deliverable from SPEC | Mark `deprecatedAt` date, retain record |
+| Verified as passed | AI validates code and marks passed=true |
+
+#### 8.3.3 Execution Flow
+
+```
+SPEC.md ──► sync instruction ──► Create/Update status.json
+                                           │
+                                           ▼
+                               verify instruction ──► Validate & Mark passed
+```
+
+**Session Structure:**
+1. **Sync Session**: Parse SPEC.md, sync deliverables structure
+2. **Verify Session**: Validate code, update passed status
+
 ---
 
 ## 9. Decision Table `[Consistency]`
@@ -727,16 +830,46 @@ Tools available to the Coding Agent (configured by Autonoe):
 | `"go"`                 | base + go                              | Go only                 |
 | `["node", "python"]`   | base + node + python                   | Specific combination    |
 
+### 9.5 Sync Command Behavior
+
+| status.json      | SPEC.md Deliverable | Action                              |
+|------------------|---------------------|-------------------------------------|
+| NOT EXISTS       | any                 | Create new with all deliverables    |
+| EXISTS           | new deliverable     | Add with pending status             |
+| EXISTS           | removed deliverable | Mark deprecatedAt, retain record    |
+| EXISTS           | existing match      | Verify and update passed status     |
+
+### 9.6 Deprecated Deliverable Handling
+
+| Deliverable State | deprecatedAt | Termination Evaluation |
+|-------------------|--------------|------------------------|
+| passed=true       | not set      | Included               |
+| passed=false      | not set      | Included               |
+| any               | set (dated)  | Excluded               |
+
+### 9.7 Sync Command Tool Availability
+
+| Tool Category        | Available | Scope                              |
+|---------------------|-----------|-----------------------------------|
+| File Read           | YES       | All files                          |
+| File Write          | LIMITED   | .autonoe-note.md only              |
+| File Edit           | LIMITED   | .autonoe-note.md only              |
+| Bash                | LIMITED   | Test/lint/build commands only      |
+| Git                 | YES       | Full access                        |
+| autonoe-deliverable | YES       | status.json updates                |
+
 ---
 
 ## Appendix A: Instructions `[Design]`
 
 ### A.1 Instruction Selection
 
-| Instruction   | Condition                   |
-| ------------- | --------------------------- |
-| initializer   | No .autonoe/status.json     |
-| coding        | .autonoe/status.json exists |
+| Instruction   | Condition                                     |
+| ------------- | --------------------------------------------- |
+| initializer   | `run` command, no .autonoe/status.json        |
+| coding        | `run` command, .autonoe/status.json exists    |
+| sync          | `sync` command, sync phase                    |
+| verify        | `sync` command, verify phase                  |
 
 ### A.2 Instruction Override
 
@@ -744,10 +877,12 @@ Tools available to the Coding Agent (configured by Autonoe):
 | ----------------------- | ---------------------- | -------------------------- |
 | .autonoe/initializer.md | Built-in instruction   | Custom initialization flow |
 | .autonoe/coding.md      | Built-in instruction   | Custom implementation flow |
+| .autonoe/sync.md        | Built-in instruction   | Custom spec parsing flow   |
+| .autonoe/verify.md      | Built-in instruction   | Custom verification flow   |
 
 ### A.3 InstructionResolver Interface
 
-**InstructionName** - Available instruction types: `'initializer'` | `'coding'`
+**InstructionName** - Available instruction types: `'initializer'` | `'coding'` | `'sync'` | `'verify'`
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
