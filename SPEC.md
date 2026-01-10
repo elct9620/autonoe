@@ -10,6 +10,7 @@
 - [2. Clean Architecture](#2-clean-architecture-design)
   - [Domain Model](docs/domain-model.md) `[External]`
 - [3. Core Interfaces](#3-core-interfaces-design)
+  - [Interfaces](docs/interfaces.md) `[External]`
 - [4. Browser Automation](#4-browser-automation-coding-agent-design)
 - [5. State Management](#5-state-management-design)
 - [6. Security](#6-security-design)
@@ -20,7 +21,7 @@
 
 ### Consistency Layer
 - [7. Decision Table](#7-decision-table-consistency)
-- [8. Test Scenarios](docs/testing.md) `[External]`
+- [Test Scenarios](docs/testing.md) `[External]`
 
 ---
 
@@ -176,259 +177,30 @@ See [Domain Model](docs/domain-model.md) for detailed type definitions.
 
 ## 3. Core Interfaces `[Design]`
 
-### 3.1 AgentClient
+Core interface definitions. For detailed specifications, see [Interfaces](docs/interfaces.md).
 
-**AgentClient** - Core interface for agent communication
+### 3.1 Interface Summary
 
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| query | `(instruction: string) => MessageStream` | Send instruction and receive event stream |
-| dispose | `() => Promise<void>` | Release resources (MCP servers, browser) |
+| Interface | Purpose | Key Methods |
+|-----------|---------|-------------|
+| AgentClient | Agent communication | query(), dispose() |
+| AgentClientFactory | Create AgentClient instances | create() |
+| Session | Execute agent queries | run() |
+| SessionRunner | Session loop orchestration | run() |
+| BashSecurity | Bash command validation | isCommandAllowed() |
+| Logger | Logging output | info(), debug(), warn(), error() |
+| PreToolUseHook | Tool call interception | callback() |
 
-**AgentClientFactory** - Factory for creating AgentClient instances
+### 3.2 Deliverable Tools
 
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| create | `() => AgentClient` | Create new AgentClient instance |
-
-**AgentClientOptions** - Constructor options for implementations
-
-| Field | Type | Description |
-|-------|------|-------------|
-| cwd | string | Working directory |
-| mcpServers | Record\<string, McpServer\> | MCP server configurations |
-| permissionLevel | PermissionLevel | Security permission level |
-| allowedTools | string[] | Enabled SDK tools |
-| sandbox | SandboxConfig | Sandbox configuration |
-| preToolUseHooks | PreToolUseHook[] | Tool validation hooks |
-| model | string | Claude model identifier |
-| maxThinkingTokens | number | Extended thinking budget |
-
-#### 3.1.1 Session Lifecycle
-
-Each session follows a strict lifecycle to ensure proper resource management:
-
-```
-Session.run() called
-    │
-    ├── client.query(instruction)
-    │       ├── Start MCP servers
-    │       ├── Launch browser (if Playwright)
-    │       └── Return MessageStream
-    │
-    ├── Process MessageStream until completion
-    │
-    ├── client.dispose()
-    │       ├── Stop MCP server processes
-    │       ├── Close browser instances
-    │       └── Release system resources
-    │
-    └── Return SessionResult
-```
-
-**Design Principle**: Each session must be independent and isolated. The `dispose()` method ensures that resources from one session do not leak into subsequent sessions.
-
-**Requirement**: Sessions must have a minimum delay (`delayBetweenSessions`, default: 3000ms) between executions to ensure SDK internal cleanup completes.
-
-### 3.2 MockAgentClient
-
-```typescript
-// packages/core/tests/helpers/mockAgentClient.ts
-class MockAgentClient implements AgentClient {
-  private responses: AgentMessage[] = []
-
-  setResponses(responses: AgentMessage[]): void
-  query(message: string): MessageStream
-}
-```
-
-### 3.3 Session
-
-**Session** - Stateless service for running agent queries
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| run | `(client, instruction, logger?) => Promise<SessionResult>` | Execute agent session |
-
-**SessionResult** - Discriminated union (success or failure)
-
-| Variant | Fields | Description |
-|---------|--------|-------------|
-| Success | success=true, costUsd, duration, outcome, quotaResetTime? | Normal completion |
-| Failure | success=false, error, duration | Unhandled exception |
-
-**Error Responses:**
-
-| Condition | Result | Error Field |
-|-----------|--------|-------------|
-| Normal completion | success=true, outcome='completed' | - |
-| SDK execution error | success=true, outcome='execution_error' | messages[] in StreamEventEnd |
-| Max iterations hit | success=true, outcome='max_iterations' | - |
-| Budget exceeded | success=true, outcome='budget_exceeded' | - |
-| Quota exceeded | success=true, outcome='quota_exceeded' | message in StreamEventEnd |
-| Unhandled exception | success=false | error string |
-
-### 3.4 BashSecurity
-
-```typescript
-// packages/core/src/bashSecurity.ts
-interface BashSecurity {
-  isCommandAllowed(command: string): ValidationResult
-}
-
-interface ValidationResult {
-  allowed: boolean
-  reason?: string
-}
-```
-
-### 3.5 Deliverable Management Tools (SDK Custom Tools)
-
-#### 3.5.1 Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ packages/core (Domain + Application)                            │
-├─────────────────────────────────────────────────────────────────┤
-│ DeliverableRepository          │ Interface                      │
-│ createDeliverable()            │ Application service            │
-│ setDeliverableStatus()         │ Application service            │
-│ Deliverable, DeliverableStatus │ Domain types                   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ packages/agent (Infrastructure)                                  │
-├─────────────────────────────────────────────────────────────────┤
-│ FileDeliverableRepository      │ Implements DeliverableRepository│
-│ createDeliverableMcpServer()   │ SDK MCP Server factory          │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### 3.5.2 Tool Specifications
-
-**create_deliverable** - Create one or more deliverables in status.json
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| deliverables | array | Array of deliverable objects |
-| deliverables[].id | string | Unique identifier |
-| deliverables[].description | string | Clear description |
-| deliverables[].acceptanceCriteria | string[] | Verifiable conditions |
-
-**set_deliverable_status** - Update deliverable status
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| deliverableId | string | Target deliverable ID |
-| status | enum | 'pending' \| 'passed' \| 'blocked' |
-
-**Status Semantics:**
-
-| Status | passed | blocked | Use Case |
-|--------|--------|---------|----------|
-| pending | false | false | Reset state, bugs found in passed deliverable |
-| passed | true | false | All acceptance criteria verified |
-| blocked | false | true | External constraints prevent completion |
-
-**External Constraints (blocked):**
-- Missing API keys or credentials
-- Unavailable external services
-- Missing hardware requirements
-- Network restrictions
-
-**NOT blocked (use pending instead):**
-- Implementation dependencies
-- Code refactoring needed
-- Technical debt
-
-#### 3.5.5 Tool Usage
-
-| Tool                   | Phase          | Operation                                                |
-| ---------------------- | -------------- | -------------------------------------------------------- |
-| create_deliverable     | Initialization | Create deliverables with acceptance criteria             |
-| set_deliverable_status | Coding         | Set status: pending (reset), passed, or blocked          |
-
-#### 3.5.6 Status Change Notification
-
-**DeliverableStatusNotification** - Notification payload
-
-| Field | Type | Description |
-|-------|------|-------------|
-| deliverableId | string | Deliverable ID |
-| deliverableDescription | string | Deliverable description |
-| previousStatus | DeliverableStatusValue \| undefined | Previous status (undefined if new) |
-| newStatus | DeliverableStatusValue | New status |
-
-**DeliverableStatusCallback** - Callback type
-
-```typescript
-type DeliverableStatusCallback = (notification: DeliverableStatusNotification) => void
-```
-
-**Output Format:**
-
-| Status | Icon | Example |
-|--------|------|---------|
-| passed | [PASS] | `[PASS] User Auth (DL-001)` |
-| blocked | [BLOCKED] | `[BLOCKED] Payment (DL-002)` |
-| pending | [PENDING] | `[PENDING] Dashboard (DL-003)` |
-
-### 3.6 PreToolUse Hook
-
-PreToolUse hooks allow intercepting tool calls before execution for validation or authorization.
-
-```typescript
-// packages/core/src/agentClient.ts
-interface PreToolUseInput {
-  toolName: string
-  toolInput: Record<string, unknown>
-}
-
-interface HookResult {
-  continue: boolean
-  decision?: 'approve' | 'block'
-  reason?: string
-}
-
-interface PreToolUseHook {
-  name: string
-  matcher?: string
-  callback: (input: PreToolUseInput) => Promise<HookResult>
-}
-```
-
-**PreToolUseInput** - Input provided to hook callback
-
-| Field | Type | Description |
-|-------|------|-------------|
-| toolName | string | Name of the tool being called |
-| toolInput | Record\<string, unknown\> | Tool parameters |
-
-**HookResult** - Result returned from hook callback
-
-| Field | Type | Description |
-|-------|------|-------------|
-| continue | boolean | Whether to continue processing (false = stop hook chain) |
-| decision | 'approve' \| 'block' | Final decision (optional) |
-| reason | string | Reason for decision (optional, displayed to agent) |
-
-**PreToolUseHook** - Hook definition
-
-| Field | Type | Description |
-|-------|------|-------------|
-| name | string | Hook identifier for debugging |
-| matcher | string | Tool name pattern to match (optional, undefined = match all) |
-| callback | (input) => Promise\<HookResult\> | Async callback function |
-
-**Built-in Hooks:**
-
-| Hook | Purpose |
+| Tool | Purpose |
 |------|---------|
-| BashSecurity | Validate bash commands against allowlist |
-| AutonoeProtection | Block direct writes to .autonoe/ directory |
+| create_deliverable | Create deliverables with acceptance criteria |
+| set_deliverable_status | Update status: pending, passed, or blocked |
 
-### 3.7 Dependency Injection
+For detailed tool specifications, see [Interfaces - Deliverable Tools](docs/interfaces.md#deliverable-management-tools).
+
+### 3.3 Dependency Injection
 
 | Component              | Injected Via              | Purpose                         |
 | ---------------------- | ------------------------- | ------------------------------- |
@@ -444,163 +216,7 @@ SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ─
          Configuration        Dependency          Per-session
 ```
 
-### 3.8 Logger
-
-```typescript
-// packages/core/src/logger.ts
-type LogLevel = 'info' | 'debug' | 'warning' | 'error'
-
-interface Logger {
-  info(message: string): void
-  debug(message: string): void
-  warn(message: string): void
-  error(message: string, error?: Error): void
-}
-
-const silentLogger: Logger
-```
-
-| Level   | Visibility        | Purpose                        |
-| ------- | ----------------- | ------------------------------ |
-| info    | Always            | Session status, configuration  |
-| debug   | --debug flag only | Internal operations, tracing   |
-| warning | Always            | Non-fatal issues, deprecations |
-| error   | Always            | Failures, critical errors      |
-
-| Layer        | Logger Usage                           |
-| ------------ | -------------------------------------- |
-| Presentation | ConsoleLogger with colored output      |
-| Application  | Use injected Logger for messages       |
-| Domain       | No direct logging (pure functions)     |
-| Tests        | TestLogger to capture and verify       |
-
-#### 3.8.1 Message Categories
-
-| Category | Level | Content |
-|----------|-------|---------|
-| Debug | debug | Instruction sent, events received, thinking (truncated) |
-| Session | info | Session start/end with cost and duration |
-| Overall | info | Summary: iterations, deliverables passed/blocked, total cost/duration |
-
-#### 3.8.2 Duration Format
-
-All duration displays use human-readable format with zero-value parts omitted:
-
-| Component | Condition                          | Format    |
-| --------- | ---------------------------------- | --------- |
-| Hours     | > 0                                | `{h}h `   |
-| Minutes   | > 0                                | `{m}m `   |
-| Seconds   | > 0 or (hours=0 and minutes=0)     | `{s}s`    |
-
-**Examples:**
-- 3661000ms → `1h 1m 1s`
-- 3600000ms → `1h`
-- 90000ms → `1m 30s`
-- 60000ms → `1m`
-- 5000ms → `5s`
-- 0ms → `0s`
-
-**Utility Function:**
-- `formatDuration(ms: number): string` in `packages/core/src/duration.ts`
-
-### 3.9 Session Loop
-
-#### 3.9.1 Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      packages/core                              │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                   SessionRunner                            │  │
-│  │  client = AgentClient (reused)                             │  │
-│  │                        │                                   │  │
-│  │   ┌────────────────────▼────────────────────┐              │  │
-│  │   │           Session Loop                   │              │  │
-│  │   │  while (not terminated):                 │              │  │
-│  │   │    session = new Session(options)        │              │  │
-│  │   │    result = session.run(client, prompt)  │              │  │
-│  │   │    if (allAchievableDeliverablesPassed) break│             │  │
-│  │   │    if (maxIterations reached) break      │              │  │
-│  │   │    delay(delayBetweenSessions)           │              │  │
-│  │   └──────────────────────────────────────────┘              │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                                                                  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                      Session                               │  │
-│  │  ┌─────────────────────────────────────────────────────┐   │  │
-│  │  │ logger.info("Session N started")                     │   │  │
-│  │  │ messages = client.query(instruction)                 │   │  │
-│  │  │ for message in messages: process(message)            │   │  │
-│  │  │ logger.info("Session N: cost=$X, duration=Ys")       │   │  │
-│  │  └─────────────────────────────────────────────────────┘   │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### 3.9.2 Loop Types
-
-| Loop             | Location         | Controller       | Purpose                          |
-| ---------------- | ---------------- | ---------------- | -------------------------------- |
-| Session Loop     | SessionRunner    | --max-iterations | Run multiple agent sessions      |
-| Agent Turn Loop  | Claude Agent SDK | SDK internal     | Process messages within session  |
-
-#### 3.9.3 Resource Scope
-
-| Scope        | Resource            |
-| ------------ | ------------------- |
-| Per Session  | ClaudeAgentClient   |
-| Per Session  | SDK child process   |
-| Per Session  | instruction         |
-| Shared       | AgentClientFactory  |
-| Shared       | Client configuration|
-
-#### 3.9.4 SessionRunner Interface
-
-```typescript
-// packages/core/src/sessionRunner.ts
-interface SessionRunner {
-  run(
-    clientFactory: AgentClientFactory,
-    logger: Logger,
-    statusReader?: DeliverableStatusReader,
-    instructionResolver?: InstructionResolver,
-    signal?: AbortSignal
-  ): Promise<SessionRunnerResult>
-}
-
-interface SessionRunnerOptions {
-  projectDir: string
-  maxIterations?: number        // undefined = unlimited
-  delayBetweenSessions?: number // default: 3000ms
-  model?: string
-  waitForQuota?: boolean        // wait for quota reset instead of exiting
-  maxThinkingTokens?: number    // extended thinking mode budget (min: 1024)
-  maxRetries?: number           // default: 3, max consecutive errors before exit
-}
-
-interface SessionRunnerResult {
-  iterations: number
-  deliverablesPassedCount: number
-  deliverablesTotalCount: number
-  blockedCount: number
-  totalDuration: number      // displayed using formatDuration()
-  totalCostUsd: number       // sum of all session costs
-  interrupted?: boolean
-  quotaExceeded?: boolean
-  error?: string             // error message when maxRetries exceeded
-}
-
-// Exit reason type for unified exit point
-type ExitReason =
-  | 'all_passed'
-  | 'all_blocked'
-  | 'max_iterations'
-  | 'quota_exceeded'
-  | 'interrupted'
-  | 'max_retries_exceeded'
-```
-
-### 3.10 Termination Conditions
+### 3.4 Termination Conditions
 
 | Priority | Condition                    | Check                                         | Result              |
 | -------- | ---------------------------- | --------------------------------------------- | ------------------- |
@@ -965,6 +581,8 @@ For detailed command allowlists, argument validation rules, and runtime security
 | any                  | reached limit    | Exit loop, partial                      |
 | any                  | undefined        | Continue until all pass                 |
 
+See [Appendix A](#appendix-a-instructions-design) for instruction selection rules.
+
 ### 7.2 Coding Agent Tool Availability
 
 Tools available to the Coding Agent (configured by Autonoe):
@@ -978,16 +596,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | Playwright           | YES       |
 | autonoe-deliverable  | YES       |
 
-### 7.3 Instruction Selection
-
-| Condition                   | Instruction                                      |
-| --------------------------- | ------------------------------------------------ |
-| No .autonoe/status.json     | .autonoe/initializer.md → initializerInstruction |
-| .autonoe/status.json exists | .autonoe/coding.md → codingInstruction           |
-
-Resolution order: project override (`.autonoe/{name}.md`) → default (`packages/core`).
-
-### 7.4 Configuration Merge
+### 7.3 Configuration Merge
 
 | User Config (agent.json)    | Autonoe Behavior                            |
 | --------------------------- | ------------------------------------------- |
@@ -998,7 +607,7 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | Disable sandbox             | Allowed with warning (stderr)               |
 | Remove .autonoe/ protection | Re-apply security baseline                  |
 
-### 7.5 Profile Selection
+### 7.4 Profile Selection
 
 | agent.json profile     | Active Profiles                        | Use Case                |
 | ---------------------- | -------------------------------------- | ----------------------- |
@@ -1008,17 +617,6 @@ Resolution order: project override (`.autonoe/{name}.md`) → default (`packages
 | `"ruby"`               | base + ruby                            | Ruby only               |
 | `"go"`                 | base + go                              | Go only                 |
 | `["node", "python"]`   | base + node + python                   | Specific combination    |
-
----
-
-## 8. Test Scenarios `[Consistency]`
-
-Test scenarios are maintained in a separate document for easier reference and maintenance.
-
-See [Test Scenarios](docs/testing.md) for:
-- Unit test scenarios (SessionRunner, Bash Security, Deliverable Tools, Configuration, Language Profiles, Logger, Claude Agent Client, Autonoe Protection, Duration Format)
-- Integration test scenarios (End-to-End, SDK Sandbox, Browser)
-- CI reporting configuration
 
 ---
 
