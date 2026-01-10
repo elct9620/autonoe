@@ -14,6 +14,7 @@
 - [4. Browser Automation](#4-browser-automation-coding-agent-design)
 - [5. State Management](#5-state-management-design)
 - [6. Security](#6-security-design)
+  - [Security Details](docs/security.md) `[External]`
 - [7. Build & Distribution](#7-build--distribution-design)
   - [Docker Configuration](docs/docker.md) `[External]`
 - [8. CLI](#8-cli-design)
