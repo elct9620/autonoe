@@ -9,7 +9,7 @@ import {
   createStatusChangeCallback,
   buildRunnerOptions,
 } from '../src/factories'
-import type { ValidatedRunOptions } from '../src/options'
+import { SandboxMode, type ValidatedRunOptions } from '../src/options'
 
 describe('createInstructionResolver', () => {
   let tempDir: string
@@ -121,7 +121,7 @@ describe('buildRunnerOptions', () => {
   const baseOptions: ValidatedRunOptions = {
     projectDir: '/test/project',
     debug: false,
-    sandboxMode: { disabled: false, source: 'default' },
+    sandboxMode: SandboxMode.enabled(),
     waitForQuota: false,
     allowDestructive: false,
   }
@@ -165,7 +165,7 @@ describe('buildRunnerOptions', () => {
     const options: ValidatedRunOptions = {
       ...baseOptions,
       debug: true,
-      sandboxMode: { disabled: true, source: 'cli' },
+      sandboxMode: SandboxMode.disabledByCli(),
       allowDestructive: true,
     }
 

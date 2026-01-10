@@ -13,7 +13,7 @@ import {
 } from '@autonoe/core'
 import { FileDeliverableRepository } from '@autonoe/agent'
 import { RunCommandHandler, VERSION } from '../src/runCommandHandler'
-import type { ValidatedRunOptions } from '../src/options'
+import { SandboxMode, type ValidatedRunOptions } from '../src/options'
 
 // Mock Logger for capturing output
 function createMockLogger(): Logger & {
@@ -100,7 +100,7 @@ describe('RunCommandHandler', () => {
     return {
       projectDir: tempDir,
       debug: false,
-      sandboxMode: { disabled: false, source: 'default' },
+      sandboxMode: SandboxMode.enabled(),
       waitForQuota: false,
       allowDestructive: false,
     }
@@ -408,7 +408,7 @@ describe('RunCommandHandler', () => {
     it('RCH-020: logs sandbox warning when disabled via CLI', async () => {
       const options = {
         ...createBaseOptions(),
-        sandboxMode: { disabled: true, source: 'cli' as const },
+        sandboxMode: SandboxMode.disabledByCli(),
       }
       const logger = createMockLogger()
       const repository = new FileDeliverableRepository(tempDir)
@@ -439,7 +439,7 @@ describe('RunCommandHandler', () => {
     it('RCH-021: logs sandbox warning when disabled via env', async () => {
       const options = {
         ...createBaseOptions(),
-        sandboxMode: { disabled: true, source: 'env' as const },
+        sandboxMode: SandboxMode.disabledByEnv(),
       }
       const logger = createMockLogger()
       const repository = new FileDeliverableRepository(tempDir)

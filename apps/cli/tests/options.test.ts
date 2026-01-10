@@ -10,6 +10,7 @@ import {
   determineSandboxMode,
   validateRunOptions,
   logSecurityWarnings,
+  SandboxMode,
 } from '../src/options'
 
 function createMockLogger(): Logger & { warnMessages: string[] } {
@@ -118,27 +119,113 @@ describe('parseThinkingOption', () => {
   })
 })
 
-describe('determineSandboxMode', () => {
+describe('SandboxMode', () => {
+  describe('static enabled()', () => {
+    it('OPT-060: creates enabled sandbox mode', () => {
+      const mode = SandboxMode.enabled()
+      expect(mode.disabled).toBe(false)
+      expect(mode.enabled).toBe(true)
+      expect(mode.source).toBe('default')
+    })
+  })
+
+  describe('static disabledByCli()', () => {
+    it('OPT-061: creates disabled sandbox mode with cli source', () => {
+      const mode = SandboxMode.disabledByCli()
+      expect(mode.disabled).toBe(true)
+      expect(mode.enabled).toBe(false)
+      expect(mode.source).toBe('cli')
+    })
+  })
+
+  describe('static disabledByEnv()', () => {
+    it('OPT-062: creates disabled sandbox mode with env source', () => {
+      const mode = SandboxMode.disabledByEnv()
+      expect(mode.disabled).toBe(true)
+      expect(mode.enabled).toBe(false)
+      expect(mode.source).toBe('env')
+    })
+  })
+
+  describe('static fromCliAndEnv()', () => {
+    it('OPT-063: CLI flag takes priority over env', () => {
+      const result = SandboxMode.fromCliAndEnv(false, {
+        AUTONOE_NO_SANDBOX: '1',
+      })
+      expect(result.disabled).toBe(true)
+      expect(result.source).toBe('cli')
+    })
+
+    it('OPT-064: uses env when no CLI flag', () => {
+      const result = SandboxMode.fromCliAndEnv(undefined, {
+        AUTONOE_NO_SANDBOX: '1',
+      })
+      expect(result.disabled).toBe(true)
+      expect(result.source).toBe('env')
+    })
+
+    it('OPT-065: returns default when neither set', () => {
+      const result = SandboxMode.fromCliAndEnv(undefined, {})
+      expect(result.disabled).toBe(false)
+      expect(result.source).toBe('default')
+    })
+
+    it('OPT-066: env value must be exactly "1"', () => {
+      const result = SandboxMode.fromCliAndEnv(undefined, {
+        AUTONOE_NO_SANDBOX: 'true',
+      })
+      expect(result.disabled).toBe(false)
+      expect(result.source).toBe('default')
+    })
+  })
+
+  describe('getWarningMessage()', () => {
+    it('OPT-067: returns undefined when enabled', () => {
+      const mode = SandboxMode.enabled()
+      expect(mode.getWarningMessage()).toBeUndefined()
+    })
+
+    it('OPT-068: returns CLI warning when disabled by CLI', () => {
+      const mode = SandboxMode.disabledByCli()
+      expect(mode.getWarningMessage()).toBe(
+        'Warning: SDK sandbox is disabled. System-level isolation is not enforced.',
+      )
+    })
+
+    it('OPT-069: returns env warning when disabled by env', () => {
+      const mode = SandboxMode.disabledByEnv()
+      expect(mode.getWarningMessage()).toBe(
+        'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.',
+      )
+    })
+  })
+})
+
+describe('determineSandboxMode (deprecated)', () => {
   it('OPT-030: CLI flag takes priority over env', () => {
     const result = determineSandboxMode(false, { AUTONOE_NO_SANDBOX: '1' })
-    expect(result).toEqual({ disabled: true, source: 'cli' })
+    expect(result.disabled).toBe(true)
+    expect(result.source).toBe('cli')
   })
 
   it('OPT-031: uses env when no CLI flag', () => {
     const result = determineSandboxMode(undefined, { AUTONOE_NO_SANDBOX: '1' })
-    expect(result).toEqual({ disabled: true, source: 'env' })
+    expect(result.disabled).toBe(true)
+    expect(result.source).toBe('env')
   })
 
   it('OPT-032: returns default when neither set', () => {
     const result = determineSandboxMode(undefined, {})
-    expect(result).toEqual({ disabled: false, source: 'default' })
+    expect(result.disabled).toBe(false)
+    expect(result.source).toBe('default')
   })
 
   it('OPT-033: env value must be exactly "1"', () => {
     const result = determineSandboxMode(undefined, {
       AUTONOE_NO_SANDBOX: 'true',
     })
-    expect(result).toEqual({ disabled: false, source: 'default' })
+    expect(result.disabled).toBe(false)
+    expect(result.source).toBe('default')
   })
 })
 
@@ -222,7 +309,7 @@ describe('validateRunOptions', () => {
 describe('logSecurityWarnings', () => {
   it('OPT-050: logs CLI sandbox warning when disabled via CLI', () => {
     const logger = createMockLogger()
-    logSecurityWarnings(logger, { disabled: true, source: 'cli' }, false)
+    logSecurityWarnings(logger, SandboxMode.disabledByCli(), false)
     expect(logger.warn).toHaveBeenCalledWith(
       'Warning: SDK sandbox is disabled. System-level isolation is not enforced.',
     )
@@ -230,7 +317,7 @@ describe('logSecurityWarnings', () => {
 
   it('OPT-051: logs env sandbox warning when disabled via env', () => {
     const logger = createMockLogger()
-    logSecurityWarnings(logger, { disabled: true, source: 'env' }, false)
+    logSecurityWarnings(logger, SandboxMode.disabledByEnv(), false)
     expect(logger.warn).toHaveBeenCalledWith(
       'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.',
     )
@@ -238,7 +325,7 @@ describe('logSecurityWarnings', () => {
 
   it('OPT-052: logs destructive warning when enabled', () => {
     const logger = createMockLogger()
-    logSecurityWarnings(logger, { disabled: false, source: 'default' }, true)
+    logSecurityWarnings(logger, SandboxMode.enabled(), true)
     expect(logger.warn).toHaveBeenCalledWith(
       'Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.',
     )
@@ -246,13 +333,13 @@ describe('logSecurityWarnings', () => {
 
   it('OPT-053: logs nothing when sandbox enabled and no destructive', () => {
     const logger = createMockLogger()
-    logSecurityWarnings(logger, { disabled: false, source: 'default' }, false)
+    logSecurityWarnings(logger, SandboxMode.enabled(), false)
     expect(logger.warn).not.toHaveBeenCalled()
   })
 
   it('OPT-054: logs both warnings when sandbox disabled and destructive enabled', () => {
     const logger = createMockLogger()
-    logSecurityWarnings(logger, { disabled: true, source: 'cli' }, true)
+    logSecurityWarnings(logger, SandboxMode.disabledByCli(), true)
     expect(logger.warn).toHaveBeenCalledTimes(2)
   })
 })
