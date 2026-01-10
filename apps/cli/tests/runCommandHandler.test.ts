@@ -278,7 +278,7 @@ describe('RunCommandHandler', () => {
       ).toBe(true)
     })
 
-    it('RCH-011: logs success message for all_blocked', async () => {
+    it('RCH-011: logs error message for all_blocked', async () => {
       const options = createBaseOptions()
       const logger = createMockLogger()
       const repository = new FileDeliverableRepository(tempDir)
@@ -302,8 +302,8 @@ describe('RunCommandHandler', () => {
       await handler.execute()
 
       expect(
-        logger.infoMessages.some((m) =>
-          m.includes('Session completed successfully'),
+        logger.errorMessages.some((m) =>
+          m.includes('All deliverables blocked'),
         ),
       ).toBe(true)
     })
@@ -374,7 +374,7 @@ describe('RunCommandHandler', () => {
       expect(processExitSpy).toHaveBeenCalledWith(1)
     })
 
-    it('RCH-014: logs error for max_iterations', async () => {
+    it('RCH-014: logs info for max_iterations', async () => {
       const options = createBaseOptions()
       const logger = createMockLogger()
       const repository = new FileDeliverableRepository(tempDir)
@@ -400,8 +400,8 @@ describe('RunCommandHandler', () => {
       await handler.execute()
 
       expect(
-        logger.errorMessages.some((m) =>
-          m.includes('Session completed with errors'),
+        logger.infoMessages.some((m) =>
+          m.includes('Session stopped: max iterations reached'),
         ),
       ).toBe(true)
     })

@@ -84,11 +84,13 @@ export class RunCommandHandler {
         this.logger.error(`Session stopped: ${result.error}`)
         process.exit(1)
       case 'all_passed':
-      case 'all_blocked':
         this.logger.info('Session completed successfully')
         break
+      case 'all_blocked':
+        this.logger.error('All deliverables blocked')
+        process.exit(1)
       case 'max_iterations':
-        this.logger.error('Session completed with errors')
+        this.logger.info('Session stopped: max iterations reached')
         break
     }
   }
