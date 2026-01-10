@@ -77,7 +77,9 @@ export async function handleRunCommand(
       new ClaudeAgentClient({
         cwd: validatedOptions.projectDir,
         permissionLevel: 'acceptEdits',
-        sandbox: validatedOptions.sandboxDisabled ? undefined : config.sandbox,
+        sandbox: validatedOptions.sandboxMode.disabled
+          ? undefined
+          : config.sandbox,
         mcpServers: config.mcpServers,
         preToolUseHooks,
         sdkMcpServers: [deliverableMcpServer],

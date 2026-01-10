@@ -25,8 +25,7 @@ export interface ValidatedRunOptions {
   maxRetries?: number
   model?: string
   debug: boolean
-  sandboxDisabled: boolean
-  sandboxSource: 'cli' | 'env' | 'default'
+  sandboxMode: SandboxMode
   waitForQuota: boolean
   allowDestructive: boolean
   maxThinkingTokens?: number
@@ -160,8 +159,7 @@ export function validateRunOptions(
       maxRetries: parseNumericOption(options.maxRetries),
       model: options.model,
       debug: options.debug ?? false,
-      sandboxDisabled: sandboxMode.disabled,
-      sandboxSource: sandboxMode.source,
+      sandboxMode,
       waitForQuota: options.waitForQuota ?? false,
       allowDestructive: options.allowDestructive ?? false,
       maxThinkingTokens:

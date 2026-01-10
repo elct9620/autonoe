@@ -201,8 +201,8 @@ describe('validateRunOptions', () => {
     )
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.options.sandboxDisabled).toBe(true)
-      expect(result.options.sandboxSource).toBe('env')
+      expect(result.options.sandboxMode.disabled).toBe(true)
+      expect(result.options.sandboxMode.source).toBe('env')
     }
   })
 })

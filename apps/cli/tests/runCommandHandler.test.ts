@@ -103,8 +103,7 @@ describe('RunCommandHandler', () => {
     return {
       projectDir: tempDir,
       debug: false,
-      sandboxDisabled: false,
-      sandboxSource: 'default',
+      sandboxMode: { disabled: false, source: 'default' },
       waitForQuota: false,
       allowDestructive: false,
     }
@@ -412,8 +411,7 @@ describe('RunCommandHandler', () => {
     it('RCH-020: logs sandbox warning when disabled via CLI', async () => {
       const options = {
         ...createBaseOptions(),
-        sandboxDisabled: true,
-        sandboxSource: 'cli' as const,
+        sandboxMode: { disabled: true, source: 'cli' as const },
       }
       const logger = createMockLogger()
       const repository = new FileDeliverableRepository(tempDir)
@@ -444,8 +442,7 @@ describe('RunCommandHandler', () => {
     it('RCH-021: logs sandbox warning when disabled via env', async () => {
       const options = {
         ...createBaseOptions(),
-        sandboxDisabled: true,
-        sandboxSource: 'env' as const,
+        sandboxMode: { disabled: true, source: 'env' as const },
       }
       const logger = createMockLogger()
       const repository = new FileDeliverableRepository(tempDir)

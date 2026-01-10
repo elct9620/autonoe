@@ -6,7 +6,7 @@ import type {
   DeliverableStatusReader,
   Logger,
 } from '@autonoe/core'
-import type { ValidatedRunOptions, SandboxMode } from './options'
+import type { ValidatedRunOptions } from './options'
 import { logSecurityWarnings } from './options'
 
 /**
@@ -51,11 +51,7 @@ export class RunCommandHandler {
   }
 
   private logSecurityWarnings(): void {
-    const sandboxMode: SandboxMode = {
-      disabled: this.options.sandboxDisabled,
-      source: this.options.sandboxSource,
-    }
-    logSecurityWarnings(sandboxMode, this.options.allowDestructive)
+    logSecurityWarnings(this.options.sandboxMode, this.options.allowDestructive)
   }
 
   private logStartupInfo(): void {

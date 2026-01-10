@@ -121,8 +121,7 @@ describe('buildRunnerOptions', () => {
   const baseOptions: ValidatedRunOptions = {
     projectDir: '/test/project',
     debug: false,
-    sandboxDisabled: false,
-    sandboxSource: 'default',
+    sandboxMode: { disabled: false, source: 'default' },
     waitForQuota: false,
     allowDestructive: false,
   }
@@ -162,20 +161,18 @@ describe('buildRunnerOptions', () => {
     })
   })
 
-  it('FAC-032: excludes debug, sandboxDisabled, sandboxSource, allowDestructive', () => {
+  it('FAC-032: excludes debug, sandboxMode, allowDestructive', () => {
     const options: ValidatedRunOptions = {
       ...baseOptions,
       debug: true,
-      sandboxDisabled: true,
-      sandboxSource: 'cli',
+      sandboxMode: { disabled: true, source: 'cli' },
       allowDestructive: true,
     }
 
     const result = buildRunnerOptions(options)
 
     expect(result).not.toHaveProperty('debug')
-    expect(result).not.toHaveProperty('sandboxDisabled')
-    expect(result).not.toHaveProperty('sandboxSource')
+    expect(result).not.toHaveProperty('sandboxMode')
     expect(result).not.toHaveProperty('allowDestructive')
   })
 })
