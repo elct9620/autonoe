@@ -14,13 +14,13 @@
 - [4. Browser Automation](#4-browser-automation-coding-agent-design)
 - [5. State Management](#5-state-management-design)
 - [6. Security](#6-security-design)
-- [10. Build & Distribution](#10-build--distribution-design)
+- [7. Build & Distribution](#7-build--distribution-design)
   - [Docker Configuration](docs/docker.md) `[External]`
-- [11. CLI](#11-cli-design)
+- [8. CLI](#8-cli-design)
 - [Appendix A: Instructions](#appendix-a-instructions-design)
 
 ### Consistency Layer
-- [7. Decision Table](#7-decision-table-consistency)
+- [9. Decision Table](#9-decision-table-consistency)
 - [Test Scenarios](docs/testing.md) `[External]`
 
 ---
@@ -568,59 +568,7 @@ For detailed command allowlists, argument validation rules, and runtime security
 
 ---
 
-## 7. Decision Table `[Consistency]`
-
-### 7.1 Session Loop Behavior
-
-| .autonoe/status.json | --max-iterations | Action                                  |
-| -------------------- | ---------------- | --------------------------------------- |
-| NOT EXISTS           | any              | Use initializerInstruction, continue    |
-| EXISTS (none passed) | any              | Run all deliverables                    |
-| EXISTS (partial)     | any              | Run deliverables with passed=false      |
-| EXISTS (all passed)  | any              | Exit loop, success                      |
-| any                  | reached limit    | Exit loop, partial                      |
-| any                  | undefined        | Continue until all pass                 |
-
-See [Appendix A](#appendix-a-instructions-design) for instruction selection rules.
-
-### 7.2 Coding Agent Tool Availability
-
-Tools available to the Coding Agent (configured by Autonoe):
-
-| Tool Category        | Available |
-| -------------------- | --------- |
-| File Read            | YES       |
-| File Write           | YES       |
-| Bash (safe)          | YES       |
-| Git                  | YES       |
-| Playwright           | YES       |
-| autonoe-deliverable  | YES       |
-
-### 7.3 Configuration Merge
-
-| User Config (agent.json)    | Autonoe Behavior                            |
-| --------------------------- | ------------------------------------------- |
-| Custom permissions          | Merge with security baseline                |
-| Custom hooks                | Merge with security baseline                |
-| Custom mcpServers           | User priority (see Section 5.4)             |
-| Custom allowCommands        | Merge with profile commands                 |
-| Disable sandbox             | Allowed with warning (stderr)               |
-| Remove .autonoe/ protection | Re-apply security baseline                  |
-
-### 7.4 Profile Selection
-
-| agent.json profile     | Active Profiles                        | Use Case                |
-| ---------------------- | -------------------------------------- | ----------------------- |
-| (not set)              | ALL (base + node + python + ruby + go) | Default, all languages  |
-| `"node"`               | base + node                            | Node.js only            |
-| `"python"`             | base + python                          | Python only             |
-| `"ruby"`               | base + ruby                            | Ruby only               |
-| `"go"`                 | base + go                              | Go only                 |
-| `["node", "python"]`   | base + node + python                   | Specific combination    |
-
----
-
-## 10. Build & Distribution `[Design]`
+## 7. Build & Distribution `[Design]`
 
 **Package Overview:**
 
@@ -633,7 +581,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 
 Package configurations are defined in their respective `package.json` files.
 
-### 10.1 Docker & CI/CD
+### 7.1 Docker & CI/CD
 
 See [Docker Configuration](docs/docker.md) for detailed build configuration.
 
@@ -657,9 +605,9 @@ See [Docker Configuration](docs/docker.md) for detailed build configuration.
 
 ---
 
-## 11. CLI `[Design]`
+## 8. CLI `[Design]`
 
-### 11.1 Usage
+### 8.1 Usage
 
 ```
 autonoe run [options]
@@ -676,7 +624,7 @@ Options:
   --thinking [budget]     Enable extended thinking mode (default: 8192)
 ```
 
-### 11.2 Behavior
+### 8.2 Behavior
 
 - Runs in specified project directory (or cwd if not specified)
 - All relative paths (.autonoe/, SPEC.md) resolved from project directory
@@ -692,6 +640,58 @@ Options:
 | absolute path     | YES              | Use as-is          |
 | relative path     | YES              | Resolve to absolute|
 | any path          | NO               | Exit with error    |
+
+---
+
+## 9. Decision Table `[Consistency]`
+
+### 9.1 Session Loop Behavior
+
+| .autonoe/status.json | --max-iterations | Action                                  |
+| -------------------- | ---------------- | --------------------------------------- |
+| NOT EXISTS           | any              | Use initializerInstruction, continue    |
+| EXISTS (none passed) | any              | Run all deliverables                    |
+| EXISTS (partial)     | any              | Run deliverables with passed=false      |
+| EXISTS (all passed)  | any              | Exit loop, success                      |
+| any                  | reached limit    | Exit loop, partial                      |
+| any                  | undefined        | Continue until all pass                 |
+
+See [Appendix A](#appendix-a-instructions-design) for instruction selection rules.
+
+### 9.2 Coding Agent Tool Availability
+
+Tools available to the Coding Agent (configured by Autonoe):
+
+| Tool Category        | Available |
+| -------------------- | --------- |
+| File Read            | YES       |
+| File Write           | YES       |
+| Bash (safe)          | YES       |
+| Git                  | YES       |
+| Playwright           | YES       |
+| autonoe-deliverable  | YES       |
+
+### 9.3 Configuration Merge
+
+| User Config (agent.json)    | Autonoe Behavior                            |
+| --------------------------- | ------------------------------------------- |
+| Custom permissions          | Merge with security baseline                |
+| Custom hooks                | Merge with security baseline                |
+| Custom mcpServers           | User priority (see Section 5.4)             |
+| Custom allowCommands        | Merge with profile commands                 |
+| Disable sandbox             | Allowed with warning (stderr)               |
+| Remove .autonoe/ protection | Re-apply security baseline                  |
+
+### 9.4 Profile Selection
+
+| agent.json profile     | Active Profiles                        | Use Case                |
+| ---------------------- | -------------------------------------- | ----------------------- |
+| (not set)              | ALL (base + node + python + ruby + go) | Default, all languages  |
+| `"node"`               | base + node                            | Node.js only            |
+| `"python"`             | base + python                          | Python only             |
+| `"ruby"`               | base + ruby                            | Ruby only               |
+| `"go"`                 | base + go                              | Go only                 |
+| `["node", "python"]`   | base + node + python                   | Specific combination    |
 
 ---
 
