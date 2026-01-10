@@ -102,6 +102,18 @@ apps/cli
 - **TypeScript**: Strict mode, ESNext target/module
 - **Prompts**: Markdown files imported via `with { type: 'text' }` (requires `markdown.d.ts`)
 
+### TypeScript Style
+
+**Private Fields**: Use underscore prefix (`_fieldName`) only when a public getter with the same logical name exists.
+
+**Optional Values**: Use `undefined` instead of `null`. Use `?: Type` for optional properties, `Type | undefined` in union types.
+
+**Factory Methods**: Use `create*()` for public factories. Use semantic names (`static pending()`, `static enabled()`) for specific state factories.
+
+**Value Objects**: Private constructor with static factory methods. Immutable (readonly fields, return new instances for mutations).
+
+**Result Pattern**: Discriminated unions with `success: boolean` or `type: string` as discriminator.
+
 ## Commit Scopes & Release Please
 
 Conventional commits 的 scope 會決定 Release Please 觸發哪個套件的版本更新：
