@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/elct9620/autonoe/compare/agent-v0.2.0...agent-v0.3.0) (2026-01-11)
+
+
+### Features
+
+* **core:** add AgentClient.dispose() for resource cleanup ([9b6ac90](https://github.com/elct9620/autonoe/commit/9b6ac90c14b08e487a7d61c8b7d699039ce9b533))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @autonoe/core bumped to 0.3.0
+
 ## [0.2.0](https://github.com/elct9620/autonoe/compare/agent-v0.1.0...agent-v0.2.0) (2026-01-04)
 
 
