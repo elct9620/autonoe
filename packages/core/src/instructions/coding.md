@@ -221,7 +221,7 @@ Update `.autonoe-note.md` with helpful information for handing off to the next a
 - Committed all work
 - Ensured `.autonoe/status.json` is up to date
 - Documented any important information in `.autonoe-note.md` for the next agent
-- Left environment in a clean and working state
+- Deleted any temporary files you created and left environment in a clean state
 
 Ensure no breaking features or incomplete work should be left behind. The next session will start from STEP 1 to verify previous work before continuing.
 

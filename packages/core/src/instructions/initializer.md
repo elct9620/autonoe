@@ -178,7 +178,7 @@ Before context fills up, ensure you have:
 - Commit all works with conventional commit messages with why you did it, avoid mention deliverable ids in commit messages
 - Create `.autonoe-note.md` summarizing what you accomplished
 - Use `mcp__autonoe-deliverable__set_deliverable_status` tool to update deliverable statuses (do NOT write directly to `.autonoe/status.json`)
-- Leave environment in a clean and working state
+- Delete any temporary files you created and leave environment in a clean state
 
 ```bash
 git add .
