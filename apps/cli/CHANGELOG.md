@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.0](https://github.com/elct9620/autonoe/compare/cli-v0.2.1...cli-v0.3.0) (2026-01-11)
+
+
+### Features
+
+* **core:** add progress feedback during quota wait ([942c408](https://github.com/elct9620/autonoe/commit/942c40873802aa1343e416b5bc7d7a74619d0500))
+
+
+### Bug Fixes
+
+* **cli:** output warn and error messages to stderr ([9de43af](https://github.com/elct9620/autonoe/commit/9de43af0666c2fa6bed85ca8d84856581dd3f1d9))
+* **cli:** treat all_blocked as failure per SPEC.md ([d8d1ee1](https://github.com/elct9620/autonoe/commit/d8d1ee1cba8aa268b401c714ae835bc1f98ab3ae))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @autonoe/core bumped to 0.3.0
+    * @autonoe/agent bumped to 0.3.0
+
 ## [0.2.1](https://github.com/elct9620/autonoe/compare/cli-v0.2.0...cli-v0.2.1) (2026-01-04)
 
 
