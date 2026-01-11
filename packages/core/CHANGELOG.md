@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/elct9620/autonoe/compare/core-v0.2.0...core-v0.3.0) (2026-01-11)
+
+
+### Features
+
+* **core:** add AgentClient.dispose() for resource cleanup ([9b6ac90](https://github.com/elct9620/autonoe/commit/9b6ac90c14b08e487a7d61c8b7d699039ce9b533))
+* **core:** add progress feedback during quota wait ([942c408](https://github.com/elct9620/autonoe/commit/942c40873802aa1343e416b5bc7d7a74619d0500))
+
 ## [0.2.0](https://github.com/elct9620/autonoe/compare/core-v0.1.0...core-v0.2.0) (2026-01-04)
 
 
