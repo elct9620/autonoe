@@ -2,42 +2,89 @@ import { resolve } from 'node:path'
 import { existsSync, statSync } from 'node:fs'
 import type { Logger } from '@autonoe/core'
 
+// ========== Common Options (Cost Control + Base) ==========
+
 /**
- * CLI options passed from argument parsing
+ * CLI common options shared between run and sync commands
  */
-export interface RunCommandOptions {
+export interface CommonCommandOptions {
   projectDir?: string
   maxIterations?: string
   maxRetries?: string
   model?: string
   debug?: boolean
-  sandbox?: boolean
   waitForQuota?: boolean
-  allowDestructive?: boolean
   thinking?: string | boolean
 }
 
 /**
- * Validated and normalized run options
+ * Validated and normalized common options
  */
-export interface ValidatedRunOptions {
+export interface ValidatedCommonOptions {
   projectDir: string
   maxIterations?: number
   maxRetries?: number
   model?: string
   debug: boolean
-  sandboxMode: SandboxMode
   waitForQuota: boolean
-  allowDestructive: boolean
   maxThinkingTokens?: number
 }
 
 /**
- * Result of option validation - discriminated union
+ * Result of common option validation - discriminated union
  */
-export type OptionsValidationResult =
+export type CommonOptionsValidationResult =
+  | { success: true; options: ValidatedCommonOptions }
+  | { success: false; error: string }
+
+// ========== Run Command Options (Security-related) ==========
+
+/**
+ * CLI options for run command (extends common options)
+ */
+export interface RunCommandOptions extends CommonCommandOptions {
+  sandbox?: boolean
+  allowDestructive?: boolean
+}
+
+/**
+ * Validated and normalized run options (extends common options)
+ */
+export interface ValidatedRunOptions extends ValidatedCommonOptions {
+  sandboxMode: SandboxMode
+  allowDestructive: boolean
+}
+
+/**
+ * Result of run option validation - discriminated union
+ */
+export type RunOptionsValidationResult =
   | { success: true; options: ValidatedRunOptions }
   | { success: false; error: string }
+
+// ========== Sync Command Options (uses common directly) ==========
+
+/**
+ * CLI options for sync command (same as common options)
+ */
+export type SyncCommandOptions = CommonCommandOptions
+
+/**
+ * Validated sync options (same as common validated options)
+ */
+export type ValidatedSyncOptions = ValidatedCommonOptions
+
+/**
+ * Result of sync option validation (same as common)
+ */
+export type SyncOptionsValidationResult = CommonOptionsValidationResult
+
+// ========== Backward Compatibility ==========
+
+/**
+ * @deprecated Use RunOptionsValidationResult instead
+ */
+export type OptionsValidationResult = RunOptionsValidationResult
 
 /**
  * Sandbox mode source - where the sandbox setting was determined
@@ -200,12 +247,11 @@ export function parseThinkingOption(
 }
 
 /**
- * Validate all run options and return validated result
+ * Validate common options shared between run and sync commands
  */
-export function validateRunOptions(
-  options: RunCommandOptions,
-  env: NodeJS.ProcessEnv = process.env,
-): OptionsValidationResult {
+export function validateCommonOptions(
+  options: CommonCommandOptions,
+): CommonOptionsValidationResult {
   const projectDir = options.projectDir
     ? resolve(options.projectDir)
     : process.cwd()
@@ -222,8 +268,6 @@ export function validateRunOptions(
     return { success: false, error: thinkingResult.error }
   }
 
-  const sandboxMode = SandboxMode.fromCliAndEnv(options.sandbox, env)
-
   return {
     success: true,
     options: {
@@ -232,11 +276,38 @@ export function validateRunOptions(
       maxRetries: parseNumericOption(options.maxRetries),
       model: options.model,
       debug: options.debug ?? false,
-      sandboxMode,
       waitForQuota: options.waitForQuota ?? false,
-      allowDestructive: options.allowDestructive ?? false,
       maxThinkingTokens:
         thinkingResult.type === 'enabled' ? thinkingResult.tokens : undefined,
+    },
+  }
+}
+
+/**
+ * Validate sync options (alias to validateCommonOptions)
+ */
+export const validateSyncOptions = validateCommonOptions
+
+/**
+ * Validate all run options and return validated result
+ */
+export function validateRunOptions(
+  options: RunCommandOptions,
+  env: NodeJS.ProcessEnv = process.env,
+): RunOptionsValidationResult {
+  const commonResult = validateCommonOptions(options)
+  if (!commonResult.success) {
+    return commonResult
+  }
+
+  const sandboxMode = SandboxMode.fromCliAndEnv(options.sandbox, env)
+
+  return {
+    success: true,
+    options: {
+      ...commonResult.options,
+      sandboxMode,
+      allowDestructive: options.allowDestructive ?? false,
     },
   }
 }

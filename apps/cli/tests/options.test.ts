@@ -7,6 +7,7 @@ import {
   validateProjectDir,
   parseNumericOption,
   parseThinkingOption,
+  validateCommonOptions,
   validateRunOptions,
   logSecurityWarnings,
   SandboxMode,
@@ -312,5 +313,66 @@ describe('logSecurityWarnings', () => {
     const logger = createMockLogger()
     logSecurityWarnings(logger, SandboxMode.disabledByCli(), true)
     expect(logger.warn).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('validateCommonOptions', () => {
+  let tempDir: string
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'autonoe-test-'))
+  })
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  it('OPT-070: returns error for non-existent project dir', () => {
+    const result = validateCommonOptions({ projectDir: '/non/existent' })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error).toContain('does not exist')
+    }
+  })
+
+  it('OPT-071: returns validated options for valid input', () => {
+    const result = validateCommonOptions({ projectDir: tempDir })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.options.projectDir).toBe(tempDir)
+    }
+  })
+
+  it('OPT-072: parses all numeric options', () => {
+    const result = validateCommonOptions({
+      projectDir: tempDir,
+      maxIterations: '10',
+      maxRetries: '3',
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.options.maxIterations).toBe(10)
+      expect(result.options.maxRetries).toBe(3)
+    }
+  })
+
+  it('OPT-073: sets default values for boolean options', () => {
+    const result = validateCommonOptions({ projectDir: tempDir })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.options.debug).toBe(false)
+      expect(result.options.waitForQuota).toBe(false)
+    }
+  })
+
+  it('OPT-074: returns error for invalid thinking budget', () => {
+    const result = validateCommonOptions({
+      projectDir: tempDir,
+      thinking: '100',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error).toContain('1024')
+    }
   })
 })

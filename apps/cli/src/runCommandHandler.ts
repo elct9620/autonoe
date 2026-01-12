@@ -8,11 +8,9 @@ import type {
 } from '@autonoe/core'
 import type { ValidatedRunOptions } from './options'
 import { logSecurityWarnings } from './options'
+import { VERSION } from './version'
 
-/**
- * Version constant - should match package.json
- */
-export const VERSION = '0.2.1' // x-release-please-version
+export { VERSION }
 
 /**
  * Handler for the 'run' command

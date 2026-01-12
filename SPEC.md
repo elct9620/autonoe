@@ -759,8 +759,11 @@ autonoe sync [options]
 
 Options:
   --project-dir, -p       Project directory (default: cwd)
-  --debug, -d             Show debug output
+  --max-iterations, -n    Maximum coding sessions
+  --max-retries           Maximum retries on session error (default: 3)
   --model, -m             Claude model to use
+  --debug, -d             Show debug output
+  --wait-for-quota        Wait for quota reset instead of exiting
   --thinking [budget]     Enable extended thinking mode (default: 8192)
 ```
 

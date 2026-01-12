@@ -2,6 +2,7 @@
 
 import cac from 'cac'
 import { handleRunCommand, VERSION } from '../src/run.ts'
+import { handleSyncCommand } from '../src/sync.ts'
 
 const cli = cac('autonoe')
 
@@ -35,6 +36,36 @@ cli
       sandbox: options.sandbox,
       waitForQuota: options.waitForQuota,
       allowDestructive: options.allowDestructive,
+      thinking: options.thinking,
+    })
+  })
+
+cli
+  .command('sync', 'Sync deliverables from SPEC.md')
+  .option(
+    '-p, --project-dir <path>',
+    'Project directory (default: current directory)',
+  )
+  .option('-n, --max-iterations <count>', 'Maximum coding sessions')
+  .option(
+    '--max-retries <count>',
+    'Maximum retries on session error (default: 3)',
+  )
+  .option('-m, --model <model>', 'Claude model to use')
+  .option('-d, --debug', 'Show debug output')
+  .option('--wait-for-quota', 'Wait for quota reset instead of exiting')
+  .option(
+    '--thinking [budget]',
+    'Enable extended thinking mode (default: 8192)',
+  )
+  .action(async (options) => {
+    await handleSyncCommand({
+      projectDir: options.projectDir,
+      maxIterations: options.maxIterations,
+      maxRetries: options.maxRetries,
+      model: options.model,
+      debug: options.debug,
+      waitForQuota: options.waitForQuota,
       thinking: options.thinking,
     })
   })
