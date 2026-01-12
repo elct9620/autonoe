@@ -716,24 +716,36 @@ See [Docker Configuration](docs/docker.md) for detailed build configuration.
 
 ## 8. CLI `[Design]`
 
-### 8.1 Usage
+### 8.1 Common Options
+
+All commands share the following options:
+
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--project-dir` | `-p` | Project directory | cwd |
+| `--max-iterations` | `-n` | Maximum coding sessions | - |
+| `--max-retries` | - | Maximum retries on session error | 3 |
+| `--model` | `-m` | Claude model to use | - |
+| `--debug` | `-d` | Show debug output | false |
+| `--wait-for-quota` | - | Wait for quota reset instead of exiting | false |
+| `--thinking` | - | Enable extended thinking mode (budget tokens) | 8192 |
+
+### 8.2 run Command
+
+#### 8.2.1 Usage
 
 ```
 autonoe run [options]
-
-Options:
-  --project-dir, -p       Project directory (default: cwd)
-  --max-iterations, -n    Maximum coding sessions
-  --max-retries           Maximum retries on session error (default: 3)
-  --model, -m             Claude model to use
-  --debug, -d             Show debug output
-  --no-sandbox            Disable SDK sandbox
-  --wait-for-quota        Wait for quota reset instead of exiting
-  --allow-destructive, -D Enable rm/mv with path validation
-  --thinking [budget]     Enable extended thinking mode (default: 8192)
 ```
 
-### 8.2 Behavior
+In addition to Common Options, the following options are available:
+
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--no-sandbox` | - | Disable SDK sandbox | false |
+| `--allow-destructive` | `-D` | Enable rm/mv with path validation | false |
+
+#### 8.2.2 Behavior
 
 - Runs in specified project directory (or cwd if not specified)
 - All relative paths (.autonoe/, SPEC.md) resolved from project directory
@@ -756,16 +768,9 @@ Options:
 
 ```
 autonoe sync [options]
-
-Options:
-  --project-dir, -p       Project directory (default: cwd)
-  --max-iterations, -n    Maximum coding sessions
-  --max-retries           Maximum retries on session error (default: 3)
-  --model, -m             Claude model to use
-  --debug, -d             Show debug output
-  --wait-for-quota        Wait for quota reset instead of exiting
-  --thinking [budget]     Enable extended thinking mode (default: 8192)
 ```
+
+Uses Common Options only. No additional options.
 
 #### 8.3.2 Behavior
 
