@@ -660,7 +660,7 @@ Sync mode restricts Base Security for verification-only operations:
 | ----------- | ------------------ | ----------------------- |
 | File Write  | None               | .autonoe-note.md only   |
 | Bash        | Status commands    | Verification layer only |
-| Playwright  | N/A                | Disabled                |
+| Playwright  | N/A                | Enabled (verify phase)  |
 
 **Command Layer:** Sync uses `verification` layer from each active profile:
 
@@ -887,6 +887,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | Bash                | LIMITED   | Test/lint/build commands only      |
 | Git                 | YES       | Full access                        |
 | autonoe-deliverable | YES       | status.json updates                |
+| Playwright          | YES       | Verify phase only                  |
 
 See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.
 
