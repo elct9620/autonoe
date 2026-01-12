@@ -184,4 +184,154 @@ describe('Deliverable', () => {
       expect(d.blocked).toBe(false)
     })
   })
+
+  describe('deprecated', () => {
+    describe('static create() with deprecatedAt', () => {
+      it('creates deliverable with deprecatedAt field', () => {
+        const d = Deliverable.create(
+          'DL-001',
+          'Test',
+          ['Criterion 1'],
+          true,
+          false,
+          '2025-01-10',
+        )
+
+        expect(d.deprecatedAt).toBe('2025-01-10')
+        expect(d.deprecated).toBe(true)
+      })
+
+      it('creates deliverable without deprecatedAt when not provided', () => {
+        const d = Deliverable.create(
+          'DL-001',
+          'Test',
+          ['Criterion 1'],
+          true,
+          false,
+        )
+
+        expect(d.deprecatedAt).toBeUndefined()
+        expect(d.deprecated).toBe(false)
+      })
+    })
+
+    describe('deprecated getter', () => {
+      it('returns true when deprecatedAt is set', () => {
+        const d = Deliverable.create(
+          'DL-001',
+          'Test',
+          ['Criterion 1'],
+          false,
+          false,
+          '2025-01-10',
+        )
+        expect(d.deprecated).toBe(true)
+      })
+
+      it('returns false when deprecatedAt is undefined', () => {
+        const d = Deliverable.pending('DL-001', 'Test', ['Criterion 1'])
+        expect(d.deprecated).toBe(false)
+      })
+    })
+
+    describe('markDeprecated()', () => {
+      it('returns new instance with deprecatedAt set to current date', () => {
+        const original = Deliverable.pending('DL-001', 'Test', ['Criterion 1'])
+        const deprecated = original.markDeprecated()
+
+        expect(deprecated).not.toBe(original)
+        expect(deprecated.deprecated).toBe(true)
+        expect(deprecated.deprecatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      })
+
+      it('uses provided date when specified', () => {
+        const original = Deliverable.pending('DL-001', 'Test', ['Criterion 1'])
+        const deprecated = original.markDeprecated('2025-01-15')
+
+        expect(deprecated.deprecatedAt).toBe('2025-01-15')
+      })
+
+      it('preserves current status when marking deprecated', () => {
+        const passed = Deliverable.passed('DL-001', 'Test', ['Criterion 1'])
+        const deprecated = passed.markDeprecated()
+
+        expect(deprecated.status).toBe('passed')
+        expect(deprecated.deprecated).toBe(true)
+      })
+
+      it('does not mutate original', () => {
+        const original = Deliverable.pending('DL-001', 'Test', ['Criterion 1'])
+        original.markDeprecated()
+
+        expect(original.deprecated).toBe(false)
+      })
+    })
+
+    describe('status transitions preserve deprecatedAt', () => {
+      it('markPassed preserves deprecatedAt', () => {
+        const deprecated = Deliverable.create(
+          'DL-001',
+          'Test',
+          ['Criterion 1'],
+          false,
+          false,
+          '2025-01-10',
+        )
+        const passed = deprecated.markPassed()
+
+        expect(passed.deprecatedAt).toBe('2025-01-10')
+        expect(passed.passed).toBe(true)
+      })
+
+      it('markBlocked preserves deprecatedAt', () => {
+        const deprecated = Deliverable.create(
+          'DL-001',
+          'Test',
+          ['Criterion 1'],
+          false,
+          false,
+          '2025-01-10',
+        )
+        const blocked = deprecated.markBlocked()
+
+        expect(blocked.deprecatedAt).toBe('2025-01-10')
+        expect(blocked.blocked).toBe(true)
+      })
+
+      it('reset preserves deprecatedAt', () => {
+        const deprecated = Deliverable.create(
+          'DL-001',
+          'Test',
+          ['Criterion 1'],
+          true,
+          false,
+          '2025-01-10',
+        )
+        const reset = deprecated.reset()
+
+        expect(reset.deprecatedAt).toBe('2025-01-10')
+        expect(reset.status).toBe('pending')
+      })
+    })
+
+    describe('factory methods create non-deprecated deliverables', () => {
+      it('pending() creates non-deprecated deliverable', () => {
+        const d = Deliverable.pending('DL-001', 'Test', ['Criterion 1'])
+        expect(d.deprecated).toBe(false)
+        expect(d.deprecatedAt).toBeUndefined()
+      })
+
+      it('passed() creates non-deprecated deliverable', () => {
+        const d = Deliverable.passed('DL-001', 'Test', ['Criterion 1'])
+        expect(d.deprecated).toBe(false)
+        expect(d.deprecatedAt).toBeUndefined()
+      })
+
+      it('blocked() creates non-deprecated deliverable', () => {
+        const d = Deliverable.blocked('DL-001', 'Test', ['Criterion 1'])
+        expect(d.deprecated).toBe(false)
+        expect(d.deprecatedAt).toBeUndefined()
+      })
+    })
+  })
 })

@@ -5,10 +5,12 @@ import {
   nullDeliverableStatusReader,
   type CreateDeliverableInput,
   type SetDeliverableStatusInput,
+  type DeprecateDeliverableInput,
 } from '../src/deliverableStatus'
 import {
   createDeliverables,
   setDeliverableStatus,
+  deprecateDeliverable,
 } from '../src/deliverableService'
 
 describe('createDeliverables', () => {
@@ -467,5 +469,275 @@ describe('nullDeliverableStatusReader', () => {
     expect([...status.deliverables]).toEqual([])
     expect(status.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     expect(status.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+})
+
+describe('DeliverableStatus deprecated handling', () => {
+  describe('activeDeliverables', () => {
+    it('excludes deprecated deliverables', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.pending('DL-001', 'Active', ['C']),
+        Deliverable.create(
+          'DL-002',
+          'Deprecated',
+          ['C'],
+          false,
+          false,
+          '2025-01-10',
+        ),
+        Deliverable.pending('DL-003', 'Also Active', ['C']),
+      ])
+
+      expect(status.activeDeliverables).toHaveLength(2)
+      expect(status.activeDeliverables.map((d) => d.id)).toEqual([
+        'DL-001',
+        'DL-003',
+      ])
+    })
+
+    it('returns all deliverables when none are deprecated', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.pending('DL-001', 'A', ['C']),
+        Deliverable.pending('DL-002', 'B', ['C']),
+      ])
+
+      expect(status.activeDeliverables).toHaveLength(2)
+    })
+
+    it('returns empty array when all are deprecated', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.create('DL-001', 'A', ['C'], true, false, '2025-01-10'),
+        Deliverable.create('DL-002', 'B', ['C'], false, false, '2025-01-10'),
+      ])
+
+      expect(status.activeDeliverables).toHaveLength(0)
+    })
+  })
+
+  describe('countDeprecated', () => {
+    it('returns 0 when no deprecated deliverables', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.pending('DL-001', 'A', ['C']),
+        Deliverable.passed('DL-002', 'B', ['C']),
+      ])
+
+      expect(status.countDeprecated()).toBe(0)
+    })
+
+    it('counts deprecated deliverables correctly', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.pending('DL-001', 'A', ['C']),
+        Deliverable.create('DL-002', 'B', ['C'], true, false, '2025-01-10'),
+        Deliverable.create('DL-003', 'C', ['C'], false, false, '2025-01-10'),
+      ])
+
+      expect(status.countDeprecated()).toBe(2)
+    })
+  })
+
+  describe('countPassed excludes deprecated', () => {
+    it('does not count deprecated deliverables even if passed', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.passed('DL-001', 'Active Passed', ['C']),
+        Deliverable.create(
+          'DL-002',
+          'Deprecated Passed',
+          ['C'],
+          true,
+          false,
+          '2025-01-10',
+        ),
+        Deliverable.pending('DL-003', 'Active Pending', ['C']),
+      ])
+
+      expect(status.countPassed()).toBe(1)
+    })
+  })
+
+  describe('countBlocked excludes deprecated', () => {
+    it('does not count deprecated deliverables even if blocked', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.blocked('DL-001', 'Active Blocked', ['C']),
+        Deliverable.create(
+          'DL-002',
+          'Deprecated Blocked',
+          ['C'],
+          false,
+          true,
+          '2025-01-10',
+        ),
+        Deliverable.pending('DL-003', 'Active Pending', ['C']),
+      ])
+
+      expect(status.countBlocked()).toBe(1)
+    })
+  })
+
+  describe('allAchievablePassed excludes deprecated', () => {
+    it('returns true when all active non-blocked pass, ignoring deprecated', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.passed('DL-001', 'Active Passed', ['C']),
+        Deliverable.create(
+          'DL-002',
+          'Deprecated Pending',
+          ['C'],
+          false,
+          false,
+          '2025-01-10',
+        ),
+      ])
+
+      expect(status.allAchievablePassed()).toBe(true)
+    })
+
+    it('returns false when only deprecated deliverables exist', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.create(
+          'DL-001',
+          'Deprecated',
+          ['C'],
+          true,
+          false,
+          '2025-01-10',
+        ),
+      ])
+
+      expect(status.allAchievablePassed()).toBe(false)
+    })
+  })
+
+  describe('allBlocked excludes deprecated', () => {
+    it('returns true when all active are blocked, ignoring deprecated', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.blocked('DL-001', 'Active Blocked', ['C']),
+        Deliverable.create(
+          'DL-002',
+          'Deprecated Pending',
+          ['C'],
+          false,
+          false,
+          '2025-01-10',
+        ),
+      ])
+
+      expect(status.allBlocked()).toBe(true)
+    })
+
+    it('returns false when only deprecated deliverables exist', () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.create(
+          'DL-001',
+          'Deprecated',
+          ['C'],
+          false,
+          true,
+          '2025-01-10',
+        ),
+      ])
+
+      expect(status.allBlocked()).toBe(false)
+    })
+  })
+})
+
+describe('deprecateDeliverable', () => {
+  it('marks deliverable as deprecated', () => {
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      Deliverable.pending('DL-001', 'Test', ['Criterion']),
+    ])
+    const input: DeprecateDeliverableInput = {
+      deliverableId: 'DL-001',
+    }
+
+    const result = deprecateDeliverable(status, input)
+
+    expect(result.result.success).toBe(true)
+    expect(result.result.message).toContain('deprecated')
+    expect(result.status.deliverables[0]!.deprecated).toBe(true)
+    expect(result.status.deliverables[0]!.deprecatedAt).toMatch(
+      /^\d{4}-\d{2}-\d{2}$/,
+    )
+  })
+
+  it('preserves existing status when deprecating', () => {
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      Deliverable.passed('DL-001', 'Test', ['Criterion']),
+    ])
+    const input: DeprecateDeliverableInput = {
+      deliverableId: 'DL-001',
+    }
+
+    const result = deprecateDeliverable(status, input)
+
+    expect(result.status.deliverables[0]!.passed).toBe(true)
+    expect(result.status.deliverables[0]!.deprecated).toBe(true)
+  })
+
+  it('returns error for non-existent deliverable', () => {
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      Deliverable.pending('DL-001', 'Existing', ['Criterion']),
+    ])
+    const input: DeprecateDeliverableInput = {
+      deliverableId: 'DL-999',
+    }
+
+    const result = deprecateDeliverable(status, input)
+
+    expect(result.result.success).toBe(false)
+    expect(result.result.error).toBe('NOT_FOUND')
+    expect(result.result.message).toContain('not found')
+    expect(result.status).toBe(status) // Status unchanged
+  })
+
+  it('returns error for already deprecated deliverable', () => {
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      Deliverable.create(
+        'DL-001',
+        'Already Deprecated',
+        ['Criterion'],
+        false,
+        false,
+        '2025-01-10',
+      ),
+    ])
+    const input: DeprecateDeliverableInput = {
+      deliverableId: 'DL-001',
+    }
+
+    const result = deprecateDeliverable(status, input)
+
+    expect(result.result.success).toBe(false)
+    expect(result.result.error).toBe('VALIDATION_ERROR')
+    expect(result.result.message).toContain('already deprecated')
+    expect(result.status).toBe(status) // Status unchanged
+  })
+
+  it('returns error for empty deliverable ID', () => {
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      Deliverable.pending('DL-001', 'Test', ['Criterion']),
+    ])
+    const input: DeprecateDeliverableInput = {
+      deliverableId: '',
+    }
+
+    const result = deprecateDeliverable(status, input)
+
+    expect(result.result.success).toBe(false)
+    expect(result.result.error).toBe('VALIDATION_ERROR')
+  })
+
+  it('preserves other deliverables', () => {
+    const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+      Deliverable.pending('DL-001', 'First', ['Criterion']),
+      Deliverable.pending('DL-002', 'Second', ['Criterion']),
+    ])
+    const input: DeprecateDeliverableInput = {
+      deliverableId: 'DL-001',
+    }
+
+    const result = deprecateDeliverable(status, input)
+
+    expect(result.status.deliverables[0]!.deprecated).toBe(true)
+    expect(result.status.deliverables[1]!.deprecated).toBe(false)
   })
 })

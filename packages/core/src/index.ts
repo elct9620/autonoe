@@ -91,6 +91,7 @@ export type {
   DeliverableInput,
   CreateDeliverableInput,
   SetDeliverableStatusInput,
+  DeprecateDeliverableInput,
   DeliverableStatusNotification,
   DeliverableStatusCallback,
   OperationResult,
@@ -103,7 +104,11 @@ export {
 } from './deliverableStatus'
 
 // Deliverable application services
-export { createDeliverables, setDeliverableStatus } from './deliverableService'
+export {
+  createDeliverables,
+  setDeliverableStatus,
+  deprecateDeliverable,
+} from './deliverableService'
 
 // Instruction exports
 export type { InstructionName, InstructionResolver } from './instructions'

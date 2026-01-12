@@ -22,17 +22,20 @@ export class Deliverable {
   readonly description: string
   readonly acceptanceCriteria: readonly string[]
   private readonly _status: DeliverableStatusValue
+  readonly deprecatedAt: string | undefined
 
   private constructor(
     id: string,
     description: string,
     acceptanceCriteria: string[],
     status: DeliverableStatusValue,
+    deprecatedAt?: string,
   ) {
     this.id = id
     this.description = description
     this.acceptanceCriteria = acceptanceCriteria
     this._status = status
+    this.deprecatedAt = deprecatedAt
   }
 
   /**
@@ -57,8 +60,16 @@ export class Deliverable {
   }
 
   /**
+   * Whether the deliverable is deprecated
+   */
+  get deprecated(): boolean {
+    return this.deprecatedAt !== undefined
+  }
+
+  /**
    * Factory method for deserialization (backward compatibility with JSON)
    * Converts legacy (passed, blocked) booleans to status value
+   * @param deprecatedAt - Optional deprecation date (YYYY-MM-DD format)
    */
   static create(
     id: string,
@@ -66,13 +77,20 @@ export class Deliverable {
     acceptanceCriteria: string[],
     passed: boolean,
     blocked: boolean,
+    deprecatedAt?: string,
   ): Deliverable {
     const status: DeliverableStatusValue = passed
       ? 'passed'
       : blocked
         ? 'blocked'
         : 'pending'
-    return new Deliverable(id, description, acceptanceCriteria, status)
+    return new Deliverable(
+      id,
+      description,
+      acceptanceCriteria,
+      status,
+      deprecatedAt,
+    )
   }
 
   /**
@@ -118,6 +136,7 @@ export class Deliverable {
       this.description,
       this.acceptanceCriteria as string[],
       'passed',
+      this.deprecatedAt,
     )
   }
 
@@ -131,6 +150,7 @@ export class Deliverable {
       this.description,
       this.acceptanceCriteria as string[],
       'blocked',
+      this.deprecatedAt,
     )
   }
 
@@ -144,6 +164,23 @@ export class Deliverable {
       this.description,
       this.acceptanceCriteria as string[],
       'pending',
+      this.deprecatedAt,
+    )
+  }
+
+  /**
+   * Mark deliverable as deprecated
+   * @param date - Optional date string (YYYY-MM-DD). Defaults to current date.
+   * @returns New Deliverable instance with deprecatedAt set
+   */
+  markDeprecated(date?: string): Deliverable {
+    const deprecatedAt = date ?? new Date().toISOString().split('T')[0]!
+    return new Deliverable(
+      this.id,
+      this.description,
+      this.acceptanceCriteria as string[],
+      this._status,
+      deprecatedAt,
     )
   }
 }

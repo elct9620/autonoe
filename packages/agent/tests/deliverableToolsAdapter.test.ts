@@ -8,7 +8,9 @@ import {
 import {
   handleCreateDeliverables,
   handleSetDeliverableStatus,
+  handleDeprecateDeliverable,
   createDeliverableMcpServer,
+  DELIVERABLE_TOOL_SETS,
 } from '../src/deliverableToolsAdapter'
 
 /**
@@ -408,21 +410,83 @@ describe('deliverableToolsAdapter', () => {
     })
   })
 
+  describe('handleDeprecateDeliverable', () => {
+    it('marks deliverable as deprecated and saves', async () => {
+      repository.setStatus(
+        DeliverableStatus.create('2025-01-01', '2025-01-01', [
+          Deliverable.pending('DL-001', 'Feature', ['AC1']),
+        ]),
+      )
+
+      const input = { deliverableId: 'DL-001' }
+      const result = await handleDeprecateDeliverable(repository, input)
+
+      expect(repository.loadCalls).toBe(1)
+      expect(repository.saveCalls).toBe(1)
+      expect(repository.savedStatus?.deliverables[0]?.deprecated).toBe(true)
+
+      const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+      expect(parsedResult.success).toBe(true)
+      expect(parsedResult.message).toContain('deprecated')
+    })
+
+    it('returns error for non-existent deliverable and does not save', async () => {
+      repository.setStatus(
+        DeliverableStatus.create('2025-01-01', '2025-01-01', []),
+      )
+
+      const input = { deliverableId: 'DL-999' }
+      const result = await handleDeprecateDeliverable(repository, input)
+
+      expect(repository.saveCalls).toBe(0)
+
+      const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+      expect(parsedResult.success).toBe(false)
+      expect(parsedResult.message).toContain('not found')
+    })
+
+    it('returns error for already deprecated deliverable', async () => {
+      repository.setStatus(
+        DeliverableStatus.create('2025-01-01', '2025-01-01', [
+          Deliverable.create(
+            'DL-001',
+            'Already Deprecated',
+            ['AC1'],
+            false,
+            false,
+            '2025-01-10',
+          ),
+        ]),
+      )
+
+      const input = { deliverableId: 'DL-001' }
+      const result = await handleDeprecateDeliverable(repository, input)
+
+      expect(repository.saveCalls).toBe(0)
+
+      const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+      expect(parsedResult.success).toBe(false)
+      expect(parsedResult.message).toContain('already deprecated')
+    })
+  })
+
   describe('createDeliverableMcpServer', () => {
     describe('DL-T010: Server structure', () => {
-      it('returns SDK MCP server configuration with required properties', () => {
-        const server = createDeliverableMcpServer(repository)
+      it('returns server and allowedTools', () => {
+        const result = createDeliverableMcpServer(repository)
 
-        // McpSdkServerConfigWithInstance has: type, name, instance
-        expect(server).toHaveProperty('type', 'sdk')
-        expect(server).toHaveProperty('name')
-        expect(server).toHaveProperty('instance')
+        expect(result).toHaveProperty('server')
+        expect(result).toHaveProperty('allowedTools')
+        // Server has McpSdkServerConfigWithInstance properties
+        expect(result.server).toHaveProperty('type', 'sdk')
+        expect(result.server).toHaveProperty('name')
+        expect(result.server).toHaveProperty('instance')
       })
     })
 
     describe('DL-T011: Server configuration', () => {
       it('has correct server name', () => {
-        const server = createDeliverableMcpServer(repository)
+        const { server } = createDeliverableMcpServer(repository)
 
         expect(server.name).toBe('autonoe-deliverable')
       })
@@ -430,12 +494,109 @@ describe('deliverableToolsAdapter', () => {
 
     describe('DL-T012: Server instance', () => {
       it('provides valid MCP server instance', () => {
-        const server = createDeliverableMcpServer(repository)
+        const { server } = createDeliverableMcpServer(repository)
 
         // SDK MCP server instance should be a valid object
         expect(server.instance).toBeDefined()
         expect(typeof server.instance).toBe('object')
       })
+    })
+
+    describe('Tool sets', () => {
+      it('defaults to coding tool set', () => {
+        const { server } = createDeliverableMcpServer(repository)
+        // Server should be created without error using default coding toolset
+        expect(server).toBeDefined()
+        expect(server.name).toBe('autonoe-deliverable')
+      })
+
+      it('accepts toolSet option', () => {
+        const { server } = createDeliverableMcpServer(repository, {
+          toolSet: 'initializer',
+        })
+        expect(server).toBeDefined()
+      })
+
+      it('accepts custom tool array', () => {
+        const { server } = createDeliverableMcpServer(repository, {
+          toolSet: ['create_deliverable', 'deprecate_deliverable'],
+        })
+        expect(server).toBeDefined()
+      })
+
+      it('accepts onStatusChange callback in options', () => {
+        const callback = vi.fn()
+        const { server } = createDeliverableMcpServer(repository, {
+          toolSet: 'coding',
+          onStatusChange: callback,
+        })
+        expect(server).toBeDefined()
+      })
+    })
+  })
+
+  describe('DELIVERABLE_TOOL_SETS', () => {
+    it('initializer set contains only create_deliverable', () => {
+      expect(DELIVERABLE_TOOL_SETS.initializer).toEqual(['create_deliverable'])
+    })
+
+    it('coding set contains only set_deliverable_status', () => {
+      expect(DELIVERABLE_TOOL_SETS.coding).toEqual(['set_deliverable_status'])
+    })
+
+    it('verify set contains only set_deliverable_status', () => {
+      expect(DELIVERABLE_TOOL_SETS.verify).toEqual(['set_deliverable_status'])
+    })
+
+    it('sync set contains create and deprecate', () => {
+      expect(DELIVERABLE_TOOL_SETS.sync).toEqual([
+        'create_deliverable',
+        'deprecate_deliverable',
+      ])
+    })
+  })
+
+  describe('allowedTools', () => {
+    it('returns MCP tool names for coding tool set', () => {
+      const { allowedTools } = createDeliverableMcpServer(repository, {
+        toolSet: 'coding',
+      })
+
+      expect(allowedTools).toEqual([
+        'mcp__autonoe-deliverable__set_deliverable_status',
+      ])
+    })
+
+    it('returns MCP tool names for initializer tool set', () => {
+      const { allowedTools } = createDeliverableMcpServer(repository, {
+        toolSet: 'initializer',
+      })
+
+      expect(allowedTools).toEqual([
+        'mcp__autonoe-deliverable__create_deliverable',
+      ])
+    })
+
+    it('returns MCP tool names for sync tool set', () => {
+      const { allowedTools } = createDeliverableMcpServer(repository, {
+        toolSet: 'sync',
+      })
+
+      expect(allowedTools).toEqual([
+        'mcp__autonoe-deliverable__create_deliverable',
+        'mcp__autonoe-deliverable__deprecate_deliverable',
+      ])
+    })
+
+    it('returns MCP tool names for custom tool array', () => {
+      const { allowedTools } = createDeliverableMcpServer(repository, {
+        toolSet: ['create_deliverable', 'set_deliverable_status'],
+      })
+
+      expect(allowedTools).toEqual([
+        'mcp__autonoe-deliverable__create_deliverable',
+        'mcp__autonoe-deliverable__set_deliverable_status',
+      ])
     })
   })
 })

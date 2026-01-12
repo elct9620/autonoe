@@ -52,15 +52,11 @@ export async function handleRunCommand(
 
   const onStatusChange = createStatusChangeCallback(logger)
 
-  const deliverableMcpServer = createDeliverableMcpServer(
-    repository,
-    onStatusChange,
-  )
-
-  const deliverableTools = [
-    'mcp__autonoe-deliverable__create_deliverable',
-    'mcp__autonoe-deliverable__set_deliverable_status',
-  ]
+  const { server: deliverableMcpServer, allowedTools: deliverableTools } =
+    createDeliverableMcpServer(repository, {
+      toolSet: 'coding',
+      onStatusChange,
+    })
 
   const bashSecurity = new DefaultBashSecurity({
     ...config.bashSecurity,

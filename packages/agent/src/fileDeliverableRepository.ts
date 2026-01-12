@@ -25,6 +25,7 @@ interface DeliverableJson {
   acceptanceCriteria: string[]
   passed: boolean
   blocked: boolean
+  deprecatedAt?: string
 }
 
 /**
@@ -50,6 +51,7 @@ function toDeliverableStatus(data: StatusJson): DeliverableStatus {
         d.acceptanceCriteria,
         d.passed,
         d.blocked,
+        d.deprecatedAt,
       ),
     ),
   )
@@ -119,6 +121,7 @@ export class FileDeliverableRepository implements DeliverableRepository {
         acceptanceCriteria: [...d.acceptanceCriteria],
         passed: d.passed,
         blocked: d.blocked,
+        ...(d.deprecatedAt && { deprecatedAt: d.deprecatedAt }),
       })),
     }
 

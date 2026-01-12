@@ -44,24 +44,38 @@ export class DeliverableStatus {
   }
 
   /**
-   * Count passed deliverables
+   * Get active (non-deprecated) deliverables for termination evaluation
+   */
+  get activeDeliverables(): readonly Deliverable[] {
+    return this.deliverables.filter((d) => !d.deprecated)
+  }
+
+  /**
+   * Count passed deliverables (excludes deprecated)
    */
   countPassed(): number {
-    return this.deliverables.filter((d) => d.passed).length
+    return this.activeDeliverables.filter((d) => d.passed).length
   }
 
   /**
-   * Count blocked deliverables
+   * Count blocked deliverables (excludes deprecated)
    */
   countBlocked(): number {
-    return this.deliverables.filter((d) => d.blocked).length
+    return this.activeDeliverables.filter((d) => d.blocked).length
   }
 
   /**
-   * Check if all achievable (non-blocked) deliverables have passed
+   * Count deprecated deliverables
+   */
+  countDeprecated(): number {
+    return this.deliverables.filter((d) => d.deprecated).length
+  }
+
+  /**
+   * Check if all achievable (non-blocked) deliverables have passed (excludes deprecated)
    */
   allAchievablePassed(): boolean {
-    const achievable = this.deliverables.filter((d) => !d.blocked)
+    const achievable = this.activeDeliverables.filter((d) => !d.blocked)
     if (achievable.length === 0) {
       return false
     }
@@ -69,13 +83,14 @@ export class DeliverableStatus {
   }
 
   /**
-   * Check if all deliverables are blocked
+   * Check if all deliverables are blocked (excludes deprecated)
    */
   allBlocked(): boolean {
-    if (this.deliverables.length === 0) {
+    const active = this.activeDeliverables
+    if (active.length === 0) {
       return false
     }
-    return this.deliverables.every((d) => d.blocked)
+    return active.every((d) => d.blocked)
   }
 
   /**
@@ -136,6 +151,13 @@ export type DeliverableStatusCallback = (
 export type SetDeliverableStatusInput = {
   deliverableId: string
   status: DeliverableStatusValue
+}
+
+/**
+ * Input for deprecate_deliverable tool
+ */
+export type DeprecateDeliverableInput = {
+  deliverableId: string
 }
 
 /**

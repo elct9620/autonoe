@@ -188,4 +188,123 @@ describe('FileDeliverableRepository', () => {
       expect(loaded.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
     })
   })
+
+  describe('deprecated deliverables', () => {
+    it('loads deliverable with deprecatedAt from JSON', async () => {
+      const expectedJson = {
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
+        deliverables: [
+          {
+            id: 'DL-001',
+            description: 'Deprecated Feature',
+            acceptanceCriteria: ['Criterion'],
+            passed: true,
+            blocked: false,
+            deprecatedAt: '2025-01-10',
+          },
+        ],
+      }
+
+      const autonoeDir = path.join(tempDir, '.autonoe')
+      await fs.mkdir(autonoeDir, { recursive: true })
+      await fs.writeFile(
+        path.join(autonoeDir, 'status.json'),
+        JSON.stringify(expectedJson),
+      )
+
+      const status = await repo.load()
+      const d = status.deliverables[0]!
+      expect(d.deprecated).toBe(true)
+      expect(d.deprecatedAt).toBe('2025-01-10')
+    })
+
+    it('loads deliverable without deprecatedAt (backward compatibility)', async () => {
+      const expectedJson = {
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
+        deliverables: [
+          {
+            id: 'DL-001',
+            description: 'Active Feature',
+            acceptanceCriteria: ['Criterion'],
+            passed: false,
+            blocked: false,
+            // No deprecatedAt field
+          },
+        ],
+      }
+
+      const autonoeDir = path.join(tempDir, '.autonoe')
+      await fs.mkdir(autonoeDir, { recursive: true })
+      await fs.writeFile(
+        path.join(autonoeDir, 'status.json'),
+        JSON.stringify(expectedJson),
+      )
+
+      const status = await repo.load()
+      const d = status.deliverables[0]!
+      expect(d.deprecated).toBe(false)
+      expect(d.deprecatedAt).toBeUndefined()
+    })
+
+    it('saves deprecatedAt when present', async () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.create(
+          'DL-001',
+          'Deprecated',
+          ['Criterion'],
+          true,
+          false,
+          '2025-01-10',
+        ),
+      ])
+
+      await repo.save(status)
+
+      const content = await fs.readFile(
+        path.join(tempDir, '.autonoe', 'status.json'),
+        'utf-8',
+      )
+      const saved = JSON.parse(content)
+      expect(saved.deliverables[0].deprecatedAt).toBe('2025-01-10')
+    })
+
+    it('does not include deprecatedAt when undefined', async () => {
+      const status = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.pending('DL-001', 'Active', ['Criterion']),
+      ])
+
+      await repo.save(status)
+
+      const content = await fs.readFile(
+        path.join(tempDir, '.autonoe', 'status.json'),
+        'utf-8',
+      )
+      const saved = JSON.parse(content)
+      expect(saved.deliverables[0]).not.toHaveProperty('deprecatedAt')
+    })
+
+    it('round-trip preserves deprecatedAt', async () => {
+      const original = DeliverableStatus.create('2025-01-01', '2025-01-01', [
+        Deliverable.pending('DL-001', 'Active', ['Criterion']),
+        Deliverable.create(
+          'DL-002',
+          'Deprecated',
+          ['Criterion'],
+          true,
+          false,
+          '2025-01-10',
+        ),
+      ])
+
+      await repo.save(original)
+      const loaded = await repo.load()
+
+      expect(loaded.deliverables[0]!.deprecated).toBe(false)
+      expect(loaded.deliverables[0]!.deprecatedAt).toBeUndefined()
+      expect(loaded.deliverables[1]!.deprecated).toBe(true)
+      expect(loaded.deliverables[1]!.deprecatedAt).toBe('2025-01-10')
+    })
+  })
 })

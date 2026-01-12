@@ -4,14 +4,57 @@ import type {
   DeliverableRepository,
   CreateDeliverableInput,
   SetDeliverableStatusInput,
+  DeprecateDeliverableInput,
   DeliverableStatusCallback,
 } from '@autonoe/core'
-import { createDeliverables, setDeliverableStatus } from '@autonoe/core'
+import {
+  createDeliverables,
+  setDeliverableStatus,
+  deprecateDeliverable,
+} from '@autonoe/core'
 
 /**
  * MCP tool output format (SDK required structure)
  */
 type McpToolOutput = { content: Array<{ type: 'text'; text: string }> }
+
+/**
+ * Available tool names for deliverable operations
+ */
+export type DeliverableToolName =
+  | 'create_deliverable'
+  | 'set_deliverable_status'
+  | 'deprecate_deliverable'
+
+/**
+ * Predefined tool sets for different session types
+ */
+export const DELIVERABLE_TOOL_SETS = {
+  initializer: ['create_deliverable'] as const,
+  coding: ['set_deliverable_status'] as const,
+  verify: ['set_deliverable_status'] as const,
+  sync: ['create_deliverable', 'deprecate_deliverable'] as const,
+} as const
+
+export type DeliverableToolSetName = keyof typeof DELIVERABLE_TOOL_SETS
+
+const MCP_SERVER_NAME = 'autonoe-deliverable'
+
+/**
+ * Result of creating a deliverable MCP server
+ */
+export interface DeliverableMcpServerResult {
+  server: ReturnType<typeof createSdkMcpServer>
+  allowedTools: string[]
+}
+
+/**
+ * Options for creating MCP server
+ */
+export interface DeliverableMcpServerOptions {
+  toolSet?: DeliverableToolSetName | DeliverableToolName[]
+  onStatusChange?: DeliverableStatusCallback
+}
 
 /**
  * Handler for create_deliverable tool (batch)
@@ -72,15 +115,48 @@ export async function handleSetDeliverableStatus(
 }
 
 /**
- * Create an SDK MCP server with deliverable tools
+ * Handler for deprecate_deliverable tool
+ * Extracted for testability
+ */
+export async function handleDeprecateDeliverable(
+  repository: DeliverableRepository,
+  input: DeprecateDeliverableInput,
+): Promise<McpToolOutput> {
+  const status = await repository.load()
+  const { status: newStatus, result } = deprecateDeliverable(status, input)
+
+  if (result.success) {
+    await repository.save(newStatus)
+  }
+
+  return {
+    content: [{ type: 'text' as const, text: JSON.stringify(result) }],
+  }
+}
+
+/**
+ * Create an SDK MCP server with configurable deliverable tools
  * @param repository - Repository for persisting deliverable status
- * @param onStatusChange - Optional callback for status change notifications
- * @returns SDK MCP server configuration with instance
+ * @param options - Configuration options including tool set and callbacks
+ * @returns Object containing the MCP server and allowed tool names
  */
 export function createDeliverableMcpServer(
   repository: DeliverableRepository,
-  onStatusChange?: DeliverableStatusCallback,
-) {
+  options: DeliverableMcpServerOptions = {},
+): DeliverableMcpServerResult {
+  const { toolSet = 'coding', onStatusChange } = options
+
+  // Resolve tool names from toolSet
+  const toolNames: readonly DeliverableToolName[] = Array.isArray(toolSet)
+    ? toolSet
+    : DELIVERABLE_TOOL_SETS[toolSet]
+
+  // Generate fully qualified MCP tool names
+  const allowedTools = toolNames.map(
+    (name) => `mcp__${MCP_SERVER_NAME}__${name}`,
+  )
+
+  // Define all available tools
   const createDeliverableTool = tool(
     'create_deliverable',
     'Create one or more deliverables in status.json. Use this in the initialization phase to define work units.',
@@ -116,9 +192,30 @@ export function createDeliverableMcpServer(
     (input) => handleSetDeliverableStatus(repository, input, onStatusChange),
   )
 
-  return createSdkMcpServer({
-    name: 'autonoe-deliverable',
+  const deprecateDeliverableTool = tool(
+    'deprecate_deliverable',
+    'Mark a deliverable as deprecated. Used during sync when deliverables are removed from SPEC.md. Deprecated deliverables are excluded from termination evaluation.',
+    {
+      deliverableId: z.string().describe('Deliverable ID to deprecate'),
+    },
+    (input) => handleDeprecateDeliverable(repository, input),
+  )
+
+  // Map tool names to tool instances
+  const toolMap = {
+    create_deliverable: createDeliverableTool,
+    set_deliverable_status: setDeliverableStatusTool,
+    deprecate_deliverable: deprecateDeliverableTool,
+  } as const
+
+  // Select tools based on tool set
+  const selectedTools = toolNames.map((name) => toolMap[name])
+
+  const server = createSdkMcpServer({
+    name: MCP_SERVER_NAME,
     version: '1.0.0',
-    tools: [createDeliverableTool, setDeliverableStatusTool],
+    tools: selectedTools,
   })
+
+  return { server, allowedTools }
 }

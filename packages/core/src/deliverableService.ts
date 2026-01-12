@@ -8,6 +8,7 @@ import {
   DeliverableStatus,
   type CreateDeliverableInput,
   type SetDeliverableStatusInput,
+  type DeprecateDeliverableInput,
   type OperationResult,
 } from './deliverableStatus'
 
@@ -193,5 +194,57 @@ export function setDeliverableStatus(
   return success(
     status.withDeliverables(updatedDeliverables),
     `Deliverable "${updated.description}" (${updated.id}) marked as ${input.status}`,
+  )
+}
+
+/**
+ * Mark a deliverable as deprecated
+ * Sets deprecatedAt to current date (YYYY-MM-DD format)
+ * @returns Updated status and tool result
+ */
+export function deprecateDeliverable(
+  status: DeliverableStatus,
+  input: DeprecateDeliverableInput,
+): { status: DeliverableStatus; result: OperationResult } {
+  // Validate input
+  if (!input.deliverableId || input.deliverableId.trim() === '') {
+    return failure(status, 'Deliverable ID is required', 'VALIDATION_ERROR')
+  }
+
+  // Find deliverable
+  const index = status.deliverables.findIndex(
+    (d) => d.id === input.deliverableId,
+  )
+  if (index === -1) {
+    return failure(
+      status,
+      `Deliverable with ID "${input.deliverableId}" not found`,
+      'NOT_FOUND',
+    )
+  }
+
+  const existing = status.deliverables[index]!
+
+  // Check if already deprecated
+  if (existing.deprecated) {
+    return failure(
+      status,
+      `Deliverable "${input.deliverableId}" is already deprecated`,
+      'VALIDATION_ERROR',
+    )
+  }
+
+  // Mark as deprecated
+  const updated = existing.markDeprecated()
+
+  const updatedDeliverables = [
+    ...status.deliverables.slice(0, index),
+    updated,
+    ...status.deliverables.slice(index + 1),
+  ]
+
+  return success(
+    status.withDeliverables(updatedDeliverables),
+    `Deliverable "${existing.description}" (${existing.id}) marked as deprecated`,
   )
 }

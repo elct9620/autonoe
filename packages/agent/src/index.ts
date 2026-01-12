@@ -6,4 +6,12 @@ export {
   createDeliverableMcpServer,
   handleCreateDeliverables,
   handleSetDeliverableStatus,
+  handleDeprecateDeliverable,
+  DELIVERABLE_TOOL_SETS,
+} from './deliverableToolsAdapter'
+export type {
+  DeliverableToolName,
+  DeliverableToolSetName,
+  DeliverableMcpServerOptions,
+  DeliverableMcpServerResult,
 } from './deliverableToolsAdapter'
