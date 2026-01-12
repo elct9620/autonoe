@@ -86,8 +86,8 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 │  │  ┌─────────────────────────────────────────────────────────────────┐││
 │  │  │                      MCP Servers                                 │││
 │  │  │  ┌─────────────┐  ┌─────────────┐  ┌───────────────────────┐    │││
-│  │  │  │  Playwright │  │  Built-in   │  │   File System         │    │││
-│  │  │  │  (Browser)  │  │  (Bash)     │  │   (Read/Write)        │    │││
+│  │  │  │  Browser    │  │  Built-in   │  │   File System         │    │││
+│  │  │  │  Automation │  │  (Bash)     │  │   (Read/Write)        │    │││
 │  │  │  └─────────────┘  └─────────────┘  └───────────────────────┘    │││
 │  │  └─────────────────────────────────────────────────────────────────┘││
 │  └─────────────────────────────────────────────────────────────────────┘│
@@ -120,11 +120,11 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 
 ### 1.3 Coding Agent Tools
 
-| Tool        | Source         | Purpose                  |
-| ----------- | -------------- | ------------------------ |
-| Browser     | Playwright MCP | E2E testing via browser  |
-| File System | SDK Built-in   | Read/Write project files |
-| Bash        | SDK Built-in   | Execute allowed commands |
+| Tool        | Source                      | Purpose                            |
+| ----------- | --------------------------- | ---------------------------------- |
+| Browser     | Playwright MCP (pre-installed) | Browser automation for verification |
+| File System | SDK Built-in                | Read/Write project files           |
+| Bash        | SDK Built-in                | Execute allowed commands           |
 
 ### 1.4 Coding Conventions
 
@@ -315,7 +315,14 @@ Retry behavior:
 
 ## 4. Browser Automation (Coding Agent) `[Design]`
 
-### 4.1 Playwright MCP Tools
+Autonoe supports Browser Automation for verifying UI behavior and executing E2E tests.
+
+**Design Decisions:**
+- Browser Automation is recommended for verification
+- Playwright MCP is pre-installed as the default tool
+- Users can configure alternative Browser Automation tools via `agent.json` `mcpServers`
+
+### 4.1 Pre-installed Tool: Playwright MCP
 
 Uses Microsoft Playwright MCP server (`@playwright/mcp@latest`) with session isolation:
 
