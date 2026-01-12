@@ -34,6 +34,7 @@ export const DELIVERABLE_TOOL_SETS = {
   coding: ['set_deliverable_status'] as const,
   verify: ['set_deliverable_status'] as const,
   sync: ['create_deliverable', 'deprecate_deliverable'] as const,
+  run: ['create_deliverable', 'set_deliverable_status'] as const,
 } as const
 
 export type DeliverableToolSetName = keyof typeof DELIVERABLE_TOOL_SETS

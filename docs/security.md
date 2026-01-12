@@ -30,15 +30,23 @@ Shared security capabilities for all execution modes.
 
 ### Base Bash Commands
 
-Status and navigation commands available in all modes:
+Base profile contains two command layers:
 
-| Category   | Commands                                               |
-| ---------- | ------------------------------------------------------ |
-| Navigation | ls, pwd, cat, head, tail, wc, find, grep               |
-| Text       | tree, sort, diff, printf, date, uniq, cut, tr, tac, jq |
-| Process    | echo, which, ps, lsof, sleep                           |
-| File Ops   | mkdir                                                  |
-| Git        | git                                                    |
+**Status Layer (verification)** - Available in all modes including `sync`:
+
+| Category   | Commands                                 |
+| ---------- | ---------------------------------------- |
+| Navigation | ls, pwd, cat, head, tail, wc, find, grep |
+| Text       | tree, sort, diff, date                   |
+| Git        | git                                      |
+
+**Operations Layer (development)** - Only available in `run` mode:
+
+| Category | Commands                       |
+| -------- | ------------------------------ |
+| Text     | printf, uniq, cut, tr, tac, jq |
+| Process  | echo, which, ps, lsof, sleep   |
+| File Ops | mkdir, cp                      |
 
 ### Validation Flow
 
@@ -274,12 +282,12 @@ Sync mode restricts Base Security for verification-only operations. Prevents mod
 
 ### Restrictions from Base
 
-| Capability | Base            | Sync                  |
-| ---------- | --------------- | --------------------- |
-| File Write | None            | .autonoe-note.md only |
-| File Edit  | None            | .autonoe-note.md only |
-| Bash       | Status commands | Test/lint/build only  |
-| Playwright | N/A             | Disabled              |
+| Capability | Base            | Sync                    |
+| ---------- | --------------- | ----------------------- |
+| File Write | None            | .autonoe-note.md only   |
+| File Edit  | None            | .autonoe-note.md only   |
+| Bash       | Status commands | Verification layer only |
+| Playwright | N/A             | Enabled (verify phase)  |
 
 ### Allowed Tools
 
@@ -290,21 +298,26 @@ Sync mode restricts Base Security for verification-only operations. Prevents mod
 | File Edit           | LIMITED   | .autonoe-note.md only      |
 | Bash                | LIMITED   | Verification commands only |
 | Git                 | YES       | Full access                |
-| Playwright          | NO        | Disabled                   |
+| Playwright          | YES       | Verification phase         |
 | autonoe-deliverable | YES       | status.json updates        |
 
 ### Allowed Bash Commands
 
 Sync uses the **verification layer** from each active profile. Only verification commands are allowed:
 
-| Profile | Verification Commands                                                                                  |
-| ------- | ------------------------------------------------------------------------------------------------------ |
-| node    | npm test, bun test, vitest, jest, tsc --noEmit, eslint, prettier --check, npm run build, bun run build |
-| python  | pytest, tox, nox, mypy, pyright, ruff check, flake8, pylint                                            |
-| ruby    | rspec, minitest, cucumber, rubocop, standard                                                           |
-| go      | go test, go build, gofmt -d, golangci-lint, staticcheck                                                |
+| Profile | Verification Commands                                                                    |
+| ------- | ---------------------------------------------------------------------------------------- |
+| base    | ls, pwd, cat, head, tail, wc, find, grep, tree, sort, diff, date, git                    |
+| node    | npm, npx, bun, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome |
+| python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint               |
+| ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard                       |
+| go      | go, gofmt, goimports, golangci-lint, staticcheck                                         |
 
-**Base status commands** (always available): `ls`, `cat`, `head`, `tail`
+**Notes:**
+
+- Package managers are allowed for running test scripts (e.g., `npm test`, `bundle exec rspec`)
+- Auto-fix commands (e.g., `prettier --write`, `rubocop -a`) are excluded
+- User extensions (`allowCommands`) are ignored in sync mode
 
 **Profile × Command Behavior:**
 

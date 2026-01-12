@@ -54,12 +54,13 @@ export async function handleRunCommand(
 
   const { server: deliverableMcpServer, allowedTools: deliverableTools } =
     createDeliverableMcpServer(repository, {
-      toolSet: 'coding',
+      toolSet: 'run',
       onStatusChange,
     })
 
   const bashSecurity = new DefaultBashSecurity({
     ...config.bashSecurity,
+    mode: 'run',
     allowDestructive: validatedOptions.allowDestructive,
     projectDir: validatedOptions.projectDir,
   })

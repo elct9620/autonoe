@@ -1,15 +1,20 @@
 /**
- * Profile command sets and related data
- * @see SPEC.md Section 6.3.2
+ * Profile command sets with layer support
+ * @see SPEC.md Section 5.4, 6.4
  */
 
-import type { ProfileName } from './types'
+import type { ProfileName, ProfileCommandSet } from './types'
+
+// =============================================================================
+// Base Profile
+// =============================================================================
 
 /**
- * Base profile commands (always included)
- * @see SPEC.md Section 6.3.2
+ * Base status commands (verification layer)
+ * Read-only commands available in all modes including sync
+ * @see SPEC.md Section 6.2
  */
-export const BASE_COMMANDS = new Set([
+export const BASE_STATUS_COMMANDS = new Set([
   // Navigation
   'ls',
   'pwd',
@@ -19,11 +24,24 @@ export const BASE_COMMANDS = new Set([
   'wc',
   'find',
   'grep',
+  // Text Processing
+  'tree',
+  'sort',
+  'diff',
+  'date',
+  // Git (sync needs to read version state)
+  'git',
+])
+
+/**
+ * Base operation commands (development layer only)
+ * Commands that may modify state, only available in run mode
+ * @see SPEC.md Section 6.2
+ */
+export const BASE_OPERATION_COMMANDS = new Set([
   // File Ops
   'mkdir',
   'cp',
-  // Git
-  'git',
   // Process
   'echo',
   'which',
@@ -31,11 +49,7 @@ export const BASE_COMMANDS = new Set([
   'lsof',
   'sleep',
   // Text Processing
-  'tree',
-  'sort',
-  'diff',
   'printf',
-  'date',
   'uniq',
   'cut',
   'tr',
@@ -44,73 +58,104 @@ export const BASE_COMMANDS = new Set([
 ])
 
 /**
- * Node.js profile commands
- * @see SPEC.md Section 6.3.2
+ * All base commands (status + operations)
  */
-export const NODE_COMMANDS = new Set([
-  // Runtime
-  'node',
-  'bun',
-  'deno',
-  // Package
+export const BASE_COMMANDS = new Set([
+  ...BASE_STATUS_COMMANDS,
+  ...BASE_OPERATION_COMMANDS,
+])
+
+// =============================================================================
+// Node.js Profile
+// =============================================================================
+
+/**
+ * Node.js verification commands (sync mode)
+ * Package managers included for running test scripts
+ */
+export const NODE_VERIFICATION_COMMANDS = new Set([
+  // Package managers (for npm test, bun test, etc.)
   'npm',
   'npx',
+  'bun',
   'yarn',
   'pnpm',
-  // Build
+  // Test runners
+  'vitest',
+  'jest',
+  'playwright',
+  'mocha',
+  // Type check
   'tsc',
+  // Lint (read-only)
+  'eslint',
+  'prettier',
+  'biome',
+])
+
+/**
+ * Node.js development commands (run mode only)
+ */
+export const NODE_DEVELOPMENT_COMMANDS = new Set([
+  // Runtime
+  'node',
+  'deno',
+  // Build tools
   'esbuild',
   'vite',
   'webpack',
   'rollup',
-  // Test
-  'jest',
-  'vitest',
-  'playwright',
-  'mocha',
-  // Lint
-  'eslint',
-  'prettier',
-  'biome',
-  // Framework
+  // Framework CLI
   'next',
   'nuxt',
   'astro',
   'remix',
 ])
 
+// =============================================================================
+// Python Profile
+// =============================================================================
+
 /**
- * Python profile commands
- * @see SPEC.md Section 6.3.2
+ * Python verification commands (sync mode)
  */
-export const PYTHON_COMMANDS = new Set([
-  // Runtime
-  'python',
-  'python3',
-  // Package
+export const PYTHON_VERIFICATION_COMMANDS = new Set([
+  // Package managers (for pip install -e, pytest, etc.)
   'pip',
   'pip3',
   'pipx',
   'uv',
-  // Venv
-  'venv',
-  'virtualenv',
-  'conda',
-  // Build
+  // Test runners
+  'pytest',
+  'tox',
+  'nox',
+  // Type check
+  'mypy',
+  'pyright',
+  // Lint (read-only)
+  'ruff',
+  'flake8',
+  'pylint',
+])
+
+/**
+ * Python development commands (run mode only)
+ */
+export const PYTHON_DEVELOPMENT_COMMANDS = new Set([
+  // Runtime
+  'python',
+  'python3',
+  // Build tools
   'poetry',
   'pdm',
   'hatch',
   'flit',
-  // Test
-  'pytest',
-  'tox',
-  'nox',
-  // Lint
-  'ruff',
+  // Environment
+  'venv',
+  'virtualenv',
+  'conda',
+  // Format (auto-fix)
   'black',
-  'mypy',
-  'flake8',
-  'pylint',
   // Framework
   'django-admin',
   'flask',
@@ -118,28 +163,37 @@ export const PYTHON_COMMANDS = new Set([
   'gunicorn',
 ])
 
+// =============================================================================
+// Ruby Profile
+// =============================================================================
+
 /**
- * Ruby profile commands
- * @see SPEC.md Section 6.3.2
+ * Ruby verification commands (sync mode)
  */
-export const RUBY_COMMANDS = new Set([
-  // Runtime
-  'ruby',
-  'irb',
-  // Package
-  'gem',
+export const RUBY_VERIFICATION_COMMANDS = new Set([
+  // Package managers (for bundle exec rspec, etc.)
   'bundle',
   'bundler',
-  // Build
-  'rake',
-  'thor',
-  // Test
+  'gem',
+  // Test runners
   'rspec',
   'minitest',
   'cucumber',
-  // Lint
+  // Lint (read-only)
   'rubocop',
   'standard',
+])
+
+/**
+ * Ruby development commands (run mode only)
+ */
+export const RUBY_DEVELOPMENT_COMMANDS = new Set([
+  // Runtime
+  'ruby',
+  'irb',
+  // Build tools
+  'rake',
+  'thor',
   // Framework
   'rails',
   'hanami',
@@ -147,36 +201,81 @@ export const RUBY_COMMANDS = new Set([
   'unicorn',
 ])
 
+// =============================================================================
+// Go Profile
+// =============================================================================
+
 /**
- * Go profile commands
- * @see SPEC.md Section 6.3.2
+ * Go verification commands (sync mode)
  */
-export const GO_COMMANDS = new Set([
-  // Runtime
+export const GO_VERIFICATION_COMMANDS = new Set([
+  // Runtime (go test, go build)
   'go',
-  // Format
+  // Format check
   'gofmt',
   'goimports',
   // Lint
-  'golint',
   'golangci-lint',
   'staticcheck',
+])
+
+/**
+ * Go development commands (run mode only)
+ */
+export const GO_DEVELOPMENT_COMMANDS = new Set([
   // Tools
   'gopls',
   'dlv',
   'goreleaser',
+  'golint',
 ])
 
+// =============================================================================
+// Profile Command Sets (Layered)
+// =============================================================================
+
 /**
- * Profile to commands mapping
+ * Profile to layered commands mapping
+ * @see SPEC.md Section 5.4
  */
-export const PROFILE_COMMANDS: Record<ProfileName, Set<string>> = {
-  base: BASE_COMMANDS,
-  node: NODE_COMMANDS,
-  python: PYTHON_COMMANDS,
-  ruby: RUBY_COMMANDS,
-  go: GO_COMMANDS,
+export const PROFILE_COMMAND_SETS: Record<ProfileName, ProfileCommandSet> = {
+  base: {
+    verification: BASE_STATUS_COMMANDS,
+    development: BASE_COMMANDS,
+  },
+  node: {
+    verification: NODE_VERIFICATION_COMMANDS,
+    development: new Set([
+      ...NODE_VERIFICATION_COMMANDS,
+      ...NODE_DEVELOPMENT_COMMANDS,
+    ]),
+  },
+  python: {
+    verification: PYTHON_VERIFICATION_COMMANDS,
+    development: new Set([
+      ...PYTHON_VERIFICATION_COMMANDS,
+      ...PYTHON_DEVELOPMENT_COMMANDS,
+    ]),
+  },
+  ruby: {
+    verification: RUBY_VERIFICATION_COMMANDS,
+    development: new Set([
+      ...RUBY_VERIFICATION_COMMANDS,
+      ...RUBY_DEVELOPMENT_COMMANDS,
+    ]),
+  },
+  go: {
+    verification: GO_VERIFICATION_COMMANDS,
+    development: new Set([
+      ...GO_VERIFICATION_COMMANDS,
+      ...GO_DEVELOPMENT_COMMANDS,
+    ]),
+  },
 }
+
+// =============================================================================
+// Validation & Destructive Commands
+// =============================================================================
 
 /**
  * Commands requiring argument validation (always enabled)
@@ -185,7 +284,7 @@ export const VALIDATED_COMMANDS = new Set(['chmod', 'pkill'])
 
 /**
  * Destructive commands that require special validation
- * Only enabled when --allow-destructive flag is set
+ * Only enabled when --allow-destructive flag is set (run mode only)
  * @see SPEC.md Section 6.4.2
  */
 export const DESTRUCTIVE_COMMANDS = new Set(['rm', 'mv'])
@@ -195,6 +294,10 @@ export const DESTRUCTIVE_COMMANDS = new Set(['rm', 'mv'])
  * @see SPEC.md Section 6.4.4
  */
 export const BLOCKED_RM_FLAGS = new Set(['--no-preserve-root'])
+
+// =============================================================================
+// pkill Targets
+// =============================================================================
 
 /**
  * pkill targets per profile
@@ -226,6 +329,10 @@ export const PROFILE_PKILL_TARGETS: Record<ProfileName, Set<string>> = {
   ruby: RUBY_PKILL_TARGETS,
   go: GO_PKILL_TARGETS,
 }
+
+// =============================================================================
+// Other Patterns
+// =============================================================================
 
 /**
  * Pattern for allowed chmod modes (+x variants)

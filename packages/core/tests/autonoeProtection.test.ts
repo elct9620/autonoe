@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { createAutonoeProtectionHook } from '../src/autonoeProtection'
+import {
+  createAutonoeProtectionHook,
+  createSyncWriteRestrictionHook,
+  SYNC_ALLOWED_WRITE_PATHS,
+} from '../src/autonoeProtection'
 
 describe('Autonoe Protection', () => {
   describe('SC-AP001: Block .autonoe/status.json', () => {
@@ -205,6 +209,140 @@ describe('Autonoe Protection', () => {
       const result = await hook.callback({
         toolName: 'Edit',
         toolInput: { file_path: 'deep/nested/.autonoe/file.json' },
+      })
+
+      expect(result.decision).toBe('block')
+    })
+  })
+})
+
+describe('Sync Write Restriction', () => {
+  describe('SYNC_ALLOWED_WRITE_PATHS', () => {
+    it('contains .autonoe-note.md', () => {
+      expect(SYNC_ALLOWED_WRITE_PATHS).toContain('.autonoe-note.md')
+    })
+  })
+
+  describe('createSyncWriteRestrictionHook', () => {
+    it('has correct name', () => {
+      const hook = createSyncWriteRestrictionHook()
+      expect(hook.name).toBe('sync-write-restriction')
+    })
+
+    it('has correct matcher for Edit|Write', () => {
+      const hook = createSyncWriteRestrictionHook()
+      expect(hook.matcher).toBe('Edit|Write')
+    })
+  })
+
+  describe('SC-SWR001: Allow .autonoe-note.md', () => {
+    it('approves write to .autonoe-note.md', async () => {
+      const hook = createSyncWriteRestrictionHook()
+      const result = await hook.callback({
+        toolName: 'Write',
+        toolInput: { file_path: '.autonoe-note.md' },
+      })
+
+      expect(result.decision).toBe('approve')
+      expect(result.continue).toBe(true)
+    })
+
+    it('approves write to /project/.autonoe-note.md', async () => {
+      const hook = createSyncWriteRestrictionHook()
+      const result = await hook.callback({
+        toolName: 'Edit',
+        toolInput: { file_path: '/project/.autonoe-note.md' },
+      })
+
+      expect(result.decision).toBe('approve')
+    })
+  })
+
+  describe('SC-SWR002: Block all other files', () => {
+    it('blocks write to src/index.ts', async () => {
+      const hook = createSyncWriteRestrictionHook()
+      const result = await hook.callback({
+        toolName: 'Write',
+        toolInput: { file_path: 'src/index.ts' },
+      })
+
+      expect(result.decision).toBe('block')
+      expect(result.continue).toBe(false)
+      expect(result.reason).toContain('Sync mode')
+    })
+
+    it('blocks write to package.json', async () => {
+      const hook = createSyncWriteRestrictionHook()
+      const result = await hook.callback({
+        toolName: 'Edit',
+        toolInput: { file_path: 'package.json' },
+      })
+
+      expect(result.decision).toBe('block')
+    })
+
+    it('blocks write to README.md', async () => {
+      const hook = createSyncWriteRestrictionHook()
+      const result = await hook.callback({
+        toolName: 'Write',
+        toolInput: { file_path: 'README.md' },
+      })
+
+      expect(result.decision).toBe('block')
+    })
+  })
+
+  describe('SC-SWR003: Handle undefined file_path', () => {
+    it('approves when file_path is undefined', async () => {
+      const hook = createSyncWriteRestrictionHook()
+      const result = await hook.callback({
+        toolName: 'Write',
+        toolInput: {},
+      })
+
+      expect(result.decision).toBe('approve')
+      expect(result.continue).toBe(true)
+    })
+  })
+
+  describe('SC-SWR004: Handle camelCase filePath', () => {
+    it('approves .autonoe-note.md with camelCase filePath', async () => {
+      const hook = createSyncWriteRestrictionHook()
+      const result = await hook.callback({
+        toolName: 'Write',
+        toolInput: { filePath: '.autonoe-note.md' },
+      })
+
+      expect(result.decision).toBe('approve')
+    })
+
+    it('blocks other files with camelCase filePath', async () => {
+      const hook = createSyncWriteRestrictionHook()
+      const result = await hook.callback({
+        toolName: 'Edit',
+        toolInput: { filePath: 'src/app.ts' },
+      })
+
+      expect(result.decision).toBe('block')
+    })
+  })
+
+  describe('SC-SWR005: Handle Windows paths', () => {
+    it('approves Windows path to .autonoe-note.md', async () => {
+      const hook = createSyncWriteRestrictionHook()
+      const result = await hook.callback({
+        toolName: 'Write',
+        toolInput: { file_path: 'C:\\project\\.autonoe-note.md' },
+      })
+
+      expect(result.decision).toBe('approve')
+    })
+
+    it('blocks Windows path to other files', async () => {
+      const hook = createSyncWriteRestrictionHook()
+      const result = await hook.callback({
+        toolName: 'Edit',
+        toolInput: { file_path: 'C:\\project\\src\\index.ts' },
       })
 
       expect(result.decision).toBe('block')

@@ -834,4 +834,85 @@ describe('Destructive Commands (--allow-destructive)', () => {
       expect(result.allowed).toBe(false)
     })
   })
+
+  describe('Sync mode (mode: "sync")', () => {
+    it('allows verification layer commands (npm, vitest, eslint)', () => {
+      const security = new DefaultBashSecurity({ mode: 'sync' })
+      expect(security.isCommandAllowed('npm test').allowed).toBe(true)
+      expect(security.isCommandAllowed('vitest').allowed).toBe(true)
+      expect(security.isCommandAllowed('eslint .').allowed).toBe(true)
+      expect(security.isCommandAllowed('git status').allowed).toBe(true)
+    })
+
+    it('allows base status commands (ls, cat, grep)', () => {
+      const security = new DefaultBashSecurity({ mode: 'sync' })
+      expect(security.isCommandAllowed('ls -la').allowed).toBe(true)
+      expect(security.isCommandAllowed('cat file.txt').allowed).toBe(true)
+      expect(security.isCommandAllowed('grep "test" file.txt').allowed).toBe(
+        true,
+      )
+    })
+
+    it('blocks development-only commands (node, mkdir, echo)', () => {
+      const security = new DefaultBashSecurity({ mode: 'sync' })
+      expect(security.isCommandAllowed('node script.js').allowed).toBe(false)
+      expect(security.isCommandAllowed('mkdir newdir').allowed).toBe(false)
+      expect(security.isCommandAllowed('echo "test"').allowed).toBe(false)
+    })
+
+    it('ignores allowCommands in sync mode', () => {
+      const security = new DefaultBashSecurity({
+        mode: 'sync',
+        allowCommands: ['custom-command'],
+      })
+      expect(security.isCommandAllowed('custom-command').allowed).toBe(false)
+    })
+
+    it('always disables destructive commands in sync mode', () => {
+      const security = new DefaultBashSecurity({
+        mode: 'sync',
+        allowDestructive: true, // Should be ignored in sync mode
+        projectDir,
+      })
+      expect(security.isCommandAllowed('rm file.txt').allowed).toBe(false)
+      expect(security.isCommandAllowed('mv src.ts dst.ts').allowed).toBe(false)
+    })
+
+    it('respects activeProfiles in sync mode', () => {
+      const security = new DefaultBashSecurity({
+        mode: 'sync',
+        activeProfiles: ['node'],
+      })
+      // Node verification commands should work
+      expect(security.isCommandAllowed('npm test').allowed).toBe(true)
+      // Python verification commands should not work (not in profile)
+      expect(security.isCommandAllowed('pytest').allowed).toBe(false)
+    })
+  })
+
+  describe('Run mode (mode: "run")', () => {
+    it('allows all development layer commands', () => {
+      const security = new DefaultBashSecurity({ mode: 'run' })
+      expect(security.isCommandAllowed('node script.js').allowed).toBe(true)
+      expect(security.isCommandAllowed('mkdir newdir').allowed).toBe(true)
+      expect(security.isCommandAllowed('echo "test"').allowed).toBe(true)
+    })
+
+    it('respects allowCommands in run mode', () => {
+      const security = new DefaultBashSecurity({
+        mode: 'run',
+        allowCommands: ['custom-command'],
+      })
+      expect(security.isCommandAllowed('custom-command').allowed).toBe(true)
+    })
+
+    it('respects allowDestructive in run mode', () => {
+      const security = new DefaultBashSecurity({
+        mode: 'run',
+        allowDestructive: true,
+        projectDir,
+      })
+      expect(security.isCommandAllowed('rm file.txt').allowed).toBe(true)
+    })
+  })
 })

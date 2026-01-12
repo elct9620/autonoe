@@ -554,6 +554,13 @@ describe('deliverableToolsAdapter', () => {
         'deprecate_deliverable',
       ])
     })
+
+    it('run set contains create and set_deliverable_status', () => {
+      expect(DELIVERABLE_TOOL_SETS.run).toEqual([
+        'create_deliverable',
+        'set_deliverable_status',
+      ])
+    })
   })
 
   describe('allowedTools', () => {
@@ -591,6 +598,17 @@ describe('deliverableToolsAdapter', () => {
     it('returns MCP tool names for custom tool array', () => {
       const { allowedTools } = createDeliverableMcpServer(repository, {
         toolSet: ['create_deliverable', 'set_deliverable_status'],
+      })
+
+      expect(allowedTools).toEqual([
+        'mcp__autonoe-deliverable__create_deliverable',
+        'mcp__autonoe-deliverable__set_deliverable_status',
+      ])
+    })
+
+    it('returns MCP tool names for run tool set', () => {
+      const { allowedTools } = createDeliverableMcpServer(repository, {
+        toolSet: 'run',
       })
 
       expect(allowedTools).toEqual([

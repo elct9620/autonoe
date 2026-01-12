@@ -30,9 +30,37 @@ export const ALL_PROFILES: readonly ProfileName[] = Object.freeze([
 ])
 
 /**
+ * Execution mode affecting command allowlist
+ * @see SPEC.md Section 5.4
+ */
+export type ExecutionMode = 'run' | 'sync'
+
+/**
+ * Command layers for security modes
+ * @see SPEC.md Section 5.4
+ */
+export type CommandLayer = 'verification' | 'development'
+
+/**
+ * Profile command structure with layers
+ */
+export interface ProfileCommandSet {
+  verification: Set<string>
+  development: Set<string>
+}
+
+/**
  * Options for configuring BashSecurity
  */
 export interface BashSecurityOptions {
+  /**
+   * Execution mode determines command layer
+   * - 'run': development layer (full toolchain)
+   * - 'sync': verification layer (test/lint/build only)
+   * @default 'run'
+   */
+  mode?: ExecutionMode
+
   /**
    * Active profiles. If undefined or empty, ALL profiles are enabled.
    * The 'base' profile is always implicitly included.
@@ -41,6 +69,7 @@ export interface BashSecurityOptions {
 
   /**
    * Additional commands to allow (user extensions via agent.json)
+   * Note: Ignored in sync mode for security
    */
   allowCommands?: string[]
 
@@ -51,6 +80,7 @@ export interface BashSecurityOptions {
 
   /**
    * Enable rm and mv commands with path validation
+   * Note: Always disabled in sync mode
    * @see SPEC.md Section 6.4
    */
   allowDestructive?: boolean

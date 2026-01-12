@@ -13,10 +13,12 @@ import type {
   BashSecurity,
   BashSecurityOptions,
   ProfileName,
+  ExecutionMode,
+  CommandLayer,
 } from './types'
 import { ALL_PROFILES, isBashSecurity } from './types'
 import {
-  PROFILE_COMMANDS,
+  PROFILE_COMMAND_SETS,
   PROFILE_PKILL_TARGETS,
   VALIDATED_COMMANDS,
   DESTRUCTIVE_COMMANDS,
@@ -29,6 +31,33 @@ import {
   validateMv,
   validatePkill,
 } from './validators'
+
+/**
+ * Collect commands from profile command sets based on layer
+ */
+function collectCommandsFromProfiles(
+  profiles: ProfileName[],
+  layer: CommandLayer,
+  extensions?: string[],
+): Set<string> {
+  const result = new Set<string>()
+
+  for (const profile of profiles) {
+    const commandSet = PROFILE_COMMAND_SETS[profile]
+    const commands = commandSet[layer]
+    for (const cmd of commands) {
+      result.add(cmd)
+    }
+  }
+
+  if (extensions) {
+    for (const cmd of extensions) {
+      result.add(cmd)
+    }
+  }
+
+  return result
+}
 
 /**
  * Collect items from profile mappings and optional user extensions
@@ -98,28 +127,43 @@ export function createBashSecurityHook(
  * Default implementation of BashSecurity
  */
 export class DefaultBashSecurity implements BashSecurity {
+  private readonly mode: ExecutionMode
   private readonly allowedCommands: Set<string>
   private readonly allowedPkillTargets: Set<string>
   private readonly allowDestructive: boolean
   private readonly projectDir: string | undefined
 
   constructor(options: BashSecurityOptions = {}) {
+    this.mode = options.mode ?? 'run'
     const profiles = this.resolveActiveProfiles(options.activeProfiles)
+    const layer = this.modeToLayer(this.mode)
 
-    this.allowedCommands = collectFromProfiles(
+    // Collect commands based on layer
+    // In sync mode, user extensions (allowCommands) are ignored for security
+    this.allowedCommands = collectCommandsFromProfiles(
       profiles,
-      PROFILE_COMMANDS,
-      options.allowCommands,
+      layer,
+      this.mode === 'run' ? options.allowCommands : undefined,
     )
 
+    // pkill targets are always collected (sync mode may need to kill test processes)
     this.allowedPkillTargets = collectFromProfiles(
       profiles,
       PROFILE_PKILL_TARGETS,
       options.allowPkillTargets,
     )
 
-    this.allowDestructive = options.allowDestructive ?? false
+    // Destructive commands are always disabled in sync mode
+    this.allowDestructive =
+      this.mode === 'run' && (options.allowDestructive ?? false)
     this.projectDir = options.projectDir
+  }
+
+  /**
+   * Map execution mode to command layer
+   */
+  private modeToLayer(mode: ExecutionMode): CommandLayer {
+    return mode === 'sync' ? 'verification' : 'development'
   }
 
   /**

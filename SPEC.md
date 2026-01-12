@@ -497,12 +497,12 @@ Each language profile contains two command layers:
 ```
 Profile Structure
 ├── base (always included)
-│   ├── status: ls, pwd, cat, head, tail, ...
-│   └── operations: mkdir, cp, git, ...
+│   ├── status: ls, pwd, cat, head, tail, wc, find, grep, tree, sort, diff, date, git
+│   └── operations: mkdir, cp, echo, which, ps, lsof, sleep, printf, uniq, cut, tr, tac, jq
 │
 └── language (node, python, ruby, go)
-    ├── verification: test runners, type checkers, linters
-    └── development: package managers, frameworks, runtimes
+    ├── verification: test runners, type checkers, linters, package managers (for test)
+    └── development: runtimes, build tools, frameworks
 ```
 
 **Mode × Profile → Commands:**
@@ -673,12 +673,16 @@ Sync mode restricts Base Security for verification-only operations:
 
 | Profile | Verification Commands |
 |---------|----------------------|
-| node    | npm test, bun test, vitest, jest, tsc --noEmit, eslint, prettier --check |
-| python  | pytest, tox, mypy, pyright, ruff check, flake8, pylint |
-| ruby    | rspec, minitest, cucumber, rubocop, standard |
-| go      | go test, go build, golangci-lint, staticcheck, gofmt -d |
+| base    | ls, pwd, cat, head, tail, wc, find, grep, tree, sort, diff, date, git |
+| node    | npm, npx, bun, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome |
+| python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint |
+| ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard |
+| go      | go, gofmt, goimports, golangci-lint, staticcheck |
 
-**Note:** Build commands (e.g., `npm run build`, `go build`) are allowed for compilation verification. Auto-fix commands (e.g., `prettier --write`, `rubocop -a`) are excluded as they modify source code.
+**Notes:**
+- Package managers (npm, pip, bundle, etc.) are allowed for running test scripts (e.g., `npm test`, `bundle exec rspec`)
+- Auto-fix commands (e.g., `prettier --write`, `rubocop -a`, `black`) are excluded as they modify source code
+- User extensions (`allowCommands`) are ignored in sync mode for security
 
 See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.
 

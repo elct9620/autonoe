@@ -9,8 +9,14 @@ export type {
   BashSecurity,
   BashSecurityOptions,
   ProfileName,
+  ExecutionMode,
+  CommandLayer,
+  ProfileCommandSet,
 } from './types'
 export { ALL_PROFILES, isBashSecurity } from './types'
+
+// Profile exports
+export { PROFILE_COMMAND_SETS } from './profiles'
 
 // Main implementation
 export {

@@ -57,11 +57,14 @@ export type {
   ValidationResult,
   BashSecurityOptions,
   ProfileName,
+  ExecutionMode,
+  CommandLayer,
 } from './security'
 export {
   DefaultBashSecurity,
   createBashSecurityHook,
   ALL_PROFILES,
+  PROFILE_COMMAND_SETS,
 } from './security'
 
 // Configuration exports
@@ -81,7 +84,11 @@ export {
 } from './configuration'
 
 // Autonoe Protection exports
-export { createAutonoeProtectionHook } from './autonoeProtection'
+export {
+  createAutonoeProtectionHook,
+  createSyncWriteRestrictionHook,
+  SYNC_ALLOWED_WRITE_PATHS,
+} from './autonoeProtection'
 
 // Deliverable entity
 export { Deliverable, type DeliverableStatusValue } from './deliverable'
