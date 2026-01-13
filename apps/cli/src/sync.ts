@@ -97,7 +97,12 @@ export async function handleSyncCommand(
   }
 
   // Single SessionRunner instance (same pattern as run command)
-  const runnerOptions = createRunnerOptions(validatedOptions)
+  // TODO: Remove temporary default once termination conditions are specified
+  const syncOptions = {
+    ...validatedOptions,
+    maxIterations: validatedOptions.maxIterations ?? 15,
+  }
+  const runnerOptions = createRunnerOptions(syncOptions)
   const sessionRunner = new SessionRunner(runnerOptions)
 
   // SyncInstructionSelector: session 1 uses 'sync', session 2+ uses 'verify'
