@@ -5,14 +5,21 @@
 
 import initializerInstruction from './instructions/initializer.md' with { type: 'text' }
 import codingInstruction from './instructions/coding.md' with { type: 'text' }
+import syncInstruction from './instructions/sync.md' with { type: 'text' }
+import verifyInstruction from './instructions/verify.md' with { type: 'text' }
 import type { DeliverableStatusReader } from './deliverableStatus'
 
-export { initializerInstruction, codingInstruction }
+export {
+  initializerInstruction,
+  codingInstruction,
+  syncInstruction,
+  verifyInstruction,
+}
 
 /**
  * Instruction name type
  */
-export type InstructionName = 'initializer' | 'coding'
+export type InstructionName = 'initializer' | 'coding' | 'sync' | 'verify'
 
 /**
  * Interface for resolving instructions with optional override support
@@ -27,9 +34,16 @@ export interface InstructionResolver {
  * Use this when no override resolution is needed
  */
 export function createDefaultInstructionResolver(): InstructionResolver {
+  const instructions: Record<InstructionName, string> = {
+    initializer: initializerInstruction,
+    coding: codingInstruction,
+    sync: syncInstruction,
+    verify: verifyInstruction,
+  }
+
   return {
     async resolve(name: InstructionName): Promise<string> {
-      return name === 'initializer' ? initializerInstruction : codingInstruction
+      return instructions[name]
     },
   }
 }

@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises'
 import {
   initializerInstruction,
   codingInstruction,
+  syncInstruction,
+  verifyInstruction,
   type SessionRunnerOptions,
   type InstructionResolver,
   type InstructionName,
@@ -20,15 +22,20 @@ import { ConsoleWaitProgressReporter } from './consoleWaitProgressReporter'
 export function createInstructionResolver(
   projectDir: string,
 ): InstructionResolver {
+  const defaultInstructions: Record<InstructionName, string> = {
+    initializer: initializerInstruction,
+    coding: codingInstruction,
+    sync: syncInstruction,
+    verify: verifyInstruction,
+  }
+
   return {
     async resolve(name: InstructionName): Promise<string> {
       const overridePath = join(projectDir, '.autonoe', `${name}.md`)
       try {
         return await readFile(overridePath, 'utf-8')
       } catch {
-        return name === 'initializer'
-          ? initializerInstruction
-          : codingInstruction
+        return defaultInstructions[name]
       }
     },
   }

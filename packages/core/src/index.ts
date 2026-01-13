@@ -122,6 +122,8 @@ export type { InstructionName, InstructionResolver } from './instructions'
 export {
   initializerInstruction,
   codingInstruction,
+  syncInstruction,
+  verifyInstruction,
   createDefaultInstructionResolver,
   selectInstruction,
 } from './instructions'

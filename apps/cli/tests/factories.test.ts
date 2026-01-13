@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { initializerInstruction, codingInstruction } from '@autonoe/core'
+import {
+  initializerInstruction,
+  codingInstruction,
+  syncInstruction,
+  verifyInstruction,
+} from '@autonoe/core'
 import {
   createInstructionResolver,
   formatStatusIcon,
@@ -57,6 +62,42 @@ describe('createInstructionResolver', () => {
     const result = await resolver.resolve('coding')
 
     expect(result).toBe('Custom coding')
+  })
+
+  it('FAC-005: returns default sync instruction when override not found', async () => {
+    const resolver = createInstructionResolver(tempDir)
+    const result = await resolver.resolve('sync')
+
+    expect(result).toBe(syncInstruction)
+  })
+
+  it('FAC-006: returns default verify instruction when override not found', async () => {
+    const resolver = createInstructionResolver(tempDir)
+    const result = await resolver.resolve('verify')
+
+    expect(result).toBe(verifyInstruction)
+  })
+
+  it('FAC-007: returns sync override when file exists', async () => {
+    const autonoeDir = join(tempDir, '.autonoe')
+    mkdirSync(autonoeDir, { recursive: true })
+    writeFileSync(join(autonoeDir, 'sync.md'), 'Custom sync')
+
+    const resolver = createInstructionResolver(tempDir)
+    const result = await resolver.resolve('sync')
+
+    expect(result).toBe('Custom sync')
+  })
+
+  it('FAC-008: returns verify override when file exists', async () => {
+    const autonoeDir = join(tempDir, '.autonoe')
+    mkdirSync(autonoeDir, { recursive: true })
+    writeFileSync(join(autonoeDir, 'verify.md'), 'Custom verify')
+
+    const resolver = createInstructionResolver(tempDir)
+    const result = await resolver.resolve('verify')
+
+    expect(result).toBe('Custom verify')
   })
 })
 
