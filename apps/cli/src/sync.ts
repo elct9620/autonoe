@@ -5,9 +5,6 @@ import {
   createBashSecurityHook,
   createSyncWriteRestrictionHook,
   type AgentClientFactory,
-  type SessionRunnerOptions,
-  type DeliverableStatusCallback,
-  type AgentConfig,
 } from '@autonoe/core'
 import {
   ClaudeAgentClient,
@@ -25,84 +22,12 @@ import { VERSION } from './version'
 import {
   createInstructionResolver,
   createStatusChangeCallback,
+  createRunnerOptions,
 } from './factories'
-import { ConsoleWaitProgressReporter } from './consoleWaitProgressReporter'
+import { SyncInstructionSelector } from './syncInstructionSelector'
 
 export { VERSION }
 export type { SyncCommandOptions }
-
-/**
- * Sync phase type for tool set selection
- */
-export type SyncPhase = 'sync' | 'verify'
-
-/**
- * Create a client factory for a specific sync phase
- *
- * Each phase uses different tool sets:
- * - sync: create_deliverable, deprecate_deliverable
- * - verify: set_deliverable_status
- *
- * @see SPEC.md Section 8.3
- */
-function createSyncPhaseClientFactory(
-  phase: SyncPhase,
-  options: ValidatedSyncOptions,
-  config: AgentConfig,
-  repository: FileDeliverableRepository,
-  onStatusChange?: DeliverableStatusCallback,
-): AgentClientFactory {
-  const { server, allowedTools } = createDeliverableMcpServer(repository, {
-    toolSet: phase,
-    onStatusChange,
-  })
-
-  const bashSecurity = new DefaultBashSecurity({
-    ...config.bashSecurity,
-    mode: 'sync', // Use verification layer for sync command
-    allowDestructive: false,
-    projectDir: options.projectDir,
-  })
-
-  const preToolUseHooks = [
-    createBashSecurityHook(bashSecurity),
-    createSyncWriteRestrictionHook(),
-  ]
-
-  return {
-    create: () =>
-      new ClaudeAgentClient({
-        cwd: options.projectDir,
-        permissionLevel: 'acceptEdits',
-        sandbox: config.sandbox,
-        mcpServers: config.mcpServers,
-        preToolUseHooks,
-        sdkMcpServers: [server],
-        allowedTools: [...config.allowedTools, ...allowedTools],
-        model: options.model,
-        maxThinkingTokens: options.maxThinkingTokens,
-      }),
-  }
-}
-
-/**
- * Create SessionRunnerOptions from validated sync options
- */
-function createSyncRunnerOptions(
-  options: ValidatedSyncOptions,
-): SessionRunnerOptions {
-  return {
-    projectDir: options.projectDir,
-    maxIterations: options.maxIterations,
-    maxRetries: options.maxRetries,
-    model: options.model,
-    waitForQuota: options.waitForQuota,
-    maxThinkingTokens: options.maxThinkingTokens,
-    waitProgressReporter: options.waitForQuota
-      ? new ConsoleWaitProgressReporter()
-      : undefined,
-  }
-}
 
 /**
  * Handle the 'sync' command
@@ -111,6 +36,11 @@ function createSyncRunnerOptions(
  * 1. Validates options
  * 2. Initializes all dependencies
  * 3. Injects dependencies into Handler
+ *
+ * Uses the same pattern as run command: single SessionRunner with
+ * dynamic instruction selection via SyncInstructionSelector.
+ *
+ * @see SPEC.md Section 8.3
  */
 export async function handleSyncCommand(
   options: SyncCommandOptions,
@@ -130,23 +60,50 @@ export async function handleSyncCommand(
   const repository = new FileDeliverableRepository(validatedOptions.projectDir)
   const onStatusChange = createStatusChangeCallback(logger)
 
-  // Create a factory function that returns phase-specific client factories
-  const createClientFactory = (phase: SyncPhase): AgentClientFactory =>
-    createSyncPhaseClientFactory(
-      phase,
-      validatedOptions,
-      config,
-      repository,
+  // Create MCP server with all sync tools (consistent with run command pattern)
+  const { server: deliverableMcpServer, allowedTools: deliverableTools } =
+    createDeliverableMcpServer(repository, {
+      toolSet: 'sync',
       onStatusChange,
-    )
+    })
 
-  // Create a factory function for SessionRunner
-  const runnerOptions = createSyncRunnerOptions(validatedOptions)
-  const createSessionRunner = () => new SessionRunner(runnerOptions)
+  const bashSecurity = new DefaultBashSecurity({
+    ...config.bashSecurity,
+    mode: 'sync', // Use verification layer for sync command
+    allowDestructive: false,
+    projectDir: validatedOptions.projectDir,
+  })
 
+  const preToolUseHooks = [
+    createBashSecurityHook(bashSecurity),
+    createSyncWriteRestrictionHook(),
+  ]
+
+  // Single client factory (same pattern as run command)
+  const clientFactory: AgentClientFactory = {
+    create: () =>
+      new ClaudeAgentClient({
+        cwd: validatedOptions.projectDir,
+        permissionLevel: 'acceptEdits',
+        sandbox: config.sandbox,
+        mcpServers: config.mcpServers,
+        preToolUseHooks,
+        sdkMcpServers: [deliverableMcpServer],
+        allowedTools: [...config.allowedTools, ...deliverableTools],
+        model: validatedOptions.model,
+        maxThinkingTokens: validatedOptions.maxThinkingTokens,
+      }),
+  }
+
+  // Single SessionRunner instance (same pattern as run command)
+  const runnerOptions = createRunnerOptions(validatedOptions)
+  const sessionRunner = new SessionRunner(runnerOptions)
+
+  // SyncInstructionSelector: session 1 uses 'sync', session 2+ uses 'verify'
   const instructionResolver = createInstructionResolver(
     validatedOptions.projectDir,
   )
+  const instructionSelector = new SyncInstructionSelector(instructionResolver)
 
   const abortController = new AbortController()
   process.on('SIGINT', () => {
@@ -155,14 +112,14 @@ export async function handleSyncCommand(
     abortController.abort()
   })
 
-  // 3. Inject dependencies into Handler
+  // 3. Inject dependencies into Handler (same pattern as run command)
   const handler = new SyncCommandHandler(
     validatedOptions,
     logger,
     repository,
-    instructionResolver,
-    createClientFactory,
-    createSessionRunner,
+    sessionRunner,
+    clientFactory,
+    instructionSelector,
     abortController.signal,
   )
 

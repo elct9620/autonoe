@@ -808,9 +808,17 @@ SPEC.md ──► sync instruction ──► Create/Update status.json
                                verify instruction ──► Validate & Mark passed
 ```
 
-**Session Structure:**
-1. **Sync Session**: Parse SPEC.md, sync deliverables structure
-2. **Verify Session**: Validate code, update passed status
+**Session Structure (Single SessionRunner Loop):**
+
+The sync command uses a single SessionRunner loop with dynamic instruction selection:
+
+| Session | Instruction | Purpose |
+|---------|-------------|---------|
+| 1 | sync | Parse SPEC.md, create/update deliverables |
+| 2+ | verify | Validate implementation, mark passed |
+
+The loop continues until all deliverables pass or max iterations reached,
+consistent with the `run` command behavior.
 
 ---
 
@@ -912,8 +920,8 @@ See [Security Details - Sync Command](docs/security.md#sync-command-security) fo
 | ------------- | --------------------------------------------- |
 | initializer   | `run` command, no .autonoe/status.json        |
 | coding        | `run` command, .autonoe/status.json exists    |
-| sync          | `sync` command, sync phase                    |
-| verify        | `sync` command, verify phase                  |
+| sync          | `sync` command, session 1                     |
+| verify        | `sync` command, session 2+                    |
 
 ### A.2 Instruction Override
 

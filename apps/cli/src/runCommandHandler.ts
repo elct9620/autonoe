@@ -2,7 +2,7 @@ import type {
   SessionRunner,
   SessionRunnerResult,
   AgentClientFactory,
-  InstructionResolver,
+  InstructionSelector,
   DeliverableStatusReader,
   Logger,
 } from '@autonoe/core'
@@ -25,7 +25,7 @@ export class RunCommandHandler {
     private readonly repository: DeliverableStatusReader,
     private readonly sessionRunner: SessionRunner,
     private readonly clientFactory: AgentClientFactory,
-    private readonly instructionResolver: InstructionResolver,
+    private readonly instructionSelector: InstructionSelector,
     private readonly abortSignal: AbortSignal,
   ) {}
 
@@ -40,7 +40,7 @@ export class RunCommandHandler {
       this.clientFactory,
       this.logger,
       this.repository,
-      this.instructionResolver,
+      this.instructionSelector,
       this.abortSignal,
     )
 

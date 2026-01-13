@@ -6,6 +6,7 @@ import {
   SessionRunner,
   type Logger,
   type InstructionResolver,
+  type InstructionSelector,
   type AgentClientFactory,
   type StreamEvent,
   type MessageStream,
@@ -13,8 +14,8 @@ import {
 } from '@autonoe/core'
 import { FileDeliverableRepository } from '@autonoe/agent'
 import { SyncCommandHandler } from '../src/syncCommandHandler'
+import { SyncInstructionSelector } from '../src/syncInstructionSelector'
 import type { ValidatedSyncOptions } from '../src/options'
-import type { SyncPhase } from '../src/sync'
 import { VERSION } from '../src/version'
 
 // Mock Logger for capturing output
@@ -58,15 +59,15 @@ function createMockClientFactory(): AgentClientFactory {
   }
 }
 
-// Instruction resolver that tracks which phases were requested
+// Instruction resolver that tracks which instructions were requested
 function createTrackingInstructionResolver(): InstructionResolver & {
-  resolvedPhases: string[]
+  resolvedNames: string[]
 } {
-  const resolvedPhases: string[] = []
+  const resolvedNames: string[] = []
   return {
-    resolvedPhases,
+    resolvedNames,
     async resolve(name) {
-      resolvedPhases.push(name)
+      resolvedNames.push(name)
       return `Test instruction for ${name}`
     },
   }
@@ -120,35 +121,34 @@ describe('SyncCommandHandler', () => {
   function createHandler(overrides?: {
     options?: Partial<ValidatedSyncOptions>
     logger?: Logger
-    instructionResolver?: InstructionResolver
-    createClientFactory?: (phase: SyncPhase) => AgentClientFactory
-    createSessionRunner?: () => SessionRunner
+    sessionRunner?: SessionRunner
+    clientFactory?: AgentClientFactory
+    instructionSelector?: InstructionSelector
     abortSignal?: AbortSignal
   }) {
     const options = { ...createBaseOptions(), ...overrides?.options }
     const logger = overrides?.logger ?? createMockLogger()
     const repository = new FileDeliverableRepository(tempDir)
-    const instructionResolver =
-      overrides?.instructionResolver ?? createTrackingInstructionResolver()
-    const createClientFactory =
-      overrides?.createClientFactory ?? (() => createMockClientFactory())
-    const createSessionRunner =
-      overrides?.createSessionRunner ??
-      (() =>
-        new SessionRunner({
-          projectDir: tempDir,
-          maxIterations: 1,
-          delayBetweenSessions: 0,
-        }))
+    const sessionRunner =
+      overrides?.sessionRunner ??
+      new SessionRunner({
+        projectDir: tempDir,
+        maxIterations: 2,
+        delayBetweenSessions: 0,
+      })
+    const clientFactory = overrides?.clientFactory ?? createMockClientFactory()
+    const instructionSelector =
+      overrides?.instructionSelector ??
+      new SyncInstructionSelector(createTrackingInstructionResolver())
     const abortSignal = overrides?.abortSignal ?? new AbortController().signal
 
     return new SyncCommandHandler(
       options,
       logger,
       repository,
-      instructionResolver,
-      createClientFactory,
-      createSessionRunner,
+      sessionRunner,
+      clientFactory,
+      instructionSelector,
       abortSignal,
     )
   }
@@ -214,124 +214,25 @@ describe('SyncCommandHandler', () => {
     })
   })
 
-  describe('two-phase execution', () => {
-    it('SCH-010: executes sync phase followed by verify phase', async () => {
-      const logger = createMockLogger()
-      createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
-
-      const handler = createHandler({ logger })
-      await handler.execute()
-
-      expect(
-        logger.infoMessages.some((m) => m.includes('Phase 1: Syncing')),
-      ).toBe(true)
-      expect(
-        logger.infoMessages.some((m) => m.includes('Phase 2: Verifying')),
-      ).toBe(true)
-    })
-
-    it('SCH-011: uses correct instruction for each phase', async () => {
+  describe('instruction selection', () => {
+    it('SCH-010: uses sync instruction for first session, verify for subsequent', async () => {
       const instructionResolver = createTrackingInstructionResolver()
-      createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
-
-      const handler = createHandler({ instructionResolver })
-      await handler.execute()
-
-      // Should resolve 'sync' for phase 1 and 'verify' for phase 2
-      expect(instructionResolver.resolvedPhases).toContain('sync')
-      expect(instructionResolver.resolvedPhases).toContain('verify')
-    })
-
-    it('SCH-012: creates separate client factory for each phase', async () => {
-      const phasesCalled: SyncPhase[] = []
-      const createClientFactory = (phase: SyncPhase) => {
-        phasesCalled.push(phase)
-        return createMockClientFactory()
-      }
-
-      createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
-
-      const handler = createHandler({ createClientFactory })
-      await handler.execute()
-
-      expect(phasesCalled).toContain('sync')
-      expect(phasesCalled).toContain('verify')
-    })
-
-    it('SCH-013: does not proceed to verify if sync is interrupted', async () => {
-      const logger = createMockLogger()
-      const abortController = new AbortController()
-      abortController.abort()
-
+      const instructionSelector = new SyncInstructionSelector(
+        instructionResolver,
+      )
       createStatusFile([Deliverable.pending('DL-001', 'Test', ['AC'])])
 
-      const handler = createHandler({
-        logger,
-        abortSignal: abortController.signal,
-      })
+      const handler = createHandler({ instructionSelector })
       await handler.execute()
 
-      expect(
-        logger.infoMessages.some((m) => m.includes('Sync interrupted')),
-      ).toBe(true)
-      expect(
-        logger.infoMessages.some((m) => m.includes('Phase 2: Verifying')),
-      ).toBe(false)
-    })
-
-    it('SCH-014: proceeds to verify even when sync reaches max iterations', async () => {
-      const logger = createMockLogger()
-      createStatusFile([Deliverable.pending('DL-001', 'Test', ['AC'])])
-
-      const handler = createHandler({ logger })
-      await handler.execute()
-
-      // Should still proceed to verify phase
-      expect(
-        logger.infoMessages.some((m) => m.includes('Phase 2: Verifying')),
-      ).toBe(true)
+      // First session uses 'sync', second session uses 'verify'
+      expect(instructionResolver.resolvedNames[0]).toBe('sync')
+      expect(instructionResolver.resolvedNames[1]).toBe('verify')
     })
   })
 
-  describe('phase results', () => {
-    it('SCH-020: logs phase completion details', async () => {
-      const logger = createMockLogger()
-      createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
-
-      const handler = createHandler({ logger })
-      await handler.execute()
-
-      expect(
-        logger.infoMessages.some((m) => m.includes('Sync phase completed')),
-      ).toBe(true)
-      expect(
-        logger.infoMessages.some((m) => m.includes('Verify phase completed')),
-      ).toBe(true)
-    })
-
-    it('SCH-021: logs deliverable counts', async () => {
-      const logger = createMockLogger()
-      createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
-
-      const handler = createHandler({ logger })
-      await handler.execute()
-
-      expect(logger.infoMessages.some((m) => m.includes('Deliverables:'))).toBe(
-        true,
-      )
-    })
-
-    it('SCH-022: logs blocked count when present', async () => {
-      const logger = createMockLogger()
-      createStatusFile([Deliverable.blocked('DL-001', 'Test', ['AC'])])
-
-      const handler = createHandler({ logger })
-      await handler.execute()
-
-      expect(logger.infoMessages.some((m) => m.includes('Blocked:'))).toBe(true)
-    })
-
-    it('SCH-023: logs success when all deliverables verified', async () => {
+  describe('result handling', () => {
+    it('SCH-020: logs success when all deliverables pass', async () => {
       const logger = createMockLogger()
       createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
 
@@ -344,10 +245,48 @@ describe('SyncCommandHandler', () => {
         ),
       ).toBe(true)
     })
+
+    it('SCH-021: logs interruption when aborted', async () => {
+      const logger = createMockLogger()
+      const abortController = new AbortController()
+      abortController.abort()
+      createStatusFile([Deliverable.pending('DL-001', 'Test', ['AC'])])
+
+      const handler = createHandler({
+        logger,
+        abortSignal: abortController.signal,
+      })
+      await handler.execute()
+
+      expect(
+        logger.infoMessages.some((m) => m.includes('Sync interrupted')),
+      ).toBe(true)
+    })
+
+    it('SCH-022: logs max iterations reached', async () => {
+      const logger = createMockLogger()
+      createStatusFile([Deliverable.pending('DL-001', 'Test', ['AC'])])
+
+      const handler = createHandler({
+        logger,
+        sessionRunner: new SessionRunner({
+          projectDir: tempDir,
+          maxIterations: 1,
+          delayBetweenSessions: 0,
+        }),
+      })
+      await handler.execute()
+
+      expect(
+        logger.infoMessages.some((m) =>
+          m.includes('Sync stopped: max iterations reached'),
+        ),
+      ).toBe(true)
+    })
   })
 
   describe('error handling', () => {
-    it('SCH-030: exits with code 1 when all blocked in sync phase', async () => {
+    it('SCH-030: exits with code 1 when all blocked', async () => {
       const logger = createMockLogger()
       createStatusFile([Deliverable.blocked('DL-001', 'Test', ['AC'])])
 

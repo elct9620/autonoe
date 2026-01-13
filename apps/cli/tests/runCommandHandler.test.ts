@@ -4,8 +4,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   SessionRunner,
+  DefaultInstructionSelector,
   type Logger,
   type InstructionResolver,
+  type InstructionSelector,
   type AgentClientFactory,
   type StreamEvent,
   type MessageStream,
@@ -71,13 +73,17 @@ function createMockClientFactory(options?: {
   }
 }
 
-// Simple instruction resolver
+// Simple instruction resolver and selector
 function createTestInstructionResolver(): InstructionResolver {
   return {
     async resolve() {
       return 'Test instruction'
     },
   }
+}
+
+function createTestInstructionSelector(): InstructionSelector {
+  return new DefaultInstructionSelector(createTestInstructionResolver())
 }
 
 describe('RunCommandHandler', () => {
@@ -147,7 +153,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -175,7 +181,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -203,7 +209,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -231,7 +237,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -262,7 +268,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -292,7 +298,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -327,7 +333,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         abortController.signal,
       )
 
@@ -359,7 +365,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory({ responsesToReturn: 'quota_exceeded' }),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -390,7 +396,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory({ responsesToReturn: 'max_iterations' }),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -425,7 +431,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -456,7 +462,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -487,7 +493,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 
@@ -515,7 +521,7 @@ describe('RunCommandHandler', () => {
         repository,
         sessionRunner,
         createMockClientFactory(),
-        createTestInstructionResolver(),
+        createTestInstructionSelector(),
         new AbortController().signal,
       )
 

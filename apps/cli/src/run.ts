@@ -4,6 +4,7 @@ import {
   DefaultBashSecurity,
   createBashSecurityHook,
   createAutonoeProtectionHook,
+  DefaultInstructionSelector,
   type AgentClientFactory,
 } from '@autonoe/core'
 import {
@@ -92,6 +93,9 @@ export async function handleRunCommand(
   const instructionResolver = createInstructionResolver(
     validatedOptions.projectDir,
   )
+  const instructionSelector = new DefaultInstructionSelector(
+    instructionResolver,
+  )
 
   const abortController = new AbortController()
   process.on('SIGINT', () => {
@@ -107,7 +111,7 @@ export async function handleRunCommand(
     repository,
     sessionRunner,
     clientFactory,
-    instructionResolver,
+    instructionSelector,
     abortController.signal,
   )
 

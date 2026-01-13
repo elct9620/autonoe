@@ -128,6 +128,13 @@ export {
   selectInstruction,
 } from './instructions'
 
+// InstructionSelector exports
+export type {
+  InstructionSelector,
+  InstructionSelectionContext,
+} from './instructionSelector'
+export { DefaultInstructionSelector } from './instructionSelector'
+
 // Timer exports
 export type { Timer } from './timer'
 export { realTimer } from './timer'

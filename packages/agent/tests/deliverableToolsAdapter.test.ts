@@ -548,10 +548,11 @@ describe('deliverableToolsAdapter', () => {
       expect(DELIVERABLE_TOOL_SETS.verify).toEqual(['set_deliverable_status'])
     })
 
-    it('sync set contains create and deprecate', () => {
+    it('sync set contains create, deprecate, and set_deliverable_status', () => {
       expect(DELIVERABLE_TOOL_SETS.sync).toEqual([
         'create_deliverable',
         'deprecate_deliverable',
+        'set_deliverable_status',
       ])
     })
 
@@ -592,6 +593,7 @@ describe('deliverableToolsAdapter', () => {
       expect(allowedTools).toEqual([
         'mcp__autonoe-deliverable__create_deliverable',
         'mcp__autonoe-deliverable__deprecate_deliverable',
+        'mcp__autonoe-deliverable__set_deliverable_status',
       ])
     })
 

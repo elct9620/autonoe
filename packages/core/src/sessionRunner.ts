@@ -4,24 +4,23 @@ import {
   type DeliverableStatusReader,
 } from './deliverableStatus'
 import type { Logger } from './logger'
-import type { InstructionResolver } from './instructions'
 import type { Timer } from './timer'
 import type { WaitProgressReporter } from './waitProgressReporter'
 import type { TerminationContext } from './terminationEvaluator'
 import { silentLogger } from './logger'
 import { silentWaitProgressReporter } from './waitProgressReporter'
 import { Session } from './session'
-import {
-  selectInstruction,
-  createDefaultInstructionResolver,
-} from './instructions'
+import { createDefaultInstructionResolver } from './instructions'
 import { nullDeliverableStatusReader } from './deliverableStatus'
-import type { SessionOutcome } from './types'
 import { formatDuration } from './duration'
 import { realTimer } from './timer'
 import { LoopState } from './loopState'
 import { evaluateTermination } from './terminationEvaluator'
 import type { ExitReason } from './exitReason'
+import {
+  DefaultInstructionSelector,
+  type InstructionSelector,
+} from './instructionSelector'
 
 // Re-export for API compatibility
 export type { ExitReason } from './exitReason'
@@ -125,7 +124,7 @@ export class SessionRunner {
     clientFactory: AgentClientFactory,
     logger: Logger = silentLogger,
     statusReader?: DeliverableStatusReader,
-    instructionResolver?: InstructionResolver,
+    instructionSelector?: InstructionSelector,
     signal?: AbortSignal,
   ): Promise<SessionRunnerResult> {
     const startTime = Date.now()
@@ -141,14 +140,18 @@ export class SessionRunner {
         break
       }
 
-      // Select instruction based on status existence
-      // @see SPEC.md Section 7.2
-      const instruction = await selectInstruction(
-        statusReader ?? nullDeliverableStatusReader,
-        instructionResolver ?? createDefaultInstructionResolver(),
-      )
-
       state = state.incrementIterations()
+
+      // Select instruction via strategy pattern
+      // @see SPEC.md Section A.1
+      const effectiveStatusReader = statusReader ?? nullDeliverableStatusReader
+      const effectiveSelector =
+        instructionSelector ??
+        new DefaultInstructionSelector(createDefaultInstructionResolver())
+      const instruction = await effectiveSelector.select({
+        iteration: state.iterations,
+        statusReader: effectiveStatusReader,
+      })
       logger.info(`Session ${state.iterations} started`)
 
       try {

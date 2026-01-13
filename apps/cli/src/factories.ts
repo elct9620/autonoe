@@ -12,7 +12,7 @@ import {
   type DeliverableStatusNotification,
   type Logger,
 } from '@autonoe/core'
-import type { ValidatedRunOptions } from './options'
+import type { ValidatedCommonOptions } from './options'
 import { ConsoleWaitProgressReporter } from './consoleWaitProgressReporter'
 
 /**
@@ -75,7 +75,7 @@ export function createStatusChangeCallback(
  * Create SessionRunnerOptions from validated options
  */
 export function createRunnerOptions(
-  options: ValidatedRunOptions,
+  options: ValidatedCommonOptions,
 ): SessionRunnerOptions {
   return {
     projectDir: options.projectDir,
