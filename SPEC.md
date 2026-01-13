@@ -198,6 +198,19 @@ Core interface definitions. For detailed specifications, see [Interfaces](docs/i
 |------|---------|
 | create_deliverable | Create deliverables with acceptance criteria |
 | set_deliverable_status | Update status: pending, passed, or blocked |
+| deprecate_deliverable | Mark deliverable as deprecated (sync command only) |
+
+**Tool Availability per Instruction:**
+
+| Instruction | Available Tools |
+|-------------|-----------------|
+| initializer | `create_deliverable` |
+| coding | `set_deliverable_status` |
+| sync | `create_deliverable`, `deprecate_deliverable` |
+| verify | `set_deliverable_status` |
+
+Each session receives only the tools needed for its instruction type.
+AgentClientFactory creates a fresh MCP server with the appropriate tool set per session.
 
 For detailed tool specifications, see [Interfaces - Deliverable Tools](docs/interfaces.md#deliverable-management-tools).
 

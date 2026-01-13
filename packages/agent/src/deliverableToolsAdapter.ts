@@ -27,19 +27,15 @@ export type DeliverableToolName =
   | 'deprecate_deliverable'
 
 /**
- * Predefined tool sets for different session types
+ * Predefined tool sets for different instruction types
+ * Each instruction type has a specific set of tools available
+ * @see SPEC.md Appendix A.1
  */
 export const DELIVERABLE_TOOL_SETS = {
   initializer: ['create_deliverable'] as const,
   coding: ['set_deliverable_status'] as const,
+  sync: ['create_deliverable', 'deprecate_deliverable'] as const,
   verify: ['set_deliverable_status'] as const,
-  // Sync uses all tools: sync instruction creates/deprecates, verify instruction updates status
-  sync: [
-    'create_deliverable',
-    'deprecate_deliverable',
-    'set_deliverable_status',
-  ] as const,
-  run: ['create_deliverable', 'set_deliverable_status'] as const,
 } as const
 
 export type DeliverableToolSetName = keyof typeof DELIVERABLE_TOOL_SETS

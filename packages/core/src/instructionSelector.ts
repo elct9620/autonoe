@@ -1,5 +1,5 @@
 import type { DeliverableStatusReader } from './deliverableStatus'
-import type { InstructionResolver } from './instructions'
+import type { InstructionName, InstructionResolver } from './instructions'
 
 /**
  * Context provided to instruction selector
@@ -10,13 +10,27 @@ export interface InstructionSelectionContext {
 }
 
 /**
+ * Result from instruction selection
+ * Contains both the instruction name (for tool set selection) and content
+ */
+export interface InstructionSelectionResult {
+  name: InstructionName
+  content: string
+}
+
+/**
  * Strategy interface for selecting instructions per session
  *
  * Allows different commands to implement their own instruction selection logic
  * without coupling SessionRunner to specific behaviors.
+ *
+ * Returns both instruction name and content so that SessionRunner can
+ * pass the name to AgentClientFactory for tool set selection.
  */
 export interface InstructionSelector {
-  select(context: InstructionSelectionContext): Promise<string>
+  select(
+    context: InstructionSelectionContext,
+  ): Promise<InstructionSelectionResult>
 }
 
 /**
@@ -31,9 +45,12 @@ export interface InstructionSelector {
 export class DefaultInstructionSelector implements InstructionSelector {
   constructor(private readonly resolver: InstructionResolver) {}
 
-  async select(context: InstructionSelectionContext): Promise<string> {
+  async select(
+    context: InstructionSelectionContext,
+  ): Promise<InstructionSelectionResult> {
     const statusExists = await context.statusReader.exists()
-    const name = statusExists ? 'coding' : 'initializer'
-    return this.resolver.resolve(name)
+    const name: InstructionName = statusExists ? 'coding' : 'initializer'
+    const content = await this.resolver.resolve(name)
+    return { name, content }
   }
 }

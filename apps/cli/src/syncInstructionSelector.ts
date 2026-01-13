@@ -1,6 +1,7 @@
 import type {
   InstructionSelector,
   InstructionSelectionContext,
+  InstructionSelectionResult,
   InstructionResolver,
   InstructionName,
 } from '@autonoe/core'
@@ -16,8 +17,11 @@ import type {
 export class SyncInstructionSelector implements InstructionSelector {
   constructor(private readonly resolver: InstructionResolver) {}
 
-  async select(context: InstructionSelectionContext): Promise<string> {
+  async select(
+    context: InstructionSelectionContext,
+  ): Promise<InstructionSelectionResult> {
     const name: InstructionName = context.iteration === 1 ? 'sync' : 'verify'
-    return this.resolver.resolve(name)
+    const content = await this.resolver.resolve(name)
+    return { name, content }
   }
 }

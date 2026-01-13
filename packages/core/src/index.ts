@@ -132,6 +132,7 @@ export {
 export type {
   InstructionSelector,
   InstructionSelectionContext,
+  InstructionSelectionResult,
 } from './instructionSelector'
 export { DefaultInstructionSelector } from './instructionSelector'
 

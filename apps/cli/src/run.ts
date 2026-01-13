@@ -6,6 +6,7 @@ import {
   createAutonoeProtectionHook,
   DefaultInstructionSelector,
   type AgentClientFactory,
+  type InstructionName,
 } from '@autonoe/core'
 import {
   ClaudeAgentClient,
@@ -53,12 +54,6 @@ export async function handleRunCommand(
 
   const onStatusChange = createStatusChangeCallback(logger)
 
-  const { server: deliverableMcpServer, allowedTools: deliverableTools } =
-    createDeliverableMcpServer(repository, {
-      toolSet: 'run',
-      onStatusChange,
-    })
-
   const bashSecurity = new DefaultBashSecurity({
     ...config.bashSecurity,
     mode: 'run',
@@ -70,9 +65,16 @@ export async function handleRunCommand(
     createAutonoeProtectionHook(),
   ]
 
+  // Factory creates MCP server per session with appropriate tool set
   const clientFactory: AgentClientFactory = {
-    create: () =>
-      new ClaudeAgentClient({
+    create: (instructionName: InstructionName) => {
+      const { server: deliverableMcpServer, allowedTools: deliverableTools } =
+        createDeliverableMcpServer(repository, {
+          toolSet: instructionName,
+          onStatusChange,
+        })
+
+      return new ClaudeAgentClient({
         cwd: validatedOptions.projectDir,
         permissionLevel: 'acceptEdits',
         sandbox: validatedOptions.sandboxMode.disabled
@@ -84,7 +86,8 @@ export async function handleRunCommand(
         allowedTools: [...config.allowedTools, ...deliverableTools],
         model: validatedOptions.model,
         maxThinkingTokens: validatedOptions.maxThinkingTokens,
-      }),
+      })
+    },
   }
 
   const runnerOptions = createRunnerOptions(validatedOptions)

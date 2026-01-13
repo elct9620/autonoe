@@ -1,5 +1,6 @@
 import type { MessageStream, McpServer, PermissionLevel } from './types'
 import type { SandboxConfig } from './configuration'
+import type { InstructionName } from './instructions'
 
 /**
  * AgentClient interface for querying the Claude Agent
@@ -12,10 +13,12 @@ export interface AgentClient {
 
 /**
  * Factory for creating fresh AgentClient instances per session
+ *
+ * Receives instruction name to select appropriate tool set for MCP server.
  * @see SPEC.md Section 3.9.3
  */
 export interface AgentClientFactory {
-  create(): AgentClient
+  create(instructionName: InstructionName): AgentClient
 }
 
 /**

@@ -91,6 +91,9 @@ export class MockAgentClient implements AgentClient {
 /**
  * Create a factory that returns the same MockAgentClient instance
  * Useful for tests that need to track calls across multiple sessions
+ *
+ * Factory.create() now accepts instructionName parameter but the mock
+ * ignores it since tests don't need real MCP server creation.
  */
 export function createMockClientFactory(
   client: MockAgentClient,

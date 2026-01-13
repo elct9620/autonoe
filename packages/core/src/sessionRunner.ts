@@ -148,15 +148,16 @@ export class SessionRunner {
       const effectiveSelector =
         instructionSelector ??
         new DefaultInstructionSelector(createDefaultInstructionResolver())
-      const instruction = await effectiveSelector.select({
-        iteration: state.iterations,
-        statusReader: effectiveStatusReader,
-      })
+      const { name: instructionName, content: instruction } =
+        await effectiveSelector.select({
+          iteration: state.iterations,
+          statusReader: effectiveStatusReader,
+        })
       logger.info(`Session ${state.iterations} started`)
 
       try {
-        // Create fresh client per session to avoid SDK child process accumulation
-        const client = clientFactory.create()
+        // Create fresh client per session with appropriate tool set
+        const client = clientFactory.create(instructionName)
         const session = new Session()
         const result = await session.run(client, instruction, logger)
 

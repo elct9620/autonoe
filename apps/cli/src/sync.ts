@@ -5,6 +5,7 @@ import {
   createBashSecurityHook,
   createSyncWriteRestrictionHook,
   type AgentClientFactory,
+  type InstructionName,
 } from '@autonoe/core'
 import {
   ClaudeAgentClient,
@@ -60,13 +61,6 @@ export async function handleSyncCommand(
   const repository = new FileDeliverableRepository(validatedOptions.projectDir)
   const onStatusChange = createStatusChangeCallback(logger)
 
-  // Create MCP server with all sync tools (consistent with run command pattern)
-  const { server: deliverableMcpServer, allowedTools: deliverableTools } =
-    createDeliverableMcpServer(repository, {
-      toolSet: 'sync',
-      onStatusChange,
-    })
-
   const bashSecurity = new DefaultBashSecurity({
     ...config.bashSecurity,
     mode: 'sync', // Use verification layer for sync command
@@ -79,10 +73,16 @@ export async function handleSyncCommand(
     createSyncWriteRestrictionHook(),
   ]
 
-  // Single client factory (same pattern as run command)
+  // Factory creates MCP server per session with appropriate tool set
   const clientFactory: AgentClientFactory = {
-    create: () =>
-      new ClaudeAgentClient({
+    create: (instructionName: InstructionName) => {
+      const { server: deliverableMcpServer, allowedTools: deliverableTools } =
+        createDeliverableMcpServer(repository, {
+          toolSet: instructionName,
+          onStatusChange,
+        })
+
+      return new ClaudeAgentClient({
         cwd: validatedOptions.projectDir,
         permissionLevel: 'acceptEdits',
         sandbox: config.sandbox,
@@ -92,7 +92,8 @@ export async function handleSyncCommand(
         allowedTools: [...config.allowedTools, ...deliverableTools],
         model: validatedOptions.model,
         maxThinkingTokens: validatedOptions.maxThinkingTokens,
-      }),
+      })
+    },
   }
 
   // Single SessionRunner instance (same pattern as run command)

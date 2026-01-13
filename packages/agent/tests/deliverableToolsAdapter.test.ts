@@ -548,18 +548,10 @@ describe('deliverableToolsAdapter', () => {
       expect(DELIVERABLE_TOOL_SETS.verify).toEqual(['set_deliverable_status'])
     })
 
-    it('sync set contains create, deprecate, and set_deliverable_status', () => {
+    it('sync set contains create and deprecate', () => {
       expect(DELIVERABLE_TOOL_SETS.sync).toEqual([
         'create_deliverable',
         'deprecate_deliverable',
-        'set_deliverable_status',
-      ])
-    })
-
-    it('run set contains create and set_deliverable_status', () => {
-      expect(DELIVERABLE_TOOL_SETS.run).toEqual([
-        'create_deliverable',
-        'set_deliverable_status',
       ])
     })
   })
@@ -593,6 +585,15 @@ describe('deliverableToolsAdapter', () => {
       expect(allowedTools).toEqual([
         'mcp__autonoe-deliverable__create_deliverable',
         'mcp__autonoe-deliverable__deprecate_deliverable',
+      ])
+    })
+
+    it('returns MCP tool names for verify tool set', () => {
+      const { allowedTools } = createDeliverableMcpServer(repository, {
+        toolSet: 'verify',
+      })
+
+      expect(allowedTools).toEqual([
         'mcp__autonoe-deliverable__set_deliverable_status',
       ])
     })
@@ -600,17 +601,6 @@ describe('deliverableToolsAdapter', () => {
     it('returns MCP tool names for custom tool array', () => {
       const { allowedTools } = createDeliverableMcpServer(repository, {
         toolSet: ['create_deliverable', 'set_deliverable_status'],
-      })
-
-      expect(allowedTools).toEqual([
-        'mcp__autonoe-deliverable__create_deliverable',
-        'mcp__autonoe-deliverable__set_deliverable_status',
-      ])
-    })
-
-    it('returns MCP tool names for run tool set', () => {
-      const { allowedTools } = createDeliverableMcpServer(repository, {
-        toolSet: 'run',
       })
 
       expect(allowedTools).toEqual([
