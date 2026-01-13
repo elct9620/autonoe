@@ -58,7 +58,8 @@ setup() {
   local fixture="$1"
   echo "  Setting up fixture: $fixture"
   cleanup_workspace
-  cp -r "tests/integration/fixtures/$fixture"/* ./tmp/
+  # Use /. to copy all files including hidden directories like .autonoe/
+  cp -r "tests/integration/fixtures/$fixture"/. ./tmp/
 }
 
 # Fix permissions on workspace files (for CI where Docker runs as root)

@@ -119,14 +119,24 @@ For deliverables that require actions outside Autonoe's capabilities (e.g., depl
 - **Existing deliverables**: Skip creation (preserve current passed/pending/blocked status)
 - **Removed deliverables**: See STEP 4
 
-## STEP 4: Handle Deprecated Deliverables
+## STEP 4: Handle Deprecated Deliverables (CRITICAL)
 
 For deliverables in status.json but NOT in SPEC.md:
 
-- Use `deprecate_deliverable` tool to mark with `deprecatedAt: "YYYY-MM-DD"` (if tool is available)
-- If tool is not available, note these deliverables for manual deprecation
+**You MUST use `mcp__autonoe-deliverable__deprecate_deliverable` tool to mark these deliverables.**
+
+- Call `deprecate_deliverable` tool with the deliverable ID
+- The tool will add `deprecatedAt: "YYYY-MM-DD"` field
+- Do NOT skip this step - deprecated deliverables must be explicitly marked
 - Do NOT delete records (retained for audit trail)
 - Deprecated deliverables are excluded from termination evaluation
+
+**Example:**
+If DL-OLD exists in status.json but not in SPEC.md, call:
+
+```
+mcp__autonoe-deliverable__deprecate_deliverable({"deliverableId": "DL-OLD"})
+```
 
 ## STEP 5: Update Notes
 
