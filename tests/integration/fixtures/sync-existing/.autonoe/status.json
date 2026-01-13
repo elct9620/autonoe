@@ -1,0 +1,18 @@
+{
+  "deliverables": [
+    {
+      "id": "DL-001",
+      "description": "Existing File",
+      "acceptanceCriteria": ["File existing.txt exists"],
+      "passed": true,
+      "blocked": false
+    },
+    {
+      "id": "DL-OLD",
+      "description": "Old deliverable to deprecate",
+      "acceptanceCriteria": ["Should be deprecated"],
+      "passed": false,
+      "blocked": false
+    }
+  ]
+}

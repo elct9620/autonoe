@@ -20,20 +20,20 @@ DEFAULT_OPTIONS="--model opus --thinking"
 
 # Test metadata for summary generation
 declare -A TEST_NAMES=(
-  ["IT-001"]="Basic Workflow"
-  ["IT-002"]="Technology Stack Recognition"
-  ["IT-003"]="Instruction Override"
-  ["IT-004"]="Deliverable Status Persistence"
-  ["IT-005"]="Session Iteration Limit"
+  ["IT-001"]="Technology Stack Recognition"
+  ["IT-002"]="Instruction Override"
+  ["IT-003"]="Session Iteration Limit"
+  ["IT-004"]="Sync Without Status.json"
+  ["IT-005"]="Sync With Existing Status.json"
   ["SC-B001"]="Browser Navigate to localhost"
 )
 
 declare -A TEST_VERIFICATION=(
-  ["IT-001"]="File hello.txt exists and contains 'Hello, World!'"
-  ["IT-002"]="File hello.js exists and outputs 'Hello, World!' when executed"
-  ["IT-003"]="Agent output contains custom marker '=== CUSTOM MARKER ==='"
-  ["IT-004"]="status.json contains deliverable with passed=true"
-  ["IT-005"]="Exit code is 0 or 1 (graceful termination)"
+  ["IT-001"]="File hello.js exists and outputs 'Hello, World!' when executed"
+  ["IT-002"]="Agent output contains custom marker '=== CUSTOM MARKER ==='"
+  ["IT-003"]="Exit code is 0 or 1 (graceful termination)"
+  ["IT-004"]="status.json created with deliverables from SPEC.md"
+  ["IT-005"]="new deliverable created and DL-OLD deprecated"
   ["SC-B001"]="status.json has passed deliverable and screenshot.png exists"
 )
 
@@ -74,6 +74,14 @@ run_autonoe() {
   return $exit_code
 }
 
+# Run autonoe sync in Docker
+run_autonoe_sync() {
+  docker compose run --rm cli autonoe sync $DEFAULT_OPTIONS "$@"
+  local exit_code=$?
+  fix_permissions
+  return $exit_code
+}
+
 # Capture test artifacts for summary
 capture_test_artifacts() {
   if [[ -f ./tmp/.autonoe-note.md ]]; then
@@ -105,31 +113,12 @@ fail() {
   capture_test_artifacts
 }
 
-# IT-001: Basic Workflow
+# IT-001: Technology Stack Recognition
 test_it001() {
   CURRENT_TEST="IT-001"
   EXECUTED_TESTS+=("IT-001")
   echo ""
-  echo "IT-001: Basic Workflow"
-  setup hello-world
-
-  if run_autonoe -n 3; then
-    if test -f ./tmp/hello.txt && grep -q "Hello, World!" ./tmp/hello.txt; then
-      pass
-    else
-      fail "hello.txt not found or content mismatch"
-    fi
-  else
-    fail "autonoe execution failed"
-  fi
-}
-
-# IT-002: Technology Stack Recognition
-test_it002() {
-  CURRENT_TEST="IT-002"
-  EXECUTED_TESTS+=("IT-002")
-  echo ""
-  echo "IT-002: Technology Stack Recognition"
+  echo "IT-001: Technology Stack Recognition"
   setup nodejs
 
   if run_autonoe -n 3; then
@@ -148,12 +137,12 @@ test_it002() {
   fi
 }
 
-# IT-003: Instruction Override
-test_it003() {
-  CURRENT_TEST="IT-003"
-  EXECUTED_TESTS+=("IT-003")
+# IT-002: Instruction Override
+test_it002() {
+  CURRENT_TEST="IT-002"
+  EXECUTED_TESTS+=("IT-002")
   echo ""
-  echo "IT-003: Instruction Override"
+  echo "IT-002: Instruction Override"
   setup custom-instruction
 
   # Capture output with debug flag
@@ -168,36 +157,12 @@ test_it003() {
   fi
 }
 
-# IT-004: Deliverable Status Persistence
-test_it004() {
-  CURRENT_TEST="IT-004"
-  EXECUTED_TESTS+=("IT-004")
+# IT-003: Session Iteration Limit
+test_it003() {
+  CURRENT_TEST="IT-003"
+  EXECUTED_TESTS+=("IT-003")
   echo ""
-  echo "IT-004: Deliverable Status Persistence"
-  setup hello-world
-
-  if run_autonoe -n 3; then
-    if test -f ./tmp/.autonoe/status.json; then
-      # Check if any deliverable has passed=true
-      if jq -e '.deliverables[] | select(.passed == true)' ./tmp/.autonoe/status.json > /dev/null 2>&1; then
-        pass
-      else
-        fail "no deliverable with passed=true"
-      fi
-    else
-      fail ".autonoe/status.json not found"
-    fi
-  else
-    fail "autonoe execution failed"
-  fi
-}
-
-# IT-005: Session Iteration Limit
-test_it005() {
-  CURRENT_TEST="IT-005"
-  EXECUTED_TESTS+=("IT-005")
-  echo ""
-  echo "IT-005: Session Iteration Limit"
+  echo "IT-003: Session Iteration Limit"
   setup hello-world
 
   # Run with max 1 iteration - should exit cleanly
@@ -209,6 +174,66 @@ test_it005() {
     pass
   else
     fail "unexpected exit code: $exit_code"
+  fi
+}
+
+# IT-004: Sync Without Status.json
+test_it004() {
+  CURRENT_TEST="IT-004"
+  EXECUTED_TESTS+=("IT-004")
+  echo ""
+  echo "IT-004: Sync Without Status.json"
+  setup hello-world
+
+  if run_autonoe_sync -n 3; then
+    if test -f ./tmp/.autonoe/status.json; then
+      # Check if deliverables array is not empty
+      if jq -e '.deliverables | length > 0' ./tmp/.autonoe/status.json > /dev/null 2>&1; then
+        pass
+      else
+        fail "status.json has no deliverables"
+      fi
+    else
+      fail ".autonoe/status.json not found"
+    fi
+  else
+    fail "autonoe sync execution failed"
+  fi
+}
+
+# IT-005: Sync With Existing Status.json
+test_it005() {
+  CURRENT_TEST="IT-005"
+  EXECUTED_TESTS+=("IT-005")
+  echo ""
+  echo "IT-005: Sync With Existing Status.json"
+  setup sync-existing
+
+  if run_autonoe_sync -n 3; then
+    if test -f ./tmp/.autonoe/status.json; then
+      # Check 1: New deliverable created (description contains "New" or similar)
+      if ! jq -e '.deliverables[] | select(.description | test("New|new|DL-002"; "i"))' ./tmp/.autonoe/status.json > /dev/null 2>&1; then
+        # Fallback check: deliverables count increased
+        local count
+        count=$(jq '.deliverables | length' ./tmp/.autonoe/status.json)
+        if [[ "$count" -lt 3 ]]; then
+          fail "new deliverable not created"
+          return
+        fi
+      fi
+
+      # Check 2: DL-OLD is deprecated (has deprecatedAt field)
+      if ! jq -e '.deliverables[] | select(.id == "DL-OLD") | select(.deprecatedAt != null)' ./tmp/.autonoe/status.json > /dev/null 2>&1; then
+        fail "DL-OLD was not deprecated"
+        return
+      fi
+
+      pass
+    else
+      fail ".autonoe/status.json not found"
+    fi
+  else
+    fail "autonoe sync execution failed"
   fi
 }
 
@@ -254,7 +279,13 @@ run_test() {
     SC-B001|sc-b001) test_scb001 ;;
     *)
       echo -e "${RED}Error: Unknown test ID: $test_id${NC}"
-      echo "Available tests: IT-001, IT-002, IT-003, IT-004, IT-005, SC-B001"
+      echo "Available tests:"
+      echo "  IT-001   Technology Stack Recognition"
+      echo "  IT-002   Instruction Override"
+      echo "  IT-003   Session Iteration Limit"
+      echo "  IT-004   Sync Without Status.json"
+      echo "  IT-005   Sync With Existing Status.json"
+      echo "  SC-B001  Browser Navigate to localhost"
       exit 1
       ;;
   esac
@@ -267,6 +298,11 @@ run_all_tests() {
   test_it003
   test_it004
   test_it005
+}
+
+# Run all E2E tests (alias for run_all_tests)
+run_e2e_tests() {
+  run_all_tests
 }
 
 # Generate GitHub Actions Job Summary
@@ -385,11 +421,11 @@ usage() {
   echo "  --help       Show this help message"
   echo ""
   echo "Available tests:"
-  echo "  IT-001   Basic Workflow"
-  echo "  IT-002   Technology Stack Recognition"
-  echo "  IT-003   Instruction Override"
-  echo "  IT-004   Deliverable Status Persistence"
-  echo "  IT-005   Session Iteration Limit"
+  echo "  IT-001   Technology Stack Recognition"
+  echo "  IT-002   Instruction Override"
+  echo "  IT-003   Session Iteration Limit"
+  echo "  IT-004   Sync Without Status.json"
+  echo "  IT-005   Sync With Existing Status.json"
   echo "  SC-B001  Browser Navigate to localhost"
 }
 

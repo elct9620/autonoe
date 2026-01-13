@@ -241,45 +241,50 @@ The `./tmp/` directory serves as the Docker volume mount point for test fixtures
 
 ### End-to-End Test Cases
 
-#### IT-001: Basic Workflow
-
-| Field        | Value                                      |
-| ------------ | ------------------------------------------ |
-| **Scenario** | End-to-end session with simple deliverable |
-| **Fixture**  | `tests/integration/fixtures/hello-world/`  |
-| **Expected** | `hello.txt` exists, content matches        |
-
-#### IT-002: Technology Stack Recognition
+#### IT-001: Technology Stack Recognition
 
 | Field        | Value                                 |
 | ------------ | ------------------------------------- |
 | **Scenario** | Node.js technology stack handling     |
+| **Command**  | `autonoe run`                         |
 | **Fixture**  | `tests/integration/fixtures/nodejs/`  |
 | **Expected** | `hello.js` exists, executes correctly |
 
-#### IT-003: Instruction Override
+#### IT-002: Instruction Override
 
 | Field        | Value                                            |
 | ------------ | ------------------------------------------------ |
 | **Scenario** | Custom instruction loading                       |
+| **Command**  | `autonoe run`                                    |
 | **Fixture**  | `tests/integration/fixtures/custom-instruction/` |
 | **Expected** | Agent outputs custom marker text                 |
 
-#### IT-004: Deliverable Status Persistence
-
-| Field        | Value                                     |
-| ------------ | ----------------------------------------- |
-| **Scenario** | Status file creation and update           |
-| **Fixture**  | `tests/integration/fixtures/hello-world/` |
-| **Expected** | Valid JSON with deliverable marked passed |
-
-#### IT-005: Session Iteration Limit
+#### IT-003: Session Iteration Limit
 
 | Field        | Value                                     |
 | ------------ | ----------------------------------------- |
 | **Scenario** | Max iterations respected                  |
+| **Command**  | `autonoe run`                             |
 | **Fixture**  | `tests/integration/fixtures/hello-world/` |
-| **Expected** | Exits after N iterations                  |
+| **Expected** | Exits with code 0 or 1 (graceful)         |
+
+#### IT-004: Sync Without Status.json
+
+| Field        | Value                                            |
+| ------------ | ------------------------------------------------ |
+| **Scenario** | Sync command creates deliverables from SPEC.md   |
+| **Command**  | `autonoe sync`                                   |
+| **Fixture**  | `tests/integration/fixtures/hello-world/`        |
+| **Expected** | `.autonoe/status.json` created with deliverables |
+
+#### IT-005: Sync With Existing Status.json
+
+| Field        | Value                                               |
+| ------------ | --------------------------------------------------- |
+| **Scenario** | Sync command updates existing status                |
+| **Command**  | `autonoe sync`                                      |
+| **Fixture**  | `tests/integration/fixtures/sync-existing/`         |
+| **Expected** | New deliverable created, old deliverable deprecated |
 
 ### SDK Sandbox Test Cases
 
