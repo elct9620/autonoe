@@ -131,6 +131,28 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | SC-AC013 | detectClaudeCodePath | claude found               | Path string                      |
 | SC-AC014 | detectClaudeCodePath | claude not found           | undefined                        |
 
+### ClaudeAgentClient SDK Options Assembly
+
+| ID        | Category          | Input                                | Expected Output                   |
+| --------- | ----------------- | ------------------------------------ | --------------------------------- |
+| SC-CAC001 | base              | `{ cwd: '/project' }`                | `sdkOptions.cwd` set              |
+| SC-CAC002 | base              | `{ model: 'claude-sonnet-4' }`       | `sdkOptions.model` set            |
+| SC-CAC010 | mcpServers        | both undefined                       | `sdkOptions.mcpServers` undefined |
+| SC-CAC011 | mcpServers        | external only                        | converted via toSdkMcpServers     |
+| SC-CAC012 | mcpServers        | SDK MCP only                         | converted to record format        |
+| SC-CAC013 | mcpServers        | both external + SDK                  | merged, SDK takes precedence      |
+| SC-CAC020 | permissionLevel   | undefined                            | `permissionMode` undefined        |
+| SC-CAC021 | permissionLevel   | `'acceptEdits'`                      | `permissionMode` set              |
+| SC-CAC030 | allowedTools      | undefined                            | `allowedTools` undefined          |
+| SC-CAC031 | allowedTools      | `['Read', 'Write']`                  | `allowedTools` set                |
+| SC-CAC040 | sandbox           | undefined                            | `sandbox` undefined               |
+| SC-CAC041 | sandbox           | `{ enabled: true, autoAllow: true }` | `sandbox` set with both fields    |
+| SC-CAC050 | preToolUseHooks   | undefined                            | `hooks` undefined                 |
+| SC-CAC051 | preToolUseHooks   | `[]`                                 | `hooks` undefined                 |
+| SC-CAC052 | preToolUseHooks   | `[hook]`                             | `hooks.PreToolUse` converted      |
+| SC-CAC060 | maxThinkingTokens | undefined                            | `maxThinkingTokens` undefined     |
+| SC-CAC061 | maxThinkingTokens | `8192`                               | `maxThinkingTokens` set           |
+
 ### Autonoe Protection
 
 | ID       | Input                              | Expected Output |
