@@ -110,7 +110,7 @@ To make a progress on the chosen deliverable, process throughly:
 
 **CRITICAL:** You must verify the deliverable close to real user with all possible tools, e.g. browser automation tools, API testing tools, CLI tools, etc.
 
-**PREFER Browser Automation:** When working on web applications, you MUST use browser automation tools (Playwright, Puppeteer) as the PRIMARY verification method. API/curl testing is supplementary, not a replacement for real browser verification.
+**PREFER Browser Automation:** When verifying web UI deliverables, you MUST use browser automation tools as the PRIMARY verification method. Playwright MCP tools are built-in, but if unavailable, explore the project for alternative browser automation methods before giving up. API/curl testing is supplementary, not a replacement for real browser verification.
 
 For example, if you are working on a web app and Playwright MCP tools is available:
 
@@ -186,6 +186,16 @@ Acceptance Criteria Verification:
 - Implementation dependencies (just implement them first)
 - Difficult but solvable problems (keep trying different approaches)
 - First attempt failures (try 2-3 different approaches before marking blocked)
+
+**Tool Failure Fallback Strategy:**
+
+When a tool or verification method fails:
+
+1. **Explore the project** for alternative methods - the project may provide other tools or commands for the same purpose
+2. **Try at least 2-3 different approaches** before considering the deliverable unverifiable
+3. **Code review alone is NOT sufficient** for deliverables that require runtime verification (UI, API, etc.)
+
+Only after exhausting alternatives should you mark the deliverable as `blocked`.
 
 Never modify or delete deliverables.
 
