@@ -42,12 +42,14 @@ RUN case "$TARGETPLATFORM" in \
 # =============================================================================
 FROM debian:bookworm-slim AS base
 
-# Install essential tools
+# Install essential tools (including Git signing support)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
     jq \
+    openssh-client \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
@@ -62,12 +64,14 @@ CMD ["autonoe"]
 # =============================================================================
 FROM node:${NODE_VERSION}-bookworm-slim AS node
 
-# Install essential tools
+# Install essential tools (including Git signing support)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
     jq \
+    openssh-client \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install claude-code CLI (required by claude-agent-sdk)
@@ -94,12 +98,14 @@ FROM python:${PYTHON_VERSION}-slim-bookworm AS python
 
 ARG NODE_VERSION
 
-# Install essential tools and Node.js
+# Install essential tools and Node.js (including Git signing support)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
     jq \
+    openssh-client \
+    gnupg \
     && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
@@ -132,12 +138,14 @@ FROM golang:${GOLANG_VERSION}-bookworm AS golang
 
 ARG NODE_VERSION
 
-# Install essential tools and Node.js
+# Install essential tools and Node.js (including Git signing support)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
     jq \
+    openssh-client \
+    gnupg \
     && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
@@ -166,12 +174,14 @@ FROM ruby:${RUBY_VERSION}-slim-bookworm AS ruby
 
 ARG NODE_VERSION
 
-# Install essential tools and Node.js
+# Install essential tools and Node.js (including Git signing support)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
     jq \
+    openssh-client \
+    gnupg \
     && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
