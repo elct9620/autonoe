@@ -196,20 +196,20 @@ Core interface definitions. For detailed specifications, see [Interfaces](docs/i
 
 | Tool | Purpose |
 |------|---------|
-| create_deliverable | Create deliverables with acceptance criteria |
-| set_deliverable_status | Update status: pending, passed, or blocked |
-| deprecate_deliverable | Mark deliverable as deprecated (sync command only) |
-| mark_verified | Mark deliverable as verified (sync command only) |
-| list_unverified | List deliverables not yet verified (sync command only), optional `limit` parameter (default: 5) |
+| create | Create deliverables with acceptance criteria |
+| set_status | Update status: pending, passed, or blocked |
+| deprecate | Mark deliverable as deprecated (sync command only) |
+| verify | Mark deliverable as verified (sync command only) |
+| list | List deliverables not yet verified (sync command only), optional `limit` parameter (default: 5) |
 
 **Tool Availability per Instruction:**
 
 | Instruction | Available Tools |
 |-------------|-----------------|
-| initializer | `create_deliverable` |
-| coding | `set_deliverable_status` |
-| sync | `create_deliverable`, `deprecate_deliverable` |
-| verify | `set_deliverable_status`, `mark_verified`, `list_unverified` |
+| initializer | `create` |
+| coding | `set_status` |
+| sync | `create`, `deprecate` |
+| verify | `set_status`, `verify`, `list` |
 
 Each session receives only the tools needed for its instruction type.
 AgentClientFactory creates a fresh MCP server with the appropriate tool set per session.
@@ -222,8 +222,8 @@ For detailed tool specifications, see [Interfaces - Deliverable Tools](docs/inte
 | ---------------------- | ------------------------- | ------------------------------- |
 | AgentClient            | SessionRunner.run()       | Enable testing with mocks       |
 | BashSecurity           | PreToolUse hook           | Validate bash commands          |
-| create_deliverable     | SDK createSdkMcpServer    | Create deliverables             |
-| set_deliverable_status | SDK createSdkMcpServer    | Set deliverable status          |
+| create                 | SDK createSdkMcpServer    | Create deliverables             |
+| set_status             | SDK createSdkMcpServer    | Set deliverable status          |
 | Logger                 | SessionRunner.run()       | Enable output capture           |
 
 ```
@@ -266,7 +266,7 @@ The sync command uses an in-memory verification tracker to ensure all deliverabl
 | unverified | Agent has not yet checked this deliverable     |
 
 - Tracker is initialized with all active deliverable IDs at sync start
-- Each deliverable must be explicitly marked via `mark_verified` tool
+- Each deliverable must be explicitly marked via `verify` tool
 - Termination occurs when all deliverables are verified
 - Unlike run command, sync does NOT terminate on all_passed/all_blocked
 
@@ -668,7 +668,7 @@ Base security capabilities shared by all execution modes:
 | ------------------- | ---------- | ------------------------ |
 | File Read           | YES        | All files                |
 | Git                 | YES        | Full access              |
-| autonoe-deliverable | YES        | status.json management   |
+| autonoe | YES        | status.json management   |
 | Bash                | LIMITED    | Status commands only     |
 | .autonoe/ Write     | NO         | Block direct writes      |
 
@@ -890,7 +890,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | Bash (safe)          | YES       |
 | Git                  | YES       |
 | Playwright           | YES       |
-| autonoe-deliverable  | YES       |
+| autonoe  | YES       |
 
 ### 9.3 Configuration Merge
 
@@ -947,7 +947,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | File Edit           | LIMITED   | .autonoe-note.md only              |
 | Bash                | LIMITED   | Test/lint/build commands only      |
 | Git                 | YES       | Full access                        |
-| autonoe-deliverable | YES       | status.json updates                |
+| autonoe | YES       | status.json updates                |
 | Playwright          | YES       | Verify phase only                  |
 
 See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.

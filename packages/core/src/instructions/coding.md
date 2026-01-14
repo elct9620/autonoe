@@ -6,7 +6,7 @@ You are continuing work on a long-running autonomous task. This is a FRESH conte
 
 You have access to this MCP tool for managing deliverables:
 
-- `mcp__autonoe-deliverable__set_deliverable_status` - Update deliverable status (pending/passed/blocked)
+- `mcp__autonoe__set_status` - Update deliverable status (pending/passed/blocked)
 
 **IMPORTANT:** You MUST use this tool to update deliverable status. Direct writes to `.autonoe/status.json` are blocked.
 
@@ -65,7 +65,7 @@ For example, you are working on a web app, you might:
 
 **If ANY ISSUE is found:**
 
-- Call `mcp__autonoe-deliverable__set_deliverable_status` tool with `{"deliverableId": "...", "status": "pending"}` to reset the deliverable
+- Call `mcp__autonoe__set_status` tool with `{"deliverableId": "...", "status": "pending"}` to reset the deliverable
 - Add issues to list
 - Fix all issues BEFORE moving to new work
 - This includes any bugs like:
@@ -154,7 +154,7 @@ Acceptance Criteria Verification:
 
 **Only after ALL criteria are verified with evidence**, call the tool:
 
-- Tool: `mcp__autonoe-deliverable__set_deliverable_status`
+- Tool: `mcp__autonoe__set_status`
 - Input: `{"deliverableId": "UI-001", "status": "passed"}`
 
 **CRITICAL:** Do NOT write directly to `.autonoe/status.json`. You MUST use the tool.

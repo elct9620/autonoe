@@ -21,10 +21,7 @@ type McpToolOutput = { content: Array<{ type: 'text'; text: string }> }
 /**
  * Available tool names for deliverable operations
  */
-export type DeliverableToolName =
-  | 'create_deliverable'
-  | 'set_deliverable_status'
-  | 'deprecate_deliverable'
+export type DeliverableToolName = 'create' | 'set_status' | 'deprecate'
 
 /**
  * Predefined tool sets for different instruction types
@@ -32,15 +29,15 @@ export type DeliverableToolName =
  * @see SPEC.md Appendix A.1
  */
 export const DELIVERABLE_TOOL_SETS = {
-  initializer: ['create_deliverable'] as const,
-  coding: ['set_deliverable_status'] as const,
-  sync: ['create_deliverable', 'deprecate_deliverable'] as const,
-  verify: ['set_deliverable_status'] as const,
+  initializer: ['create'] as const,
+  coding: ['set_status'] as const,
+  sync: ['create', 'deprecate'] as const,
+  verify: ['set_status'] as const,
 } as const
 
 export type DeliverableToolSetName = keyof typeof DELIVERABLE_TOOL_SETS
 
-const MCP_SERVER_NAME = 'autonoe-deliverable'
+const MCP_SERVER_NAME = 'autonoe'
 
 /**
  * Result of creating a deliverable MCP server
@@ -159,8 +156,8 @@ export function createDeliverableMcpServer(
   )
 
   // Define all available tools
-  const createDeliverableTool = tool(
-    'create_deliverable',
+  const createTool = tool(
+    'create',
     'Create one or more deliverables in status.json. Use this in the initialization phase to define work units.',
     {
       deliverables: z
@@ -180,8 +177,8 @@ export function createDeliverableMcpServer(
     (input) => handleCreateDeliverables(repository, input),
   )
 
-  const setDeliverableStatusTool = tool(
-    'set_deliverable_status',
+  const setStatusTool = tool(
+    'set_status',
     'Set deliverable status: pending (reset), passed (completed), or blocked (external constraints only). Document reason in .autonoe-note.md before blocking.',
     {
       deliverableId: z.string().describe('Deliverable ID to update'),
@@ -194,8 +191,8 @@ export function createDeliverableMcpServer(
     (input) => handleSetDeliverableStatus(repository, input, onStatusChange),
   )
 
-  const deprecateDeliverableTool = tool(
-    'deprecate_deliverable',
+  const deprecateTool = tool(
+    'deprecate',
     'Mark a deliverable as deprecated. Used during sync when deliverables are removed from SPEC.md. Deprecated deliverables are excluded from termination evaluation.',
     {
       deliverableId: z.string().describe('Deliverable ID to deprecate'),
@@ -205,9 +202,9 @@ export function createDeliverableMcpServer(
 
   // Map tool names to tool instances
   const toolMap = {
-    create_deliverable: createDeliverableTool,
-    set_deliverable_status: setDeliverableStatusTool,
-    deprecate_deliverable: deprecateDeliverableTool,
+    create: createTool,
+    set_status: setStatusTool,
+    deprecate: deprecateTool,
   } as const
 
   // Select tools based on tool set

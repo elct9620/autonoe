@@ -14,8 +14,8 @@ You are synchronizing deliverables from SPEC.md to status.json. This is a STRUCT
 
 You have access to these MCP tools for managing deliverables:
 
-- `mcp__autonoe-deliverable__create_deliverable` - Create new deliverables
-- `mcp__autonoe-deliverable__deprecate_deliverable` - Mark removed deliverables as deprecated
+- `mcp__autonoe__create` - Create new deliverables
+- `mcp__autonoe__deprecate` - Mark removed deliverables as deprecated
 
 **IMPORTANT:** You MUST use these tools. Direct writes to `.autonoe/status.json` are blocked.
 
@@ -37,7 +37,7 @@ cat .autonoe/status.json || echo "No existing status.json"
 
 ## STEP 3: Parse and Create Deliverables (CRITICAL)
 
-Based on `SPEC.md`, call the `mcp__autonoe-deliverable__create_deliverable` tool to create a fine-grained list of deliverables with detailed step by step E2E acceptance criteria. This is the single source of truth for what needs to be built.
+Based on `SPEC.md`, call the `mcp__autonoe__create` tool to create a fine-grained list of deliverables with detailed step by step E2E acceptance criteria. This is the single source of truth for what needs to be built.
 For each deliverable, it provides value to the end user and can be independently tested and verified. e.g. a feature, a component, an API endpoint, etc.
 
 **REMINDER:** You MUST use the tool, not write directly to `.autonoe/status.json`.
@@ -115,7 +115,7 @@ For deliverables that require actions outside Autonoe's capabilities (e.g., depl
 
 **Sync Rules:**
 
-- **New deliverables**: Create with `create_deliverable` tool
+- **New deliverables**: Create with `create` tool
 - **Existing deliverables**: Skip creation (preserve current passed/pending/blocked status)
 - **Removed deliverables**: See STEP 4
 
@@ -123,9 +123,9 @@ For deliverables that require actions outside Autonoe's capabilities (e.g., depl
 
 For deliverables in status.json but NOT in SPEC.md:
 
-**You MUST use `mcp__autonoe-deliverable__deprecate_deliverable` tool to mark these deliverables.**
+**You MUST use `mcp__autonoe__deprecate` tool to mark these deliverables.**
 
-- Call `deprecate_deliverable` tool with the deliverable ID
+- Call `deprecate` tool with the deliverable ID
 - The tool will add `deprecatedAt: "YYYY-MM-DD"` field
 - Do NOT skip this step - deprecated deliverables must be explicitly marked
 - Do NOT delete records (retained for audit trail)
@@ -135,7 +135,7 @@ For deliverables in status.json but NOT in SPEC.md:
 If DL-OLD exists in status.json but not in SPEC.md, call:
 
 ```
-mcp__autonoe-deliverable__deprecate_deliverable({"deliverableId": "DL-OLD"})
+mcp__autonoe__deprecate({"deliverableId": "DL-OLD"})
 ```
 
 ## STEP 5: Update Notes

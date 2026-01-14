@@ -8,10 +8,10 @@ export {
   handleSetDeliverableStatus,
   handleDeprecateDeliverable,
   DELIVERABLE_TOOL_SETS,
-} from './deliverableToolsAdapter'
+} from './autonoeToolsAdapter'
 export type {
   DeliverableToolName,
   DeliverableToolSetName,
   DeliverableMcpServerOptions,
   DeliverableMcpServerResult,
-} from './deliverableToolsAdapter'
+} from './autonoeToolsAdapter'

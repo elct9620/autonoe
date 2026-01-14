@@ -21,12 +21,12 @@ Shared security capabilities for all execution modes.
 
 ### Base Tools
 
-| Category            | Capability | Scope                  |
-| ------------------- | ---------- | ---------------------- |
-| File Read           | YES        | All files              |
-| Git                 | YES        | Full access            |
-| autonoe-deliverable | YES        | status.json management |
-| .autonoe/ Write     | NO         | Block direct writes    |
+| Category        | Capability | Scope                  |
+| --------------- | ---------- | ---------------------- |
+| File Read       | YES        | All files              |
+| Git             | YES        | Full access            |
+| autonoe         | YES        | status.json management |
+| .autonoe/ Write | NO         | Block direct writes    |
 
 ### Base Bash Commands
 
@@ -291,15 +291,15 @@ Sync mode restricts Base Security for verification-only operations. Prevents mod
 
 ### Allowed Tools
 
-| Tool Category       | Available | Scope                      |
-| ------------------- | --------- | -------------------------- |
-| File Read           | YES       | All files                  |
-| File Write          | LIMITED   | .autonoe-note.md only      |
-| File Edit           | LIMITED   | .autonoe-note.md only      |
-| Bash                | LIMITED   | Verification commands only |
-| Git                 | YES       | Full access                |
-| Playwright          | YES       | Verification phase         |
-| autonoe-deliverable | YES       | status.json updates        |
+| Tool Category | Available | Scope                      |
+| ------------- | --------- | -------------------------- |
+| File Read     | YES       | All files                  |
+| File Write    | LIMITED   | .autonoe-note.md only      |
+| File Edit     | LIMITED   | .autonoe-note.md only      |
+| Bash          | LIMITED   | Verification commands only |
+| Git           | YES       | Full access                |
+| Playwright    | YES       | Verification phase         |
+| autonoe       | YES       | status.json updates        |
 
 ### Allowed Bash Commands
 

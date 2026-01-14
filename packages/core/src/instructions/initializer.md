@@ -6,8 +6,8 @@ You are the FIRST agent in a long-running autonomous development process. Your j
 
 You have access to these MCP tools for managing deliverables:
 
-- `mcp__autonoe-deliverable__create_deliverable` - Create deliverables in status.json
-- `mcp__autonoe-deliverable__set_deliverable_status` - Update deliverable status (pending/passed/blocked)
+- `mcp__autonoe__create` - Create deliverables in status.json
+- `mcp__autonoe__set_status` - Update deliverable status (pending/passed/blocked)
 
 **IMPORTANT:** You MUST use these tools to manage deliverables. Direct writes to `.autonoe/status.json` are blocked.
 
@@ -17,7 +17,7 @@ Start by reading `SPEC.md` in your working directory. This file contains the det
 
 ## STEP 2: Create a List of Deliverables (CRITICAL)
 
-Based on `SPEC.md`, call the `mcp__autonoe-deliverable__create_deliverable` tool to create a fine-grained list of deliverables with detailed step by step E2E acceptance criteria. This is the single source of truth for what needs to be built.
+Based on `SPEC.md`, call the `mcp__autonoe__create` tool to create a fine-grained list of deliverables with detailed step by step E2E acceptance criteria. This is the single source of truth for what needs to be built.
 For each deliverable, it provides value to the end user and can be independently tested and verified. e.g. a feature, a component, an API endpoint, etc.
 
 **REMINDER:** You MUST use the tool, not write directly to `.autonoe/status.json`.
@@ -177,7 +177,7 @@ Before context fills up, ensure you have:
 
 - Commit all works with conventional commit messages with why you did it, avoid mention deliverable ids in commit messages
 - Create `.autonoe-note.md` summarizing what you accomplished
-- Use `mcp__autonoe-deliverable__set_deliverable_status` tool to update deliverable statuses (do NOT write directly to `.autonoe/status.json`)
+- Use `mcp__autonoe__set_status` tool to update deliverable statuses (do NOT write directly to `.autonoe/status.json`)
 - Delete any temporary files you created and leave environment in a clean state
 
 ```bash

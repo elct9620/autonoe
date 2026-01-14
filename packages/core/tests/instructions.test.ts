@@ -24,11 +24,11 @@ describe('instructions', () => {
 
     it('initializerInstruction contains expected content', () => {
       expect(initializerInstruction).toContain('SPEC.md')
-      expect(initializerInstruction).toContain('create_deliverable')
+      expect(initializerInstruction).toContain('mcp__autonoe__create')
     })
 
     it('codingInstruction contains expected content', () => {
-      expect(codingInstruction).toContain('set_deliverable_status')
+      expect(codingInstruction).toContain('mcp__autonoe__set_status')
       expect(codingInstruction).toContain('passed')
     })
   })

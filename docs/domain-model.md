@@ -101,7 +101,7 @@ External tool server configuration.
 
 ### DeliverableInput
 
-Single deliverable definition (for create_deliverable tool).
+Single deliverable definition (for create tool).
 
 | Field              | Type     | Description                          |
 | ------------------ | -------- | ------------------------------------ |
@@ -111,7 +111,7 @@ Single deliverable definition (for create_deliverable tool).
 
 ### CreateDeliverableInput
 
-Input for create_deliverable tool.
+Input for create tool.
 
 | Field        | Type               | Description                     |
 | ------------ | ------------------ | ------------------------------- |
@@ -119,7 +119,7 @@ Input for create_deliverable tool.
 
 ### SetDeliverableStatusInput
 
-Input for set_deliverable_status tool.
+Input for set_status tool.
 
 | Field         | Type                               | Description              |
 | ------------- | ---------------------------------- | ------------------------ |

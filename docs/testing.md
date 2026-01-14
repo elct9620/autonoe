@@ -60,19 +60,19 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | SC-X025 | `mv src.ts ../dst.ts`     | true             | Denied (escape) |
 | SC-X026 | `mv ../src.ts dst.ts`     | true             | Denied (escape) |
 
-### Deliverable Tools (autonoe-deliverable)
+### Deliverable Tools (autonoe)
 
-| ID      | Tool                   | Input                         | Expected Output                    |
-| ------- | ---------------------- | ----------------------------- | ---------------------------------- |
-| DL-T001 | create_deliverable     | Array with valid deliverables | All deliverables added             |
-| DL-T002 | create_deliverable     | Array with duplicate ID       | Error: ID already exists           |
-| DL-T003 | set_deliverable_status | Valid ID, status=passed       | passed=true, blocked=false         |
-| DL-T004 | set_deliverable_status | Invalid deliverable ID        | Error: deliverable not found       |
-| DL-T005 | set_deliverable_status | Valid ID, status=blocked      | passed=false, blocked=true         |
-| DL-T006 | set_deliverable_status | Valid ID, status=pending      | passed=false, blocked=false        |
-| DL-T007 | set_deliverable_status | Blocked ID, status=pending    | Reset: blocked=false               |
-| DL-T008 | set_deliverable_status | Valid ID, callback provided   | Callback invoked with notification |
-| DL-T009 | set_deliverable_status | Invalid ID, callback provided | Callback not invoked               |
+| ID      | Tool       | Input                         | Expected Output                    |
+| ------- | ---------- | ----------------------------- | ---------------------------------- |
+| DL-T001 | create     | Array with valid deliverables | All deliverables added             |
+| DL-T002 | create     | Array with duplicate ID       | Error: ID already exists           |
+| DL-T003 | set_status | Valid ID, status=passed       | passed=true, blocked=false         |
+| DL-T004 | set_status | Invalid deliverable ID        | Error: deliverable not found       |
+| DL-T005 | set_status | Valid ID, status=blocked      | passed=false, blocked=true         |
+| DL-T006 | set_status | Valid ID, status=pending      | passed=false, blocked=false        |
+| DL-T007 | set_status | Blocked ID, status=pending    | Reset: blocked=false               |
+| DL-T008 | set_status | Valid ID, callback provided   | Callback invoked with notification |
+| DL-T009 | set_status | Invalid ID, callback provided | Callback not invoked               |
 
 ### Configuration
 

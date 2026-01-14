@@ -11,7 +11,7 @@ import {
   handleDeprecateDeliverable,
   createDeliverableMcpServer,
   DELIVERABLE_TOOL_SETS,
-} from '../src/deliverableToolsAdapter'
+} from '../src/autonoeToolsAdapter'
 
 /**
  * Mock implementation of DeliverableRepository for testing
@@ -53,7 +53,7 @@ class MockDeliverableRepository implements DeliverableRepository {
   }
 }
 
-describe('deliverableToolsAdapter', () => {
+describe('autonoeToolsAdapter', () => {
   let repository: MockDeliverableRepository
 
   beforeEach(() => {
@@ -488,7 +488,7 @@ describe('deliverableToolsAdapter', () => {
       it('has correct server name', () => {
         const { server } = createDeliverableMcpServer(repository)
 
-        expect(server.name).toBe('autonoe-deliverable')
+        expect(server.name).toBe('autonoe')
       })
     })
 
@@ -507,7 +507,7 @@ describe('deliverableToolsAdapter', () => {
         const { server } = createDeliverableMcpServer(repository)
         // Server should be created without error using default coding toolset
         expect(server).toBeDefined()
-        expect(server.name).toBe('autonoe-deliverable')
+        expect(server.name).toBe('autonoe')
       })
 
       it('accepts toolSet option', () => {
@@ -519,7 +519,7 @@ describe('deliverableToolsAdapter', () => {
 
       it('accepts custom tool array', () => {
         const { server } = createDeliverableMcpServer(repository, {
-          toolSet: ['create_deliverable', 'deprecate_deliverable'],
+          toolSet: ['create', 'deprecate'],
         })
         expect(server).toBeDefined()
       })
@@ -536,23 +536,20 @@ describe('deliverableToolsAdapter', () => {
   })
 
   describe('DELIVERABLE_TOOL_SETS', () => {
-    it('initializer set contains only create_deliverable', () => {
-      expect(DELIVERABLE_TOOL_SETS.initializer).toEqual(['create_deliverable'])
+    it('initializer set contains only create', () => {
+      expect(DELIVERABLE_TOOL_SETS.initializer).toEqual(['create'])
     })
 
-    it('coding set contains only set_deliverable_status', () => {
-      expect(DELIVERABLE_TOOL_SETS.coding).toEqual(['set_deliverable_status'])
+    it('coding set contains only set_status', () => {
+      expect(DELIVERABLE_TOOL_SETS.coding).toEqual(['set_status'])
     })
 
-    it('verify set contains only set_deliverable_status', () => {
-      expect(DELIVERABLE_TOOL_SETS.verify).toEqual(['set_deliverable_status'])
+    it('verify set contains only set_status', () => {
+      expect(DELIVERABLE_TOOL_SETS.verify).toEqual(['set_status'])
     })
 
     it('sync set contains create and deprecate', () => {
-      expect(DELIVERABLE_TOOL_SETS.sync).toEqual([
-        'create_deliverable',
-        'deprecate_deliverable',
-      ])
+      expect(DELIVERABLE_TOOL_SETS.sync).toEqual(['create', 'deprecate'])
     })
   })
 
@@ -562,9 +559,7 @@ describe('deliverableToolsAdapter', () => {
         toolSet: 'coding',
       })
 
-      expect(allowedTools).toEqual([
-        'mcp__autonoe-deliverable__set_deliverable_status',
-      ])
+      expect(allowedTools).toEqual(['mcp__autonoe__set_status'])
     })
 
     it('returns MCP tool names for initializer tool set', () => {
@@ -572,9 +567,7 @@ describe('deliverableToolsAdapter', () => {
         toolSet: 'initializer',
       })
 
-      expect(allowedTools).toEqual([
-        'mcp__autonoe-deliverable__create_deliverable',
-      ])
+      expect(allowedTools).toEqual(['mcp__autonoe__create'])
     })
 
     it('returns MCP tool names for sync tool set', () => {
@@ -583,8 +576,8 @@ describe('deliverableToolsAdapter', () => {
       })
 
       expect(allowedTools).toEqual([
-        'mcp__autonoe-deliverable__create_deliverable',
-        'mcp__autonoe-deliverable__deprecate_deliverable',
+        'mcp__autonoe__create',
+        'mcp__autonoe__deprecate',
       ])
     })
 
@@ -593,19 +586,17 @@ describe('deliverableToolsAdapter', () => {
         toolSet: 'verify',
       })
 
-      expect(allowedTools).toEqual([
-        'mcp__autonoe-deliverable__set_deliverable_status',
-      ])
+      expect(allowedTools).toEqual(['mcp__autonoe__set_status'])
     })
 
     it('returns MCP tool names for custom tool array', () => {
       const { allowedTools } = createDeliverableMcpServer(repository, {
-        toolSet: ['create_deliverable', 'set_deliverable_status'],
+        toolSet: ['create', 'set_status'],
       })
 
       expect(allowedTools).toEqual([
-        'mcp__autonoe-deliverable__create_deliverable',
-        'mcp__autonoe-deliverable__set_deliverable_status',
+        'mcp__autonoe__create',
+        'mcp__autonoe__set_status',
       ])
     })
   })

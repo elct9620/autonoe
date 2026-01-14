@@ -15,7 +15,7 @@ You are validating existing implementation against deliverables. This session fo
 
 You have access to this MCP tool for managing deliverables:
 
-- `mcp__autonoe-deliverable__set_deliverable_status` - Update deliverable status (pending/passed/blocked)
+- `mcp__autonoe__set_status` - Update deliverable status (pending/passed/blocked)
 
 **IMPORTANT:** You MUST use this tool to update deliverable status. Direct writes to `.autonoe/status.json` are blocked.
 
@@ -126,7 +126,7 @@ Acceptance Criteria Verification:
 
 **Only after ALL criteria are verified with evidence**, call the tool:
 
-- Tool: `mcp__autonoe-deliverable__set_deliverable_status`
+- Tool: `mcp__autonoe__set_status`
 - Input: `{"deliverableId": "UI-001", "status": "passed"}`
 
 **CRITICAL:** Do NOT write directly to `.autonoe/status.json`. You MUST use the tool.

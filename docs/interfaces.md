@@ -347,7 +347,7 @@ All duration displays use human-readable format with zero-value parts omitted:
 
 ### Tool Specifications
 
-**create_deliverable** - Create one or more deliverables in status.json
+**create** - Create one or more deliverables in status.json
 
 | Parameter                         | Type     | Description                  |
 | --------------------------------- | -------- | ---------------------------- |
@@ -356,7 +356,7 @@ All duration displays use human-readable format with zero-value parts omitted:
 | deliverables[].description        | string   | Clear description            |
 | deliverables[].acceptanceCriteria | string[] | Verifiable conditions        |
 
-**set_deliverable_status** - Update deliverable status
+**set_status** - Update deliverable status
 
 | Parameter     | Type   | Description                        |
 | ------------- | ------ | ---------------------------------- |
@@ -386,10 +386,10 @@ All duration displays use human-readable format with zero-value parts omitted:
 
 ### Tool Usage
 
-| Tool                   | Phase          | Operation                                       |
-| ---------------------- | -------------- | ----------------------------------------------- |
-| create_deliverable     | Initialization | Create deliverables with acceptance criteria    |
-| set_deliverable_status | Coding         | Set status: pending (reset), passed, or blocked |
+| Tool       | Phase          | Operation                                       |
+| ---------- | -------------- | ----------------------------------------------- |
+| create     | Initialization | Create deliverables with acceptance criteria    |
+| set_status | Coding         | Set status: pending (reset), passed, or blocked |
 
 ### Status Change Notification
 
