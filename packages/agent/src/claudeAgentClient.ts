@@ -48,6 +48,11 @@ export class ClaudeAgentClient implements AgentClient {
       abortController,
       pathToClaudeCodeExecutable: detectClaudeCodePath(),
       model: options.model,
+      systemPrompt: {
+        type: 'preset',
+        preset: 'claude_code',
+      },
+      settingSources: ['project'],
     }
 
     // Merge external MCP servers and SDK MCP servers

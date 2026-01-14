@@ -25,6 +25,7 @@ declare -A TEST_NAMES=(
   ["IT-003"]="Session Iteration Limit"
   ["IT-004"]="Sync Without Status.json"
   ["IT-005"]="Sync With Existing Status.json"
+  ["IT-006"]="CLAUDE.md Project Settings"
   ["SC-B001"]="Browser Navigate to localhost"
 )
 
@@ -34,6 +35,7 @@ declare -A TEST_VERIFICATION=(
   ["IT-003"]="Exit code is 0 or 1 (graceful termination)"
   ["IT-004"]="status.json created with deliverables from SPEC.md"
   ["IT-005"]="new deliverable created and DL-OLD deprecated"
+  ["IT-006"]="Agent output contains CLAUDE.md marker '=== CLAUDE_MD_LOADED ==='"
   ["SC-B001"]="status.json has passed deliverable and screenshot.png exists"
 )
 
@@ -238,6 +240,26 @@ test_it005() {
   fi
 }
 
+# IT-006: CLAUDE.md Project Settings
+test_it006() {
+  CURRENT_TEST="IT-006"
+  EXECUTED_TESTS+=("IT-006")
+  echo ""
+  echo "IT-006: CLAUDE.md Project Settings"
+  setup claude-md-test
+
+  # Capture output with debug flag
+  local output
+  output=$(docker compose run --rm cli autonoe run $DEFAULT_OPTIONS -d -n 2 2>&1) || true
+  fix_permissions
+
+  if echo "$output" | grep -q "=== CLAUDE_MD_LOADED ==="; then
+    pass
+  else
+    fail "CLAUDE_MD_LOADED marker not found in output"
+  fi
+}
+
 # SC-B001: Browser Navigate to localhost
 test_scb001() {
   CURRENT_TEST="SC-B001"
@@ -277,6 +299,7 @@ run_test() {
     IT-003|it-003) test_it003 ;;
     IT-004|it-004) test_it004 ;;
     IT-005|it-005) test_it005 ;;
+    IT-006|it-006) test_it006 ;;
     SC-B001|sc-b001) test_scb001 ;;
     *)
       echo -e "${RED}Error: Unknown test ID: $test_id${NC}"
@@ -286,6 +309,7 @@ run_test() {
       echo "  IT-003   Session Iteration Limit"
       echo "  IT-004   Sync Without Status.json"
       echo "  IT-005   Sync With Existing Status.json"
+      echo "  IT-006   CLAUDE.md Project Settings"
       echo "  SC-B001  Browser Navigate to localhost"
       exit 1
       ;;
@@ -299,6 +323,7 @@ run_all_tests() {
   test_it003
   test_it004
   test_it005
+  test_it006
 }
 
 # Run all E2E tests (alias for run_all_tests)
@@ -427,6 +452,7 @@ usage() {
   echo "  IT-003   Session Iteration Limit"
   echo "  IT-004   Sync Without Status.json"
   echo "  IT-005   Sync With Existing Status.json"
+  echo "  IT-006   CLAUDE.md Project Settings"
   echo "  SC-B001  Browser Navigate to localhost"
 }
 

@@ -611,6 +611,11 @@ Profile Structure
 
 ```
 .autonoe/agent.json → loadConfig() → SECURITY_BASELINE + user config → SDK settings
+
+SDK settingSources: ['project'] (hardcoded)
+├── CLAUDE.md            # Project root coding conventions
+├── .claude/CLAUDE.md    # Project .claude directory conventions
+└── .claude/settings.json # Project SDK settings
 ```
 
 ### 5.5 SDK Sandbox Configuration
