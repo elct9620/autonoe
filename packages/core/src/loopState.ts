@@ -15,13 +15,15 @@ export class LoopState {
     readonly deliverablesPassedCount: number,
     readonly deliverablesTotalCount: number,
     readonly blockedCount: number,
+    readonly verifiedCount: number,
+    readonly verifiedTotalCount: number,
   ) {}
 
   /**
    * Create initial loop state with default values
    */
   static create(): LoopState {
-    return new LoopState(0, 0, 0, undefined, undefined, 0, 0, 0)
+    return new LoopState(0, 0, 0, undefined, undefined, 0, 0, 0, 0, 0)
   }
 
   /**
@@ -37,6 +39,8 @@ export class LoopState {
       deliverablesPassedCount: number
       deliverablesTotalCount: number
       blockedCount: number
+      verifiedCount: number
+      verifiedTotalCount: number
     }>,
   ): LoopState {
     return new LoopState(
@@ -48,6 +52,8 @@ export class LoopState {
       changes.deliverablesPassedCount ?? this.deliverablesPassedCount,
       changes.deliverablesTotalCount ?? this.deliverablesTotalCount,
       changes.blockedCount ?? this.blockedCount,
+      changes.verifiedCount ?? this.verifiedCount,
+      changes.verifiedTotalCount ?? this.verifiedTotalCount,
     )
   }
 
@@ -108,6 +114,17 @@ export class LoopState {
       deliverablesPassedCount: passed,
       deliverablesTotalCount: total,
       blockedCount: blocked,
+    })
+  }
+
+  /**
+   * Update verification counts (for sync command)
+   * @see SPEC.md Section 9.10
+   */
+  updateVerificationCounts(verified: number, total: number): LoopState {
+    return this.clone({
+      verifiedCount: verified,
+      verifiedTotalCount: total,
     })
   }
 }

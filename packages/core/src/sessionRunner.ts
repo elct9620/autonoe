@@ -58,6 +58,8 @@ export type SessionRunnerResult = {
   deliverablesPassedCount: number
   deliverablesTotalCount: number
   blockedCount: number
+  verifiedCount: number
+  verifiedTotalCount: number
   totalDuration: number
   totalCostUsd: number
 } & (
@@ -86,6 +88,8 @@ function buildResult(
     deliverablesPassedCount: state.deliverablesPassedCount,
     deliverablesTotalCount: state.deliverablesTotalCount,
     blockedCount: state.blockedCount,
+    verifiedCount: state.verifiedCount,
+    verifiedTotalCount: state.verifiedTotalCount,
     totalDuration,
     totalCostUsd: state.totalCostUsd,
   }
@@ -138,6 +142,17 @@ export class SessionRunner {
 
     // Main loop - use break to exit to unified exit point
     while (!state.exitReason) {
+      // Update verification counts before pre-session check (for sync mode)
+      if (this.options.useSyncTermination) {
+        const tracker = this.options.getVerificationTracker?.()
+        if (tracker) {
+          state = state.updateVerificationCounts(
+            tracker.verifiedCount,
+            tracker.totalCount,
+          )
+        }
+      }
+
       // Pre-session: check interrupt
       const preDecision = this.runTerminationEvaluation(state, { signal })
       if (preDecision.action === 'terminate') {
@@ -198,6 +213,17 @@ export class SessionRunner {
           status.countBlocked(),
         )
 
+        // Update verification counts for sync mode
+        if (this.options.useSyncTermination) {
+          const tracker = this.options.getVerificationTracker?.()
+          if (tracker) {
+            state = state.updateVerificationCounts(
+              tracker.verifiedCount,
+              tracker.totalCount,
+            )
+          }
+        }
+
         // Post-session: evaluate all termination conditions
         const postDecision = this.runTerminationEvaluation(state, {
           sessionOutcome: result.outcome,
@@ -253,7 +279,7 @@ export class SessionRunner {
 
   /**
    * Log the overall summary when session runner completes
-   * @see SPEC.md Section 3.8.1
+   * @see SPEC.md Section 9.10
    */
   private logOverall(
     logger: Logger,
@@ -262,8 +288,14 @@ export class SessionRunner {
   ): void {
     const blockedMsg =
       state.blockedCount > 0 ? ` (${state.blockedCount} blocked)` : ''
+
+    // Use different message format for sync command
+    const progressMsg = this.options.useSyncTermination
+      ? `${state.verifiedCount}/${state.verifiedTotalCount} verified`
+      : `${state.deliverablesPassedCount}/${state.deliverablesTotalCount} deliverables passed`
+
     logger.info(
-      `Overall: ${state.iterations} session(s), ${state.deliverablesPassedCount}/${state.deliverablesTotalCount} deliverables passed${blockedMsg}, cost=$${state.totalCostUsd.toFixed(4)}, duration=${formatDuration(totalDuration)}`,
+      `Overall: ${state.iterations} session(s), ${progressMsg}${blockedMsg}, cost=$${state.totalCostUsd.toFixed(4)}, duration=${formatDuration(totalDuration)}`,
     )
   }
 
@@ -378,6 +410,9 @@ export class SessionRunner {
         logger.info(
           `All ${state.deliverablesTotalCount} deliverables are blocked`,
         )
+        break
+      case 'all_verified':
+        logger.info(`All ${state.verifiedTotalCount} deliverables verified`)
         break
       case 'max_iterations':
         logger.info(`Max iterations (${this.maxIterations}) reached`)

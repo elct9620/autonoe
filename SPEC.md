@@ -974,6 +974,24 @@ See [Security Details - Sync Command](docs/security.md#sync-command-security) fo
 | YES          | some blocked              | Verification complete, some blocked   |
 | YES          | all blocked               | Verification complete, all blocked    |
 
+### 9.10 Session Runner Output Format
+
+| Command | Overall Message Format |
+|---------|------------------------|
+| run     | `Overall: X session(s), Y/Z deliverables passed, cost=$..., duration=...` |
+| sync    | `Overall: X session(s), Y/Z verified, cost=$..., duration=...` |
+
+**Termination Messages:**
+
+| ExitReason | Command | Message |
+|------------|---------|---------|
+| all_passed | run | `All achievable deliverables passed` |
+| all_verified | sync | `All X deliverables verified` |
+| all_blocked | both | `All X deliverables are blocked` |
+| max_iterations | both | `Max iterations (N) reached` |
+| quota_exceeded | both | `Quota exceeded` |
+| interrupted | both | `User interrupted` |
+
 ---
 
 ## Appendix A: Instructions `[Design]`

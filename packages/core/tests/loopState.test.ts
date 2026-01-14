@@ -33,6 +33,12 @@ describe('LoopState', () => {
       expect(state.deliverablesTotalCount).toBe(0)
       expect(state.blockedCount).toBe(0)
     })
+
+    it('LS-006: creates state with zero verification counts', () => {
+      const state = LoopState.create()
+      expect(state.verifiedCount).toBe(0)
+      expect(state.verifiedTotalCount).toBe(0)
+    })
   })
 
   describe('incrementIterations', () => {
@@ -159,6 +165,33 @@ describe('LoopState', () => {
       expect(next.deliverablesPassedCount).toBe(3)
       expect(next.deliverablesTotalCount).toBe(5)
       expect(next.blockedCount).toBe(1)
+    })
+  })
+
+  describe('updateVerificationCounts', () => {
+    it('LS-070: updates verified and total counts', () => {
+      const state = LoopState.create().updateVerificationCounts(2, 3)
+      expect(state.verifiedCount).toBe(2)
+      expect(state.verifiedTotalCount).toBe(3)
+    })
+
+    it('LS-071: preserves other fields when updating verification counts', () => {
+      const state = LoopState.create()
+        .incrementIterations()
+        .addCost(0.5)
+        .updateVerificationCounts(1, 2)
+
+      expect(state.iterations).toBe(1)
+      expect(state.totalCostUsd).toBe(0.5)
+      expect(state.verifiedCount).toBe(1)
+      expect(state.verifiedTotalCount).toBe(2)
+    })
+
+    it('LS-072: does not mutate original state', () => {
+      const initial = LoopState.create()
+      initial.updateVerificationCounts(1, 2)
+      expect(initial.verifiedCount).toBe(0)
+      expect(initial.verifiedTotalCount).toBe(0)
     })
   })
 

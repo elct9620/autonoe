@@ -4,6 +4,7 @@ import { silentLogger } from '../src/logger'
 import type { AgentClient, AgentClientFactory } from '../src/agentClient'
 import type { MessageStream } from '../src/types'
 import type { WaitProgressReporter } from '../src/waitProgressReporter'
+import { VerificationTracker } from '../src/verificationTracker'
 import {
   MockAgentClient,
   MockDeliverableStatusReader,
@@ -830,6 +831,139 @@ describe('SessionRunner', () => {
       expect(result.exitReason).toBe('interrupted')
       expect(result.iterations).toBe(0)
       expect(logger.hasMessage('User interrupted')).toBe(true)
+    })
+  })
+
+  describe('Sync mode output format', () => {
+    it('SR-S001: outputs verified format for sync command', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamEnd('done', 0.01)])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          Deliverable.pending('DL-001', 'Test 1', ['AC']),
+          Deliverable.pending('DL-002', 'Test 2', ['AC']),
+          Deliverable.pending('DL-003', 'Test 3', ['AC']),
+        ]),
+      ])
+
+      // Create tracker with 3 deliverables, mark 2 as verified
+      const tracker = VerificationTracker.fromIds([
+        'DL-001',
+        'DL-002',
+        'DL-003',
+      ])
+      tracker.verify('DL-001')
+      tracker.verify('DL-002')
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 1,
+        delayBetweenSessions: 0,
+        useSyncTermination: true,
+        getVerificationTracker: () => tracker,
+      })
+
+      await runner.run(factory, logger, statusReader)
+
+      // Should output "2/3 verified" not "deliverables passed"
+      expect(logger.hasMessage('2/3 verified')).toBe(true)
+      expect(logger.hasMessage('deliverables passed')).toBe(false)
+    })
+
+    it('SR-S002: outputs all_verified termination message', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamEnd('done', 0.01)])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          Deliverable.pending('DL-001', 'Test 1', ['AC']),
+          Deliverable.pending('DL-002', 'Test 2', ['AC']),
+        ]),
+      ])
+
+      // Create tracker and verify all deliverables
+      const tracker = VerificationTracker.fromIds(['DL-001', 'DL-002'])
+      tracker.verify('DL-001')
+      tracker.verify('DL-002')
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+        useSyncTermination: true,
+        getVerificationTracker: () => tracker,
+      })
+
+      const result = await runner.run(factory, logger, statusReader)
+
+      expect(result.exitReason).toBe('all_verified')
+      expect(logger.hasMessage('All 2 deliverables verified')).toBe(true)
+    })
+
+    it('SR-S003: result includes verifiedCount and verifiedTotalCount', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamEnd('done', 0.01)])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          Deliverable.pending('DL-001', 'Test 1', ['AC']),
+          Deliverable.pending('DL-002', 'Test 2', ['AC']),
+          Deliverable.pending('DL-003', 'Test 3', ['AC']),
+        ]),
+      ])
+
+      const tracker = VerificationTracker.fromIds([
+        'DL-001',
+        'DL-002',
+        'DL-003',
+      ])
+      tracker.verify('DL-001')
+      tracker.verify('DL-002')
+      tracker.verify('DL-003')
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+        useSyncTermination: true,
+        getVerificationTracker: () => tracker,
+      })
+
+      const result = await runner.run(factory, silentLogger, statusReader)
+
+      expect(result.verifiedCount).toBe(3)
+      expect(result.verifiedTotalCount).toBe(3)
+    })
+
+    it('SR-S004: run command still outputs deliverables passed format', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamEnd('done', 0.01)])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
+      ])
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+        // useSyncTermination defaults to false (run mode)
+      })
+
+      await runner.run(factory, logger, statusReader)
+
+      // Should output "deliverables passed" not "verified"
+      expect(logger.hasMessage('deliverables passed')).toBe(true)
+      expect(logger.hasMessage('verified')).toBe(false)
     })
   })
 })
