@@ -50,10 +50,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy compiled binary
-COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
-
 WORKDIR /workspace
+
+# Copy compiled binary (last to maximize cache hits)
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 
 CMD ["autonoe"]
 
@@ -70,9 +70,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy compiled binary
-COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
-
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
@@ -84,6 +81,9 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
 ENV AUTONOE_NO_SANDBOX=1
 
 WORKDIR /workspace
+
+# Copy compiled binary (last to maximize cache hits)
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 
 CMD ["autonoe"]
 
@@ -108,9 +108,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
-# Copy compiled binary
-COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
-
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
@@ -122,6 +119,9 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
 ENV AUTONOE_NO_SANDBOX=1
 
 WORKDIR /workspace
+
+# Copy compiled binary (last to maximize cache hits)
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 
 CMD ["autonoe"]
 
@@ -142,9 +142,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy compiled binary
-COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
-
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
@@ -156,6 +153,9 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
 ENV AUTONOE_NO_SANDBOX=1
 
 WORKDIR /workspace
+
+# Copy compiled binary (last to maximize cache hits)
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 
 CMD ["autonoe"]
 
@@ -176,9 +176,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy compiled binary
-COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
-
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
@@ -190,6 +187,9 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
 ENV AUTONOE_NO_SANDBOX=1
 
 WORKDIR /workspace
+
+# Copy compiled binary (last to maximize cache hits)
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
 
 CMD ["autonoe"]
 
