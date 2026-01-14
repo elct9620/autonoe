@@ -6,6 +6,7 @@ import {
 import { LoopState } from '../src/loopState'
 import { DeliverableStatus } from '../src/deliverableStatus'
 import { Deliverable } from '../src/deliverable'
+import { VerificationTracker } from '../src/verificationTracker'
 
 /**
  * evaluateTermination Tests
@@ -352,6 +353,79 @@ describe('evaluateTermination', () => {
         action: 'terminate',
         exitReason: 'all_passed',
       })
+    })
+  })
+
+  describe('Sync termination mode', () => {
+    it('TE-080: returns all_verified when sync mode and all verified', () => {
+      const tracker = VerificationTracker.fromIds(['DL-001', 'DL-002'])
+      tracker.verify('DL-001')
+      tracker.verify('DL-002')
+
+      const decision = evaluateTermination(
+        createContext({
+          verificationTracker: tracker,
+          options: { maxRetries: 3, useSyncTermination: true },
+        }),
+      )
+
+      expect(decision).toEqual({
+        action: 'terminate',
+        exitReason: 'all_verified',
+      })
+    })
+
+    it('TE-081: continues when sync mode but not all verified', () => {
+      const tracker = VerificationTracker.fromIds(['DL-001', 'DL-002'])
+      tracker.verify('DL-001')
+      // DL-002 not verified
+
+      const decision = evaluateTermination(
+        createContext({
+          verificationTracker: tracker,
+          options: { maxRetries: 3, useSyncTermination: true },
+        }),
+      )
+
+      expect(decision.action).toBe('continue')
+    })
+
+    it('TE-082: all_verified has priority over max_iterations in sync mode', () => {
+      const tracker = VerificationTracker.fromIds(['DL-001'])
+      tracker.verify('DL-001')
+      const state = createStateWithIterations(5)
+
+      const decision = evaluateTermination(
+        createContext({
+          state,
+          verificationTracker: tracker,
+          options: {
+            maxRetries: 3,
+            maxIterations: 5,
+            useSyncTermination: true,
+          },
+        }),
+      )
+
+      expect(decision).toEqual({
+        action: 'terminate',
+        exitReason: 'all_verified',
+      })
+    })
+
+    it('TE-083: ignores all_verified when useSyncTermination is false', () => {
+      const tracker = VerificationTracker.fromIds(['DL-001'])
+      tracker.verify('DL-001')
+
+      const decision = evaluateTermination(
+        createContext({
+          verificationTracker: tracker,
+          options: { maxRetries: 3, useSyncTermination: false },
+        }),
+      )
+
+      // Should continue because sync mode is disabled
+      expect(decision.action).toBe('continue')
     })
   })
 })

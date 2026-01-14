@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   Deliverable,
   DeliverableStatus,
+  VerificationTracker,
   type DeliverableRepository,
   type DeliverableStatusNotification,
 } from '@autonoe/core'
@@ -9,6 +10,8 @@ import {
   handleCreateDeliverables,
   handleSetDeliverableStatus,
   handleDeprecateDeliverable,
+  handleVerifyDeliverable,
+  handleListDeliverables,
   createDeliverableMcpServer,
   DELIVERABLE_TOOL_SETS,
 } from '../src/autonoeToolsAdapter'
@@ -467,6 +470,226 @@ describe('autonoeToolsAdapter', () => {
       const parsedResult = JSON.parse(result.content[0]?.text ?? '')
       expect(parsedResult.success).toBe(false)
       expect(parsedResult.message).toContain('already deprecated')
+    })
+  })
+
+  describe('handleVerifyDeliverable', () => {
+    describe('DL-T010: Valid ID in tracker', () => {
+      it('marks deliverable as verified when ID exists in tracker', async () => {
+        const tracker = VerificationTracker.fromIds(['DL-001', 'DL-002'])
+        const input = { deliverableId: 'DL-001' }
+
+        const result = await handleVerifyDeliverable(tracker, input)
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(true)
+        expect(parsedResult.message).toContain('marked as verified')
+        expect(tracker.isVerified('DL-001')).toBe(true)
+      })
+    })
+
+    describe('DL-T011: Invalid ID (not in tracker)', () => {
+      it('returns error when deliverable ID not in tracker', async () => {
+        const tracker = VerificationTracker.fromIds(['DL-001'])
+        const input = { deliverableId: 'DL-999' }
+
+        const result = await handleVerifyDeliverable(tracker, input)
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(false)
+        expect(parsedResult.message).toContain('not found')
+        expect(tracker.isVerified('DL-999')).toBe(false)
+      })
+    })
+  })
+
+  describe('handleListDeliverables', () => {
+    describe('DL-T020: filter: status=pending', () => {
+      it('filters by status = pending', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'Pending Feature', ['AC1']),
+            Deliverable.passed('DL-002', 'Passed Feature', ['AC2']),
+            Deliverable.blocked('DL-003', 'Blocked Feature', ['AC3']),
+          ]),
+        )
+
+        const result = await handleListDeliverables(repository, undefined, {
+          filter: { status: 'pending' },
+        })
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.deliverables).toHaveLength(1)
+        expect(parsedResult.deliverables[0].id).toBe('DL-001')
+      })
+    })
+
+    describe('DL-T021: filter: status=passed', () => {
+      it('filters by status = passed', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'Pending Feature', ['AC1']),
+            Deliverable.passed('DL-002', 'Passed Feature', ['AC2']),
+            Deliverable.blocked('DL-003', 'Blocked Feature', ['AC3']),
+          ]),
+        )
+
+        const result = await handleListDeliverables(repository, undefined, {
+          filter: { status: 'passed' },
+        })
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.deliverables).toHaveLength(1)
+        expect(parsedResult.deliverables[0].id).toBe('DL-002')
+      })
+    })
+
+    describe('DL-T022: filter: status=blocked', () => {
+      it('filters by status = blocked', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'Pending Feature', ['AC1']),
+            Deliverable.passed('DL-002', 'Passed Feature', ['AC2']),
+            Deliverable.blocked('DL-003', 'Blocked Feature', ['AC3']),
+          ]),
+        )
+
+        const result = await handleListDeliverables(repository, undefined, {
+          filter: { status: 'blocked' },
+        })
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.deliverables).toHaveLength(1)
+        expect(parsedResult.deliverables[0].id).toBe('DL-003')
+      })
+    })
+
+    describe('DL-T023: filter: verified=true with tracker', () => {
+      it('filters by verified = true with tracker', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'First', ['AC1']),
+            Deliverable.pending('DL-002', 'Second', ['AC2']),
+          ]),
+        )
+
+        const tracker = VerificationTracker.fromIds(['DL-001', 'DL-002'])
+        tracker.verify('DL-001')
+
+        const result = await handleListDeliverables(repository, tracker, {
+          filter: { verified: true },
+        })
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.deliverables).toHaveLength(1)
+        expect(parsedResult.deliverables[0].id).toBe('DL-001')
+      })
+    })
+
+    describe('DL-T024: filter: verified=false with tracker', () => {
+      it('filters by verified = false with tracker', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'First', ['AC1']),
+            Deliverable.pending('DL-002', 'Second', ['AC2']),
+          ]),
+        )
+
+        const tracker = VerificationTracker.fromIds(['DL-001', 'DL-002'])
+        tracker.verify('DL-001')
+
+        const result = await handleListDeliverables(repository, tracker, {
+          filter: { verified: false },
+        })
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.deliverables).toHaveLength(1)
+        expect(parsedResult.deliverables[0].id).toBe('DL-002')
+      })
+    })
+
+    describe('DL-T025: filter: verified without tracker', () => {
+      it('ignores verified filter when tracker undefined', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'First', ['AC1']),
+            Deliverable.pending('DL-002', 'Second', ['AC2']),
+          ]),
+        )
+
+        const result = await handleListDeliverables(repository, undefined, {
+          filter: { verified: false },
+        })
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        // All deliverables returned because verified filter is ignored
+        expect(parsedResult.deliverables).toHaveLength(2)
+      })
+    })
+
+    describe('DL-T026: limit', () => {
+      it('applies limit to results', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'First', ['AC1']),
+            Deliverable.pending('DL-002', 'Second', ['AC2']),
+            Deliverable.pending('DL-003', 'Third', ['AC3']),
+            Deliverable.pending('DL-004', 'Fourth', ['AC4']),
+          ]),
+        )
+
+        const result = await handleListDeliverables(repository, undefined, {
+          limit: 3,
+        })
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.deliverables).toHaveLength(3)
+      })
+    })
+
+    describe('DL-T027: no filter', () => {
+      it('returns all active deliverables', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'Pending', ['AC1']),
+            Deliverable.passed('DL-002', 'Passed', ['AC2']),
+            Deliverable.blocked('DL-003', 'Blocked', ['AC3']),
+          ]),
+        )
+
+        const result = await handleListDeliverables(repository, undefined, {})
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.deliverables).toHaveLength(3)
+      })
+    })
+
+    describe('Combined filters', () => {
+      it('combines status and verified filters', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'Pending Verified', ['AC1']),
+            Deliverable.pending('DL-002', 'Pending Unverified', ['AC2']),
+            Deliverable.passed('DL-003', 'Passed Verified', ['AC3']),
+          ]),
+        )
+
+        const tracker = VerificationTracker.fromIds([
+          'DL-001',
+          'DL-002',
+          'DL-003',
+        ])
+        tracker.verify('DL-001')
+        tracker.verify('DL-003')
+
+        const result = await handleListDeliverables(repository, tracker, {
+          filter: { status: 'pending', verified: false },
+        })
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.deliverables).toHaveLength(1)
+        expect(parsedResult.deliverables[0].id).toBe('DL-002')
+      })
     })
   })
 

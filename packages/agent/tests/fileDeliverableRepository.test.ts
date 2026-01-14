@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import * as fs from 'node:fs/promises'
+import * as fsSync from 'node:fs'
 import * as path from 'node:path'
 import * as os from 'node:os'
 import { FileDeliverableRepository } from '../src/fileDeliverableRepository'
@@ -100,6 +101,65 @@ describe('FileDeliverableRepository', () => {
       const status = await repo.load()
       expect([...status.deliverables]).toEqual([])
       expect(status.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    })
+  })
+
+  describe('loadSync()', () => {
+    it('returns undefined when file does not exist', () => {
+      const status = repo.loadSync()
+      expect(status).toBeUndefined()
+    })
+
+    it('returns status from file', () => {
+      const expectedJson = {
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
+        deliverables: [
+          {
+            id: 'DL-001',
+            description: 'Test Deliverable',
+            acceptanceCriteria: ['Criterion 1'],
+            passed: false,
+            blocked: false,
+          },
+        ],
+      }
+
+      const autonoeDir = path.join(tempDir, '.autonoe')
+      fsSync.mkdirSync(autonoeDir, { recursive: true })
+      fsSync.writeFileSync(
+        path.join(autonoeDir, 'status.json'),
+        JSON.stringify(expectedJson),
+      )
+
+      const status = repo.loadSync()
+      expect(status).toBeDefined()
+      expect(status!.deliverables.length).toBe(1)
+      expect(status!.deliverables[0]!.id).toBe('DL-001')
+    })
+
+    it('returns undefined for invalid JSON', () => {
+      const autonoeDir = path.join(tempDir, '.autonoe')
+      fsSync.mkdirSync(autonoeDir, { recursive: true })
+      fsSync.writeFileSync(
+        path.join(autonoeDir, 'status.json'),
+        'not valid json',
+      )
+
+      const status = repo.loadSync()
+      expect(status).toBeUndefined()
+    })
+
+    it('returns undefined when deliverables is not array', () => {
+      const autonoeDir = path.join(tempDir, '.autonoe')
+      fsSync.mkdirSync(autonoeDir, { recursive: true })
+      fsSync.writeFileSync(
+        path.join(autonoeDir, 'status.json'),
+        '{"deliverables": "not an array"}',
+      )
+
+      const status = repo.loadSync()
+      expect(status).toBeUndefined()
     })
   })
 

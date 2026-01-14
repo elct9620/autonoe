@@ -28,6 +28,14 @@ For the main specification, see [SPEC.md](../SPEC.md).
 
 SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 
+### TerminationEvaluator
+
+| ID     | Input                                      | Expected Output           |
+| ------ | ------------------------------------------ | ------------------------- |
+| TE-080 | useSyncTermination + allVerified()=true    | all_verified exit         |
+| TE-081 | useSyncTermination + allVerified()=false   | continue                  |
+| TE-082 | useSyncTermination + maxIterations reached | all_verified has priority |
+
 ### Bash Security
 
 | ID      | Input                    | Expected Output                 |
@@ -62,17 +70,28 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 
 ### Deliverable Tools (autonoe)
 
-| ID      | Tool       | Input                         | Expected Output                    |
-| ------- | ---------- | ----------------------------- | ---------------------------------- |
-| DL-T001 | create     | Array with valid deliverables | All deliverables added             |
-| DL-T002 | create     | Array with duplicate ID       | Error: ID already exists           |
-| DL-T003 | set_status | Valid ID, status=passed       | passed=true, blocked=false         |
-| DL-T004 | set_status | Invalid deliverable ID        | Error: deliverable not found       |
-| DL-T005 | set_status | Valid ID, status=blocked      | passed=false, blocked=true         |
-| DL-T006 | set_status | Valid ID, status=pending      | passed=false, blocked=false        |
-| DL-T007 | set_status | Blocked ID, status=pending    | Reset: blocked=false               |
-| DL-T008 | set_status | Valid ID, callback provided   | Callback invoked with notification |
-| DL-T009 | set_status | Invalid ID, callback provided | Callback not invoked               |
+| ID      | Tool       | Input                          | Expected Output                    |
+| ------- | ---------- | ------------------------------ | ---------------------------------- |
+| DL-T001 | create     | Array with valid deliverables  | All deliverables added             |
+| DL-T002 | create     | Array with duplicate ID        | Error: ID already exists           |
+| DL-T003 | set_status | Valid ID, status=passed        | passed=true, blocked=false         |
+| DL-T004 | set_status | Invalid deliverable ID         | Error: deliverable not found       |
+| DL-T005 | set_status | Valid ID, status=blocked       | passed=false, blocked=true         |
+| DL-T006 | set_status | Valid ID, status=pending       | passed=false, blocked=false        |
+| DL-T007 | set_status | Blocked ID, status=pending     | Reset: blocked=false               |
+| DL-T008 | set_status | Valid ID, callback provided    | Callback invoked with notification |
+| DL-T009 | set_status | Invalid ID, callback provided  | Callback not invoked               |
+| DL-T010 | verify     | Valid ID in tracker            | success=true, marked as verified   |
+| DL-T011 | verify     | Invalid ID (not in tracker)    | success=false, not found           |
+| DL-T012 | verify     | tracker undefined              | Error: tracker not available       |
+| DL-T020 | list       | filter: status=pending         | Only pending deliverables          |
+| DL-T021 | list       | filter: status=passed          | Only passed deliverables           |
+| DL-T022 | list       | filter: status=blocked         | Only blocked deliverables          |
+| DL-T023 | list       | filter: verified=true+tracker  | Only verified deliverables         |
+| DL-T024 | list       | filter: verified=false+tracker | Only unverified deliverables       |
+| DL-T025 | list       | filter: verified, no tracker   | verified filter ignored            |
+| DL-T026 | list       | limit: 3                       | Max 3 results returned             |
+| DL-T027 | list       | no filter                      | All active deliverables            |
 
 ### Configuration
 
