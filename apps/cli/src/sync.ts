@@ -113,12 +113,7 @@ export async function handleSyncCommand(
   }
 
   // Single SessionRunner instance (same pattern as run command)
-  // TODO: Remove temporary default once termination conditions are specified
-  const syncOptions = {
-    ...validatedOptions,
-    maxIterations: validatedOptions.maxIterations ?? 15,
-  }
-  const runnerOptions = createRunnerOptions(syncOptions)
+  const runnerOptions = createRunnerOptions(validatedOptions)
   const sessionRunner = new SessionRunner({
     ...runnerOptions,
     useSyncTermination: true,
