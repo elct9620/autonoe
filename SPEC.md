@@ -199,6 +199,8 @@ Core interface definitions. For detailed specifications, see [Interfaces](docs/i
 | create_deliverable | Create deliverables with acceptance criteria |
 | set_deliverable_status | Update status: pending, passed, or blocked |
 | deprecate_deliverable | Mark deliverable as deprecated (sync command only) |
+| mark_verified | Mark deliverable as verified (sync command only) |
+| list_unverified | List deliverables not yet verified (sync command only), optional `limit` parameter (default: 5) |
 
 **Tool Availability per Instruction:**
 
@@ -207,7 +209,7 @@ Core interface definitions. For detailed specifications, see [Interfaces](docs/i
 | initializer | `create_deliverable` |
 | coding | `set_deliverable_status` |
 | sync | `create_deliverable`, `deprecate_deliverable` |
-| verify | `set_deliverable_status` |
+| verify | `set_deliverable_status`, `mark_verified`, `list_unverified` |
 
 Each session receives only the tools needed for its instruction type.
 AgentClientFactory creates a fresh MCP server with the appropriate tool set per session.
@@ -232,14 +234,41 @@ SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ─
 
 ### 3.4 Termination Conditions
 
-| Priority | Condition                    | Check                                         | Result              |
-| -------- | ---------------------------- | --------------------------------------------- | ------------------- |
-| 1        | Quota exceeded (no wait)     | outcome === 'quota_exceeded' && !waitForQuota | success=false, quotaExceeded=true |
-| 2        | All achievable passed        | All non-blocked deliverables have passed=true | success=true        |
-| 3        | All blocked                  | All deliverables have blocked=true            | success=false       |
-| 4        | Max iterations reached       | iteration >= maxIterations                    | success=false       |
-| 5        | User interrupt               | SIGINT received                               | success=false, interrupted=true |
-| 6        | Max retries exceeded         | consecutiveErrors > maxRetries                | success=false, error=message |
+**Shared Conditions (all commands):**
+
+| Priority | Condition                | Check                                         | Result                            |
+| -------- | ------------------------ | --------------------------------------------- | --------------------------------- |
+| 1        | User interrupt           | SIGINT received                               | success=false, interrupted=true   |
+| 2        | Quota exceeded (no wait) | outcome === 'quota_exceeded' && !waitForQuota | success=false, quotaExceeded=true |
+| 5        | Max iterations reached   | iteration >= maxIterations                    | success=false                     |
+| 6        | Max retries exceeded     | consecutiveErrors > maxRetries                | success=false, error=message      |
+
+**run Command Conditions:**
+
+| Priority | Condition             | Check                                         | Result                      |
+| -------- | --------------------- | --------------------------------------------- | --------------------------- |
+| 3        | All achievable passed | All non-blocked deliverables have passed=true | all_passed (goal achieved)  |
+| 4        | All blocked           | All deliverables have blocked=true            | all_blocked (cannot proceed)|
+
+**sync Command Conditions:**
+
+| Priority | Condition    | Check                               | Result                       |
+| -------- | ------------ | ----------------------------------- | ---------------------------- |
+| 3        | All verified | verificationTracker.allVerified()   | all_verified (goal achieved) |
+
+**Verification Tracking (sync command only):**
+
+The sync command uses an in-memory verification tracker to ensure all deliverables are checked:
+
+| Concept    | Description                                    |
+| ---------- | ---------------------------------------------- |
+| verified   | Agent has confirmed this deliverable's status  |
+| unverified | Agent has not yet checked this deliverable     |
+
+- Tracker is initialized with all active deliverable IDs at sync start
+- Each deliverable must be explicitly marked via `mark_verified` tool
+- Termination occurs when all deliverables are verified
+- Unlike run command, sync does NOT terminate on all_passed/all_blocked
 
 **Blocked Deliverable Rules:**
 - A deliverable can only be blocked when `passed=false` (mutual exclusion)
@@ -922,6 +951,28 @@ Tools available to the Coding Agent (configured by Autonoe):
 | Playwright          | YES       | Verify phase only                  |
 
 See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.
+
+### 9.8 Termination by Command
+
+| Command | Goal                      | Termination Triggers                                    |
+| ------- | ------------------------- | ------------------------------------------------------- |
+| run     | All deliverables passed   | all_passed (goal achieved), all_blocked (cannot proceed)|
+| sync    | All deliverables verified | all_verified (goal achieved)                            |
+
+**Design Principle**: Commands continue running until "goal achieved" or "cannot proceed".
+
+- **run**: Goal is to pass all deliverables. Stopping on all_blocked means implementation cannot continue, not failure.
+- **sync**: Goal is to confirm status of all deliverables. all_verified indicates verification complete.
+
+### 9.9 Verification Result (Sync Command)
+
+| All Verified | Deliverable Statuses      | Result Description                    |
+| ------------ | ------------------------- | ------------------------------------- |
+| NO           | any                       | Continue verification                 |
+| YES          | all passed                | Verification complete, all passed     |
+| YES          | some passed, some pending | Verification complete, partial impl   |
+| YES          | some blocked              | Verification complete, some blocked   |
+| YES          | all blocked               | Verification complete, all blocked    |
 
 ---
 
