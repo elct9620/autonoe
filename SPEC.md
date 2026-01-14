@@ -632,6 +632,9 @@ SDK settingSources: ['project'] (hardcoded)
 2. `AUTONOE_NO_SANDBOX=1` environment variable
 3. Default: enabled
 
+**Scope:**
+Environment variable applies to all commands (run, sync).
+
 See Section 6 for security layer architecture.
 
 ---

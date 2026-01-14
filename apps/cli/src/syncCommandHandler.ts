@@ -6,7 +6,7 @@ import type {
   DeliverableStatusReader,
   Logger,
 } from '@autonoe/core'
-import type { ValidatedSyncOptions } from './options'
+import { logSecurityWarnings, type ValidatedSyncOptions } from './options'
 import { VERSION } from './version'
 
 export { VERSION }
@@ -37,6 +37,7 @@ export class SyncCommandHandler {
    * Execute the sync command
    */
   async execute(): Promise<void> {
+    this.logSecurityWarnings()
     this.logStartupInfo()
 
     const result = await this.sessionRunner.run(
@@ -49,6 +50,10 @@ export class SyncCommandHandler {
 
     this.logger.info('')
     this.handleResult(result)
+  }
+
+  private logSecurityWarnings(): void {
+    logSecurityWarnings(this.logger, this.options.sandboxMode, false)
   }
 
   private logStartupInfo(): void {

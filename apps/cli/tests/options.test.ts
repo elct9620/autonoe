@@ -8,6 +8,7 @@ import {
   parseNumericOption,
   parseThinkingOption,
   validateCommonOptions,
+  validateSyncOptions,
   validateRunOptions,
   logSecurityWarnings,
   SandboxMode,
@@ -276,6 +277,30 @@ describe('validateRunOptions', () => {
       expect(result.options.sandboxMode.source).toBe('env')
     }
   })
+
+  it('OPT-046: CLI flag overrides env for sandbox', () => {
+    const result = validateRunOptions(
+      { projectDir: tempDir, sandbox: false },
+      {}, // env does not disable sandbox
+    )
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.options.sandboxMode.disabled).toBe(true)
+      expect(result.options.sandboxMode.source).toBe('cli')
+    }
+  })
+
+  it('OPT-047: CLI flag takes priority over env when both set', () => {
+    const result = validateRunOptions(
+      { projectDir: tempDir, sandbox: false },
+      { AUTONOE_NO_SANDBOX: '1' }, // env also disables, but CLI should win
+    )
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.options.sandboxMode.disabled).toBe(true)
+      expect(result.options.sandboxMode.source).toBe('cli')
+    }
+  })
 })
 
 describe('logSecurityWarnings', () => {
@@ -373,6 +398,59 @@ describe('validateCommonOptions', () => {
     expect(result.success).toBe(false)
     if (!result.success) {
       expect(result.error).toContain('1024')
+    }
+  })
+
+  it('OPT-075: respects sandbox mode from env', () => {
+    const result = validateCommonOptions(
+      { projectDir: tempDir },
+      { AUTONOE_NO_SANDBOX: '1' },
+    )
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.options.sandboxMode.disabled).toBe(true)
+      expect(result.options.sandboxMode.source).toBe('env')
+    }
+  })
+
+  it('OPT-076: defaults to enabled sandbox when env not set', () => {
+    const result = validateCommonOptions({ projectDir: tempDir }, {})
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.options.sandboxMode.enabled).toBe(true)
+      expect(result.options.sandboxMode.source).toBe('default')
+    }
+  })
+})
+
+describe('validateSyncOptions', () => {
+  let tempDir: string
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'autonoe-test-'))
+  })
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  it('OPT-080: respects sandbox mode from env', () => {
+    const result = validateSyncOptions(
+      { projectDir: tempDir },
+      { AUTONOE_NO_SANDBOX: '1' },
+    )
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.options.sandboxMode.disabled).toBe(true)
+      expect(result.options.sandboxMode.source).toBe('env')
+    }
+  })
+
+  it('OPT-081: defaults to enabled sandbox when env not set', () => {
+    const result = validateSyncOptions({ projectDir: tempDir }, {})
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.options.sandboxMode.enabled).toBe(true)
     }
   })
 })

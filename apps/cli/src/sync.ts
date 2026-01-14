@@ -101,7 +101,9 @@ export async function handleSyncCommand(
       return new ClaudeAgentClient({
         cwd: validatedOptions.projectDir,
         permissionLevel: 'acceptEdits',
-        sandbox: config.sandbox,
+        sandbox: validatedOptions.sandboxMode.disabled
+          ? undefined
+          : config.sandbox,
         mcpServers: config.mcpServers,
         preToolUseHooks,
         sdkMcpServers: [deliverableMcpServer],

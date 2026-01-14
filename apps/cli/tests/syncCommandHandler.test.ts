@@ -15,22 +15,25 @@ import {
 import { FileDeliverableRepository } from '@autonoe/agent'
 import { SyncCommandHandler } from '../src/syncCommandHandler'
 import { SyncInstructionSelector } from '../src/syncInstructionSelector'
-import type { ValidatedSyncOptions } from '../src/options'
+import { SandboxMode, type ValidatedSyncOptions } from '../src/options'
 import { VERSION } from '../src/version'
 
 // Mock Logger for capturing output
 function createMockLogger(): Logger & {
   infoMessages: string[]
+  warnMessages: string[]
   errorMessages: string[]
 } {
   const infoMessages: string[] = []
+  const warnMessages: string[] = []
   const errorMessages: string[] = []
   return {
     infoMessages,
+    warnMessages,
     errorMessages,
     info: vi.fn((msg: string) => infoMessages.push(msg)),
     debug: vi.fn(),
-    warn: vi.fn(),
+    warn: vi.fn((msg: string) => warnMessages.push(msg)),
     error: vi.fn((msg: string) => errorMessages.push(msg)),
   }
 }
@@ -94,6 +97,7 @@ describe('SyncCommandHandler', () => {
       projectDir: tempDir,
       debug: false,
       waitForQuota: false,
+      sandboxMode: SandboxMode.enabled(),
     }
   }
 
@@ -294,6 +298,38 @@ describe('SyncCommandHandler', () => {
       await handler.execute()
 
       expect(processExitSpy).toHaveBeenCalledWith(1)
+    })
+  })
+
+  describe('security warnings', () => {
+    it('SCH-040: logs sandbox warning when disabled via env', async () => {
+      const logger = createMockLogger()
+      createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
+
+      const handler = createHandler({
+        logger,
+        options: { sandboxMode: SandboxMode.disabledByEnv() },
+      })
+      await handler.execute()
+
+      expect(
+        logger.warnMessages.some((m) =>
+          m.includes('AUTONOE_NO_SANDBOX environment variable'),
+        ),
+      ).toBe(true)
+    })
+
+    it('SCH-041: does not log warning when sandbox enabled', async () => {
+      const logger = createMockLogger()
+      createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
+
+      const handler = createHandler({
+        logger,
+        options: { sandboxMode: SandboxMode.enabled() },
+      })
+      await handler.execute()
+
+      expect(logger.warnMessages).toHaveLength(0)
     })
   })
 })

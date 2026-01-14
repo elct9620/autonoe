@@ -28,6 +28,7 @@ export interface ValidatedCommonOptions {
   debug: boolean
   waitForQuota: boolean
   maxThinkingTokens?: number
+  sandboxMode: SandboxMode
 }
 
 /**
@@ -251,6 +252,7 @@ export function parseThinkingOption(
  */
 export function validateCommonOptions(
   options: CommonCommandOptions,
+  env: NodeJS.ProcessEnv = process.env,
 ): CommonOptionsValidationResult {
   const projectDir = options.projectDir
     ? resolve(options.projectDir)
@@ -268,6 +270,10 @@ export function validateCommonOptions(
     return { success: false, error: thinkingResult.error }
   }
 
+  // Create SandboxMode from environment variable only
+  // CLI flag override is handled by validateRunOptions
+  const sandboxMode = SandboxMode.fromCliAndEnv(undefined, env)
+
   return {
     success: true,
     options: {
@@ -279,14 +285,20 @@ export function validateCommonOptions(
       waitForQuota: options.waitForQuota ?? false,
       maxThinkingTokens:
         thinkingResult.type === 'enabled' ? thinkingResult.tokens : undefined,
+      sandboxMode,
     },
   }
 }
 
 /**
- * Validate sync options (alias to validateCommonOptions)
+ * Validate sync options
  */
-export const validateSyncOptions = validateCommonOptions
+export function validateSyncOptions(
+  options: SyncCommandOptions,
+  env: NodeJS.ProcessEnv = process.env,
+): SyncOptionsValidationResult {
+  return validateCommonOptions(options, env)
+}
 
 /**
  * Validate all run options and return validated result
@@ -295,12 +307,16 @@ export function validateRunOptions(
   options: RunCommandOptions,
   env: NodeJS.ProcessEnv = process.env,
 ): RunOptionsValidationResult {
-  const commonResult = validateCommonOptions(options)
+  const commonResult = validateCommonOptions(options, env)
   if (!commonResult.success) {
     return commonResult
   }
 
-  const sandboxMode = SandboxMode.fromCliAndEnv(options.sandbox, env)
+  // Override sandboxMode if CLI flag is provided
+  const sandboxMode =
+    options.sandbox === false
+      ? SandboxMode.disabledByCli()
+      : commonResult.options.sandboxMode
 
   return {
     success: true,
