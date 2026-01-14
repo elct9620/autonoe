@@ -16,6 +16,7 @@ import { formatDuration } from './duration'
 import { realTimer } from './timer'
 import { LoopState } from './loopState'
 import { evaluateTermination } from './terminationEvaluator'
+import type { VerificationTracker } from './verificationTracker'
 import type { ExitReason } from './exitReason'
 import {
   DefaultInstructionSelector,
@@ -41,12 +42,16 @@ export interface SessionRunnerOptions {
   timer?: Timer
   /** Progress reporter for quota wait (default: silentWaitProgressReporter) */
   waitProgressReporter?: WaitProgressReporter
+  /** Use sync termination mode (allVerified instead of allPassed/allBlocked) */
+  useSyncTermination?: boolean
+  /** Callback to get verification tracker for sync termination */
+  getVerificationTracker?: () => VerificationTracker | undefined
 }
 
 /**
  * Result of a SessionRunner execution
  * Discriminated union by exitReason
- * @see SPEC.md Section 3.9.4
+ * @see SPEC.md Section 3.9.4, Section 9.9
  */
 export type SessionRunnerResult = {
   iterations: number
@@ -58,6 +63,7 @@ export type SessionRunnerResult = {
 } & (
   | { exitReason: 'all_passed' }
   | { exitReason: 'all_blocked' }
+  | { exitReason: 'all_verified' }
   | { exitReason: 'max_iterations' }
   | { exitReason: 'quota_exceeded' }
   | { exitReason: 'interrupted' }
@@ -270,10 +276,12 @@ export class SessionRunner {
   ) {
     return evaluateTermination({
       state,
+      verificationTracker: this.options.getVerificationTracker?.(),
       options: {
         maxIterations: this.maxIterations,
         maxRetries: this.maxRetries,
         waitForQuota: this.options.waitForQuota,
+        useSyncTermination: this.options.useSyncTermination,
       },
       ...partial,
     })

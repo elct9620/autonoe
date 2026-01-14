@@ -7,6 +7,8 @@ export {
   handleCreateDeliverables,
   handleSetDeliverableStatus,
   handleDeprecateDeliverable,
+  handleVerifyDeliverable,
+  handleListDeliverables,
   DELIVERABLE_TOOL_SETS,
 } from './autonoeToolsAdapter'
 export type {
@@ -14,4 +16,7 @@ export type {
   DeliverableToolSetName,
   DeliverableMcpServerOptions,
   DeliverableMcpServerResult,
+  VerifyDeliverableInput,
+  ListDeliverableFilter,
+  ListDeliverablesInput,
 } from './autonoeToolsAdapter'

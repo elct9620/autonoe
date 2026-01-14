@@ -117,6 +117,9 @@ export {
   deprecateDeliverable,
 } from './deliverableService'
 
+// VerificationTracker for sync command
+export { VerificationTracker } from './verificationTracker'
+
 // Instruction exports
 export type { InstructionName, InstructionResolver } from './instructions'
 export {

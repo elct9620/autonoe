@@ -2,6 +2,7 @@ import type { LoopState } from './loopState'
 import type { DeliverableStatus } from './deliverableStatus'
 import type { ExitReason } from './exitReason'
 import type { SessionOutcome } from './types'
+import type { VerificationTracker } from './verificationTracker'
 import { calculateWaitDuration } from './quotaManager'
 
 /**
@@ -13,11 +14,13 @@ export interface TerminationContext {
   sessionOutcome?: SessionOutcome
   quotaResetTime?: Date
   deliverableStatus?: DeliverableStatus
+  verificationTracker?: VerificationTracker
   signal?: AbortSignal
   options: {
     maxIterations?: number
     maxRetries: number
     waitForQuota?: boolean
+    useSyncTermination?: boolean
   }
 }
 
@@ -35,6 +38,8 @@ export type TerminationDecision =
 
 /**
  * Evaluate termination conditions with priority order:
+ *
+ * For run command:
  * 1. Interrupted (SIGINT)
  * 2. Quota exceeded
  * 3. All achievable deliverables passed
@@ -42,7 +47,14 @@ export type TerminationDecision =
  * 5. Max iterations reached
  * 6. Max retries exceeded
  *
- * @see SPEC.md Section 3.10
+ * For sync command (useSyncTermination=true):
+ * 1. Interrupted (SIGINT)
+ * 2. Quota exceeded
+ * 3. All deliverables verified (allVerified)
+ * 4. Max iterations reached
+ * 5. Max retries exceeded
+ *
+ * @see SPEC.md Section 3.10, Section 9.9
  */
 export function evaluateTermination(
   context: TerminationContext,
@@ -65,14 +77,23 @@ export function evaluateTermination(
     return { action: 'terminate', exitReason: 'quota_exceeded' }
   }
 
-  // 3. All achievable deliverables passed
-  if (context.deliverableStatus?.allAchievablePassed()) {
-    return { action: 'terminate', exitReason: 'all_passed' }
-  }
+  // Sync command uses verification-based termination
+  if (context.options.useSyncTermination) {
+    // 3. All deliverables verified
+    if (context.verificationTracker?.allVerified()) {
+      return { action: 'terminate', exitReason: 'all_verified' }
+    }
+  } else {
+    // Run command uses pass/block-based termination
+    // 3. All achievable deliverables passed
+    if (context.deliverableStatus?.allAchievablePassed()) {
+      return { action: 'terminate', exitReason: 'all_passed' }
+    }
 
-  // 4. All deliverables blocked
-  if (context.deliverableStatus?.allBlocked()) {
-    return { action: 'terminate', exitReason: 'all_blocked' }
+    // 4. All deliverables blocked
+    if (context.deliverableStatus?.allBlocked()) {
+      return { action: 'terminate', exitReason: 'all_blocked' }
+    }
   }
 
   // 5. Max iterations reached

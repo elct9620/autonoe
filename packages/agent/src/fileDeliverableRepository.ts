@@ -1,4 +1,5 @@
 import * as fs from 'node:fs/promises'
+import * as fsSync from 'node:fs'
 import * as path from 'node:path'
 import {
   Deliverable,
@@ -96,6 +97,26 @@ export class FileDeliverableRepository implements DeliverableRepository {
       return toDeliverableStatus(data)
     } catch {
       return DeliverableStatus.empty()
+    }
+  }
+
+  /**
+   * Synchronous load for use in factory functions
+   * Returns undefined if file doesn't exist or is invalid
+   */
+  loadSync(): DeliverableStatus | undefined {
+    try {
+      const content = fsSync.readFileSync(this.statusPath, 'utf-8')
+      const data = JSON.parse(content) as StatusJson
+
+      // Validate structure
+      if (!data.deliverables || !Array.isArray(data.deliverables)) {
+        return undefined
+      }
+
+      return toDeliverableStatus(data)
+    } catch {
+      return undefined
     }
   }
 

@@ -540,12 +540,16 @@ describe('autonoeToolsAdapter', () => {
       expect(DELIVERABLE_TOOL_SETS.initializer).toEqual(['create'])
     })
 
-    it('coding set contains only set_status', () => {
-      expect(DELIVERABLE_TOOL_SETS.coding).toEqual(['set_status'])
+    it('coding set contains set_status and list', () => {
+      expect(DELIVERABLE_TOOL_SETS.coding).toEqual(['set_status', 'list'])
     })
 
-    it('verify set contains only set_status', () => {
-      expect(DELIVERABLE_TOOL_SETS.verify).toEqual(['set_status'])
+    it('verify set contains set_status, verify, and list', () => {
+      expect(DELIVERABLE_TOOL_SETS.verify).toEqual([
+        'set_status',
+        'verify',
+        'list',
+      ])
     })
 
     it('sync set contains create and deprecate', () => {
@@ -559,7 +563,10 @@ describe('autonoeToolsAdapter', () => {
         toolSet: 'coding',
       })
 
-      expect(allowedTools).toEqual(['mcp__autonoe__set_status'])
+      expect(allowedTools).toEqual([
+        'mcp__autonoe__set_status',
+        'mcp__autonoe__list',
+      ])
     })
 
     it('returns MCP tool names for initializer tool set', () => {
@@ -586,7 +593,11 @@ describe('autonoeToolsAdapter', () => {
         toolSet: 'verify',
       })
 
-      expect(allowedTools).toEqual(['mcp__autonoe__set_status'])
+      expect(allowedTools).toEqual([
+        'mcp__autonoe__set_status',
+        'mcp__autonoe__verify',
+        'mcp__autonoe__list',
+      ])
     })
 
     it('returns MCP tool names for custom tool array', () => {

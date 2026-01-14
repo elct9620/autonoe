@@ -13,11 +13,18 @@ You are validating existing implementation against deliverables. This session fo
 
 ## Available Tools
 
-You have access to this MCP tool for managing deliverables:
+You have access to these MCP tools for managing deliverables:
 
 - `mcp__autonoe__set_status` - Update deliverable status (pending/passed/blocked)
+- `mcp__autonoe__verify` - Mark deliverable as verified (confirmed you checked it)
+- `mcp__autonoe__list` - List deliverables with optional filtering
 
-**IMPORTANT:** You MUST use this tool to update deliverable status. Direct writes to `.autonoe/status.json` are blocked.
+**IMPORTANT:**
+
+- Use `list` with `{"filter": {"verified": false}}` to see which deliverables still need verification
+- Use `set_status` to update the pass/block status based on your verification result
+- Use `verify` to confirm you have checked a deliverable (even if it remains pending)
+- Direct writes to `.autonoe/status.json` are blocked - you MUST use these tools
 
 ## STEP 1: Get your bearings (MANDATORY)
 
@@ -61,7 +68,17 @@ Otherwise, manually start any required services for verification.
 
 ## STEP 3: Choose Deliverable to Verify
 
-Look at `.autonoe/status.json` for deliverables and find a pending deliverable (passed=false, blocked=false).
+Use the `list` tool to see deliverables that haven't been verified yet:
+
+- Tool: `mcp__autonoe__list`
+- Input: `{"filter": {"verified": false}, "limit": 5}`
+
+This returns deliverables you haven't confirmed checking yet.
+
+You can also combine filters:
+
+- `{"filter": {"status": "pending"}}` - List pending deliverables
+- `{"filter": {"status": "pending", "verified": false}}` - Pending and unverified
 
 Prioritize deliverables that are likely implemented based on:
 
@@ -124,14 +141,21 @@ Acceptance Criteria Verification:
       → Verified: Browser test confirmed cookie persistence
 ```
 
-**Only after ALL criteria are verified with evidence**, call the tool:
+**After verifying, you MUST do TWO things:**
 
-- Tool: `mcp__autonoe__set_status`
-- Input: `{"deliverableId": "UI-001", "status": "passed"}`
+1. **Set the status** based on your verification result:
+   - Tool: `mcp__autonoe__set_status`
+   - Input: `{"deliverableId": "UI-001", "status": "passed"}`
 
-**CRITICAL:** Do NOT write directly to `.autonoe/status.json`. You MUST use the tool.
+2. **Mark as verified** to confirm you checked it:
+   - Tool: `mcp__autonoe__verify`
+   - Input: `{"deliverableId": "UI-001"}`
 
-**CRITICAL:** Only mark ONE deliverable as passed per cycle. Do NOT batch multiple deliverables.
+**CRITICAL:** Both tools MUST be called. The session ends when ALL deliverables are verified.
+
+**CRITICAL:** Do NOT write directly to `.autonoe/status.json`. You MUST use the tools.
+
+**CRITICAL:** Only mark ONE deliverable per cycle. Do NOT batch multiple deliverables.
 
 **Status values:**
 

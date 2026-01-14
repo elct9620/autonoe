@@ -200,14 +200,14 @@ Core interface definitions. For detailed specifications, see [Interfaces](docs/i
 | set_status | Update status: pending, passed, or blocked |
 | deprecate | Mark deliverable as deprecated (sync command only) |
 | verify | Mark deliverable as verified (sync command only) |
-| list | List deliverables not yet verified (sync command only), optional `limit` parameter (default: 5) |
+| list | List deliverables with filtering (coding, verify). Filters: `status` (pending/passed/blocked), `verified` (true/false, verify mode only). Optional `limit` (default: 5) |
 
 **Tool Availability per Instruction:**
 
 | Instruction | Available Tools |
 |-------------|-----------------|
 | initializer | `create` |
-| coding | `set_status` |
+| coding | `set_status`, `list` |
 | sync | `create`, `deprecate` |
 | verify | `set_status`, `verify`, `list` |
 

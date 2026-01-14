@@ -4,11 +4,17 @@ You are continuing work on a long-running autonomous task. This is a FRESH conte
 
 ## Available Tools
 
-You have access to this MCP tool for managing deliverables:
+You have access to these MCP tools for managing deliverables:
 
 - `mcp__autonoe__set_status` - Update deliverable status (pending/passed/blocked)
+- `mcp__autonoe__list` - List deliverables with optional filtering
 
-**IMPORTANT:** You MUST use this tool to update deliverable status. Direct writes to `.autonoe/status.json` are blocked.
+Use `list` to check which deliverables need work:
+
+- `{"filter": {"status": "pending"}}` - See pending tasks
+- `{}` - See all deliverables
+
+**IMPORTANT:** You MUST use `set_status` to update deliverable status. Direct writes to `.autonoe/status.json` are blocked.
 
 ## STEP 1: Get your bearings (MANDATORY)
 

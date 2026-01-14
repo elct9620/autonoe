@@ -4,6 +4,7 @@ import {
   DefaultBashSecurity,
   createBashSecurityHook,
   createSyncWriteRestrictionHook,
+  VerificationTracker,
   type AgentClientFactory,
   type InstructionName,
 } from '@autonoe/core'
@@ -73,13 +74,28 @@ export async function handleSyncCommand(
     createSyncWriteRestrictionHook(),
   ]
 
+  // Shared verification tracker for verify sessions
+  // Created lazily on first verify instruction
+  let verificationTracker: VerificationTracker | undefined
+
   // Factory creates MCP server per session with appropriate tool set
   const clientFactory: AgentClientFactory = {
     create: (instructionName: InstructionName) => {
+      // Create tracker on first verify instruction
+      // Tracker is shared across all verify sessions
+      if (instructionName === 'verify' && !verificationTracker) {
+        const status = repository.loadSync()
+        if (status) {
+          verificationTracker = VerificationTracker.fromStatus(status)
+        }
+      }
+
       const { server: deliverableMcpServer, allowedTools: deliverableTools } =
         createDeliverableMcpServer(repository, {
           toolSet: instructionName,
           onStatusChange,
+          verificationTracker:
+            instructionName === 'verify' ? verificationTracker : undefined,
         })
 
       return new ClaudeAgentClient({
@@ -103,7 +119,11 @@ export async function handleSyncCommand(
     maxIterations: validatedOptions.maxIterations ?? 15,
   }
   const runnerOptions = createRunnerOptions(syncOptions)
-  const sessionRunner = new SessionRunner(runnerOptions)
+  const sessionRunner = new SessionRunner({
+    ...runnerOptions,
+    useSyncTermination: true,
+    getVerificationTracker: () => verificationTracker,
+  })
 
   // SyncInstructionSelector: session 1 uses 'sync', session 2+ uses 'verify'
   const instructionResolver = createInstructionResolver(

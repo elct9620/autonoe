@@ -384,12 +384,49 @@ All duration displays use human-readable format with zero-value parts omitted:
 - Code refactoring needed
 - Technical debt
 
+**deprecate** - Mark deliverable as deprecated (sync command only)
+
+| Parameter     | Type   | Description           |
+| ------------- | ------ | --------------------- |
+| deliverableId | string | Target deliverable ID |
+
+Returns: `{ success: boolean }`
+
+**verify** - Mark deliverable as verified (sync command only)
+
+| Parameter     | Type   | Description           |
+| ------------- | ------ | --------------------- |
+| deliverableId | string | Target deliverable ID |
+
+Returns: `{ success: boolean }`
+
+**list** - List deliverables with optional filtering (coding, verify)
+
+| Parameter       | Type   | Default   | Description                                |
+| --------------- | ------ | --------- | ------------------------------------------ |
+| filter          | object | undefined | Filter criteria                            |
+| filter.status   | enum   | undefined | 'pending' \| 'passed' \| 'blocked'         |
+| filter.verified | bool   | undefined | true/false (only available in verify mode) |
+| limit           | number | 5         | Maximum number of items to return          |
+
+Returns: `{ deliverables: Deliverable[] }`
+
+**Filter Examples:**
+
+- `{"filter": {"status": "pending"}}` - List pending deliverables
+- `{"filter": {"verified": false}}` - List unverified (verify mode only)
+- `{"filter": {"status": "pending", "verified": false}}` - Combined filter
+- `{}` or `{"limit": 10}` - List all (with optional limit)
+
 ### Tool Usage
 
 | Tool       | Phase          | Operation                                       |
 | ---------- | -------------- | ----------------------------------------------- |
 | create     | Initialization | Create deliverables with acceptance criteria    |
-| set_status | Coding         | Set status: pending (reset), passed, or blocked |
+| set_status | Coding/Verify  | Set status: pending (reset), passed, or blocked |
+| deprecate  | Sync           | Mark deliverable as deprecated                  |
+| verify     | Verify         | Mark deliverable as verified (checked)          |
+| list       | Coding/Verify  | List deliverables with optional filtering       |
 
 ### Status Change Notification
 
