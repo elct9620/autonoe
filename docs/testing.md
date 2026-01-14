@@ -172,6 +172,16 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | SC-CAC060 | maxThinkingTokens | undefined                            | `maxThinkingTokens` undefined     |
 | SC-CAC061 | maxThinkingTokens | `8192`                               | `maxThinkingTokens` set           |
 
+### ClientFactory Sandbox Passthrough
+
+| ID       | Command | sandboxMode           | Expected sandbox to Client    |
+| -------- | ------- | --------------------- | ----------------------------- |
+| SC-CF001 | run     | SandboxMode.enabled() | config.sandbox (enabled=true) |
+| SC-CF002 | run     | disabledByCli()       | undefined                     |
+| SC-CF003 | run     | disabledByEnv()       | undefined                     |
+| SC-CF004 | sync    | SandboxMode.enabled() | config.sandbox (enabled=true) |
+| SC-CF005 | sync    | disabledByEnv()       | undefined                     |
+
 ### Autonoe Protection
 
 | ID       | Input                              | Expected Output |
