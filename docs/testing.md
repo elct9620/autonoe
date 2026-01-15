@@ -230,17 +230,39 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | DU-006 | 3661000    | `1h 1m 1s`      |
 | DU-007 | 3660000    | `1h 1m`         |
 
-### CLI Command Handlers
+### RunCommandHandler
 
-| ID     | Input                      | Expected Output                     |
-| ------ | -------------------------- | ----------------------------------- |
-| CH-001 | run with valid project     | SessionRunner executed successfully |
-| CH-002 | sync with valid project    | SyncRunner executed successfully    |
-| CH-003 | invalid --project-dir path | Exit with error, non-zero exit code |
-| CH-004 | --no-sandbox flag          | Sandbox disabled in client config   |
-| CH-005 | --allow-destructive flag   | Destructive commands enabled        |
-| CH-006 | --debug flag               | Debug logging enabled               |
-| CH-007 | --wait-for-quota flag      | WaitForQuota option passed          |
+| ID      | Input                        | Expected Output                 |
+| ------- | ---------------------------- | ------------------------------- |
+| RCH-001 | execute()                    | Logs startup info with version  |
+| RCH-002 | maxIterations specified      | Logs max iterations             |
+| RCH-003 | model specified              | Logs model                      |
+| RCH-004 | thinking tokens specified    | Logs thinking tokens            |
+| RCH-010 | result: all_passed           | Logs success message            |
+| RCH-011 | result: all_blocked          | Logs error message              |
+| RCH-012 | result: interrupted          | Logs interrupted, does not exit |
+| RCH-013 | result: quota_exceeded       | Logs error and exits            |
+| RCH-014 | result: max_iterations       | Logs info message               |
+| RCH-020 | sandbox disabled via CLI     | Logs sandbox warning            |
+| RCH-021 | sandbox disabled via env     | Logs sandbox warning            |
+| RCH-022 | allowDestructive enabled     | Logs destructive warning        |
+| RCH-023 | sandbox enabled, no destruct | No warnings logged              |
+
+### SyncCommandHandler
+
+| ID      | Input                     | Expected Output                      |
+| ------- | ------------------------- | ------------------------------------ |
+| SCH-001 | execute()                 | Logs startup info with version       |
+| SCH-002 | maxIterations specified   | Logs max iterations                  |
+| SCH-003 | model specified           | Logs model                           |
+| SCH-004 | thinking tokens specified | Logs thinking tokens                 |
+| SCH-010 | session sequence          | Sync instruction first, verify after |
+| SCH-020 | result: all_passed        | Logs success message                 |
+| SCH-021 | result: interrupted       | Logs interruption message            |
+| SCH-022 | result: max_iterations    | Logs max iterations reached          |
+| SCH-030 | result: all_blocked       | Exits with code 1                    |
+| SCH-040 | sandbox disabled via env  | Logs sandbox warning                 |
+| SCH-041 | sandbox enabled           | No warning logged                    |
 
 ### ConsoleLogger
 
