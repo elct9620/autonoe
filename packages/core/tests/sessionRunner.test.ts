@@ -546,65 +546,69 @@ describe('SessionRunner', () => {
   })
 
   describe('Retry on session error', () => {
-    it('should retry on session error and create new session', async () => {
-      const throwingClient = new ThrowingMockClient(2, [
-        createMockStreamEnd('success', 0.01),
-      ])
+    describe('SC-S014: Session error, retry succeeds', () => {
+      it('should retry on session error and create new session', async () => {
+        const throwingClient = new ThrowingMockClient(2, [
+          createMockStreamEnd('success', 0.01),
+        ])
 
-      const statusReader = new MockDeliverableStatusReader()
-      statusReader.setStatusSequence([
-        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
-      ])
+        const statusReader = new MockDeliverableStatusReader()
+        statusReader.setStatusSequence([
+          createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
+        ])
 
-      const factory: AgentClientFactory = {
-        create: () => throwingClient,
-      }
+        const factory: AgentClientFactory = {
+          create: () => throwingClient,
+        }
 
-      const logger = new TestLogger()
-      const runner = new SessionRunner({
-        projectDir: '/test/project',
-        maxRetries: 3,
-        delayBetweenSessions: 0,
+        const logger = new TestLogger()
+        const runner = new SessionRunner({
+          projectDir: '/test/project',
+          maxRetries: 3,
+          delayBetweenSessions: 0,
+        })
+
+        const result = await runner.run(factory, logger, statusReader)
+
+        // Should have called query 3 times (2 errors + 1 success)
+        expect(throwingClient.getCallCount()).toBe(3)
+        // All deliverables passed after retry
+        expect(result.deliverablesPassedCount).toBe(1)
+        expect(logger.hasMessage('Session error (1/3)')).toBe(true)
+        expect(logger.hasMessage('Session error (2/3)')).toBe(true)
       })
-
-      const result = await runner.run(factory, logger, statusReader)
-
-      // Should have called query 3 times (2 errors + 1 success)
-      expect(throwingClient.getCallCount()).toBe(3)
-      // All deliverables passed after retry
-      expect(result.deliverablesPassedCount).toBe(1)
-      expect(logger.hasMessage('Session error (1/3)')).toBe(true)
-      expect(logger.hasMessage('Session error (2/3)')).toBe(true)
     })
 
-    it('should return result with error after maxRetries consecutive errors', async () => {
-      const throwingClient = new ThrowingMockClient(5, [
-        createMockStreamEnd('never reached', 0.01),
-      ])
+    describe('SC-S015: Session error, maxRetries exceeded', () => {
+      it('should return result with error after maxRetries consecutive errors', async () => {
+        const throwingClient = new ThrowingMockClient(5, [
+          createMockStreamEnd('never reached', 0.01),
+        ])
 
-      const factory: AgentClientFactory = {
-        create: () => throwingClient,
-      }
+        const factory: AgentClientFactory = {
+          create: () => throwingClient,
+        }
 
-      const logger = new TestLogger()
-      const runner = new SessionRunner({
-        projectDir: '/test/project',
-        maxRetries: 3,
-        delayBetweenSessions: 0,
+        const logger = new TestLogger()
+        const runner = new SessionRunner({
+          projectDir: '/test/project',
+          maxRetries: 3,
+          delayBetweenSessions: 0,
+        })
+
+        const result = await runner.run(factory, logger)
+
+        // Should have called query 4 times (3 retries + 1 initial)
+        expect(throwingClient.getCallCount()).toBe(4)
+        // Max retries exceeded - error present
+        expect(result.exitReason).toBe('max_retries_exceeded')
+        if (result.exitReason === 'max_retries_exceeded') {
+          expect(result.error).toBe('Session error 4')
+        }
+        expect(
+          logger.hasMessage('Session failed after 3 consecutive errors'),
+        ).toBe(true)
       })
-
-      const result = await runner.run(factory, logger)
-
-      // Should have called query 4 times (3 retries + 1 initial)
-      expect(throwingClient.getCallCount()).toBe(4)
-      // Max retries exceeded - error present
-      expect(result.exitReason).toBe('max_retries_exceeded')
-      if (result.exitReason === 'max_retries_exceeded') {
-        expect(result.error).toBe('Session error 4')
-      }
-      expect(
-        logger.hasMessage('Session failed after 3 consecutive errors'),
-      ).toBe(true)
     })
 
     it('should log overall info when max retries exceeded', async () => {
@@ -626,48 +630,50 @@ describe('SessionRunner', () => {
       expect(logger.hasMessage('Overall:')).toBe(true)
     })
 
-    it('should reset error counter after successful session', async () => {
-      // First session errors once, second session succeeds
-      let callCount = 0
-      const factory: AgentClientFactory = {
-        create: () => {
-          callCount++
-          if (callCount === 1 || callCount === 3) {
-            return new ThrowingMockClient(1, [
-              createMockStreamEnd('retry success', 0.01),
+    describe('SC-S016: Session success after error', () => {
+      it('should reset error counter after successful session', async () => {
+        // First session errors once, second session succeeds
+        let callCount = 0
+        const factory: AgentClientFactory = {
+          create: () => {
+            callCount++
+            if (callCount === 1 || callCount === 3) {
+              return new ThrowingMockClient(1, [
+                createMockStreamEnd('retry success', 0.01),
+              ])
+            }
+            return new ThrowingMockClient(0, [
+              createMockStreamEnd('direct success', 0.01),
             ])
-          }
-          return new ThrowingMockClient(0, [
-            createMockStreamEnd('direct success', 0.01),
-          ])
-        },
-      }
+          },
+        }
 
-      const statusReader = new MockDeliverableStatusReader()
-      statusReader.setStatusSequence([
-        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
-        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
-        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
-      ])
+        const statusReader = new MockDeliverableStatusReader()
+        statusReader.setStatusSequence([
+          createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+          createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+          createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
+        ])
 
-      const logger = new TestLogger()
-      const runner = new SessionRunner({
-        projectDir: '/test/project',
-        maxRetries: 3,
-        delayBetweenSessions: 0,
+        const logger = new TestLogger()
+        const runner = new SessionRunner({
+          projectDir: '/test/project',
+          maxRetries: 3,
+          delayBetweenSessions: 0,
+        })
+
+        const result = await runner.run(factory, logger, statusReader)
+
+        // All deliverables passed after error recovery
+        expect(result.deliverablesPassedCount).toBe(1)
+        // Error counter should be reset between successful sessions
+        // so we should see (1/3) for each retry, not (2/3)
+        const entries = logger.getEntries()
+        const errorLogs = entries.filter((e) =>
+          e.message.includes('Session error'),
+        )
+        expect(errorLogs.every((e) => e.message.includes('(1/3)'))).toBe(true)
       })
-
-      const result = await runner.run(factory, logger, statusReader)
-
-      // All deliverables passed after error recovery
-      expect(result.deliverablesPassedCount).toBe(1)
-      // Error counter should be reset between successful sessions
-      // so we should see (1/3) for each retry, not (2/3)
-      const entries = logger.getEntries()
-      const errorLogs = entries.filter((e) =>
-        e.message.includes('Session error'),
-      )
-      expect(errorLogs.every((e) => e.message.includes('(1/3)'))).toBe(true)
     })
 
     it('should use default maxRetries=3 when not specified', async () => {

@@ -372,4 +372,79 @@ describe('ClaudeAgentClient', () => {
       })
     })
   })
+
+  describe('wrapSdkQuery error handling', () => {
+    function createThrowingQuery(error: unknown): SDKQuery {
+      const generator = (async function* () {
+        throw error
+      })()
+      const query = generator as unknown as SDKQuery
+      query.interrupt = vi.fn().mockResolvedValue(undefined)
+      return query
+    }
+
+    describe('SC-AC020: SDK throws error', () => {
+      it('yields stream_error event when SDK throws', async () => {
+        const error = new Error('SDK connection failed')
+        sdkQueryMock.mockReturnValue(createThrowingQuery(error))
+
+        const { ClaudeAgentClient } = await import('../src/claudeAgentClient')
+        const client = new ClaudeAgentClient({ cwd: '/project' })
+
+        const stream = client.query('test')
+        const events: unknown[] = []
+        for await (const event of stream) {
+          events.push(event)
+        }
+
+        expect(events).toHaveLength(1)
+        expect(events[0]).toMatchObject({
+          type: 'stream_error',
+          message: 'SDK connection failed',
+        })
+      })
+    })
+
+    describe('SC-AC021: Error with stack', () => {
+      it('includes stack trace in stream_error event', async () => {
+        const error = new Error('SDK error with stack')
+        sdkQueryMock.mockReturnValue(createThrowingQuery(error))
+
+        const { ClaudeAgentClient } = await import('../src/claudeAgentClient')
+        const client = new ClaudeAgentClient({ cwd: '/project' })
+
+        const stream = client.query('test')
+        const events: unknown[] = []
+        for await (const event of stream) {
+          events.push(event)
+        }
+
+        const errorEvent = events[0] as { stack?: string }
+        expect(errorEvent).toHaveProperty('stack')
+        expect(errorEvent.stack).toContain('Error: SDK error with stack')
+      })
+    })
+
+    describe('SC-AC022: Non-Error thrown', () => {
+      it('converts non-Error to string message', async () => {
+        sdkQueryMock.mockReturnValue(createThrowingQuery('string error'))
+
+        const { ClaudeAgentClient } = await import('../src/claudeAgentClient')
+        const client = new ClaudeAgentClient({ cwd: '/project' })
+
+        const stream = client.query('test')
+        const events: unknown[] = []
+        for await (const event of stream) {
+          events.push(event)
+        }
+
+        expect(events[0]).toMatchObject({
+          type: 'stream_error',
+          message: 'string error',
+        })
+        const errorEvent = events[0] as { stack?: string }
+        expect(errorEvent.stack).toBeUndefined()
+      })
+    })
+  })
 })

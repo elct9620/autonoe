@@ -25,6 +25,9 @@ For the main specification, see [SPEC.md](../SPEC.md).
 | SC-S011 | All passed, 2 sessions             | Overall log with cost and duration      |
 | SC-S012 | Partial with blocked               | Overall log shows "(N blocked)"         |
 | SC-S013 | Max iterations reached             | Overall logged before exit              |
+| SC-S014 | Session error, retry succeeds      | consecutiveErrors reset to 0            |
+| SC-S015 | Session error, maxRetries exceeded | Exit with max_retries_exceeded          |
+| SC-S016 | Session success after error        | Error counter reset, loop continues     |
 
 SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 
@@ -86,6 +89,10 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | DL-T010 | verify     | Valid ID in tracker            | success=true, marked as verified   |
 | DL-T011 | verify     | Invalid ID (not in tracker)    | success=false, not found           |
 | DL-T012 | verify     | tracker undefined              | Error: tracker not available       |
+| DL-T013 | deprecate  | Valid ID, not deprecated       | success=true, deprecatedAt set     |
+| DL-T014 | deprecate  | Invalid deliverable ID         | Error: deliverable not found       |
+| DL-T015 | deprecate  | Already deprecated ID          | Error: already deprecated          |
+| DL-T016 | deprecate  | Empty deliverable ID           | Error: ID is required              |
 | DL-T020 | list       | filter: status=pending         | Only pending deliverables          |
 | DL-T021 | list       | filter: status=passed          | Only passed deliverables           |
 | DL-T022 | list       | filter: status=blocked         | Only blocked deliverables          |
@@ -172,6 +179,9 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | SC-AC012 | toSessionEnd         | Result with total_cost_usd | StreamEventEnd with totalCostUsd |
 | SC-AC013 | detectClaudeCodePath | claude found               | Path string                      |
 | SC-AC014 | detectClaudeCodePath | claude not found           | undefined                        |
+| SC-AC020 | wrapSdkQuery         | SDK throws error           | Yields stream_error event        |
+| SC-AC021 | wrapSdkQuery         | Error with stack           | stream_error includes stack      |
+| SC-AC022 | wrapSdkQuery         | Non-Error thrown           | stream_error with String(error)  |
 
 ### ClaudeAgentClient SDK Options Assembly
 

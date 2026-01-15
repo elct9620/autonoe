@@ -414,62 +414,98 @@ describe('autonoeToolsAdapter', () => {
   })
 
   describe('handleDeprecateDeliverable', () => {
-    it('marks deliverable as deprecated and saves', async () => {
-      repository.setStatus(
-        DeliverableStatus.create('2025-01-01', '2025-01-01', [
-          Deliverable.pending('DL-001', 'Feature', ['AC1']),
-        ]),
-      )
+    describe('DL-T013: Valid ID, not deprecated', () => {
+      it('marks deliverable as deprecated and saves', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'Feature', ['AC1']),
+          ]),
+        )
 
-      const input = { deliverableId: 'DL-001' }
-      const result = await handleDeprecateDeliverable(repository, input)
+        const input = { deliverableId: 'DL-001' }
+        const result = await handleDeprecateDeliverable(repository, input)
 
-      expect(repository.loadCalls).toBe(1)
-      expect(repository.saveCalls).toBe(1)
-      expect(repository.savedStatus?.deliverables[0]?.deprecated).toBe(true)
+        expect(repository.loadCalls).toBe(1)
+        expect(repository.saveCalls).toBe(1)
+        expect(repository.savedStatus?.deliverables[0]?.deprecated).toBe(true)
 
-      const parsedResult = JSON.parse(result.content[0]?.text ?? '')
-      expect(parsedResult.success).toBe(true)
-      expect(parsedResult.message).toContain('deprecated')
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(true)
+        expect(parsedResult.message).toContain('deprecated')
+      })
     })
 
-    it('returns error for non-existent deliverable and does not save', async () => {
-      repository.setStatus(
-        DeliverableStatus.create('2025-01-01', '2025-01-01', []),
-      )
+    describe('DL-T014: Invalid deliverable ID', () => {
+      it('returns error for non-existent deliverable and does not save', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', []),
+        )
 
-      const input = { deliverableId: 'DL-999' }
-      const result = await handleDeprecateDeliverable(repository, input)
+        const input = { deliverableId: 'DL-999' }
+        const result = await handleDeprecateDeliverable(repository, input)
 
-      expect(repository.saveCalls).toBe(0)
+        expect(repository.saveCalls).toBe(0)
 
-      const parsedResult = JSON.parse(result.content[0]?.text ?? '')
-      expect(parsedResult.success).toBe(false)
-      expect(parsedResult.message).toContain('not found')
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(false)
+        expect(parsedResult.message).toContain('not found')
+      })
     })
 
-    it('returns error for already deprecated deliverable', async () => {
-      repository.setStatus(
-        DeliverableStatus.create('2025-01-01', '2025-01-01', [
-          Deliverable.create(
-            'DL-001',
-            'Already Deprecated',
-            ['AC1'],
-            false,
-            false,
-            '2025-01-10',
-          ),
-        ]),
-      )
+    describe('DL-T015: Already deprecated ID', () => {
+      it('returns error for already deprecated deliverable', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.create(
+              'DL-001',
+              'Already Deprecated',
+              ['AC1'],
+              false,
+              false,
+              '2025-01-10',
+            ),
+          ]),
+        )
 
-      const input = { deliverableId: 'DL-001' }
-      const result = await handleDeprecateDeliverable(repository, input)
+        const input = { deliverableId: 'DL-001' }
+        const result = await handleDeprecateDeliverable(repository, input)
 
-      expect(repository.saveCalls).toBe(0)
+        expect(repository.saveCalls).toBe(0)
 
-      const parsedResult = JSON.parse(result.content[0]?.text ?? '')
-      expect(parsedResult.success).toBe(false)
-      expect(parsedResult.message).toContain('already deprecated')
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(false)
+        expect(parsedResult.message).toContain('already deprecated')
+      })
+    })
+
+    describe('DL-T016: Empty deliverable ID', () => {
+      it('returns error for empty ID', async () => {
+        repository.setStatus(
+          DeliverableStatus.create('2025-01-01', '2025-01-01', [
+            Deliverable.pending('DL-001', 'Feature', ['AC1']),
+          ]),
+        )
+
+        const input = { deliverableId: '' }
+        const result = await handleDeprecateDeliverable(repository, input)
+
+        expect(repository.saveCalls).toBe(0)
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(false)
+        expect(parsedResult.message).toContain('required')
+      })
+
+      it('returns error for whitespace-only ID', async () => {
+        const input = { deliverableId: '   ' }
+        const result = await handleDeprecateDeliverable(repository, input)
+
+        expect(repository.saveCalls).toBe(0)
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(false)
+        expect(parsedResult.message).toContain('required')
+      })
     })
   })
 
