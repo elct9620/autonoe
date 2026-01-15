@@ -128,30 +128,56 @@ CLAUDE_CODE_OAUTH_TOKEN=your-oauth-token
 
 ## CLI Reference
 
-```
-autonoe run [options]
+### Common Options
 
-Options:
-  -p, --project-dir <path>    Project directory (default: current directory)
-  -n, --max-iterations <n>    Maximum coding sessions (default: unlimited)
-  --max-retries <n>           Maximum retries on session error (default: 3)
-  -m, --model <model>         Claude model to use
-  -d, --debug                 Show debug output
-  --no-sandbox                Disable SDK sandbox (not recommended)
-  --wait-for-quota            Wait for quota reset instead of exiting
-  -D, --allow-destructive     Enable rm/mv with path validation
-  --thinking [budget]         Enable extended thinking mode (default: 8192)
-  -h, --help                  Show help
-  -v, --version               Show version
+All commands share the following options:
+
+| Option             | Short | Description                                   | Default   |
+| ------------------ | ----- | --------------------------------------------- | --------- |
+| `--project-dir`    | `-p`  | Project directory                             | cwd       |
+| `--max-iterations` | `-n`  | Maximum coding sessions                       | unlimited |
+| `--max-retries`    |       | Maximum retries on session error              | 3         |
+| `--model`          | `-m`  | Claude model to use                           | -         |
+| `--debug`          | `-d`  | Show debug output                             | false     |
+| `--wait-for-quota` |       | Wait for quota reset instead of exiting       | false     |
+| `--thinking`       |       | Enable extended thinking mode (budget tokens) | 8192      |
+
+### run Command
+
+Implements deliverables from SPEC.md.
+
+```bash
+autonoe run [options]
 ```
+
+**Additional Options:**
+
+| Option                | Short | Description                           | Default |
+| --------------------- | ----- | ------------------------------------- | ------- |
+| `--no-sandbox`        |       | Disable SDK sandbox (not recommended) | false   |
+| `--allow-destructive` | `-D`  | Enable rm/mv with path validation     | false   |
+
+### sync Command
+
+Synchronizes SPEC.md with status.json and verifies existing implementation.
+
+```bash
+autonoe sync [options]
+```
+
+Uses common options only. This is a **read-only operation** that does not modify project files (except `.autonoe/status.json` and `.autonoe-note.md`).
 
 ## How It Works
 
-Autonoe operates in two phases:
+Autonoe provides two commands: `run` for implementation and `sync` for verification.
+
+### run Command
+
+Implements deliverables from SPEC.md in a session loop:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          Session Loop                               │
+│                          run Session Loop                           │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  ┌──────────────────┐                  ┌──────────────────┐        │
@@ -196,7 +222,49 @@ Exit conditions: max iterations, all blocked, quota exceeded, max retries
 - Marks deliverables as passed/failed
 - Continues until all deliverables pass or max iterations reached
 
-**Deliverable Status**
+### sync Command
+
+Synchronizes SPEC.md changes and verifies existing implementation (**read-only**):
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         sync Session Loop                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────────┐                  ┌──────────────────┐        │
+│  │ Phase 1:         │                  │ Phase 2:         │        │
+│  │ Sync             │─────────────────▶│ Verify           │        │
+│  │                  │                  │                  │        │
+│  │ - Read SPEC.md   │  (status.json    │ - Run tests      │        │
+│  │ - Create/Update  │   updated)       │ - Validate code  │        │
+│  │   deliverables   │                  │ - Mark verified  │        │
+│  └──────────────────┘                  └────────┬─────────┘        │
+│                                                 │                   │
+│                                                 ▼                   │
+│                                ┌────────────────────────────┐      │
+│                                │ All deliverables verified? │      │
+│                                └─────────────┬──────────────┘      │
+│                                       Yes    │      No             │
+│                                        ▼     │       ▼             │
+│                                      Done    │   Continue          │
+└─────────────────────────────────────────────────────────────────────┘
+
+Does NOT modify project files (only .autonoe/status.json and .autonoe-note.md)
+```
+
+**Phase 1: Sync**
+
+- Reads your `SPEC.md` file
+- Creates new deliverables or marks removed ones as deprecated
+- Updates `.autonoe/status.json`
+
+**Phase 2: Verify**
+
+- Runs tests and validation
+- Confirms deliverable status matches implementation
+- Marks each deliverable as verified
+
+### Deliverable Status
 
 Each deliverable tracks progress with three states:
 
@@ -206,12 +274,18 @@ Each deliverable tracks progress with three states:
 | `passed`  | All acceptance criteria verified       |
 | `blocked` | Cannot proceed (dependency/constraint) |
 
-The session loop exits when:
+Deliverables removed from SPEC.md are marked with `deprecatedAt` timestamp and excluded from termination evaluation.
 
-- **All achievable passed**: All non-blocked deliverables have passed
-- **All blocked**: Every deliverable is blocked
-- **Max iterations**: Reached `-n` limit
-- **Max retries**: Exceeded `--max-retries` consecutive errors
+### Exit Conditions
+
+| Condition             | run | sync |
+| --------------------- | --- | ---- |
+| All achievable passed | ✓   | -    |
+| All verified          | -   | ✓    |
+| All blocked           | ✓   | ✓    |
+| Max iterations        | ✓   | ✓    |
+| Max retries           | ✓   | ✓    |
+| Quota exceeded        | ✓   | ✓    |
 
 ## Configuration
 
@@ -220,7 +294,11 @@ Create `.autonoe/agent.json` to customize behavior:
 ```json
 {
   "profile": ["node", "python"],
-  "allowCommands": ["docker", "custom-cli"],
+  "allowCommands": {
+    "base": ["make"],
+    "run": ["docker", "custom-cli"],
+    "sync": ["shellcheck"]
+  },
   "allowPkillTargets": ["custom-server"],
   "permissions": {
     "allow": ["WebFetch(https://api.example.com/*)"]
@@ -237,14 +315,26 @@ Create `.autonoe/agent.json` to customize behavior:
 
 ### Configuration Options
 
-| Field               | Type                 | Description                                |
-| ------------------- | -------------------- | ------------------------------------------ |
-| `profile`           | `string \| string[]` | Language profiles to enable (default: all) |
-| `allowCommands`     | `string[]`           | Additional bash commands to allow          |
-| `allowPkillTargets` | `string[]`           | Additional processes that can be killed    |
-| `permissions.allow` | `string[]`           | SDK permission rules                       |
-| `allowedTools`      | `string[]`           | Additional SDK tools to enable             |
-| `mcpServers`        | `object`             | Custom MCP servers                         |
+| Field               | Type                         | Description                                |
+| ------------------- | ---------------------------- | ------------------------------------------ |
+| `profile`           | `string \| string[]`         | Language profiles to enable (default: all) |
+| `allowCommands`     | `string[] \| TieredCommands` | Additional bash commands (see below)       |
+| `allowPkillTargets` | `string[]`                   | Additional processes that can be killed    |
+| `permissions.allow` | `string[]`                   | SDK permission rules                       |
+| `allowedTools`      | `string[]`                   | Additional SDK tools to enable             |
+| `mcpServers`        | `object`                     | Custom MCP servers                         |
+
+### allowCommands Structure
+
+Commands can be specified per-command or shared:
+
+| Key    | Applies to   | Example                  |
+| ------ | ------------ | ------------------------ |
+| `base` | run and sync | `"base": ["make"]`       |
+| `run`  | run only     | `"run": ["docker"]`      |
+| `sync` | sync only    | `"sync": ["shellcheck"]` |
+
+Legacy `string[]` format is treated as `{ run: [...] }` for backward compatibility.
 
 ### Language Profiles
 
@@ -259,15 +349,24 @@ Create `.autonoe/agent.json` to customize behavior:
 
 Override the default agent instructions by creating files in `.autonoe/`:
 
-| File                      | Purpose                                       |
-| ------------------------- | --------------------------------------------- |
-| `.autonoe/initializer.md` | First session: read SPEC, create deliverables |
-| `.autonoe/coding.md`      | Subsequent sessions: implement and verify     |
+| File                      | Command | Purpose                                        |
+| ------------------------- | ------- | ---------------------------------------------- |
+| `.autonoe/initializer.md` | run     | First session: read SPEC, create deliverables  |
+| `.autonoe/coding.md`      | run     | Subsequent sessions: implement and verify      |
+| `.autonoe/sync.md`        | sync    | First session: parse SPEC, update deliverables |
+| `.autonoe/verify.md`      | sync    | Subsequent sessions: validate implementation   |
 
 ### Instruction Selection
 
-1. **First session** (no `.autonoe/status.json`): Uses `initializer.md`
-2. **Subsequent sessions**: Uses `coding.md`
+**run command:**
+
+1. First session (no `.autonoe/status.json`): Uses `initializer.md`
+2. Subsequent sessions: Uses `coding.md`
+
+**sync command:**
+
+1. First session: Uses `sync.md`
+2. Subsequent sessions: Uses `verify.md`
 
 ### Override Priority
 
