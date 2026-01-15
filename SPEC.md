@@ -549,23 +549,20 @@ Base Commands (read-only, all commands share)
 └── Utility: echo, sleep
 
 Command Extensions
-├── run: mkdir, cp, language development (runtimes, frameworks), user extensions
-└── sync: language verification only (test runners, linters)
+├── run: mkdir, cp, language profiles, user extensions
+└── sync: language profiles (no file ops)
 ```
 
-**Profile Command Layers (Language-specific):**
+**Language Profile Commands:**
 
-| Layer | Purpose | Used By |
-|-------|---------|---------|
-| verification | Test, type check, lint commands | `sync` command |
-| development | Full toolchain (includes verification) | `run` command |
+Language profile commands (node, python, ruby, go) are available in both modes. The only difference is that `sync` excludes file operation commands (mkdir, cp).
 
 **Mode × Profile → Commands:**
 
 | Command | Base Commands | Extensions |
 |---------|---------------|------------|
-| `run`   | All read-only | + mkdir, cp, language development, user extensions |
-| `sync`  | All read-only | + language verification only |
+| `run`   | All read-only | + mkdir, cp, language profiles, user extensions |
+| `sync`  | All read-only | + language profiles (no mkdir, cp) |
 
 **MCP Servers User Priority:**
 
@@ -741,7 +738,7 @@ Run mode extends Base Security with additional capabilities for implementation:
 | `"python"`           | base + python                          |
 | `["node", "python"]` | base + node + python                   |
 
-**Command Layer:** Run uses `development` layer which includes all verification commands plus package managers, frameworks, and runtimes.
+**Run Command:** Includes all language profile commands plus file operation commands (mkdir, cp).
 
 See [Security Details - Run Command](docs/security.md#run-command-security) for command allowlists and runtime options.
 
@@ -749,27 +746,26 @@ See [Security Details - Run Command](docs/security.md#run-command-security) for 
 
 Sync mode restricts Base Security for verification-only operations:
 
-| Restriction | Base               | Sync                    |
-| ----------- | ------------------ | ----------------------- |
-| File Write  | None               | .autonoe-note.md only   |
-| Bash        | Read-only commands | + Verification only     |
-| Playwright  | N/A                | Enabled (verify phase)  |
+| Restriction | Base               | Sync                           |
+| ----------- | ------------------ | ------------------------------ |
+| File Write  | None               | .autonoe-note.md only          |
+| Bash        | Read-only commands | + Profile commands, - File ops |
+| Playwright  | N/A                | Enabled (verify phase)         |
 
-**Sync Command = Base Commands + Language Verification:**
+**Sync Command = Base Commands + Language Profiles (no file ops):**
 
 | Profile | Commands |
 |---------|----------|
 | base    | All read-only commands (see Section 6.2) |
-| node    | npm, npx, bun, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome |
-| python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint |
-| ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard |
-| go      | go, gofmt, goimports, golangci-lint, staticcheck |
+| node    | All Node.js commands (npm, npx, node, vitest, jest, eslint, prettier, etc.) |
+| python  | All Python commands (pip, python, pytest, mypy, ruff, etc.) |
+| ruby    | All Ruby commands (bundle, ruby, rspec, rubocop, etc.) |
+| go      | All Go commands (go, gofmt, golangci-lint, etc.) |
 
 **Restrictions:**
-- File modification commands (mkdir, cp) are excluded
-- User extensions (`allowCommands.run`) are ignored; only `allowCommands.sync` and `allowCommands.base` apply
+- File operation commands (mkdir, cp) are excluded
+- User extensions: only `allowCommands.sync` and `allowCommands.base` apply
 - Destructive commands (rm, mv) are always disabled
-- Auto-fix commands (e.g., `prettier --write`, `rubocop -a`, `black`) are excluded
 
 See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.
 
@@ -959,12 +955,12 @@ Tools available to the Coding Agent (configured by Autonoe):
 | `"go"`                 | base + go                              | Go only                 |
 | `["node", "python"]`   | base + node + python                   | Specific combination    |
 
-**Profile × Command → Command Layer:**
+**Profile × Command:**
 
-| Command | Profile Layer | Description |
-|---------|---------------|-------------|
-| `run`   | development   | Full toolchain (includes verification) |
-| `sync`  | verification  | Test, type check, lint, build only |
+| Command | Language Commands | File Operations |
+|---------|-------------------|-----------------|
+| `run`   | All               | mkdir, cp       |
+| `sync`  | All               | (excluded)      |
 
 ### 9.5 Sync Command Behavior
 

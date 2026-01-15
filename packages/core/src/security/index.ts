@@ -10,15 +10,13 @@ export type {
   BashSecurityOptions,
   ProfileName,
   ExecutionMode,
-  CommandLayer,
-  ProfileCommandSet,
   TieredAllowCommands,
   AllowCommandsConfig,
 } from './types'
 export { ALL_PROFILES, isBashSecurity } from './types'
 
 // Profile exports
-export { PROFILE_COMMAND_SETS } from './profiles'
+export { PROFILE_COMMANDS } from './profiles'
 
 // Main implementation
 export {

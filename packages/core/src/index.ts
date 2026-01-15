@@ -58,13 +58,12 @@ export type {
   BashSecurityOptions,
   ProfileName,
   ExecutionMode,
-  CommandLayer,
 } from './security'
 export {
   DefaultBashSecurity,
   createBashSecurityHook,
   ALL_PROFILES,
-  PROFILE_COMMAND_SETS,
+  PROFILE_COMMANDS,
 } from './security'
 
 // Configuration exports

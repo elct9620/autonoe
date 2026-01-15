@@ -14,16 +14,17 @@ import type {
   BashSecurityOptions,
   ProfileName,
   ExecutionMode,
-  CommandLayer,
   AllowCommandsConfig,
   TieredAllowCommands,
 } from './types'
 import { ALL_PROFILES, isBashSecurity } from './types'
 import {
-  PROFILE_COMMAND_SETS,
+  PROFILE_COMMANDS,
   PROFILE_PKILL_TARGETS,
   VALIDATED_COMMANDS,
   DESTRUCTIVE_COMMANDS,
+  BASE_READONLY_COMMANDS,
+  RUN_EXTENSION_COMMANDS,
 } from './profiles'
 import { splitCommandChain, parseCommand } from './commandParser'
 import {
@@ -70,23 +71,40 @@ function getAllowCommandsForMode(
 }
 
 /**
- * Collect commands from profile command sets based on layer
+ * Collect commands for active profiles
+ * - Base readonly commands (always)
+ * - Run extension commands (run mode only)
+ * - Language profile commands (same for all modes)
  */
-function collectCommandsFromProfiles(
+function collectCommands(
   profiles: ProfileName[],
-  layer: CommandLayer,
+  mode: ExecutionMode,
   extensions?: string[],
 ): Set<string> {
   const result = new Set<string>()
 
+  // 1. Base readonly commands (always available)
+  for (const cmd of BASE_READONLY_COMMANDS) {
+    result.add(cmd)
+  }
+
+  // 2. Run extension commands (mkdir, cp) - run mode only
+  if (mode === 'run') {
+    for (const cmd of RUN_EXTENSION_COMMANDS) {
+      result.add(cmd)
+    }
+  }
+
+  // 3. Language profile commands (same for all modes)
   for (const profile of profiles) {
-    const commandSet = PROFILE_COMMAND_SETS[profile]
-    const commands = commandSet[layer]
+    if (profile === 'base') continue // handled above
+    const commands = PROFILE_COMMANDS[profile]
     for (const cmd of commands) {
       result.add(cmd)
     }
   }
 
+  // 4. User extensions
   if (extensions) {
     for (const cmd of extensions) {
       result.add(cmd)
@@ -173,16 +191,15 @@ export class DefaultBashSecurity implements BashSecurity {
   constructor(options: BashSecurityOptions = {}) {
     this.mode = options.mode ?? 'run'
     const profiles = this.resolveActiveProfiles(options.activeProfiles)
-    const layer = this.modeToLayer(this.mode)
 
     // Normalize and get mode-specific allow commands
     const tieredCommands = normalizeAllowCommands(options.allowCommands)
     const extensions = getAllowCommandsForMode(tieredCommands, this.mode)
 
-    // Collect commands based on layer with mode-specific extensions
-    this.allowedCommands = collectCommandsFromProfiles(
+    // Collect commands with mode-specific extensions
+    this.allowedCommands = collectCommands(
       profiles,
-      layer,
+      this.mode,
       extensions.length > 0 ? extensions : undefined,
     )
 
@@ -197,13 +214,6 @@ export class DefaultBashSecurity implements BashSecurity {
     this.allowDestructive =
       this.mode === 'run' && (options.allowDestructive ?? false)
     this.projectDir = options.projectDir
-  }
-
-  /**
-   * Map execution mode to command layer
-   */
-  private modeToLayer(mode: ExecutionMode): CommandLayer {
-    return mode === 'sync' ? 'verification' : 'development'
   }
 
   /**

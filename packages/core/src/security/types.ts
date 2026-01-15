@@ -36,20 +36,6 @@ export const ALL_PROFILES: readonly ProfileName[] = Object.freeze([
 export type ExecutionMode = 'run' | 'sync'
 
 /**
- * Command layers for security modes
- * @see SPEC.md Section 5.4
- */
-export type CommandLayer = 'verification' | 'development'
-
-/**
- * Profile command structure with layers
- */
-export interface ProfileCommandSet {
-  verification: Set<string>
-  development: Set<string>
-}
-
-/**
  * Tiered allow commands structure
  * @see SPEC.md Section 5.4
  */
@@ -72,9 +58,9 @@ export type AllowCommandsConfig = string[] | TieredAllowCommands
  */
 export interface BashSecurityOptions {
   /**
-   * Execution mode determines command layer
-   * - 'run': development layer (full toolchain)
-   * - 'sync': verification layer (test/lint/build only)
+   * Execution mode
+   * - 'run': includes file operation commands (mkdir, cp)
+   * - 'sync': excludes file operation commands
    * @default 'run'
    */
   mode?: ExecutionMode

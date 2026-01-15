@@ -1,9 +1,9 @@
 /**
- * Profile command sets with layer support
+ * Profile command sets
  * @see SPEC.md Section 5.4, 6.4
  */
 
-import type { ProfileName, ProfileCommandSet } from './types'
+import type { ProfileName } from './types'
 
 // =============================================================================
 // Base Profile
@@ -47,8 +47,8 @@ export const BASE_READONLY_COMMANDS = new Set([
 ])
 
 /**
- * Run command extension commands (run mode only)
- * Commands that may modify state, only available in run mode
+ * Run-only extension commands (file operations)
+ * Commands that modify filesystem, only available in run mode
  * @see SPEC.md Section 6.3
  */
 export const RUN_EXTENSION_COMMANDS = new Set([
@@ -57,36 +57,15 @@ export const RUN_EXTENSION_COMMANDS = new Set([
   'cp',
 ])
 
-/**
- * @deprecated Use BASE_READONLY_COMMANDS instead
- * Kept for backward compatibility
- */
-export const BASE_STATUS_COMMANDS = BASE_READONLY_COMMANDS
-
-/**
- * @deprecated Use RUN_EXTENSION_COMMANDS instead
- * Kept for backward compatibility
- */
-export const BASE_OPERATION_COMMANDS = RUN_EXTENSION_COMMANDS
-
-/**
- * All base commands (readonly + run extensions)
- */
-export const BASE_COMMANDS = new Set([
-  ...BASE_READONLY_COMMANDS,
-  ...RUN_EXTENSION_COMMANDS,
-])
-
 // =============================================================================
 // Node.js Profile
 // =============================================================================
 
 /**
- * Node.js verification commands (sync mode)
- * Package managers included for running test scripts
+ * Node.js commands (available in all modes)
  */
-export const NODE_VERIFICATION_COMMANDS = new Set([
-  // Package managers (for npm test, bun test, etc.)
+export const NODE_COMMANDS = new Set([
+  // Package managers
   'npm',
   'npx',
   'bun',
@@ -99,16 +78,10 @@ export const NODE_VERIFICATION_COMMANDS = new Set([
   'mocha',
   // Type check
   'tsc',
-  // Lint (read-only)
+  // Lint
   'eslint',
   'prettier',
   'biome',
-])
-
-/**
- * Node.js development commands (run mode only)
- */
-export const NODE_DEVELOPMENT_COMMANDS = new Set([
   // Runtime
   'node',
   'deno',
@@ -129,10 +102,10 @@ export const NODE_DEVELOPMENT_COMMANDS = new Set([
 // =============================================================================
 
 /**
- * Python verification commands (sync mode)
+ * Python commands (available in all modes)
  */
-export const PYTHON_VERIFICATION_COMMANDS = new Set([
-  // Package managers (for pip install -e, pytest, etc.)
+export const PYTHON_COMMANDS = new Set([
+  // Package managers
   'pip',
   'pip3',
   'pipx',
@@ -144,16 +117,10 @@ export const PYTHON_VERIFICATION_COMMANDS = new Set([
   // Type check
   'mypy',
   'pyright',
-  // Lint (read-only)
+  // Lint
   'ruff',
   'flake8',
   'pylint',
-])
-
-/**
- * Python development commands (run mode only)
- */
-export const PYTHON_DEVELOPMENT_COMMANDS = new Set([
   // Runtime
   'python',
   'python3',
@@ -166,7 +133,7 @@ export const PYTHON_DEVELOPMENT_COMMANDS = new Set([
   'venv',
   'virtualenv',
   'conda',
-  // Format (auto-fix)
+  // Format
   'black',
   // Framework
   'django-admin',
@@ -180,10 +147,10 @@ export const PYTHON_DEVELOPMENT_COMMANDS = new Set([
 // =============================================================================
 
 /**
- * Ruby verification commands (sync mode)
+ * Ruby commands (available in all modes)
  */
-export const RUBY_VERIFICATION_COMMANDS = new Set([
-  // Package managers (for bundle exec rspec, etc.)
+export const RUBY_COMMANDS = new Set([
+  // Package managers
   'bundle',
   'bundler',
   'gem',
@@ -191,15 +158,9 @@ export const RUBY_VERIFICATION_COMMANDS = new Set([
   'rspec',
   'minitest',
   'cucumber',
-  // Lint (read-only)
+  // Lint
   'rubocop',
   'standard',
-])
-
-/**
- * Ruby development commands (run mode only)
- */
-export const RUBY_DEVELOPMENT_COMMANDS = new Set([
   // Runtime
   'ruby',
   'irb',
@@ -218,71 +179,40 @@ export const RUBY_DEVELOPMENT_COMMANDS = new Set([
 // =============================================================================
 
 /**
- * Go verification commands (sync mode)
+ * Go commands (available in all modes)
  */
-export const GO_VERIFICATION_COMMANDS = new Set([
-  // Runtime (go test, go build)
+export const GO_COMMANDS = new Set([
+  // Runtime and build
   'go',
-  // Format check
+  // Format
   'gofmt',
   'goimports',
   // Lint
   'golangci-lint',
   'staticcheck',
-])
-
-/**
- * Go development commands (run mode only)
- */
-export const GO_DEVELOPMENT_COMMANDS = new Set([
+  'golint',
   // Tools
   'gopls',
   'dlv',
   'goreleaser',
-  'golint',
 ])
 
 // =============================================================================
-// Profile Command Sets (Layered)
+// Profile Command Mapping
 // =============================================================================
 
 /**
- * Profile to layered commands mapping
- * @see SPEC.md Section 5.4
+ * Profile to commands mapping (language profiles only)
+ * Base profile is handled separately via BASE_READONLY_COMMANDS and RUN_EXTENSION_COMMANDS
  */
-export const PROFILE_COMMAND_SETS: Record<ProfileName, ProfileCommandSet> = {
-  base: {
-    verification: BASE_READONLY_COMMANDS,
-    development: BASE_COMMANDS,
-  },
-  node: {
-    verification: NODE_VERIFICATION_COMMANDS,
-    development: new Set([
-      ...NODE_VERIFICATION_COMMANDS,
-      ...NODE_DEVELOPMENT_COMMANDS,
-    ]),
-  },
-  python: {
-    verification: PYTHON_VERIFICATION_COMMANDS,
-    development: new Set([
-      ...PYTHON_VERIFICATION_COMMANDS,
-      ...PYTHON_DEVELOPMENT_COMMANDS,
-    ]),
-  },
-  ruby: {
-    verification: RUBY_VERIFICATION_COMMANDS,
-    development: new Set([
-      ...RUBY_VERIFICATION_COMMANDS,
-      ...RUBY_DEVELOPMENT_COMMANDS,
-    ]),
-  },
-  go: {
-    verification: GO_VERIFICATION_COMMANDS,
-    development: new Set([
-      ...GO_VERIFICATION_COMMANDS,
-      ...GO_DEVELOPMENT_COMMANDS,
-    ]),
-  },
+export const PROFILE_COMMANDS: Record<
+  Exclude<ProfileName, 'base'>,
+  Set<string>
+> = {
+  node: NODE_COMMANDS,
+  python: PYTHON_COMMANDS,
+  ruby: RUBY_COMMANDS,
+  go: GO_COMMANDS,
 }
 
 // =============================================================================

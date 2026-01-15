@@ -104,57 +104,52 @@ Run mode extends Base Security with additional capabilities for implementation.
 
 ### Language Profile Commands
 
-Each profile contains two command layers:
-
-- **Verification**: Test, type check, lint commands (used by `sync`)
-- **Development**: Full toolchain including verification (used by `run`)
+Language profile commands are available in both `run` and `sync` modes. The only difference between modes is that `sync` excludes file operation commands (mkdir, cp).
 
 #### Node.js Profile
 
-| Category  | Verification                                        | Development                         |
-| --------- | --------------------------------------------------- | ----------------------------------- |
-| Runtime   | -                                                   | node, bun, deno                     |
-| Package   | -                                                   | npm, npx, yarn, pnpm                |
-| Build     | npm run build, bun run build                        | tsc, esbuild, vite, webpack, rollup |
-| Test      | npm test, bun test, vitest, jest, playwright, mocha | -                                   |
-| Type      | tsc --noEmit                                        | -                                   |
-| Lint      | eslint, prettier --check, biome check               | prettier --write, biome format      |
-| Framework | -                                                   | next, nuxt, astro, remix            |
+| Category  | Commands                        |
+| --------- | ------------------------------- |
+| Runtime   | node, deno                      |
+| Package   | npm, npx, bun, yarn, pnpm       |
+| Test      | vitest, jest, playwright, mocha |
+| Type      | tsc                             |
+| Lint      | eslint, prettier, biome         |
+| Build     | esbuild, vite, webpack, rollup  |
+| Framework | next, nuxt, astro, remix        |
 
 #### Python Profile
 
-| Category  | Verification               | Development                            |
-| --------- | -------------------------- | -------------------------------------- |
-| Runtime   | -                          | python, python3                        |
-| Package   | -                          | pip, pip3, pipx, uv                    |
-| Venv      | -                          | venv, virtualenv, conda                |
-| Build     | -                          | poetry, pdm, hatch, flit               |
-| Test      | pytest, tox, nox           | -                                      |
-| Type      | mypy, pyright              | -                                      |
-| Lint      | ruff check, flake8, pylint | ruff format, black                     |
-| Framework | -                          | django-admin, flask, uvicorn, gunicorn |
+| Category  | Commands                               |
+| --------- | -------------------------------------- |
+| Runtime   | python, python3                        |
+| Package   | pip, pip3, pipx, uv                    |
+| Venv      | venv, virtualenv, conda                |
+| Build     | poetry, pdm, hatch, flit               |
+| Test      | pytest, tox, nox                       |
+| Type      | mypy, pyright                          |
+| Lint      | ruff, flake8, pylint, black            |
+| Framework | django-admin, flask, uvicorn, gunicorn |
 
 #### Ruby Profile
 
-| Category  | Verification              | Development                  |
-| --------- | ------------------------- | ---------------------------- |
-| Runtime   | -                         | ruby, irb                    |
-| Package   | -                         | gem, bundle, bundler         |
-| Build     | -                         | rake, thor                   |
-| Test      | rspec, minitest, cucumber | -                            |
-| Lint      | rubocop, standard         | rubocop -a, rubocop -A       |
-| Framework | -                         | rails, hanami, puma, unicorn |
+| Category  | Commands                     |
+| --------- | ---------------------------- |
+| Runtime   | ruby, irb                    |
+| Package   | gem, bundle, bundler         |
+| Build     | rake, thor                   |
+| Test      | rspec, minitest, cucumber    |
+| Lint      | rubocop, standard            |
+| Framework | rails, hanami, puma, unicorn |
 
 #### Go Profile
 
-| Category | Verification                       | Development            |
-| -------- | ---------------------------------- | ---------------------- |
-| Runtime  | -                                  | go run                 |
-| Build    | go build                           | go install             |
-| Test     | go test                            | -                      |
-| Format   | gofmt -d                           | gofmt -w, goimports    |
-| Lint     | golint, golangci-lint, staticcheck | -                      |
-| Tools    | -                                  | gopls, dlv, goreleaser |
+| Category | Commands                           |
+| -------- | ---------------------------------- |
+| Runtime  | go                                 |
+| Format   | gofmt, goimports                   |
+| Lint     | golangci-lint, staticcheck, golint |
+| Tools    | gopls, dlv, goreleaser             |
 
 ### Argument Validation
 
@@ -280,59 +275,54 @@ Sync mode restricts Base Security for verification-only operations. Prevents mod
 
 ### Restrictions from Base
 
-| Capability | Base               | Sync                      |
-| ---------- | ------------------ | ------------------------- |
-| File Write | None               | .autonoe-note.md only     |
-| File Edit  | None               | .autonoe-note.md only     |
-| Bash       | Read-only commands | + Verification layer only |
-| Playwright | N/A                | Enabled (verify phase)    |
+| Capability | Base               | Sync                           |
+| ---------- | ------------------ | ------------------------------ |
+| File Write | None               | .autonoe-note.md only          |
+| File Edit  | None               | .autonoe-note.md only          |
+| Bash       | Read-only commands | + Profile commands, - File ops |
+| Playwright | N/A                | Enabled (verify phase)         |
 
 ### Allowed Tools
 
-| Tool Category | Available | Scope                         |
-| ------------- | --------- | ----------------------------- |
-| File Read     | YES       | All files                     |
-| File Write    | LIMITED   | .autonoe-note.md only         |
-| File Edit     | LIMITED   | .autonoe-note.md only         |
-| Bash          | LIMITED   | Base read-only + verification |
-| Git           | YES       | Full access                   |
-| Playwright    | YES       | Verification phase            |
-| autonoe       | YES       | status.json updates           |
+| Tool Category | Available | Scope                                   |
+| ------------- | --------- | --------------------------------------- |
+| File Read     | YES       | All files                               |
+| File Write    | LIMITED   | .autonoe-note.md only                   |
+| File Edit     | LIMITED   | .autonoe-note.md only                   |
+| Bash          | LIMITED   | Base read-only + profiles (no file ops) |
+| Git           | YES       | Full access                             |
+| Playwright    | YES       | Verification phase                      |
+| autonoe       | YES       | status.json updates                     |
 
 ### Allowed Bash Commands
 
-Sync uses **Base read-only commands** plus **verification layer** from each active profile:
+Sync uses **Base read-only commands** plus **all language profile commands**. The only difference from run mode is that file operation commands (mkdir, cp) are excluded.
 
-| Profile | Commands                                                                                 |
-| ------- | ---------------------------------------------------------------------------------------- |
-| base    | All read-only commands (see Base Bash Commands above)                                    |
-| node    | npm, npx, bun, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome |
-| python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint               |
-| ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard                       |
-| go      | go, gofmt, goimports, golangci-lint, staticcheck                                         |
-
-**Notes:**
-
-- Package managers are allowed for running test scripts (e.g., `npm test`, `bundle exec rspec`)
-- Auto-fix commands (e.g., `prettier --write`, `rubocop -a`) are excluded
-- User extensions (`allowCommands`) are ignored in sync mode
+| Profile | Commands                                                                                                   |
+| ------- | ---------------------------------------------------------------------------------------------------------- |
+| base    | All read-only commands (see Base Bash Commands above)                                                      |
+| node    | npm, npx, bun, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome, node, deno, etc. |
+| python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint, python, python3, poetry, etc.  |
+| ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard, ruby, irb, rake, rails, etc.           |
+| go      | go, gofmt, goimports, golangci-lint, staticcheck, golint, gopls, dlv, goreleaser                           |
 
 **Profile × Command Behavior:**
 
-| agent.json profile | Sync Allowed Commands                                |
-| ------------------ | ---------------------------------------------------- |
-| (not set)          | Base read-only + All profiles' verification          |
-| `"node"`           | Base read-only + Node.verification                   |
-| `"python"`         | Base read-only + Python.verification                 |
-| `["node", "go"]`   | Base read-only + Node.verification + Go.verification |
+| agent.json profile | Sync Allowed Commands                      |
+| ------------------ | ------------------------------------------ |
+| (not set)          | Base read-only + All profiles              |
+| `"node"`           | Base read-only + Node profile              |
+| `"python"`         | Base read-only + Python profile            |
+| `["node", "go"]`   | Base read-only + Node profile + Go profile |
+
+**Note:** User extensions (`allowCommands`) with `sync` key are respected in sync mode.
 
 ### Blocked Commands
 
-| Category             | Commands                                    | Reason                      |
-| -------------------- | ------------------------------------------- | --------------------------- |
-| File modification    | `sed -i`, `rm`, `mv`, `mkdir`, `cp`         | Prevents source changes     |
-| Package installation | `npm install`, `pip install`, `gem install` | Prevents dependency changes |
-| Auto-fix             | `prettier --write`, `rubocop -a`, `black`   | Modifies source code        |
+| Category        | Commands      | Reason                 |
+| --------------- | ------------- | ---------------------- |
+| File operations | `mkdir`, `cp` | Run mode only          |
+| Destructive     | `rm`, `mv`    | Always blocked in sync |
 
 ### Protected Scope
 

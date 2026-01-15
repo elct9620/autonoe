@@ -836,15 +836,16 @@ describe('Destructive Commands (--allow-destructive)', () => {
   })
 
   describe('Sync mode (mode: "sync")', () => {
-    it('allows verification layer commands (npm, vitest, eslint)', () => {
+    it('allows language profile commands (npm, vitest, node)', () => {
       const security = new DefaultBashSecurity({ mode: 'sync' })
       expect(security.isCommandAllowed('npm test').allowed).toBe(true)
       expect(security.isCommandAllowed('vitest').allowed).toBe(true)
       expect(security.isCommandAllowed('eslint .').allowed).toBe(true)
       expect(security.isCommandAllowed('git status').allowed).toBe(true)
+      expect(security.isCommandAllowed('node script.js').allowed).toBe(true)
     })
 
-    it('allows base status commands (ls, cat, grep)', () => {
+    it('allows base readonly commands (ls, cat, grep)', () => {
       const security = new DefaultBashSecurity({ mode: 'sync' })
       expect(security.isCommandAllowed('ls -la').allowed).toBe(true)
       expect(security.isCommandAllowed('cat file.txt').allowed).toBe(true)
@@ -853,10 +854,12 @@ describe('Destructive Commands (--allow-destructive)', () => {
       )
     })
 
-    it('blocks development-only commands (node, mkdir)', () => {
+    it('blocks file operation commands (mkdir, cp)', () => {
       const security = new DefaultBashSecurity({ mode: 'sync' })
-      expect(security.isCommandAllowed('node script.js').allowed).toBe(false)
       expect(security.isCommandAllowed('mkdir newdir').allowed).toBe(false)
+      expect(security.isCommandAllowed('cp src.txt dst.txt').allowed).toBe(
+        false,
+      )
     })
 
     it('allows utility commands (echo, sleep) in sync mode', () => {
@@ -888,18 +891,19 @@ describe('Destructive Commands (--allow-destructive)', () => {
         mode: 'sync',
         activeProfiles: ['node'],
       })
-      // Node verification commands should work
+      // Node profile commands should work
       expect(security.isCommandAllowed('npm test').allowed).toBe(true)
-      // Python verification commands should not work (not in profile)
+      // Python profile commands should not work (not in profile)
       expect(security.isCommandAllowed('pytest').allowed).toBe(false)
     })
   })
 
   describe('Run mode (mode: "run")', () => {
-    it('allows all development layer commands', () => {
+    it('allows all commands including file operations', () => {
       const security = new DefaultBashSecurity({ mode: 'run' })
       expect(security.isCommandAllowed('node script.js').allowed).toBe(true)
       expect(security.isCommandAllowed('mkdir newdir').allowed).toBe(true)
+      expect(security.isCommandAllowed('cp src.txt dst.txt').allowed).toBe(true)
       expect(security.isCommandAllowed('echo "test"').allowed).toBe(true)
     })
 
