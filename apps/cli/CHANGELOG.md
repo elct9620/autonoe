@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/elct9620/autonoe/compare/cli-v0.3.0...cli-v0.3.1) (2026-01-15)
+
+
+### Bug Fixes
+
+* **cli:** point release-please extra-files to version.ts ([5e8deb8](https://github.com/elct9620/autonoe/commit/5e8deb80f5671ee8f69d284c1fa6d46318bb3c7a))
+
 ## [0.3.0](https://github.com/elct9620/autonoe/compare/cli-v0.2.1...cli-v0.3.0) (2026-01-15)
 
 
