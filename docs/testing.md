@@ -94,7 +94,6 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | DL-T025 | list       | filter: verified, no tracker   | verified filter ignored            |
 | DL-T026 | list       | limit: 3                       | Max 3 results returned             |
 | DL-T027 | list       | no filter                      | All active deliverables            |
-| DL-T028 | list       | sync instruction context       | Tool available, returns list       |
 
 ### Configuration
 
@@ -243,26 +242,57 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | CH-006 | --debug flag               | Debug logging enabled               |
 | CH-007 | --wait-for-quota flag      | WaitForQuota option passed          |
 
-### Console Components
+### ConsoleLogger
 
-| ID     | Component                   | Input                       | Expected Output            |
-| ------ | --------------------------- | --------------------------- | -------------------------- |
-| CC-001 | ConsoleLogger               | info(message)               | Output to stdout           |
-| CC-002 | ConsoleLogger               | debug(message), debug=false | No output                  |
-| CC-003 | ConsoleLogger               | debug(message), debug=true  | Output to stdout           |
-| CC-004 | ConsoleLogger               | warn(message)               | Output to stderr           |
-| CC-005 | ConsoleLogger               | error(message)              | Output to stderr           |
-| CC-006 | ConsoleWaitProgressReporter | startWait(5000)             | Progress message displayed |
-| CC-007 | ConsoleWaitProgressReporter | startWait then cleanup      | Timer cleared, no output   |
+| ID      | Input                              | Expected Output                     |
+| ------- | ---------------------------------- | ----------------------------------- |
+| LOG-001 | info(message)                      | Output to stdout with cyan color    |
+| LOG-010 | debug(message), debug=false        | No output                           |
+| LOG-011 | debug(message), debug=true         | Output to stdout with [debug] label |
+| LOG-012 | debug defaults                     | debug=false by default              |
+| LOG-020 | warn(message)                      | Output to stderr with yellow color  |
+| LOG-030 | error(message)                     | Output to stderr with red color     |
+| LOG-031 | error(message, error), debug=false | No stack trace logged               |
+| LOG-032 | error(message, error), debug=true  | Stack trace logged                  |
+| LOG-033 | error with undefined stack         | Handles gracefully                  |
+
+### ConsoleWaitProgressReporter
+
+| ID      | Input                        | Expected Output                      |
+| ------- | ---------------------------- | ------------------------------------ |
+| WPR-001 | constructor()                | Default updateIntervalMs=60000       |
+| WPR-002 | constructor(custom interval) | Custom updateIntervalMs applied      |
+| WPR-010 | startWait with resetTime     | Reset time displayed                 |
+| WPR-011 | startWait without resetTime  | No reset time displayed              |
+| WPR-012 | startWait(120000)            | Progress message with remaining time |
+| WPR-013 | after interval elapsed       | Progress updated                     |
+| WPR-014 | cleanup() called             | Timer stopped, no more updates       |
+| WPR-015 | cleanup()                    | Progress line cleared                |
+| WPR-016 | remaining time reaches zero  | Ticking stops automatically          |
+| WPR-017 | startWait return value       | Returns cleanup function             |
+| WPR-018 | progress message             | Includes emoji (⏳)                  |
+| WPR-019 | output color                 | Uses cyan color                      |
 
 ### Factory Functions
 
-| ID     | Factory                    | Input                | Expected Output                    |
-| ------ | -------------------------- | -------------------- | ---------------------------------- |
-| FF-001 | createAgentClientFactory   | run mode + options   | Factory with run config            |
-| FF-002 | createAgentClientFactory   | sync mode + options  | Factory with sync config (limited) |
-| FF-003 | createSessionRunnerOptions | all options provided | Complete SessionRunnerOptions      |
-| FF-004 | createSessionRunnerOptions | minimal options      | Default values applied             |
+| ID      | Factory                    | Input                      | Expected Output                       |
+| ------- | -------------------------- | -------------------------- | ------------------------------------- |
+| FAC-001 | createInstructionResolver  | override file exists       | Returns override content              |
+| FAC-002 | createInstructionResolver  | no initializer override    | Returns default initializer           |
+| FAC-003 | createInstructionResolver  | no coding override         | Returns default coding                |
+| FAC-004 | createInstructionResolver  | coding override exists     | Returns coding override               |
+| FAC-005 | createInstructionResolver  | no sync override           | Returns default sync                  |
+| FAC-006 | createInstructionResolver  | no verify override         | Returns default verify                |
+| FAC-007 | createInstructionResolver  | sync override exists       | Returns sync override                 |
+| FAC-008 | createInstructionResolver  | verify override exists     | Returns verify override               |
+| FAC-010 | formatStatusIcon           | passed status              | Returns [PASS]                        |
+| FAC-011 | formatStatusIcon           | blocked status             | Returns [BLOCKED]                     |
+| FAC-012 | formatStatusIcon           | pending status             | Returns [PENDING]                     |
+| FAC-020 | createStatusChangeCallback | status change notification | Logs formatted message with icon      |
+| FAC-021 | createStatusChangeCallback | blocked status change      | Logs blocked status correctly         |
+| FAC-030 | createRunnerOptions        | required fields only       | Options with defaults                 |
+| FAC-031 | createRunnerOptions        | all optional fields        | Complete options with all fields      |
+| FAC-032 | createRunnerOptions        | debug/sandbox/destructive  | Excludes CLI-only options from runner |
 
 ---
 
