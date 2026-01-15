@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow
+
+1. Review `SPEC.md` before working on features or fixes.
+2. Clarify whether to make changes or update the spec with the user.
+3. Use the `spec-knowledge` to update spec as needed.
+4. Review testing for changes, create or update tests as necessary.
+5. Work with changes and verify correctness.
+6. Wait user review and feedback.
+
 ## Build & Development Commands
 
 ```bash
