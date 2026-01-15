@@ -420,13 +420,13 @@ Returns: `{ deliverables: Deliverable[] }`
 
 ### Tool Usage
 
-| Tool       | Phase          | Operation                                       |
-| ---------- | -------------- | ----------------------------------------------- |
-| create     | Initialization | Create deliverables with acceptance criteria    |
-| set_status | Coding/Verify  | Set status: pending (reset), passed, or blocked |
-| deprecate  | Sync           | Mark deliverable as deprecated                  |
-| verify     | Verify         | Mark deliverable as verified (checked)          |
-| list       | Coding/Verify  | List deliverables with optional filtering       |
+| Tool       | Phase               | Operation                                       |
+| ---------- | ------------------- | ----------------------------------------------- |
+| create     | Initialization/Sync | Create deliverables with acceptance criteria    |
+| set_status | Coding/Verify       | Set status: pending (reset), passed, or blocked |
+| deprecate  | Sync                | Mark deliverable as deprecated                  |
+| verify     | Verify              | Mark deliverable as verified (checked)          |
+| list       | Coding/Sync/Verify  | List deliverables with optional filtering       |
 
 ### Status Change Notification
 

@@ -35,6 +35,8 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | TE-080 | useSyncTermination + allVerified()=true    | all_verified exit         |
 | TE-081 | useSyncTermination + allVerified()=false   | continue                  |
 | TE-082 | useSyncTermination + maxIterations reached | all_verified has priority |
+| TE-083 | sync session 1 (no tracker yet)            | always continue           |
+| TE-084 | sync session 2 + tracker initialized       | check all_verified        |
 
 ### Bash Security
 
@@ -92,6 +94,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | DL-T025 | list       | filter: verified, no tracker   | verified filter ignored            |
 | DL-T026 | list       | limit: 3                       | Max 3 results returned             |
 | DL-T027 | list       | no filter                      | All active deliverables            |
+| DL-T028 | list       | sync instruction context       | Tool available, returns list       |
 
 ### Configuration
 
@@ -104,6 +107,27 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | SC-C005 | User tries to disable sandbox            | Ignored, sandbox always enabled    |
 | SC-C006 | User tries to remove .autonoe protection | Security baseline re-applied       |
 | SC-C007 | Verify sandbox configuration             | enabled=true, autoAllow=true       |
+
+### Prerequisites
+
+| ID      | Input                    | Expected Output                     |
+| ------- | ------------------------ | ----------------------------------- |
+| SC-P001 | SPEC.md not found (run)  | Exit with error, non-zero exit code |
+| SC-P002 | SPEC.md not found (sync) | Exit with error, non-zero exit code |
+| SC-P003 | SPEC.md exists           | Command proceeds normally           |
+
+### Option Validation
+
+| ID      | Option             | Input | Expected Output                    |
+| ------- | ------------------ | ----- | ---------------------------------- |
+| SC-V001 | `--thinking`       | 1024  | Valid, command proceeds            |
+| SC-V002 | `--thinking`       | 1023  | Exit with error (below minimum)    |
+| SC-V003 | `--thinking`       | 8192  | Valid (default value)              |
+| SC-V004 | `--max-iterations` | 1     | Valid, command proceeds            |
+| SC-V005 | `--max-iterations` | 0     | Exit with error (must be positive) |
+| SC-V006 | `--max-iterations` | -1    | Exit with error (must be positive) |
+| SC-V007 | `--max-retries`    | 0     | Valid (no retries)                 |
+| SC-V008 | `--max-retries`    | -1    | Exit with error (must be >= 0)     |
 
 ### Language Profiles
 

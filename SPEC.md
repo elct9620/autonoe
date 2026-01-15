@@ -209,7 +209,7 @@ Core interface definitions. For detailed specifications, see [Interfaces](docs/i
 | set_status | Update status: pending, passed, or blocked |
 | deprecate | Mark deliverable as deprecated (sync command only) |
 | verify | Mark deliverable as verified (sync command only) |
-| list | List deliverables with filtering (coding, verify). Filters: `status` (pending/passed/blocked), `verified` (true/false, verify mode only). Optional `limit` (default: 5) |
+| list | List deliverables with filtering. Filters: `status` (pending/passed/blocked), `verified` (true/false, verify mode only). Optional `limit` (default: 5) |
 
 **Tool Availability per Instruction:**
 
@@ -217,7 +217,7 @@ Core interface definitions. For detailed specifications, see [Interfaces](docs/i
 |-------------|-----------------|
 | initializer | `create` |
 | coding | `set_status`, `list` |
-| sync | `create`, `deprecate` |
+| sync | `create`, `deprecate`, `list` |
 | verify | `set_status`, `verify`, `list` |
 
 Each session receives only the tools needed for its instruction type.
@@ -274,7 +274,12 @@ The sync command uses an in-memory verification tracker to ensure all deliverabl
 | verified   | Agent has confirmed this deliverable's status  |
 | unverified | Agent has not yet checked this deliverable     |
 
-- Tracker is initialized with all active deliverable IDs at sync start
+**Initialization:**
+- Tracker is initialized **after session 1 (sync instruction) completes**
+- Populated with all active deliverable IDs from the updated status.json
+- Session 1 does NOT check termination conditions (always proceeds to session 2)
+
+**Termination:**
 - Each deliverable must be explicitly marked via `verify` tool
 - Termination occurs when all deliverables are verified
 - Unlike run command, sync does NOT terminate on all_passed/all_blocked
@@ -824,6 +829,28 @@ All commands share the following options:
 | `--wait-for-quota` | - | Wait for quota reset instead of exiting | false |
 | `--thinking` | - | Enable extended thinking mode (budget tokens) | 8192 |
 
+**Option Validation:**
+
+| Option | Constraint | Error |
+|--------|------------|-------|
+| `--thinking` | Must be >= 1024 | `Thinking budget must be at least 1024 tokens, got {value}` |
+| `--max-iterations` | Must be > 0 if specified | `Max iterations must be positive, got {value}` |
+| `--max-retries` | Must be >= 0 | `Max retries must be non-negative, got {value}` |
+
+When validation fails, the command exits immediately with a non-zero exit code.
+
+### 8.1.1 Prerequisites
+
+All commands require the following conditions:
+
+| Condition | Check | Error |
+|-----------|-------|-------|
+| SPEC.md exists | File exists in project directory | `SPEC.md not found in {projectDir}` |
+
+**Exit Behavior:**
+
+When a prerequisite is not met, the command exits immediately with a non-zero exit code and displays the error message to stderr.
+
 ### 8.2 run Command
 
 #### 8.2.1 Usage
@@ -871,7 +898,7 @@ Uses Common Options only. No additional options.
 - Reads SPEC.md and uses Coding Agent to parse deliverables
 - Creates or updates `.autonoe/status.json`
 - Uses verify instruction to validate existing code against deliverables
-- **Read-only operation: does not modify any project files**
+- **Read-only for source code: does not modify project source files, but may commit status changes via git**
 
 **Status Sync Strategy:**
 
@@ -898,10 +925,12 @@ The sync command uses a single SessionRunner loop with dynamic instruction selec
 | Session | Instruction | Purpose |
 |---------|-------------|---------|
 | 1 | sync | Parse SPEC.md, create/update deliverables |
-| 2+ | verify | Validate implementation, mark passed |
+| 2+ | verify | Validate implementation, mark verified |
 
-The loop continues until all deliverables pass or max iterations reached,
-consistent with the `run` command behavior.
+**Termination:**
+- After session 1 completes, verification tracker is initialized with all active deliverable IDs from status.json
+- Loop continues until all deliverables are **verified** (checked), or max iterations reached
+- Unlike `run` command, sync terminates on `all_verified`, not `all_passed`
 
 ---
 
