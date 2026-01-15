@@ -240,7 +240,7 @@ export function parseThinkingOption(
   if (tokens < MIN_THINKING_TOKENS) {
     return {
       type: 'error',
-      error: `Thinking budget must be at least ${MIN_THINKING_TOKENS} tokens`,
+      error: `Thinking budget must be at least ${MIN_THINKING_TOKENS} tokens, got ${tokens}`,
     }
   }
 

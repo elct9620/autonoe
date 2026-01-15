@@ -92,7 +92,7 @@ describe('parseThinkingOption', () => {
     const result = parseThinkingOption('512')
     expect(result).toEqual({
       type: 'error',
-      error: 'Thinking budget must be at least 1024 tokens',
+      error: 'Thinking budget must be at least 1024 tokens, got 512',
     })
   })
 
