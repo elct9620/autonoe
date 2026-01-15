@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.3.0](https://github.com/elct9620/autonoe/compare/cli-v0.2.1...cli-v0.3.0) (2026-01-15)
+
+
+### Features
+
+* **agent:** add deprecate_deliverable tool with tool set mechanism ([a1b9b77](https://github.com/elct9620/autonoe/commit/a1b9b776fad882896d6f47760d09653547a6863c))
+* **cli:** add openssh-client and gnupg for Git signing support ([d4faef3](https://github.com/elct9620/autonoe/commit/d4faef3ecb81e6a110eff170390c5da29663630a))
+* **cli:** add sync command with dummy implementation ([3f7e2fe](https://github.com/elct9620/autonoe/commit/3f7e2fedd5520a479cd7b60155ab82b3415bc799))
+* **cli:** add temporary default max-iterations for sync command ([4bf3312](https://github.com/elct9620/autonoe/commit/4bf3312f0fbbc18075acb16996f532e63d75afe8))
+* **cli:** implement SyncCommandHandler two-phase execution ([58b0bb0](https://github.com/elct9620/autonoe/commit/58b0bb0d06d287b909a3adbf45f9297dd17e5412))
+* **core:** add execution mode support for sync command security ([fd4990f](https://github.com/elct9620/autonoe/commit/fd4990f737368cc8e5b9e4258c10e7671b16480f))
+* **core:** add progress feedback during quota wait ([942c408](https://github.com/elct9620/autonoe/commit/942c40873802aa1343e416b5bc7d7a74619d0500))
+* **core:** add sync and verify instruction types support ([9cb2280](https://github.com/elct9620/autonoe/commit/9cb2280442c6167f4f6002fe1891e6026ff7dc1f))
+* **core:** implement verification tracker for sync command ([d907522](https://github.com/elct9620/autonoe/commit/d9075223a7880e5174baca8f31f220be82b99513))
+
+
+### Bug Fixes
+
+* **cli:** apply AUTONOE_NO_SANDBOX env var to sync command ([97aec5e](https://github.com/elct9620/autonoe/commit/97aec5ef04df911380e5e04eb992d5dba183fd5e))
+* **cli:** output warn and error messages to stderr ([9de43af](https://github.com/elct9620/autonoe/commit/9de43af0666c2fa6bed85ca8d84856581dd3f1d9))
+* **cli:** treat all_blocked as failure per SPEC.md ([d8d1ee1](https://github.com/elct9620/autonoe/commit/d8d1ee1cba8aa268b401c714ae835bc1f98ab3ae))
+
+
+### Performance Improvements
+
+* **cli:** optimize Dockerfile layer order to improve build cache ([17ef469](https://github.com/elct9620/autonoe/commit/17ef469f4ce3ba40d9fdd272d03e47b47bfe16c2))
+
 ## [0.2.1](https://github.com/elct9620/autonoe/compare/cli-v0.2.0...cli-v0.2.1) (2026-01-04)
 
 
