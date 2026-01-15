@@ -39,13 +39,14 @@ Base profile contains two command layers:
 | Navigation | ls, pwd, cat, head, tail, wc, find, grep |
 | Text       | tree, sort, diff, date                   |
 | Git        | git                                      |
+| Utility    | echo, sleep                              |
 
 **Operations Layer (development)** - Only available in `run` mode:
 
 | Category | Commands                       |
 | -------- | ------------------------------ |
 | Text     | printf, uniq, cut, tr, tac, jq |
-| Process  | echo, which, ps, lsof, sleep   |
+| Process  | which, ps, lsof                |
 | File Ops | mkdir, cp                      |
 
 ### Validation Flow
@@ -307,7 +308,7 @@ Sync uses the **verification layer** from each active profile. Only verification
 
 | Profile | Verification Commands                                                                    |
 | ------- | ---------------------------------------------------------------------------------------- |
-| base    | ls, pwd, cat, head, tail, wc, find, grep, tree, sort, diff, date, git                    |
+| base    | ls, pwd, cat, head, tail, wc, find, grep, tree, sort, diff, date, git, echo, sleep       |
 | node    | npm, npx, bun, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome |
 | python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint               |
 | ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard                       |
@@ -332,7 +333,7 @@ Sync uses the **verification layer** from each active profile. Only verification
 
 | Category             | Commands                                    | Reason                      |
 | -------------------- | ------------------------------------------- | --------------------------- |
-| File modification    | `echo >`, `sed -i`, `rm`, `mv`, `cp`        | Prevents source changes     |
+| File modification    | `sed -i`, `rm`, `mv`, `cp`                  | Prevents source changes     |
 | Package installation | `npm install`, `pip install`, `gem install` | Prevents dependency changes |
 | Auto-fix             | `prettier --write`, `rubocop -a`, `black`   | Modifies source code        |
 

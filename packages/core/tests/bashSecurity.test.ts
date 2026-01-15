@@ -853,11 +853,16 @@ describe('Destructive Commands (--allow-destructive)', () => {
       )
     })
 
-    it('blocks development-only commands (node, mkdir, echo)', () => {
+    it('blocks development-only commands (node, mkdir)', () => {
       const security = new DefaultBashSecurity({ mode: 'sync' })
       expect(security.isCommandAllowed('node script.js').allowed).toBe(false)
       expect(security.isCommandAllowed('mkdir newdir').allowed).toBe(false)
-      expect(security.isCommandAllowed('echo "test"').allowed).toBe(false)
+    })
+
+    it('allows utility commands (echo, sleep) in sync mode', () => {
+      const security = new DefaultBashSecurity({ mode: 'sync' })
+      expect(security.isCommandAllowed('echo "test"').allowed).toBe(true)
+      expect(security.isCommandAllowed('sleep 1').allowed).toBe(true)
     })
 
     it('ignores allowCommands in sync mode', () => {

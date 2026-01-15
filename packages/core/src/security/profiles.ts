@@ -31,6 +31,9 @@ export const BASE_STATUS_COMMANDS = new Set([
   'date',
   // Git (sync needs to read version state)
   'git',
+  // Utility (safe, no state modification)
+  'echo',
+  'sleep',
 ])
 
 /**
@@ -43,11 +46,9 @@ export const BASE_OPERATION_COMMANDS = new Set([
   'mkdir',
   'cp',
   // Process
-  'echo',
   'which',
   'ps',
   'lsof',
-  'sleep',
   // Text Processing
   'printf',
   'uniq',

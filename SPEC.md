@@ -539,8 +539,8 @@ Each language profile contains two command layers:
 ```
 Profile Structure
 ├── base (always included)
-│   ├── status: ls, pwd, cat, head, tail, wc, find, grep, tree, sort, diff, date, git
-│   └── operations: mkdir, cp, echo, which, ps, lsof, sleep, printf, uniq, cut, tr, tac, jq
+│   ├── status: ls, pwd, cat, head, tail, wc, find, grep, tree, sort, diff, date, git, echo, sleep
+│   └── operations: mkdir, cp, which, ps, lsof, printf, uniq, cut, tr, tac, jq
 │
 └── language (node, python, ruby, go)
     ├── verification: test runners, type checkers, linters, package managers (for test)
