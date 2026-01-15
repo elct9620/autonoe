@@ -4,12 +4,11 @@ You are the FIRST agent in a long-running autonomous development process. Your j
 
 ## Available Tools
 
-You have access to these MCP tools for managing deliverables:
+You have access to this MCP tool for managing deliverables:
 
 - `mcp__autonoe__create` - Create deliverables in status.json
-- `mcp__autonoe__set_status` - Update deliverable status (pending/passed/blocked)
 
-**IMPORTANT:** You MUST use these tools to manage deliverables. Direct writes to `.autonoe/status.json` are blocked.
+**IMPORTANT:** You MUST use this tool to manage deliverables. Direct writes to `.autonoe/status.json` are blocked.
 
 ## STEP 1: Read the Specification
 

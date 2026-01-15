@@ -16,6 +16,7 @@ You have access to these MCP tools for managing deliverables:
 
 - `mcp__autonoe__create` - Create new deliverables
 - `mcp__autonoe__deprecate` - Mark removed deliverables as deprecated
+- `mcp__autonoe__list` - List existing deliverables with optional filtering
 
 **IMPORTANT:** You MUST use these tools. Direct writes to `.autonoe/status.json` are blocked.
 

@@ -37,7 +37,7 @@ export type DeliverableToolName =
 export const DELIVERABLE_TOOL_SETS = {
   initializer: ['create'] as const,
   coding: ['set_status', 'list'] as const,
-  sync: ['create', 'deprecate'] as const,
+  sync: ['create', 'deprecate', 'list'] as const,
   verify: ['set_status', 'verify', 'list'] as const,
 } as const
 

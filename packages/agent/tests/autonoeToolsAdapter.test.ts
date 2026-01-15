@@ -775,8 +775,12 @@ describe('autonoeToolsAdapter', () => {
       ])
     })
 
-    it('sync set contains create and deprecate', () => {
-      expect(DELIVERABLE_TOOL_SETS.sync).toEqual(['create', 'deprecate'])
+    it('sync set contains create, deprecate, and list', () => {
+      expect(DELIVERABLE_TOOL_SETS.sync).toEqual([
+        'create',
+        'deprecate',
+        'list',
+      ])
     })
   })
 
@@ -808,6 +812,7 @@ describe('autonoeToolsAdapter', () => {
       expect(allowedTools).toEqual([
         'mcp__autonoe__create',
         'mcp__autonoe__deprecate',
+        'mcp__autonoe__list',
       ])
     })
 
