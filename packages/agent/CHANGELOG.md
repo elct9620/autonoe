@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/elct9620/autonoe/compare/agent-v0.2.0...agent-v0.3.0) (2026-01-15)
+
+
+### Features
+
+* **agent:** add deprecate_deliverable tool with tool set mechanism ([a1b9b77](https://github.com/elct9620/autonoe/commit/a1b9b776fad882896d6f47760d09653547a6863c))
+* **agent:** enable SDK to load project CLAUDE.md settings ([ef9bed3](https://github.com/elct9620/autonoe/commit/ef9bed3fddfd51decf754a95bf0f81b8334b92b9))
+* **core:** add AgentClient.dispose() for resource cleanup ([9b6ac90](https://github.com/elct9620/autonoe/commit/9b6ac90c14b08e487a7d61c8b7d699039ce9b533))
+* **core:** add execution mode support for sync command security ([fd4990f](https://github.com/elct9620/autonoe/commit/fd4990f737368cc8e5b9e4258c10e7671b16480f))
+* **core:** implement verification tracker for sync command ([d907522](https://github.com/elct9620/autonoe/commit/d9075223a7880e5174baca8f31f220be82b99513))
+
 ## [0.2.0](https://github.com/elct9620/autonoe/compare/agent-v0.1.0...agent-v0.2.0) (2026-01-04)
 
 
