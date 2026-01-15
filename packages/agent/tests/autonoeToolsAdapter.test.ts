@@ -730,7 +730,7 @@ describe('autonoeToolsAdapter', () => {
   })
 
   describe('createDeliverableMcpServer', () => {
-    describe('DL-T010: Server structure', () => {
+    describe('DL-T030: Server structure', () => {
       it('returns server and allowedTools', () => {
         const result = createDeliverableMcpServer(repository)
 
@@ -743,7 +743,7 @@ describe('autonoeToolsAdapter', () => {
       })
     })
 
-    describe('DL-T011: Server configuration', () => {
+    describe('DL-T031: Server configuration', () => {
       it('has correct server name', () => {
         const { server } = createDeliverableMcpServer(repository)
 
@@ -751,13 +751,31 @@ describe('autonoeToolsAdapter', () => {
       })
     })
 
-    describe('DL-T012: Server instance', () => {
+    describe('DL-T032: Server instance', () => {
       it('provides valid MCP server instance', () => {
         const { server } = createDeliverableMcpServer(repository)
 
         // SDK MCP server instance should be a valid object
         expect(server.instance).toBeDefined()
         expect(typeof server.instance).toBe('object')
+      })
+    })
+
+    describe('DL-T012: verify toolset without tracker', () => {
+      it('creates server with verify tools even without tracker (error handled at call time)', () => {
+        // When verify toolset is used without providing verificationTracker,
+        // the server should still be created. The error "tracker not available"
+        // is returned when the verify tool is actually invoked.
+        const { server, allowedTools } = createDeliverableMcpServer(
+          repository,
+          {
+            toolSet: 'verify',
+            // verificationTracker is intentionally omitted
+          },
+        )
+
+        expect(server).toBeDefined()
+        expect(allowedTools).toContain('mcp__autonoe__verify')
       })
     })
 

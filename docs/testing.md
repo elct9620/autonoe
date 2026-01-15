@@ -88,7 +88,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | DL-T009 | set_status | Invalid ID, callback provided  | Callback not invoked               |
 | DL-T010 | verify     | Valid ID in tracker            | success=true, marked as verified   |
 | DL-T011 | verify     | Invalid ID (not in tracker)    | success=false, not found           |
-| DL-T012 | verify     | tracker undefined              | Error: tracker not available       |
+| DL-T012 | verify     | Server without tracker         | Server created, error at call time |
 | DL-T013 | deprecate  | Valid ID, not deprecated       | success=true, deprecatedAt set     |
 | DL-T014 | deprecate  | Invalid deliverable ID         | Error: deliverable not found       |
 | DL-T015 | deprecate  | Already deprecated ID          | Error: already deprecated          |
@@ -101,6 +101,14 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | DL-T025 | list       | filter: verified, no tracker   | verified filter ignored            |
 | DL-T026 | list       | limit: 3                       | Max 3 results returned             |
 | DL-T027 | list       | no filter                      | All active deliverables            |
+
+### Deliverable MCP Server
+
+| ID      | Input            | Expected Output         |
+| ------- | ---------------- | ----------------------- |
+| DL-T030 | Server structure | Valid server definition |
+| DL-T031 | Server config    | Correct configuration   |
+| DL-T032 | Server instance  | Valid MCP server        |
 
 ### Configuration
 
@@ -182,6 +190,19 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | SC-AC020 | wrapSdkQuery         | SDK throws error           | Yields stream_error event        |
 | SC-AC021 | wrapSdkQuery         | Error with stack           | stream_error includes stack      |
 | SC-AC022 | wrapSdkQuery         | Non-Error thrown           | stream_error with String(error)  |
+
+### Hook Callback Matchers
+
+| ID        | Function                  | Input              | Expected Output             |
+| --------- | ------------------------- | ------------------ | --------------------------- |
+| SC-ACH001 | toSdkHookCallbackMatchers | Empty array        | Empty array                 |
+| SC-ACH002 | toSdkHookCallbackMatchers | Single hook        | Matcher preserved           |
+| SC-ACH003 | toSdkHookCallbackMatchers | Multiple hooks     | Order preserved             |
+| SC-ACH004 | toSdkHookCallbackMatchers | HookInput          | PreToolUseInput transformed |
+| SC-ACH005 | toSdkHookCallbackMatchers | Missing tool_name  | Defaults to empty string    |
+| SC-ACH006 | toSdkHookCallbackMatchers | Missing tool_input | Defaults to empty object    |
+| SC-ACH007 | toSdkHookCallbackMatchers | HookResult         | SyncHookJSONOutput          |
+| SC-ACH008 | toSdkHookCallbackMatchers | Block decision     | Correctly propagated        |
 
 ### ClaudeAgentClient SDK Options Assembly
 

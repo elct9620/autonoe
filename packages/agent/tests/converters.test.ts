@@ -168,7 +168,7 @@ describe('converters', () => {
   })
 
   describe('toSessionEnd', () => {
-    it('converts SDK success result to SessionEndCompleted', () => {
+    it('SC-AC012: converts SDK success result to SessionEndCompleted with totalCostUsd', () => {
       const sdkMessage = {
         type: 'result',
         subtype: 'success',
@@ -264,7 +264,7 @@ describe('converters', () => {
   })
 
   describe('toStreamEvents', () => {
-    it('yields SessionEndCompleted for success result message', () => {
+    it('SC-AC011: yields events from SDK message with content', () => {
       const sdkMessage = {
         type: 'result',
         subtype: 'success',
@@ -354,12 +354,12 @@ describe('converters', () => {
   })
 
   describe('toSdkHookCallbackMatchers', () => {
-    it('SC-AC010: returns empty array for empty input', () => {
+    it('SC-ACH001: returns empty array for empty input', () => {
       const result = toSdkHookCallbackMatchers([])
       expect(result).toEqual([])
     })
 
-    it('SC-AC011: converts single hook preserving matcher', () => {
+    it('SC-ACH002: converts single hook preserving matcher', () => {
       const hook: PreToolUseHook = {
         name: 'test-hook',
         matcher: 'Bash|Edit',
@@ -373,7 +373,7 @@ describe('converters', () => {
       expect(result[0]!.hooks).toHaveLength(1)
     })
 
-    it('SC-AC012: converts multiple hooks preserving order', () => {
+    it('SC-ACH003: converts multiple hooks preserving order', () => {
       const hooks: PreToolUseHook[] = [
         {
           name: 'hook1',
@@ -402,7 +402,7 @@ describe('converters', () => {
         tool_use_id: 'tool-use-123',
       }
 
-      it('SC-AC013: transforms HookInput to PreToolUseInput', async () => {
+      it('SC-ACH004: transforms HookInput to PreToolUseInput', async () => {
         const mockCallback = vi.fn().mockResolvedValue({
           continue: true,
           decision: 'approve',
@@ -433,7 +433,7 @@ describe('converters', () => {
         })
       })
 
-      it('SC-AC014: defaults tool_name to empty string when missing', async () => {
+      it('SC-ACH005: defaults tool_name to empty string when missing', async () => {
         const mockCallback = vi.fn().mockResolvedValue({ continue: true })
         const hook: PreToolUseHook = { name: 'test', callback: mockCallback }
 
@@ -456,7 +456,7 @@ describe('converters', () => {
         })
       })
 
-      it('SC-AC015: defaults tool_input to empty object when missing', async () => {
+      it('SC-ACH006: defaults tool_input to empty object when missing', async () => {
         const mockCallback = vi.fn().mockResolvedValue({ continue: true })
         const hook: PreToolUseHook = { name: 'test', callback: mockCallback }
 
@@ -480,7 +480,7 @@ describe('converters', () => {
         })
       })
 
-      it('SC-AC016: transforms HookResult to SyncHookJSONOutput', async () => {
+      it('SC-ACH007: transforms HookResult to SyncHookJSONOutput', async () => {
         const mockCallback = vi.fn().mockResolvedValue({
           continue: true,
           decision: 'approve',
@@ -508,7 +508,7 @@ describe('converters', () => {
         })
       })
 
-      it('SC-AC017: correctly propagates block decision with reason', async () => {
+      it('SC-ACH008: correctly propagates block decision with reason', async () => {
         const mockCallback = vi.fn().mockResolvedValue({
           continue: false,
           decision: 'block',
