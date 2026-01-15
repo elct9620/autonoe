@@ -299,6 +299,73 @@ describe('SyncCommandHandler', () => {
 
       expect(processExitSpy).toHaveBeenCalledWith(1)
     })
+
+    it('SCH-031: exits with code 1 on quota exceeded', async () => {
+      const logger = createMockLogger()
+      createStatusFile([Deliverable.pending('DL-001', 'Test', ['AC'])])
+
+      // Create a mock session runner that returns quota_exceeded
+      const mockSessionRunner = {
+        run: vi.fn().mockResolvedValue({
+          exitReason: 'quota_exceeded',
+          iterations: 1,
+          deliverablesPassedCount: 0,
+          deliverablesTotalCount: 1,
+          blockedCount: 0,
+          verifiedCount: 0,
+          verifiedTotalCount: 1,
+          totalDuration: 100,
+          totalCostUsd: 0.01,
+        }),
+      } as unknown as SessionRunner
+
+      const handler = createHandler({
+        logger,
+        sessionRunner: mockSessionRunner,
+      })
+      await handler.execute()
+
+      expect(
+        logger.errorMessages.some((m) =>
+          m.includes('Sync stopped: quota exceeded'),
+        ),
+      ).toBe(true)
+      expect(processExitSpy).toHaveBeenCalledWith(1)
+    })
+
+    it('SCH-032: exits with code 1 on max retries exceeded', async () => {
+      const logger = createMockLogger()
+      createStatusFile([Deliverable.pending('DL-001', 'Test', ['AC'])])
+
+      // Create a mock session runner that returns max_retries_exceeded
+      const mockSessionRunner = {
+        run: vi.fn().mockResolvedValue({
+          exitReason: 'max_retries_exceeded',
+          error: 'Connection failed',
+          iterations: 1,
+          deliverablesPassedCount: 0,
+          deliverablesTotalCount: 1,
+          blockedCount: 0,
+          verifiedCount: 0,
+          verifiedTotalCount: 1,
+          totalDuration: 100,
+          totalCostUsd: 0.01,
+        }),
+      } as unknown as SessionRunner
+
+      const handler = createHandler({
+        logger,
+        sessionRunner: mockSessionRunner,
+      })
+      await handler.execute()
+
+      expect(
+        logger.errorMessages.some((m) =>
+          m.includes('Sync stopped: Connection failed'),
+        ),
+      ).toBe(true)
+      expect(processExitSpy).toHaveBeenCalledWith(1)
+    })
   })
 
   describe('security warnings', () => {

@@ -28,6 +28,7 @@ For the main specification, see [SPEC.md](../SPEC.md).
 | SC-S014 | Session error, retry succeeds      | consecutiveErrors reset to 0            |
 | SC-S015 | Session error, maxRetries exceeded | Exit with max_retries_exceeded          |
 | SC-S016 | Session success after error        | Error counter reset, loop continues     |
+| SC-S017 | Session returns failure result     | Retry logic triggered                   |
 
 SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 
@@ -59,6 +60,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | SC-X016 | Hook with no command     | Approved (continue=true)        |
 | SC-X017 | `./bin/dev.sh`           | Allowed (dev script)            |
 | SC-X018 | `bin/dev.sh --flag`      | Denied (no args allowed)        |
+| SC-X060 | Symlink resolution error | Command blocked                 |
 
 **Destructive Commands (--allow-destructive):**
 
@@ -121,6 +123,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | SC-C005 | User tries to disable sandbox            | Ignored, sandbox always enabled    |
 | SC-C006 | User tries to remove .autonoe protection | Security baseline re-applied       |
 | SC-C007 | Verify sandbox configuration             | enabled=true, autoAllow=true       |
+| SC-C008 | Profile array normalization              | Array passed through unchanged     |
 
 ### Prerequisites
 
@@ -292,6 +295,8 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | SCH-021 | result: interrupted       | Logs interruption message            |
 | SCH-022 | result: max_iterations    | Logs max iterations reached          |
 | SCH-030 | result: all_blocked       | Exits with code 1                    |
+| SCH-031 | result: quota_exceeded    | Logs error and exits with code 1     |
+| SCH-032 | result: max_retries       | Logs error and exits with code 1     |
 | SCH-040 | sandbox disabled via env  | Logs sandbox warning                 |
 | SCH-041 | sandbox enabled           | No warning logged                    |
 

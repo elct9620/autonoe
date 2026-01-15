@@ -10,7 +10,9 @@ import {
   MockDeliverableStatusReader,
   createMockStreamText,
   createMockStreamEnd,
+  createMockErrorStreamEnd,
   createMockQuotaExceededStreamEnd,
+  createMockStreamError,
   createMockStatusJson,
   createMockClientFactory,
   TestLogger,
@@ -74,6 +76,153 @@ describe('SessionRunner', () => {
       expect(result.iterations).toBeGreaterThanOrEqual(1)
       expect(result).toHaveProperty('totalDuration')
       expect(result).toHaveProperty('totalCostUsd')
+    })
+  })
+
+  describe('SC-S002: No status.json uses initializerInstruction', () => {
+    it('uses initializer instruction when status.json does not exist', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamEnd('done', 0.01)])
+
+      // Track which instruction name was passed to create()
+      let receivedInstructionName: string | undefined
+      const factory: AgentClientFactory = {
+        create: (instructionName) => {
+          receivedInstructionName = instructionName
+          return client
+        },
+      }
+
+      // Empty status sequence = no status.json
+      const statusReader = new MockDeliverableStatusReader()
+      // Don't set any status sequence - exists() will return false
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 1,
+      })
+      await runner.run(factory, silentLogger, statusReader)
+
+      // Should use 'initializer' instruction when no status.json
+      expect(receivedInstructionName).toBe('initializer')
+    })
+
+    it('uses coding instruction when status.json exists', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamEnd('done', 0.01)])
+
+      let receivedInstructionName: string | undefined
+      const factory: AgentClientFactory = {
+        create: (instructionName) => {
+          receivedInstructionName = instructionName
+          return client
+        },
+      }
+
+      // Status with deliverables = status.json exists
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
+      ])
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 1,
+      })
+      await runner.run(factory, silentLogger, statusReader)
+
+      // Should use 'coding' instruction when status.json exists
+      expect(receivedInstructionName).toBe('coding')
+    })
+  })
+
+  describe('SC-S006: Result event success logging', () => {
+    it('logs result text on successful session end', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockStreamEnd('Task completed successfully', 0.01),
+      ])
+      const factory = createMockClientFactory(client)
+      const logger = new TestLogger()
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 1,
+      })
+      await runner.run(factory, logger)
+
+      // Should log the result text from stream_end event
+      expect(logger.hasMessage('Task completed successfully')).toBe(true)
+    })
+
+    it('does not log when result is undefined', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamEnd(undefined, 0.01)])
+      const factory = createMockClientFactory(client)
+      const logger = new TestLogger()
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 1,
+      })
+      await runner.run(factory, logger)
+
+      // Should not log any result text (only session info)
+      const entries = logger.getEntries()
+      const infoLogs = entries.filter((e) => e.level === 'info')
+      // Only 'Session 1 started', 'Session 1: cost=...', and 'Overall:' should be logged
+      expect(infoLogs.every((e) => !e.message.includes('undefined'))).toBe(true)
+    })
+  })
+
+  describe('SC-S007: Result event error logging', () => {
+    it('logs error messages on execution_error outcome', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockErrorStreamEnd([
+          'Error 1: Something went wrong',
+          'Error 2: Failed to process',
+        ]),
+      ])
+      const factory = createMockClientFactory(client)
+      const logger = new TestLogger()
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 1,
+      })
+      await runner.run(factory, logger)
+
+      // Should log each error message via logger.error()
+      const errorLogs = logger.getEntries().filter((e) => e.level === 'error')
+      expect(
+        errorLogs.some((e) =>
+          e.message.includes('Error 1: Something went wrong'),
+        ),
+      ).toBe(true)
+      expect(
+        errorLogs.some((e) => e.message.includes('Error 2: Failed to process')),
+      ).toBe(true)
+    })
+
+    it('logs all error messages when multiple present', async () => {
+      const client = new MockAgentClient()
+      const errorMessages = ['First error', 'Second error', 'Third error']
+      client.setResponses([createMockErrorStreamEnd(errorMessages)])
+      const factory = createMockClientFactory(client)
+      const logger = new TestLogger()
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 1,
+      })
+      await runner.run(factory, logger)
+
+      // All error messages should be logged
+      const errorLogs = logger.getEntries().filter((e) => e.level === 'error')
+      for (const msg of errorMessages) {
+        expect(errorLogs.some((e) => e.message.includes(msg))).toBe(true)
+      }
     })
   })
 
@@ -542,6 +691,65 @@ describe('SessionRunner', () => {
 
       expect(result).toHaveProperty('totalCostUsd')
       expect(result.totalCostUsd).toBeCloseTo(0.0123, 4)
+    })
+  })
+
+  describe('SC-S017: Session returns failure result (stream_error)', () => {
+    it('triggers retry when session returns failure via stream_error', async () => {
+      const client = new MockAgentClient()
+      // First session: stream_error without stream_end -> Session returns { success: false }
+      // Second session: normal success
+      client.setResponsesPerSession([
+        [createMockStreamError('Connection lost')],
+        [createMockStreamEnd('done', 0.01)],
+      ])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
+      ])
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxRetries: 3,
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, logger, statusReader)
+
+      // Should have retried after stream_error and succeeded
+      expect(result.exitReason).toBe('all_passed')
+      expect(result.deliverablesPassedCount).toBe(1)
+      expect(logger.hasMessage('Session error (1/3)')).toBe(true)
+    })
+
+    it('returns max_retries_exceeded when stream_error persists', async () => {
+      const client = new MockAgentClient()
+      // All sessions return stream_error
+      client.setResponsesPerSession([
+        [createMockStreamError('Error 1')],
+        [createMockStreamError('Error 2')],
+        [createMockStreamError('Error 3')],
+        [createMockStreamError('Error 4')],
+      ])
+      const factory = createMockClientFactory(client)
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxRetries: 3,
+        delayBetweenSessions: 0,
+      })
+
+      const result = await runner.run(factory, logger)
+
+      expect(result.exitReason).toBe('max_retries_exceeded')
+      if (result.exitReason === 'max_retries_exceeded') {
+        expect(result.error).toBeDefined()
+      }
     })
   })
 

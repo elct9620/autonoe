@@ -316,6 +316,59 @@ describe('Configuration', () => {
     })
   })
 
+  describe('SC-C008: Profile array normalization', () => {
+    it('passes array profile through unchanged', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          profile: ['node', 'python'],
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.bashSecurity.activeProfiles).toEqual(['node', 'python'])
+    })
+
+    it('normalizes single profile string to array', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          profile: 'node',
+        }),
+      )
+
+      const config = await loadConfig(testDir)
+
+      expect(config.bashSecurity.activeProfiles).toEqual(['node'])
+    })
+
+    it('uses all profiles when profile is undefined', async () => {
+      // No profile specified in agent.json
+      const config = await loadConfig(testDir)
+
+      expect(config.bashSecurity.activeProfiles).toBeUndefined()
+    })
+
+    it('mergeConfig handles array profile correctly', () => {
+      const result = mergeConfig(SECURITY_BASELINE, {
+        profile: ['node', 'python'],
+      })
+
+      expect(result.bashSecurity.activeProfiles).toEqual(['node', 'python'])
+    })
+
+    it('mergeConfig handles string profile correctly', () => {
+      const result = mergeConfig(SECURITY_BASELINE, {
+        profile: 'node',
+      })
+
+      expect(result.bashSecurity.activeProfiles).toEqual(['node'])
+    })
+  })
+
   describe('Configuration loading', () => {
     it('loads agent.json from .autonoe directory', async () => {
       mkdirSync(join(testDir, '.autonoe'), { recursive: true })
