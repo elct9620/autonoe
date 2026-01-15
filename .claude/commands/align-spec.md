@@ -32,7 +32,9 @@ The `<execute>ARGUMENTS</execute>` will execute the main procedure.
     <condition if="new feature added to spec">
         <step>11. suggest implementation steps for the new feature in the codebase</step>
     </condition>
-    <return>Specification and codebase alignment summary and actions</return>
+    <step>12. pick the highest priority changes based on user feedback</step>
+    <step>13. align the codebase and specification based on the plan</step>
+    <return>alignment report and updated code/specification</return>
 </procedure>
 
 # Task
