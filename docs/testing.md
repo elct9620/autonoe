@@ -231,6 +231,39 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | DU-006 | 3661000    | `1h 1m 1s`      |
 | DU-007 | 3660000    | `1h 1m`         |
 
+### CLI Command Handlers
+
+| ID     | Input                      | Expected Output                     |
+| ------ | -------------------------- | ----------------------------------- |
+| CH-001 | run with valid project     | SessionRunner executed successfully |
+| CH-002 | sync with valid project    | SyncRunner executed successfully    |
+| CH-003 | invalid --project-dir path | Exit with error, non-zero exit code |
+| CH-004 | --no-sandbox flag          | Sandbox disabled in client config   |
+| CH-005 | --allow-destructive flag   | Destructive commands enabled        |
+| CH-006 | --debug flag               | Debug logging enabled               |
+| CH-007 | --wait-for-quota flag      | WaitForQuota option passed          |
+
+### Console Components
+
+| ID     | Component                   | Input                       | Expected Output            |
+| ------ | --------------------------- | --------------------------- | -------------------------- |
+| CC-001 | ConsoleLogger               | info(message)               | Output to stdout           |
+| CC-002 | ConsoleLogger               | debug(message), debug=false | No output                  |
+| CC-003 | ConsoleLogger               | debug(message), debug=true  | Output to stdout           |
+| CC-004 | ConsoleLogger               | warn(message)               | Output to stderr           |
+| CC-005 | ConsoleLogger               | error(message)              | Output to stderr           |
+| CC-006 | ConsoleWaitProgressReporter | startWait(5000)             | Progress message displayed |
+| CC-007 | ConsoleWaitProgressReporter | startWait then cleanup      | Timer cleared, no output   |
+
+### Factory Functions
+
+| ID     | Factory                    | Input                | Expected Output                    |
+| ------ | -------------------------- | -------------------- | ---------------------------------- |
+| FF-001 | createAgentClientFactory   | run mode + options   | Factory with run config            |
+| FF-002 | createAgentClientFactory   | sync mode + options  | Factory with sync config (limited) |
+| FF-003 | createSessionRunnerOptions | all options provided | Complete SessionRunnerOptions      |
+| FF-004 | createSessionRunnerOptions | minimal options      | Default values applied             |
+
 ---
 
 ## Integration Test Scenarios `[Consistency]`
