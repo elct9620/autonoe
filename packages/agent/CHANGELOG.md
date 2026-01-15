@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/elct9620/autonoe/compare/agent-v0.3.0...agent-v0.3.1) (2026-01-15)
+
+
+### Bug Fixes
+
+* **agent:** align deliverable tool sets with SPEC.md Section 3.2 ([5273566](https://github.com/elct9620/autonoe/commit/5273566973ad8cac4b7773e836b4ad3d4bd79328))
+
 ## [0.3.0](https://github.com/elct9620/autonoe/compare/agent-v0.2.0...agent-v0.3.0) (2026-01-15)
 
 
