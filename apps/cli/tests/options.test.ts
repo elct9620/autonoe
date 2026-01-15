@@ -12,6 +12,8 @@ import {
   validateRunOptions,
   logSecurityWarnings,
   SandboxMode,
+  checkSpecExists,
+  validatePrerequisites,
 } from '../src/options'
 
 function createMockLogger(): Logger & { warnMessages: string[] } {
@@ -452,5 +454,134 @@ describe('validateSyncOptions', () => {
     if (result.success) {
       expect(result.options.sandboxMode.enabled).toBe(true)
     }
+  })
+})
+
+describe('checkSpecExists', () => {
+  let tempDir: string
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'autonoe-test-'))
+  })
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  it('SC-P003: returns true when SPEC.md exists', () => {
+    writeFileSync(join(tempDir, 'SPEC.md'), '# Spec')
+    expect(checkSpecExists(tempDir)).toBe(true)
+  })
+
+  it('returns false when SPEC.md does not exist', () => {
+    expect(checkSpecExists(tempDir)).toBe(false)
+  })
+})
+
+describe('validatePrerequisites', () => {
+  let tempDir: string
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'autonoe-test-'))
+  })
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  it('SC-P001/SC-P002: returns error when SPEC.md not found', () => {
+    const result = validatePrerequisites(tempDir)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error).toBe(`SPEC.md not found in ${tempDir}`)
+    }
+  })
+
+  it('SC-P003: returns success when SPEC.md exists', () => {
+    writeFileSync(join(tempDir, 'SPEC.md'), '# Spec')
+    const result = validatePrerequisites(tempDir)
+    expect(result.success).toBe(true)
+  })
+})
+
+describe('Option Validation Constraints', () => {
+  let tempDir: string
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), 'autonoe-test-'))
+  })
+
+  afterEach(() => {
+    rmSync(tempDir, { recursive: true, force: true })
+  })
+
+  describe('maxIterations constraint', () => {
+    it('SC-V004: accepts positive value', () => {
+      const result = validateCommonOptions({
+        projectDir: tempDir,
+        maxIterations: '1',
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.options.maxIterations).toBe(1)
+      }
+    })
+
+    it('SC-V005: rejects zero value', () => {
+      const result = validateCommonOptions({
+        projectDir: tempDir,
+        maxIterations: '0',
+      })
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toBe('Max iterations must be positive, got 0')
+      }
+    })
+
+    it('SC-V006: rejects negative value', () => {
+      const result = validateCommonOptions({
+        projectDir: tempDir,
+        maxIterations: '-1',
+      })
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toBe('Max iterations must be positive, got -1')
+      }
+    })
+  })
+
+  describe('maxRetries constraint', () => {
+    it('SC-V007: accepts zero value (no retries)', () => {
+      const result = validateCommonOptions({
+        projectDir: tempDir,
+        maxRetries: '0',
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.options.maxRetries).toBe(0)
+      }
+    })
+
+    it('SC-V008: rejects negative value', () => {
+      const result = validateCommonOptions({
+        projectDir: tempDir,
+        maxRetries: '-1',
+      })
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toBe('Max retries must be non-negative, got -1')
+      }
+    })
+
+    it('accepts positive value', () => {
+      const result = validateCommonOptions({
+        projectDir: tempDir,
+        maxRetries: '5',
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.options.maxRetries).toBe(5)
+      }
+    })
   })
 })

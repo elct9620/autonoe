@@ -15,6 +15,7 @@ import {
 } from '@autonoe/agent'
 import {
   validateSyncOptions,
+  validatePrerequisites,
   type SyncCommandOptions,
   type ValidatedSyncOptions,
 } from './options'
@@ -56,6 +57,13 @@ export async function handleSyncCommand(
     process.exit(1)
   }
   const validatedOptions = validation.options
+
+  // 1.5. Check prerequisites (SPEC.md exists)
+  const prereqValidation = validatePrerequisites(validatedOptions.projectDir)
+  if (!prereqValidation.success) {
+    logger.error(prereqValidation.error)
+    process.exit(1)
+  }
 
   // 2. Initialize all dependencies
   const config = await loadConfig(validatedOptions.projectDir)

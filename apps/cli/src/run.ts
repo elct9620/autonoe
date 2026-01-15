@@ -13,7 +13,11 @@ import {
   FileDeliverableRepository,
   createDeliverableMcpServer,
 } from '@autonoe/agent'
-import { validateRunOptions, type RunCommandOptions } from './options'
+import {
+  validateRunOptions,
+  validatePrerequisites,
+  type RunCommandOptions,
+} from './options'
 import { RunCommandHandler, VERSION } from './runCommandHandler'
 import { ConsoleLogger } from './consoleLogger'
 import {
@@ -46,6 +50,13 @@ export async function handleRunCommand(
     process.exit(1)
   }
   const validatedOptions = validation.options
+
+  // 1.5. Check prerequisites (SPEC.md exists)
+  const prereqValidation = validatePrerequisites(validatedOptions.projectDir)
+  if (!prereqValidation.success) {
+    logger.error(prereqValidation.error)
+    process.exit(1)
+  }
 
   // 2. Initialize all dependencies
   const config = await loadConfig(validatedOptions.projectDir)

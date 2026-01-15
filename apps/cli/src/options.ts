@@ -1,4 +1,4 @@
-import { resolve } from 'node:path'
+import { resolve, join } from 'node:path'
 import { existsSync, statSync } from 'node:fs'
 import type { Logger } from '@autonoe/core'
 
@@ -270,6 +270,24 @@ export function validateCommonOptions(
     return { success: false, error: thinkingResult.error }
   }
 
+  // Validate maxIterations constraint: must be > 0 if specified
+  const maxIterations = parseNumericOption(options.maxIterations)
+  if (maxIterations !== undefined && maxIterations <= 0) {
+    return {
+      success: false,
+      error: `Max iterations must be positive, got ${maxIterations}`,
+    }
+  }
+
+  // Validate maxRetries constraint: must be >= 0 if specified
+  const maxRetries = parseNumericOption(options.maxRetries)
+  if (maxRetries !== undefined && maxRetries < 0) {
+    return {
+      success: false,
+      error: `Max retries must be non-negative, got ${maxRetries}`,
+    }
+  }
+
   // Create SandboxMode from environment variable only
   // CLI flag override is handled by validateRunOptions
   const sandboxMode = SandboxMode.fromCliAndEnv(undefined, env)
@@ -278,8 +296,8 @@ export function validateCommonOptions(
     success: true,
     options: {
       projectDir,
-      maxIterations: parseNumericOption(options.maxIterations),
-      maxRetries: parseNumericOption(options.maxRetries),
+      maxIterations,
+      maxRetries,
       model: options.model,
       debug: options.debug ?? false,
       waitForQuota: options.waitForQuota ?? false,
@@ -347,4 +365,38 @@ export function logSecurityWarnings(
       'Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.',
     )
   }
+}
+
+// ========== Prerequisites ==========
+
+/**
+ * Prerequisite validation result - discriminated union
+ */
+export type PrerequisiteValidationResult =
+  | { success: true }
+  | { success: false; error: string }
+
+/**
+ * Check if SPEC.md exists in the project directory
+ */
+export function checkSpecExists(projectDir: string): boolean {
+  const specPath = join(projectDir, 'SPEC.md')
+  return existsSync(specPath)
+}
+
+/**
+ * Validate prerequisites for command execution
+ * Currently checks: SPEC.md existence
+ */
+export function validatePrerequisites(
+  projectDir: string,
+): PrerequisiteValidationResult {
+  if (!checkSpecExists(projectDir)) {
+    return {
+      success: false,
+      error: `SPEC.md not found in ${projectDir}`,
+    }
+  }
+
+  return { success: true }
 }
