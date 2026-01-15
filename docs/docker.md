@@ -1,6 +1,6 @@
 # Docker Configuration
 
-Docker image configuration for Autonoe CLI. For overview, see [SPEC.md Section 10](../SPEC.md#10-build--distribution-design).
+Docker image configuration for Autonoe CLI. For overview, see [SPEC.md Section 7](../SPEC.md#7-build--distribution-design).
 
 ## Image Strategy
 
