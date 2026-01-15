@@ -15,6 +15,8 @@ import type {
   ProfileName,
   ExecutionMode,
   CommandLayer,
+  AllowCommandsConfig,
+  TieredAllowCommands,
 } from './types'
 import { ALL_PROFILES, isBashSecurity } from './types'
 import {
@@ -31,6 +33,41 @@ import {
   validateMv,
   validatePkill,
 } from './validators'
+
+/**
+ * Normalize allow commands to tiered structure
+ * - undefined -> {}
+ * - string[] -> { run: [...] } (legacy format, backward compatible)
+ * - TieredAllowCommands -> as-is
+ */
+function normalizeAllowCommands(
+  config: AllowCommandsConfig | undefined,
+): TieredAllowCommands {
+  if (!config) {
+    return {}
+  }
+
+  // Legacy format: string[] treated as run-only commands
+  if (Array.isArray(config)) {
+    return { run: config }
+  }
+
+  // Already tiered format
+  return config
+}
+
+/**
+ * Get allow commands for the given execution mode
+ * Returns base + mode-specific commands
+ */
+function getAllowCommandsForMode(
+  tiered: TieredAllowCommands,
+  mode: ExecutionMode,
+): string[] {
+  const base = tiered.base ?? []
+  const modeSpecific = mode === 'run' ? (tiered.run ?? []) : (tiered.sync ?? [])
+  return [...base, ...modeSpecific]
+}
 
 /**
  * Collect commands from profile command sets based on layer
@@ -138,12 +175,15 @@ export class DefaultBashSecurity implements BashSecurity {
     const profiles = this.resolveActiveProfiles(options.activeProfiles)
     const layer = this.modeToLayer(this.mode)
 
-    // Collect commands based on layer
-    // In sync mode, user extensions (allowCommands) are ignored for security
+    // Normalize and get mode-specific allow commands
+    const tieredCommands = normalizeAllowCommands(options.allowCommands)
+    const extensions = getAllowCommandsForMode(tieredCommands, this.mode)
+
+    // Collect commands based on layer with mode-specific extensions
     this.allowedCommands = collectCommandsFromProfiles(
       profiles,
       layer,
-      this.mode === 'run' ? options.allowCommands : undefined,
+      extensions.length > 0 ? extensions : undefined,
     )
 
     // pkill targets are always collected (sync mode may need to kill test processes)

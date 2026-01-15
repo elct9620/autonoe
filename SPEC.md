@@ -508,7 +508,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 │                                                                  │
 │  User Config (.autonoe/agent.json)                               │
 │  ├── profile: "node" | ["node", "python"]  # Language profiles   │
-│  ├── allowCommands: [...]      # Hook layer extensions           │
+│  ├── allowCommands: { base?, run?, sync? }  # Hook layer (tiered)│
 │  ├── allowPkillTargets: [...]  # Hook layer extensions           │
 │  ├── permissions.allow: [...]  # SDK layer (Merged with baseline)│
 │  ├── allowedTools: [...]       # Merged with baseline            │
@@ -520,7 +520,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 | ---------------- | ----------------- | ----- | -------------- |
 | sandbox          | Hardcoded         | SDK   | --no-sandbox   |
 | profile          | ALL by default    | Hook  | Restrict       |
-| allowCommands    | (none)            | Hook  | User-defined   |
+| allowCommands    | (none)            | Hook  | User-defined (tiered) |
 | allowPkillTargets| (none)            | Hook  | User-defined   |
 | permissions      | baseline + user   | SDK   | Merge          |
 | allowedTools     | baseline + user   | SDK   | Merge          |
@@ -585,7 +585,11 @@ Command Extensions
 ```json
 {
   "profile": ["node", "python"],
-  "allowCommands": ["docker", "custom-cli"],
+  "allowCommands": {
+    "base": ["make"],
+    "run": ["docker", "custom-cli"],
+    "sync": ["shellcheck"]
+  },
   "allowPkillTargets": ["custom-server"],
   "permissions": {
     "allow": [
@@ -605,11 +609,22 @@ Command Extensions
 | Field             | Type                        | Layer | Description                             |
 | ----------------- | --------------------------- | ----- | --------------------------------------- |
 | profile           | `string \| string[]`        | Hook  | Restrict to specific language profiles  |
-| allowCommands     | `string[]`                  | Hook  | Additional bash commands to allow       |
+| allowCommands     | `string[] \| TieredAllowCommands` | Hook  | Additional bash commands (see below)    |
 | allowPkillTargets | `string[]`                  | Hook  | Additional pkill target processes       |
 | permissions.allow | `string[]`                  | SDK   | SDK permission rules (e.g., WebFetch)   |
 | allowedTools      | `string[]`                  | SDK   | Additional SDK tools to enable          |
 | mcpServers        | `Record<string, McpServer>` | SDK   | Additional MCP servers                  |
+
+**allowCommands Structure:**
+
+| Format | run mode | sync mode |
+|--------|----------|-----------|
+| `["cmd"]` (legacy) | ✅ Allowed | ❌ Ignored |
+| `{ base: ["cmd"] }` | ✅ Allowed | ✅ Allowed |
+| `{ run: ["cmd"] }` | ✅ Allowed | ❌ Ignored |
+| `{ sync: ["cmd"] }` | ❌ Ignored | ✅ Allowed |
+
+Legacy `string[]` format is treated as `{ run: [...] }` for backward compatibility.
 
 **SDK Settings Bridge:**
 
@@ -743,7 +758,7 @@ Sync mode restricts Base Security for verification-only operations:
 
 **Restrictions:**
 - File modification commands (mkdir, cp) are excluded
-- User extensions (`allowCommands`) are ignored for security
+- User extensions (`allowCommands.run`) are ignored; only `allowCommands.sync` and `allowCommands.base` apply
 - Destructive commands (rm, mv) are always disabled
 - Auto-fix commands (e.g., `prettier --write`, `rubocop -a`, `black`) are excluded
 

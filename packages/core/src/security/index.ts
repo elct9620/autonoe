@@ -12,6 +12,8 @@ export type {
   ExecutionMode,
   CommandLayer,
   ProfileCommandSet,
+  TieredAllowCommands,
+  AllowCommandsConfig,
 } from './types'
 export { ALL_PROFILES, isBashSecurity } from './types'
 

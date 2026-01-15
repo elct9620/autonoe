@@ -7,7 +7,11 @@ import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { McpServer } from './types'
-import type { BashSecurityOptions, ProfileName } from './security'
+import type {
+  AllowCommandsConfig,
+  BashSecurityOptions,
+  ProfileName,
+} from './security'
 
 /**
  * Sandbox configuration
@@ -61,8 +65,10 @@ export interface UserConfig {
   profile?: ProfileName | ProfileName[]
   /**
    * Additional bash commands to allow
+   * - string[]: Legacy format, treated as { run: [...] }
+   * - { base?, run?, sync? }: Tiered structure
    */
-  allowCommands?: string[]
+  allowCommands?: AllowCommandsConfig
   /**
    * Additional pkill target processes
    */

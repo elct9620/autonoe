@@ -865,7 +865,7 @@ describe('Destructive Commands (--allow-destructive)', () => {
       expect(security.isCommandAllowed('sleep 1').allowed).toBe(true)
     })
 
-    it('ignores allowCommands in sync mode', () => {
+    it('ignores legacy allowCommands (string[]) in sync mode', () => {
       const security = new DefaultBashSecurity({
         mode: 'sync',
         allowCommands: ['custom-command'],
@@ -918,6 +918,167 @@ describe('Destructive Commands (--allow-destructive)', () => {
         projectDir,
       })
       expect(security.isCommandAllowed('rm file.txt').allowed).toBe(true)
+    })
+  })
+
+  describe('Tiered allowCommands { base, run, sync }', () => {
+    describe('Backward compatibility (legacy string[])', () => {
+      it('treats string[] as run-only commands', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'run',
+          allowCommands: ['docker', 'kubectl'],
+        })
+        expect(security.isCommandAllowed('docker build .').allowed).toBe(true)
+        expect(security.isCommandAllowed('kubectl get pods').allowed).toBe(true)
+      })
+
+      it('ignores legacy string[] in sync mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'sync',
+          allowCommands: ['docker', 'kubectl'],
+        })
+        expect(security.isCommandAllowed('docker build .').allowed).toBe(false)
+        expect(security.isCommandAllowed('kubectl get pods').allowed).toBe(
+          false,
+        )
+      })
+    })
+
+    describe('Tiered structure { base, run, sync }', () => {
+      it('allows base commands in run mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'run',
+          allowCommands: { base: ['make', 'cmake'] },
+        })
+        expect(security.isCommandAllowed('make build').allowed).toBe(true)
+        expect(security.isCommandAllowed('cmake .').allowed).toBe(true)
+      })
+
+      it('allows base commands in sync mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'sync',
+          allowCommands: { base: ['make', 'cmake'] },
+        })
+        expect(security.isCommandAllowed('make test').allowed).toBe(true)
+        expect(security.isCommandAllowed('cmake --version').allowed).toBe(true)
+      })
+
+      it('allows run-only commands in run mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'run',
+          allowCommands: { run: ['docker'] },
+        })
+        expect(security.isCommandAllowed('docker build .').allowed).toBe(true)
+      })
+
+      it('blocks run-only commands in sync mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'sync',
+          allowCommands: { run: ['docker'] },
+        })
+        expect(security.isCommandAllowed('docker build .').allowed).toBe(false)
+      })
+
+      it('allows sync-only commands in sync mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'sync',
+          allowCommands: { sync: ['shellcheck'] },
+        })
+        expect(security.isCommandAllowed('shellcheck script.sh').allowed).toBe(
+          true,
+        )
+      })
+
+      it('blocks sync-only commands in run mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'run',
+          allowCommands: { sync: ['shellcheck'] },
+        })
+        expect(security.isCommandAllowed('shellcheck script.sh').allowed).toBe(
+          false,
+        )
+      })
+
+      it('combines base and run commands in run mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'run',
+          allowCommands: {
+            base: ['make'],
+            run: ['docker'],
+          },
+        })
+        expect(security.isCommandAllowed('make build').allowed).toBe(true)
+        expect(security.isCommandAllowed('docker run hello').allowed).toBe(true)
+      })
+
+      it('combines base and sync commands in sync mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'sync',
+          allowCommands: {
+            base: ['make'],
+            sync: ['shellcheck'],
+          },
+        })
+        expect(security.isCommandAllowed('make test').allowed).toBe(true)
+        expect(security.isCommandAllowed('shellcheck script.sh').allowed).toBe(
+          true,
+        )
+      })
+
+      it('full tiered config works correctly in run mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'run',
+          allowCommands: {
+            base: ['make'],
+            run: ['docker'],
+            sync: ['shellcheck'],
+          },
+        })
+        expect(security.isCommandAllowed('make build').allowed).toBe(true)
+        expect(security.isCommandAllowed('docker build .').allowed).toBe(true)
+        expect(security.isCommandAllowed('shellcheck script.sh').allowed).toBe(
+          false,
+        )
+      })
+
+      it('full tiered config works correctly in sync mode', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'sync',
+          allowCommands: {
+            base: ['make'],
+            run: ['docker'],
+            sync: ['shellcheck'],
+          },
+        })
+        expect(security.isCommandAllowed('make test').allowed).toBe(true)
+        expect(security.isCommandAllowed('docker build .').allowed).toBe(false)
+        expect(security.isCommandAllowed('shellcheck script.sh').allowed).toBe(
+          true,
+        )
+      })
+    })
+
+    describe('Empty/undefined handling', () => {
+      it('handles undefined allowCommands', () => {
+        const security = new DefaultBashSecurity({ mode: 'run' })
+        expect(security.isCommandAllowed('npm install').allowed).toBe(true)
+      })
+
+      it('handles empty object {}', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'run',
+          allowCommands: {},
+        })
+        expect(security.isCommandAllowed('npm install').allowed).toBe(true)
+      })
+
+      it('handles partial tiered object { base: [...] }', () => {
+        const security = new DefaultBashSecurity({
+          mode: 'run',
+          allowCommands: { base: ['make'] },
+        })
+        expect(security.isCommandAllowed('make build').allowed).toBe(true)
+      })
     })
   })
 })

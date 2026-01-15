@@ -50,6 +50,24 @@ export interface ProfileCommandSet {
 }
 
 /**
+ * Tiered allow commands structure
+ * @see SPEC.md Section 5.4
+ */
+export interface TieredAllowCommands {
+  /** Commands available in all modes */
+  base?: string[]
+  /** Commands available only in run mode */
+  run?: string[]
+  /** Commands available only in sync mode */
+  sync?: string[]
+}
+
+/**
+ * Allow commands configuration - supports both legacy array and tiered structure
+ */
+export type AllowCommandsConfig = string[] | TieredAllowCommands
+
+/**
  * Options for configuring BashSecurity
  */
 export interface BashSecurityOptions {
@@ -69,9 +87,10 @@ export interface BashSecurityOptions {
 
   /**
    * Additional commands to allow (user extensions via agent.json)
-   * Note: Ignored in sync mode for security
+   * - string[]: Legacy format, treated as { run: [...] } for backward compatibility
+   * - TieredAllowCommands: { base?, run?, sync? }
    */
-  allowCommands?: string[]
+  allowCommands?: AllowCommandsConfig
 
   /**
    * Additional pkill targets to allow (user extensions via agent.json)
