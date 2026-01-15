@@ -10,11 +10,11 @@ import type { ProfileName, ProfileCommandSet } from './types'
 // =============================================================================
 
 /**
- * Base status commands (verification layer)
- * Read-only commands available in all modes including sync
+ * Base read-only commands (available in all modes)
+ * All read-only commands that don't modify system state
  * @see SPEC.md Section 6.2
  */
-export const BASE_STATUS_COMMANDS = new Set([
+export const BASE_READONLY_COMMANDS = new Set([
   // Navigation
   'ls',
   'pwd',
@@ -29,41 +29,52 @@ export const BASE_STATUS_COMMANDS = new Set([
   'sort',
   'diff',
   'date',
-  // Git (sync needs to read version state)
-  'git',
-  // Utility (safe, no state modification)
-  'echo',
-  'sleep',
-])
-
-/**
- * Base operation commands (development layer only)
- * Commands that may modify state, only available in run mode
- * @see SPEC.md Section 6.2
- */
-export const BASE_OPERATION_COMMANDS = new Set([
-  // File Ops
-  'mkdir',
-  'cp',
-  // Process
-  'which',
-  'ps',
-  'lsof',
-  // Text Processing
   'printf',
   'uniq',
   'cut',
   'tr',
   'tac',
   'jq',
+  // Git (sync needs to read version state)
+  'git',
+  // Process Query (read-only)
+  'which',
+  'ps',
+  'lsof',
+  // Utility (safe, no state modification)
+  'echo',
+  'sleep',
 ])
 
 /**
- * All base commands (status + operations)
+ * Run command extension commands (run mode only)
+ * Commands that may modify state, only available in run mode
+ * @see SPEC.md Section 6.3
+ */
+export const RUN_EXTENSION_COMMANDS = new Set([
+  // File Ops (modify filesystem)
+  'mkdir',
+  'cp',
+])
+
+/**
+ * @deprecated Use BASE_READONLY_COMMANDS instead
+ * Kept for backward compatibility
+ */
+export const BASE_STATUS_COMMANDS = BASE_READONLY_COMMANDS
+
+/**
+ * @deprecated Use RUN_EXTENSION_COMMANDS instead
+ * Kept for backward compatibility
+ */
+export const BASE_OPERATION_COMMANDS = RUN_EXTENSION_COMMANDS
+
+/**
+ * All base commands (readonly + run extensions)
  */
 export const BASE_COMMANDS = new Set([
-  ...BASE_STATUS_COMMANDS,
-  ...BASE_OPERATION_COMMANDS,
+  ...BASE_READONLY_COMMANDS,
+  ...RUN_EXTENSION_COMMANDS,
 ])
 
 // =============================================================================
@@ -241,7 +252,7 @@ export const GO_DEVELOPMENT_COMMANDS = new Set([
  */
 export const PROFILE_COMMAND_SETS: Record<ProfileName, ProfileCommandSet> = {
   base: {
-    verification: BASE_STATUS_COMMANDS,
+    verification: BASE_READONLY_COMMANDS,
     development: BASE_COMMANDS,
   },
   node: {

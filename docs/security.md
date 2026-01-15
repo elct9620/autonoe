@@ -30,24 +30,21 @@ Shared security capabilities for all execution modes.
 
 ### Base Bash Commands
 
-Base profile contains two command layers:
+Base commands are all read-only and available in all modes (run and sync):
 
-**Status Layer (verification)** - Available in all modes including `sync`:
+| Category        | Commands                                               |
+| --------------- | ------------------------------------------------------ |
+| Navigation      | ls, pwd, cat, head, tail, wc, find, grep               |
+| Text Processing | tree, sort, diff, date, printf, uniq, cut, tr, tac, jq |
+| Git             | git                                                    |
+| Process Query   | which, ps, lsof                                        |
+| Utility         | echo, sleep                                            |
 
-| Category   | Commands                                 |
-| ---------- | ---------------------------------------- |
-| Navigation | ls, pwd, cat, head, tail, wc, find, grep |
-| Text       | tree, sort, diff, date                   |
-| Git        | git                                      |
-| Utility    | echo, sleep                              |
+**Run Command Extensions** - Only available in `run` mode:
 
-**Operations Layer (development)** - Only available in `run` mode:
-
-| Category | Commands                       |
-| -------- | ------------------------------ |
-| Text     | printf, uniq, cut, tr, tac, jq |
-| Process  | which, ps, lsof                |
-| File Ops | mkdir, cp                      |
+| Category | Commands  |
+| -------- | --------- |
+| File Ops | mkdir, cp |
 
 ### Validation Flow
 
@@ -283,32 +280,32 @@ Sync mode restricts Base Security for verification-only operations. Prevents mod
 
 ### Restrictions from Base
 
-| Capability | Base            | Sync                    |
-| ---------- | --------------- | ----------------------- |
-| File Write | None            | .autonoe-note.md only   |
-| File Edit  | None            | .autonoe-note.md only   |
-| Bash       | Status commands | Verification layer only |
-| Playwright | N/A             | Enabled (verify phase)  |
+| Capability | Base               | Sync                      |
+| ---------- | ------------------ | ------------------------- |
+| File Write | None               | .autonoe-note.md only     |
+| File Edit  | None               | .autonoe-note.md only     |
+| Bash       | Read-only commands | + Verification layer only |
+| Playwright | N/A                | Enabled (verify phase)    |
 
 ### Allowed Tools
 
-| Tool Category | Available | Scope                      |
-| ------------- | --------- | -------------------------- |
-| File Read     | YES       | All files                  |
-| File Write    | LIMITED   | .autonoe-note.md only      |
-| File Edit     | LIMITED   | .autonoe-note.md only      |
-| Bash          | LIMITED   | Verification commands only |
-| Git           | YES       | Full access                |
-| Playwright    | YES       | Verification phase         |
-| autonoe       | YES       | status.json updates        |
+| Tool Category | Available | Scope                         |
+| ------------- | --------- | ----------------------------- |
+| File Read     | YES       | All files                     |
+| File Write    | LIMITED   | .autonoe-note.md only         |
+| File Edit     | LIMITED   | .autonoe-note.md only         |
+| Bash          | LIMITED   | Base read-only + verification |
+| Git           | YES       | Full access                   |
+| Playwright    | YES       | Verification phase            |
+| autonoe       | YES       | status.json updates           |
 
 ### Allowed Bash Commands
 
-Sync uses the **verification layer** from each active profile. Only verification commands are allowed:
+Sync uses **Base read-only commands** plus **verification layer** from each active profile:
 
-| Profile | Verification Commands                                                                    |
+| Profile | Commands                                                                                 |
 | ------- | ---------------------------------------------------------------------------------------- |
-| base    | ls, pwd, cat, head, tail, wc, find, grep, tree, sort, diff, date, git, echo, sleep       |
+| base    | All read-only commands (see Base Bash Commands above)                                    |
 | node    | npm, npx, bun, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome |
 | python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint               |
 | ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard                       |
@@ -322,18 +319,18 @@ Sync uses the **verification layer** from each active profile. Only verification
 
 **Profile × Command Behavior:**
 
-| agent.json profile | Sync Allowed Commands                             |
-| ------------------ | ------------------------------------------------- |
-| (not set)          | Base.status + All profiles' verification          |
-| `"node"`           | Base.status + Node.verification                   |
-| `"python"`         | Base.status + Python.verification                 |
-| `["node", "go"]`   | Base.status + Node.verification + Go.verification |
+| agent.json profile | Sync Allowed Commands                                |
+| ------------------ | ---------------------------------------------------- |
+| (not set)          | Base read-only + All profiles' verification          |
+| `"node"`           | Base read-only + Node.verification                   |
+| `"python"`         | Base read-only + Python.verification                 |
+| `["node", "go"]`   | Base read-only + Node.verification + Go.verification |
 
 ### Blocked Commands
 
 | Category             | Commands                                    | Reason                      |
 | -------------------- | ------------------------------------------- | --------------------------- |
-| File modification    | `sed -i`, `rm`, `mv`, `cp`                  | Prevents source changes     |
+| File modification    | `sed -i`, `rm`, `mv`, `mkdir`, `cp`         | Prevents source changes     |
 | Package installation | `npm install`, `pip install`, `gem install` | Prevents dependency changes |
 | Auto-fix             | `prettier --write`, `rubocop -a`, `black`   | Modifies source code        |
 

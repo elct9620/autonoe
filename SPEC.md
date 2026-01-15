@@ -527,32 +527,36 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 | hooks            | baseline + user   | Hook  | Merge          |
 | mcpServers       | Hardcoded + user  | SDK   | User priority  |
 
-**Profile Command Layers:**
+**Command Architecture:**
 
-Each language profile contains two command layers:
+Commands are organized into Base (read-only, shared) and Command-specific extensions:
+
+```
+Base Commands (read-only, all commands share)
+├── Navigation: ls, pwd, cat, head, tail, wc, find, grep
+├── Text Processing: tree, sort, diff, date, printf, uniq, cut, tr, tac, jq
+├── Git: git
+├── Process Query: which, ps, lsof
+└── Utility: echo, sleep
+
+Command Extensions
+├── run: mkdir, cp, language development (runtimes, frameworks), user extensions
+└── sync: language verification only (test runners, linters)
+```
+
+**Profile Command Layers (Language-specific):**
 
 | Layer | Purpose | Used By |
 |-------|---------|---------|
-| verification | Test, type check, lint, build check | `sync` command |
+| verification | Test, type check, lint commands | `sync` command |
 | development | Full toolchain (includes verification) | `run` command |
-
-```
-Profile Structure
-├── base (always included)
-│   ├── status: ls, pwd, cat, head, tail, wc, find, grep, tree, sort, diff, date, git, echo, sleep
-│   └── operations: mkdir, cp, which, ps, lsof, printf, uniq, cut, tr, tac, jq
-│
-└── language (node, python, ruby, go)
-    ├── verification: test runners, type checkers, linters, package managers (for test)
-    └── development: runtimes, build tools, frameworks
-```
 
 **Mode × Profile → Commands:**
 
-| Command | Base | Profile Layer |
-|---------|------|---------------|
-| `run`   | full | development (includes verification) |
-| `sync`  | restricted | verification only |
+| Command | Base Commands | Extensions |
+|---------|---------------|------------|
+| `run`   | All read-only | + mkdir, cp, language development, user extensions |
+| `sync`  | All read-only | + language verification only |
 
 **MCP Servers User Priority:**
 
@@ -677,10 +681,18 @@ Base security capabilities shared by all execution modes:
 | File Read           | YES        | All files                |
 | Git                 | YES        | Full access              |
 | autonoe | YES        | status.json management   |
-| Bash                | LIMITED    | Status commands only     |
+| Bash                | LIMITED    | Read-only commands only  |
 | .autonoe/ Write     | NO         | Block direct writes      |
 
-**Base Bash Commands:** `ls`, `pwd`, `cat`, `head`, `tail`, `wc`, `find`, `grep`, `tree`, `sort`, `diff`, `date`
+**Base Bash Commands (Read-only):**
+
+| Category | Commands |
+|----------|----------|
+| Navigation | ls, pwd, cat, head, tail, wc, find, grep |
+| Text Processing | tree, sort, diff, date, printf, uniq, cut, tr, tac, jq |
+| Git | git |
+| Process Query | which, ps, lsof |
+| Utility | echo, sleep |
 
 See [Security Details - Base Security](docs/security.md#base-security) for validation flow and command chain handling.
 
@@ -716,23 +728,24 @@ Sync mode restricts Base Security for verification-only operations:
 | Restriction | Base               | Sync                    |
 | ----------- | ------------------ | ----------------------- |
 | File Write  | None               | .autonoe-note.md only   |
-| Bash        | Status commands    | Verification layer only |
+| Bash        | Read-only commands | + Verification only     |
 | Playwright  | N/A                | Enabled (verify phase)  |
 
-**Command Layer:** Sync uses `verification` layer from each active profile:
+**Sync Command = Base Commands + Language Verification:**
 
-| Profile | Verification Commands |
-|---------|----------------------|
-| base    | ls, pwd, cat, head, tail, wc, find, grep, tree, sort, diff, date, git |
+| Profile | Commands |
+|---------|----------|
+| base    | All read-only commands (see Section 6.2) |
 | node    | npm, npx, bun, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome |
 | python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint |
 | ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard |
 | go      | go, gofmt, goimports, golangci-lint, staticcheck |
 
-**Notes:**
-- Package managers (npm, pip, bundle, etc.) are allowed for running test scripts (e.g., `npm test`, `bundle exec rspec`)
-- Auto-fix commands (e.g., `prettier --write`, `rubocop -a`, `black`) are excluded as they modify source code
-- User extensions (`allowCommands`) are ignored in sync mode for security
+**Restrictions:**
+- File modification commands (mkdir, cp) are excluded
+- User extensions (`allowCommands`) are ignored for security
+- Destructive commands (rm, mv) are always disabled
+- Auto-fix commands (e.g., `prettier --write`, `rubocop -a`, `black`) are excluded
 
 See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.
 
