@@ -18,7 +18,7 @@
       "package-name": "@autonoe/cli",
       "changelog-path": "CHANGELOG.md",
       "component": "cli",
-      "extra-files": ["src/run.ts"]
+      "extra-files": ["src/version.ts"]
     }
   },
   "plugins": [
