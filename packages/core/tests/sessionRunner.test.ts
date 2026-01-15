@@ -59,6 +59,83 @@ class ThrowingMockClient implements AgentClient {
 }
 
 describe('SessionRunner', () => {
+  describe('SC-S001: Project with SPEC.md', () => {
+    it('starts session successfully with valid project', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamEnd('done', 0.01)])
+      const factory = createMockClientFactory(client)
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        maxIterations: 1,
+      })
+      const result = await runner.run(factory)
+
+      expect(result.iterations).toBeGreaterThanOrEqual(1)
+      expect(result).toHaveProperty('totalDuration')
+      expect(result).toHaveProperty('totalCostUsd')
+    })
+  })
+
+  describe('SC-S003: All deliverables passed', () => {
+    it('completes session with success when all deliverables pass', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamEnd('done', 0.01)])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([
+          Deliverable.passed('DL-001', 'Test 1', ['AC1']),
+          Deliverable.passed('DL-002', 'Test 2', ['AC2']),
+        ]),
+      ])
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+      })
+      const result = await runner.run(factory, silentLogger, statusReader)
+
+      expect(result.exitReason).toBe('all_passed')
+      expect(result.deliverablesPassedCount).toBe(2)
+      expect(result.deliverablesTotalCount).toBe(2)
+    })
+  })
+
+  describe('SC-S005: Agent interruption', () => {
+    it('stops cleanly when interrupted during session', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([createMockStreamEnd('done', 0.01)])
+      const factory = createMockClientFactory(client)
+
+      const controller = new AbortController()
+      // Interrupt after a short delay
+      setTimeout(() => controller.abort(), 10)
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 100, // Long delay to allow interrupt
+      })
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+      ])
+
+      const result = await runner.run(
+        factory,
+        silentLogger,
+        statusReader,
+        undefined,
+        controller.signal,
+      )
+
+      expect(result.exitReason).toBe('interrupted')
+    })
+  })
+
   describe('run()', () => {
     it('returns a SessionRunnerResult', async () => {
       const client = new MockAgentClient()

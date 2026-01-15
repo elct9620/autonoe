@@ -49,7 +49,7 @@ describe('converters', () => {
   })
 
   describe('toStreamEvent', () => {
-    it('converts text block to AgentText', () => {
+    it('SC-AC003: converts text block to AgentText', () => {
       const block = { type: 'text', text: 'Hello' }
       const result = toStreamEvent(block)
       expect(result).toEqual({
@@ -67,7 +67,7 @@ describe('converters', () => {
       })
     })
 
-    it('converts tool_use block to ToolInvocation', () => {
+    it('SC-AC004: converts tool_use block to ToolInvocation', () => {
       const block = {
         type: 'tool_use',
         name: 'bash',
@@ -91,7 +91,7 @@ describe('converters', () => {
       })
     })
 
-    it('converts tool_result block with string content', () => {
+    it('SC-AC005: converts tool_result block with string content', () => {
       const block = {
         type: 'tool_result',
         tool_use_id: 'id-123',
@@ -148,7 +148,7 @@ describe('converters', () => {
       expect(result).toBeUndefined()
     })
 
-    it('converts thinking block to AgentThinking', () => {
+    it('SC-AC016: converts thinking block to AgentThinking', () => {
       const block = { type: 'thinking', thinking: 'Let me analyze this...' }
       const result = toStreamEvent(block)
       expect(result).toEqual({

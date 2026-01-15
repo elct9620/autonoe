@@ -80,7 +80,7 @@ describe('parseNumericOption', () => {
 })
 
 describe('parseThinkingOption', () => {
-  it('OPT-020: returns enabled with 8192 for boolean true', () => {
+  it('SC-V003/OPT-020: returns enabled with 8192 for boolean true', () => {
     const result = parseThinkingOption(true)
     expect(result).toEqual({ type: 'enabled', tokens: 8192 })
   })
@@ -90,7 +90,7 @@ describe('parseThinkingOption', () => {
     expect(result).toEqual({ type: 'enabled', tokens: 16384 })
   })
 
-  it('OPT-022: returns error for value below minimum', () => {
+  it('SC-V002/OPT-022: returns error for value below minimum', () => {
     const result = parseThinkingOption('512')
     expect(result).toEqual({
       type: 'error',
@@ -116,7 +116,7 @@ describe('parseThinkingOption', () => {
     })
   })
 
-  it('OPT-026: accepts minimum value 1024', () => {
+  it('SC-V001/OPT-026: accepts minimum value 1024', () => {
     const result = parseThinkingOption('1024')
     expect(result).toEqual({ type: 'enabled', tokens: 1024 })
   })

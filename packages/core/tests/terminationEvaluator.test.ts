@@ -427,5 +427,43 @@ describe('evaluateTermination', () => {
       // Should continue because sync mode is disabled
       expect(decision.action).toBe('continue')
     })
+
+    it('TE-084: sync session 2+ with initialized tracker checks all_verified', () => {
+      // Simulates sync command session 2+, where tracker has been initialized
+      // after session 1 completed
+      const tracker = VerificationTracker.fromIds(['DL-001', 'DL-002'])
+      tracker.verify('DL-001')
+      // DL-002 not yet verified
+
+      const state = createStateWithIterations(2) // Session 2
+
+      const decision = evaluateTermination(
+        createContext({
+          state,
+          verificationTracker: tracker,
+          options: { maxRetries: 3, useSyncTermination: true },
+        }),
+      )
+
+      // Should continue because not all deliverables are verified yet
+      expect(decision.action).toBe('continue')
+
+      // Now verify the remaining deliverable
+      tracker.verify('DL-002')
+
+      const decisionAfterVerify = evaluateTermination(
+        createContext({
+          state,
+          verificationTracker: tracker,
+          options: { maxRetries: 3, useSyncTermination: true },
+        }),
+      )
+
+      // Should terminate with all_verified
+      expect(decisionAfterVerify).toEqual({
+        action: 'terminate',
+        exitReason: 'all_verified',
+      })
+    })
   })
 })
