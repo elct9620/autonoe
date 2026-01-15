@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.0](https://github.com/elct9620/autonoe/compare/core-v0.2.0...core-v0.3.0) (2026-01-15)
+
+
+### Features
+
+* **agent:** add deprecate_deliverable tool with tool set mechanism ([a1b9b77](https://github.com/elct9620/autonoe/commit/a1b9b776fad882896d6f47760d09653547a6863c))
+* **core:** add AgentClient.dispose() for resource cleanup ([9b6ac90](https://github.com/elct9620/autonoe/commit/9b6ac90c14b08e487a7d61c8b7d699039ce9b533))
+* **core:** add execution mode support for sync command security ([fd4990f](https://github.com/elct9620/autonoe/commit/fd4990f737368cc8e5b9e4258c10e7671b16480f))
+* **core:** add progress feedback during quota wait ([942c408](https://github.com/elct9620/autonoe/commit/942c40873802aa1343e416b5bc7d7a74619d0500))
+* **core:** add sync and verify instruction types support ([9cb2280](https://github.com/elct9620/autonoe/commit/9cb2280442c6167f4f6002fe1891e6026ff7dc1f))
+* **core:** add sync and verify instructions for sync command ([e23b1ea](https://github.com/elct9620/autonoe/commit/e23b1ead41bfbb3343ba1b3a6eee0ea67c962ad3))
+* **core:** add tool failure fallback strategy to instructions ([2939fae](https://github.com/elct9620/autonoe/commit/2939fae3dac19f934beda56af7ac0558e6264aa7))
+* **core:** allow echo and sleep commands in sync mode ([03455b0](https://github.com/elct9620/autonoe/commit/03455b053e147823b378faf00b3c1315add3e3fc))
+* **core:** display verified count instead of passed for sync command ([ae23e82](https://github.com/elct9620/autonoe/commit/ae23e82103da1f85153cbc4c7046de693c95b89e))
+* **core:** implement verification tracker for sync command ([d907522](https://github.com/elct9620/autonoe/commit/d9075223a7880e5174baca8f31f220be82b99513))
+* **core:** support tiered allowCommands structure for mode-specific extensions ([1a25f3c](https://github.com/elct9620/autonoe/commit/1a25f3ca3fbe662d9dc22bc90ac4dbca60994c8e))
+
+
+### Bug Fixes
+
+* ensure hidden directories are copied in integration test setup ([1d20dff](https://github.com/elct9620/autonoe/commit/1d20dff26e3a214c42aee85f26d02b29a9dd332b))
+
 ## [0.2.0](https://github.com/elct9620/autonoe/compare/core-v0.1.0...core-v0.2.0) (2026-01-04)
 
 
