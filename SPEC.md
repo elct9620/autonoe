@@ -56,6 +56,15 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 | Reproducibility | Same SPEC.md produces consistent results |
 | Graceful degradation | Blocked deliverables documented, non-blocked pass |
 
+### 0.5 Non-goals
+
+| Non-goal | Rationale |
+|----------|-----------|
+| Specification authoring | User writes SPEC.md; Autonoe implements it |
+| Interactive development | Autonomous execution; human-in-loop handled by external tools |
+| Deployment automation | Scope ends at code generation and verification |
+| Runtime monitoring | Focus on development phase, not production operation |
+
 ---
 
 ## 1. System Overview `[Design]`
