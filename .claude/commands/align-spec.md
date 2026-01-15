@@ -15,7 +15,7 @@ The `<execute>ARGUMENTS</execute>` will execute the main procedure.
     <step>2. read SPEC.md to gather information about the specification</step>
     <step>3. explore the codebase to identify areas that may not align with the specification</step>
     <step>4. use git commands to check recent changes that might have affected alignment</step>
-    <step>5. identify discrepancies between the specification and the codebase</step>
+    <step>5. identify discrepancies between the specification and the codebase, e.g., missing features, redundant code, outdated implementations, or missing tests</step>
     <step>6. ask user to clarify with proposed changes or questions regarding the alignment</step>
     <condition if="codebase out of sync">
         <step>7. plan necessary updates to the codebase or specification to ensure alignment</step>
