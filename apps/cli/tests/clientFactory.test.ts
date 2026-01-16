@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { SandboxMode } from '../src/options'
+import {
+  sandboxEnabled,
+  sandboxDisabledByCli,
+  sandboxDisabledByEnv,
+  type SandboxMode,
+} from '../src/options'
 import { SECURITY_BASELINE } from '@autonoe/core'
 
 /**
@@ -23,7 +28,7 @@ describe('ClientFactory Sandbox Passthrough', () => {
 
   describe('run command', () => {
     it('SC-CF001: passes config.sandbox when sandboxMode is enabled', () => {
-      const sandboxMode = SandboxMode.enabled()
+      const sandboxMode = sandboxEnabled()
       const config = { sandbox: SECURITY_BASELINE.sandbox }
 
       const sandbox = resolveSandbox(sandboxMode, config)
@@ -35,7 +40,7 @@ describe('ClientFactory Sandbox Passthrough', () => {
     })
 
     it('SC-CF002: passes undefined when disabled via CLI', () => {
-      const sandboxMode = SandboxMode.disabledByCli()
+      const sandboxMode = sandboxDisabledByCli()
       const config = { sandbox: SECURITY_BASELINE.sandbox }
 
       const sandbox = resolveSandbox(sandboxMode, config)
@@ -44,7 +49,7 @@ describe('ClientFactory Sandbox Passthrough', () => {
     })
 
     it('SC-CF003: passes undefined when disabled via env', () => {
-      const sandboxMode = SandboxMode.disabledByEnv()
+      const sandboxMode = sandboxDisabledByEnv()
       const config = { sandbox: SECURITY_BASELINE.sandbox }
 
       const sandbox = resolveSandbox(sandboxMode, config)
@@ -55,7 +60,7 @@ describe('ClientFactory Sandbox Passthrough', () => {
 
   describe('sync command', () => {
     it('SC-CF004: passes config.sandbox when sandboxMode is enabled', () => {
-      const sandboxMode = SandboxMode.enabled()
+      const sandboxMode = sandboxEnabled()
       const config = { sandbox: SECURITY_BASELINE.sandbox }
 
       const sandbox = resolveSandbox(sandboxMode, config)
@@ -67,7 +72,7 @@ describe('ClientFactory Sandbox Passthrough', () => {
     })
 
     it('SC-CF005: passes undefined when disabled via env', () => {
-      const sandboxMode = SandboxMode.disabledByEnv()
+      const sandboxMode = sandboxDisabledByEnv()
       const config = { sandbox: SECURITY_BASELINE.sandbox }
 
       const sandbox = resolveSandbox(sandboxMode, config)

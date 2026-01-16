@@ -16,8 +16,7 @@ import {
   type ValidatedRunOptions,
   type ValidatedSyncOptions,
 } from './options'
-import { RunCommandHandler } from './runCommandHandler'
-import { SyncCommandHandler } from './syncCommandHandler'
+import { CommandHandler } from './commandHandler'
 import { ConsoleLogger } from './consoleLogger'
 import { VERSION } from './version'
 import {
@@ -26,7 +25,7 @@ import {
   createRunnerOptions,
 } from './factories'
 import { SyncInstructionSelector } from './syncInstructionSelector'
-import { AgentClientFactoryBuilder } from './agentClientFactoryBuilder'
+import { createAgentClientFactory } from './agentClientFactory'
 import { defaultProcessExit, type ProcessExitStrategy } from './processExit'
 
 // Re-export for backward compatibility
@@ -40,18 +39,6 @@ interface CommonDependencies {
   repository: FileDeliverableRepository
   onStatusChange: DeliverableStatusCallback
   abortController: AbortController
-}
-
-type ValidationResult<T> =
-  | { success: true; options: T }
-  | { success: false; error: string }
-
-interface CommandConfig<TOptions, TValidated extends { projectDir: string }> {
-  validate: (options: TOptions) => ValidationResult<TValidated>
-  createHandler: (
-    validated: TValidated,
-    deps: CommonDependencies,
-  ) => { execute(): Promise<void> }
 }
 
 async function initializeCommonDependencies(
@@ -78,60 +65,21 @@ async function initializeCommonDependencies(
   }
 }
 
-async function executeCommand<
-  TOptions extends { debug?: boolean },
-  TValidated extends { projectDir: string },
->(
-  options: TOptions,
-  config: CommandConfig<TOptions, TValidated>,
-  processExit: ProcessExitStrategy,
-): Promise<void> {
-  const logger = new ConsoleLogger({ debug: options.debug })
-
-  const validation = config.validate(options)
-  if (!validation.success) {
-    logger.error(validation.error)
-    processExit.exit(1)
-    return
-  }
-  const validatedOptions = validation.options
-
-  const prereqValidation = validatePrerequisites(validatedOptions.projectDir)
-  if (!prereqValidation.success) {
-    logger.error(prereqValidation.error)
-    processExit.exit(1)
-    return
-  }
-
-  const deps = await initializeCommonDependencies(
-    validatedOptions.projectDir,
-    logger,
-  )
-  const handler = config.createHandler(validatedOptions, deps)
-
-  try {
-    await handler.execute()
-  } catch (error) {
-    const err = error instanceof Error ? error : new Error(String(error))
-    logger.error(`Error: ${err.message}`, err)
-    processExit.exit(1)
-  }
-}
-
 function createRunHandler(
   options: ValidatedRunOptions,
   deps: CommonDependencies,
 ): { execute(): Promise<void> } {
-  const { factory: clientFactory } = new AgentClientFactoryBuilder()
-    .withProjectDir(options.projectDir)
-    .withConfig(deps.config)
-    .withRepository(deps.repository)
-    .withStatusChangeCallback(deps.onStatusChange)
-    .withSandboxMode(options.sandboxMode)
-    .withModel(options.model)
-    .withMaxThinkingTokens(options.maxThinkingTokens)
-    .withRunMode(options.allowDestructive)
-    .build()
+  const { factory: clientFactory } = createAgentClientFactory({
+    projectDir: options.projectDir,
+    config: deps.config,
+    repository: deps.repository,
+    sandboxMode: options.sandboxMode,
+    mode: 'run',
+    onStatusChange: deps.onStatusChange,
+    model: options.model,
+    maxThinkingTokens: options.maxThinkingTokens,
+    allowDestructive: options.allowDestructive,
+  })
 
   const runnerOptions = createRunnerOptions(options)
   const sessionRunner = new SessionRunner(runnerOptions)
@@ -141,8 +89,14 @@ function createRunHandler(
     instructionResolver,
   )
 
-  return new RunCommandHandler(
+  return new CommandHandler(
     options,
+    options.sandboxMode,
+    {
+      messagePrefix: 'Session',
+      startupMessage: 'Starting coding agent session...',
+      allowDestructive: options.allowDestructive,
+    },
     deps.logger,
     deps.repository,
     sessionRunner,
@@ -157,16 +111,16 @@ function createSyncHandler(
   deps: CommonDependencies,
 ): { execute(): Promise<void> } {
   const { factory: clientFactory, getVerificationTracker } =
-    new AgentClientFactoryBuilder()
-      .withProjectDir(options.projectDir)
-      .withConfig(deps.config)
-      .withRepository(deps.repository)
-      .withStatusChangeCallback(deps.onStatusChange)
-      .withSandboxMode(options.sandboxMode)
-      .withModel(options.model)
-      .withMaxThinkingTokens(options.maxThinkingTokens)
-      .withSyncMode()
-      .build()
+    createAgentClientFactory({
+      projectDir: options.projectDir,
+      config: deps.config,
+      repository: deps.repository,
+      sandboxMode: options.sandboxMode,
+      mode: 'sync',
+      onStatusChange: deps.onStatusChange,
+      model: options.model,
+      maxThinkingTokens: options.maxThinkingTokens,
+    })
 
   const runnerOptions = createRunnerOptions(options)
   const sessionRunner = new SessionRunner({
@@ -178,8 +132,14 @@ function createSyncHandler(
   const instructionResolver = createInstructionResolver(options.projectDir)
   const instructionSelector = new SyncInstructionSelector(instructionResolver)
 
-  return new SyncCommandHandler(
+  return new CommandHandler(
     options,
+    options.sandboxMode,
+    {
+      messagePrefix: 'Sync',
+      startupMessage: 'Starting sync mode...',
+      allowDestructive: false,
+    },
     deps.logger,
     deps.repository,
     sessionRunner,
@@ -196,11 +156,33 @@ export async function handleRunCommand(
   options: RunCommandOptions,
   processExit: ProcessExitStrategy = defaultProcessExit,
 ): Promise<void> {
-  await executeCommand(
-    options,
-    { validate: validateRunOptions, createHandler: createRunHandler },
-    processExit,
+  const logger = new ConsoleLogger({ debug: options.debug })
+
+  const validation = validateRunOptions(options)
+  if (!validation.success) {
+    logger.error(validation.error)
+    return processExit.exit(1)
+  }
+
+  const prereqValidation = validatePrerequisites(validation.options.projectDir)
+  if (!prereqValidation.success) {
+    logger.error(prereqValidation.error)
+    return processExit.exit(1)
+  }
+
+  const deps = await initializeCommonDependencies(
+    validation.options.projectDir,
+    logger,
   )
+  const handler = createRunHandler(validation.options, deps)
+
+  try {
+    await handler.execute()
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error))
+    logger.error(`Error: ${err.message}`, err)
+    processExit.exit(1)
+  }
 }
 
 /**
@@ -212,9 +194,31 @@ export async function handleSyncCommand(
   options: SyncCommandOptions,
   processExit: ProcessExitStrategy = defaultProcessExit,
 ): Promise<void> {
-  await executeCommand(
-    options,
-    { validate: validateSyncOptions, createHandler: createSyncHandler },
-    processExit,
+  const logger = new ConsoleLogger({ debug: options.debug })
+
+  const validation = validateSyncOptions(options)
+  if (!validation.success) {
+    logger.error(validation.error)
+    return processExit.exit(1)
+  }
+
+  const prereqValidation = validatePrerequisites(validation.options.projectDir)
+  if (!prereqValidation.success) {
+    logger.error(prereqValidation.error)
+    return processExit.exit(1)
+  }
+
+  const deps = await initializeCommonDependencies(
+    validation.options.projectDir,
+    logger,
   )
+  const handler = createSyncHandler(validation.options, deps)
+
+  try {
+    await handler.execute()
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error))
+    logger.error(`Error: ${err.message}`, err)
+    processExit.exit(1)
+  }
 }

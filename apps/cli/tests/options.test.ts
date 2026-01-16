@@ -11,7 +11,11 @@ import {
   validateSyncOptions,
   validateRunOptions,
   logSecurityWarnings,
-  SandboxMode,
+  sandboxEnabled,
+  sandboxDisabledByCli,
+  sandboxDisabledByEnv,
+  createSandboxMode,
+  getSandboxWarningMessage,
   checkSpecExists,
   validatePrerequisites,
 } from '../src/options'
@@ -122,37 +126,34 @@ describe('parseThinkingOption', () => {
   })
 })
 
-describe('SandboxMode', () => {
-  describe('static enabled()', () => {
+describe('SandboxMode factory functions', () => {
+  describe('sandboxEnabled()', () => {
     it('OPT-060: creates enabled sandbox mode', () => {
-      const mode = SandboxMode.enabled()
+      const mode = sandboxEnabled()
       expect(mode.disabled).toBe(false)
-      expect(mode.enabled).toBe(true)
       expect(mode.source).toBe('default')
     })
   })
 
-  describe('static disabledByCli()', () => {
+  describe('sandboxDisabledByCli()', () => {
     it('OPT-061: creates disabled sandbox mode with cli source', () => {
-      const mode = SandboxMode.disabledByCli()
+      const mode = sandboxDisabledByCli()
       expect(mode.disabled).toBe(true)
-      expect(mode.enabled).toBe(false)
       expect(mode.source).toBe('cli')
     })
   })
 
-  describe('static disabledByEnv()', () => {
+  describe('sandboxDisabledByEnv()', () => {
     it('OPT-062: creates disabled sandbox mode with env source', () => {
-      const mode = SandboxMode.disabledByEnv()
+      const mode = sandboxDisabledByEnv()
       expect(mode.disabled).toBe(true)
-      expect(mode.enabled).toBe(false)
       expect(mode.source).toBe('env')
     })
   })
 
-  describe('static fromCliAndEnv()', () => {
+  describe('createSandboxMode()', () => {
     it('OPT-063: CLI flag takes priority over env', () => {
-      const result = SandboxMode.fromCliAndEnv(false, {
+      const result = createSandboxMode(false, {
         AUTONOE_NO_SANDBOX: '1',
       })
       expect(result.disabled).toBe(true)
@@ -160,7 +161,7 @@ describe('SandboxMode', () => {
     })
 
     it('OPT-064: uses env when no CLI flag', () => {
-      const result = SandboxMode.fromCliAndEnv(undefined, {
+      const result = createSandboxMode(undefined, {
         AUTONOE_NO_SANDBOX: '1',
       })
       expect(result.disabled).toBe(true)
@@ -168,13 +169,13 @@ describe('SandboxMode', () => {
     })
 
     it('OPT-065: returns default when neither set', () => {
-      const result = SandboxMode.fromCliAndEnv(undefined, {})
+      const result = createSandboxMode(undefined, {})
       expect(result.disabled).toBe(false)
       expect(result.source).toBe('default')
     })
 
     it('OPT-066: env value must be exactly "1"', () => {
-      const result = SandboxMode.fromCliAndEnv(undefined, {
+      const result = createSandboxMode(undefined, {
         AUTONOE_NO_SANDBOX: 'true',
       })
       expect(result.disabled).toBe(false)
@@ -182,22 +183,22 @@ describe('SandboxMode', () => {
     })
   })
 
-  describe('getWarningMessage()', () => {
+  describe('getSandboxWarningMessage()', () => {
     it('OPT-067: returns undefined when enabled', () => {
-      const mode = SandboxMode.enabled()
-      expect(mode.getWarningMessage()).toBeUndefined()
+      const mode = sandboxEnabled()
+      expect(getSandboxWarningMessage(mode)).toBeUndefined()
     })
 
     it('OPT-068: returns CLI warning when disabled by CLI', () => {
-      const mode = SandboxMode.disabledByCli()
-      expect(mode.getWarningMessage()).toBe(
+      const mode = sandboxDisabledByCli()
+      expect(getSandboxWarningMessage(mode)).toBe(
         'Warning: SDK sandbox is disabled. System-level isolation is not enforced.',
       )
     })
 
     it('OPT-069: returns env warning when disabled by env', () => {
-      const mode = SandboxMode.disabledByEnv()
-      expect(mode.getWarningMessage()).toBe(
+      const mode = sandboxDisabledByEnv()
+      expect(getSandboxWarningMessage(mode)).toBe(
         'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.',
       )
     })
@@ -308,7 +309,7 @@ describe('validateRunOptions', () => {
 describe('logSecurityWarnings', () => {
   it('OPT-050: logs CLI sandbox warning when disabled via CLI', () => {
     const logger = createMockLogger()
-    logSecurityWarnings(logger, SandboxMode.disabledByCli(), false)
+    logSecurityWarnings(logger, sandboxDisabledByCli(), false)
     expect(logger.warn).toHaveBeenCalledWith(
       'Warning: SDK sandbox is disabled. System-level isolation is not enforced.',
     )
@@ -316,7 +317,7 @@ describe('logSecurityWarnings', () => {
 
   it('OPT-051: logs env sandbox warning when disabled via env', () => {
     const logger = createMockLogger()
-    logSecurityWarnings(logger, SandboxMode.disabledByEnv(), false)
+    logSecurityWarnings(logger, sandboxDisabledByEnv(), false)
     expect(logger.warn).toHaveBeenCalledWith(
       'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.',
     )
@@ -324,7 +325,7 @@ describe('logSecurityWarnings', () => {
 
   it('OPT-052: logs destructive warning when enabled', () => {
     const logger = createMockLogger()
-    logSecurityWarnings(logger, SandboxMode.enabled(), true)
+    logSecurityWarnings(logger, sandboxEnabled(), true)
     expect(logger.warn).toHaveBeenCalledWith(
       'Warning: Destructive commands (rm, mv) enabled. Files can be deleted within project directory.',
     )
@@ -332,13 +333,13 @@ describe('logSecurityWarnings', () => {
 
   it('OPT-053: logs nothing when sandbox enabled and no destructive', () => {
     const logger = createMockLogger()
-    logSecurityWarnings(logger, SandboxMode.enabled(), false)
+    logSecurityWarnings(logger, sandboxEnabled(), false)
     expect(logger.warn).not.toHaveBeenCalled()
   })
 
   it('OPT-054: logs both warnings when sandbox disabled and destructive enabled', () => {
     const logger = createMockLogger()
-    logSecurityWarnings(logger, SandboxMode.disabledByCli(), true)
+    logSecurityWarnings(logger, sandboxDisabledByCli(), true)
     expect(logger.warn).toHaveBeenCalledTimes(2)
   })
 })
@@ -419,7 +420,7 @@ describe('validateCommonOptions', () => {
     const result = validateCommonOptions({ projectDir: tempDir }, {})
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.options.sandboxMode.enabled).toBe(true)
+      expect(result.options.sandboxMode.disabled).toBe(false)
       expect(result.options.sandboxMode.source).toBe('default')
     }
   })
@@ -452,7 +453,7 @@ describe('validateSyncOptions', () => {
     const result = validateSyncOptions({ projectDir: tempDir }, {})
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.options.sandboxMode.enabled).toBe(true)
+      expect(result.options.sandboxMode.disabled).toBe(false)
     }
   })
 })

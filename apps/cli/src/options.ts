@@ -93,97 +93,73 @@ export type OptionsValidationResult = RunOptionsValidationResult
 export type SandboxSource = 'cli' | 'env' | 'default'
 
 /**
- * SandboxMode Value Object - immutable representation of sandbox configuration
- *
- * Uses static factory methods to create instances in specific states.
- * Constructor is private to ensure valid states only.
+ * SandboxMode - immutable representation of sandbox configuration
  */
-export class SandboxMode {
-  private constructor(
-    private readonly _disabled: boolean,
-    private readonly _source: SandboxSource,
-  ) {}
+export interface SandboxMode {
+  readonly disabled: boolean
+  readonly source: SandboxSource
+}
 
-  /**
-   * Whether sandbox is disabled
-   */
-  get disabled(): boolean {
-    return this._disabled
+/**
+ * Create enabled sandbox mode (default state)
+ */
+export function sandboxEnabled(): SandboxMode {
+  return { disabled: false, source: 'default' }
+}
+
+/**
+ * Create disabled sandbox mode from CLI flag
+ */
+export function sandboxDisabledByCli(): SandboxMode {
+  return { disabled: true, source: 'cli' }
+}
+
+/**
+ * Create disabled sandbox mode from environment variable
+ */
+export function sandboxDisabledByEnv(): SandboxMode {
+  return { disabled: true, source: 'env' }
+}
+
+/**
+ * Determine sandbox mode from CLI flag and environment variable
+ * Priority: CLI flag > env var > default (enabled)
+ */
+export function createSandboxMode(
+  cliSandbox: boolean | undefined,
+  env: NodeJS.ProcessEnv,
+): SandboxMode {
+  if (cliSandbox === false) {
+    return sandboxDisabledByCli()
   }
 
-  /**
-   * Whether sandbox is enabled (convenience getter)
-   */
-  get enabled(): boolean {
-    return !this._disabled
+  if (env.AUTONOE_NO_SANDBOX === '1') {
+    return sandboxDisabledByEnv()
   }
 
-  /**
-   * Source of sandbox determination
-   */
-  get source(): SandboxSource {
-    return this._source
-  }
+  return sandboxEnabled()
+}
 
-  /**
-   * Create enabled sandbox mode (default state)
-   */
-  static enabled(): SandboxMode {
-    return new SandboxMode(false, 'default')
-  }
-
-  /**
-   * Create disabled sandbox mode from CLI flag
-   */
-  static disabledByCli(): SandboxMode {
-    return new SandboxMode(true, 'cli')
-  }
-
-  /**
-   * Create disabled sandbox mode from environment variable
-   */
-  static disabledByEnv(): SandboxMode {
-    return new SandboxMode(true, 'env')
-  }
-
-  /**
-   * Determine sandbox mode from CLI flag and environment variable
-   * Priority: CLI flag > env var > default (enabled)
-   */
-  static fromCliAndEnv(
-    cliSandbox: boolean | undefined,
-    env: NodeJS.ProcessEnv,
-  ): SandboxMode {
-    if (cliSandbox === false) {
-      return SandboxMode.disabledByCli()
-    }
-
-    if (env.AUTONOE_NO_SANDBOX === '1') {
-      return SandboxMode.disabledByEnv()
-    }
-
-    return SandboxMode.enabled()
-  }
-
-  /**
-   * Get the warning message for disabled sandbox, if any
-   * Returns undefined if sandbox is enabled
-   */
-  getWarningMessage(): string | undefined {
-    if (!this._disabled) {
-      return undefined
-    }
-
-    if (this._source === 'cli') {
-      return 'Warning: SDK sandbox is disabled. System-level isolation is not enforced.'
-    }
-
-    if (this._source === 'env') {
-      return 'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.'
-    }
-
+/**
+ * Get the warning message for disabled sandbox, if any
+ * Returns undefined if sandbox is enabled
+ */
+export function getSandboxWarningMessage(
+  mode: SandboxMode,
+): string | undefined {
+  if (!mode.disabled) {
     return undefined
   }
+
+  if (mode.source === 'cli') {
+    return 'Warning: SDK sandbox is disabled. System-level isolation is not enforced.'
+  }
+
+  if (mode.source === 'env') {
+    return 'Warning: SDK sandbox disabled via AUTONOE_NO_SANDBOX environment variable.'
+  }
+
+  return undefined
 }
 
 /**
@@ -290,7 +266,7 @@ export function validateCommonOptions(
 
   // Create SandboxMode from environment variable only
   // CLI flag override is handled by validateRunOptions
-  const sandboxMode = SandboxMode.fromCliAndEnv(undefined, env)
+  const sandboxMode = createSandboxMode(undefined, env)
 
   return {
     success: true,
@@ -333,7 +309,7 @@ export function validateRunOptions(
   // Override sandboxMode if CLI flag is provided
   const sandboxMode =
     options.sandbox === false
-      ? SandboxMode.disabledByCli()
+      ? sandboxDisabledByCli()
       : commonResult.options.sandboxMode
 
   return {
@@ -355,7 +331,7 @@ export function logSecurityWarnings(
   sandboxMode: SandboxMode,
   allowDestructive: boolean,
 ): void {
-  const sandboxWarning = sandboxMode.getWarningMessage()
+  const sandboxWarning = getSandboxWarningMessage(sandboxMode)
   if (sandboxWarning) {
     logger.warn(sandboxWarning)
   }

@@ -14,7 +14,11 @@ import {
   createStatusChangeCallback,
   createRunnerOptions,
 } from '../src/factories'
-import { SandboxMode, type ValidatedRunOptions } from '../src/options'
+import {
+  sandboxEnabled,
+  sandboxDisabledByCli,
+  type ValidatedRunOptions,
+} from '../src/options'
 import { ConsoleWaitProgressReporter } from '../src/consoleWaitProgressReporter'
 
 describe('createInstructionResolver', () => {
@@ -163,7 +167,7 @@ describe('createRunnerOptions', () => {
   const baseOptions: ValidatedRunOptions = {
     projectDir: '/test/project',
     debug: false,
-    sandboxMode: SandboxMode.enabled(),
+    sandboxMode: sandboxEnabled(),
     waitForQuota: false,
     allowDestructive: false,
   }
@@ -210,7 +214,7 @@ describe('createRunnerOptions', () => {
     const options: ValidatedRunOptions = {
       ...baseOptions,
       debug: true,
-      sandboxMode: SandboxMode.disabledByCli(),
+      sandboxMode: sandboxDisabledByCli(),
       allowDestructive: true,
     }
 

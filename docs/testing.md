@@ -231,13 +231,13 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 
 ### ClientFactory Sandbox Passthrough
 
-| ID       | Command | sandboxMode           | Expected sandbox to Client    |
-| -------- | ------- | --------------------- | ----------------------------- |
-| SC-CF001 | run     | SandboxMode.enabled() | config.sandbox (enabled=true) |
-| SC-CF002 | run     | disabledByCli()       | undefined                     |
-| SC-CF003 | run     | disabledByEnv()       | undefined                     |
-| SC-CF004 | sync    | SandboxMode.enabled() | config.sandbox (enabled=true) |
-| SC-CF005 | sync    | disabledByEnv()       | undefined                     |
+| ID       | Command | sandboxMode            | Expected sandbox to Client    |
+| -------- | ------- | ---------------------- | ----------------------------- |
+| SC-CF001 | run     | sandboxEnabled()       | config.sandbox (enabled=true) |
+| SC-CF002 | run     | sandboxDisabledByCli() | undefined                     |
+| SC-CF003 | run     | sandboxDisabledByEnv() | undefined                     |
+| SC-CF004 | sync    | sandboxEnabled()       | config.sandbox (enabled=true) |
+| SC-CF005 | sync    | sandboxDisabledByEnv() | undefined                     |
 
 ### Autonoe Protection
 
@@ -264,7 +264,11 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | DU-006 | 3661000    | `1h 1m 1s`      |
 | DU-007 | 3660000    | `1h 1m`         |
 
-### RunCommandHandler
+### CommandHandler
+
+Generic command handler for run and sync modes. Configured via `CommandHandlerConfig`.
+
+**Run Mode (RCH tests):**
 
 | ID      | Input                        | Expected Output                 |
 | ------- | ---------------------------- | ------------------------------- |
@@ -282,7 +286,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | RCH-022 | allowDestructive enabled     | Logs destructive warning        |
 | RCH-023 | sandbox enabled, no destruct | No warnings logged              |
 
-### SyncCommandHandler
+**Sync Mode (SCH tests):**
 
 | ID      | Input                     | Expected Output                      |
 | ------- | ------------------------- | ------------------------------------ |
@@ -352,22 +356,21 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | FAC-031 | createRunnerOptions        | all optional fields        | Complete options with all fields      |
 | FAC-032 | createRunnerOptions        | debug/sandbox/destructive  | Excludes CLI-only options from runner |
 
-### AgentClientFactoryBuilder
+### createAgentClientFactory
 
-| ID      | Input                           | Expected Output                         |
-| ------- | ------------------------------- | --------------------------------------- |
-| AFB-001 | withRunMode(false)              | Factory with run-specific hooks         |
-| AFB-002 | withRunMode(true)               | Factory with allowDestructive enabled   |
-| AFB-003 | withSyncMode()                  | Factory with sync-specific hooks        |
-| AFB-004 | withSyncMode() + verify session | VerificationTracker lazy initialization |
-| AFB-010 | Missing projectDir              | Throws configuration error              |
-| AFB-011 | Missing config                  | Throws configuration error              |
-| AFB-012 | Missing repository              | Throws configuration error              |
-| AFB-013 | Missing mode (no run/sync)      | Throws configuration error              |
-| AFB-020 | withSandboxMode(enabled)        | Client receives sandbox config          |
-| AFB-021 | withSandboxMode(disabled)       | Client receives undefined sandbox       |
-| AFB-030 | withModel('claude-sonnet-4')    | Client configured with model            |
-| AFB-031 | withMaxThinkingTokens(8192)     | Client configured with thinking tokens  |
+| ID      | Input                               | Expected Output                         |
+| ------- | ----------------------------------- | --------------------------------------- |
+| ACF-001 | mode: 'run', allowDestructive=false | Factory with run-specific hooks         |
+| ACF-002 | mode: 'run', allowDestructive=true  | Factory with allowDestructive enabled   |
+| ACF-003 | mode: 'sync'                        | Factory with sync-specific hooks        |
+| ACF-004 | mode: 'sync' + verify session       | VerificationTracker lazy initialization |
+| ACF-020 | sandboxMode: enabled                | Client receives sandbox config          |
+| ACF-021 | sandboxMode: disabled               | Client receives undefined sandbox       |
+| ACF-030 | model: 'claude-sonnet-4'            | Client configured with model            |
+| ACF-031 | maxThinkingTokens: 8192             | Client configured with thinking tokens  |
+| ACF-032 | onStatusChange callback             | Callback passed to MCP server           |
+
+Note: Required field validation (projectDir, config, repository, sandboxMode, mode) is enforced by TypeScript at compile time.
 
 ### CLI Command Functions (handleRunCommand / handleSyncCommand)
 

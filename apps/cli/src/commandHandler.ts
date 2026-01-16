@@ -5,26 +5,30 @@ import type {
   DeliverableStatusReader,
   Logger,
 } from '@autonoe/core'
-import { logSecurityWarnings, type ValidatedSyncOptions } from './options'
+import type { SandboxMode, ValidatedCommonOptions } from './options'
+import { logSecurityWarnings } from './options'
 import { VERSION } from './version'
 import { handleSessionResult } from './resultHandler'
 
 export { VERSION }
 
+export interface CommandHandlerConfig {
+  messagePrefix: string
+  startupMessage: string
+  allowDestructive: boolean
+}
+
 /**
- * Handler for the 'sync' command
+ * Generic command handler for run and sync commands
  *
- * Uses the same pattern as RunCommandHandler: single SessionRunner loop
- * with dynamic instruction selection via InstructionSelector.
- *
- * Session 1 uses 'sync' instruction to parse SPEC.md and sync deliverables.
- * Session 2+ uses 'verify' instruction to validate implementation.
- *
- * @see SPEC.md Section 8.3
+ * Receives all dependencies via constructor (DI pattern).
+ * Entrypoint is responsible for initializing and injecting dependencies.
  */
-export class SyncCommandHandler {
+export class CommandHandler {
   constructor(
-    private readonly options: ValidatedSyncOptions,
+    private readonly options: ValidatedCommonOptions,
+    private readonly sandboxMode: SandboxMode,
+    private readonly config: CommandHandlerConfig,
     private readonly logger: Logger,
     private readonly repository: DeliverableStatusReader,
     private readonly sessionRunner: SessionRunner,
@@ -33,9 +37,6 @@ export class SyncCommandHandler {
     private readonly abortSignal: AbortSignal,
   ) {}
 
-  /**
-   * Execute the sync command
-   */
   async execute(): Promise<void> {
     this.logSecurityWarnings()
     this.logStartupInfo()
@@ -49,18 +50,24 @@ export class SyncCommandHandler {
     )
 
     this.logger.info('')
-    handleSessionResult(result, this.logger, { messagePrefix: 'Sync' })
+    handleSessionResult(result, this.logger, {
+      messagePrefix: this.config.messagePrefix,
+    })
   }
 
   private logSecurityWarnings(): void {
-    logSecurityWarnings(this.logger, this.options.sandboxMode, false)
+    logSecurityWarnings(
+      this.logger,
+      this.sandboxMode,
+      this.config.allowDestructive,
+    )
   }
 
   private logStartupInfo(): void {
-    const { logger, options } = this
+    const { logger, options, config } = this
     logger.info(`Autonoe v${VERSION}`)
     logger.info('')
-    logger.info('Starting sync mode...')
+    logger.info(config.startupMessage)
     logger.info(`  Working directory: ${options.projectDir}`)
     if (options.maxIterations) {
       logger.info(`  Max iterations: ${options.maxIterations}`)
