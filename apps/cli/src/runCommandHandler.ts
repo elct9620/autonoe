@@ -1,6 +1,5 @@
 import type {
   SessionRunner,
-  SessionRunnerResult,
   AgentClientFactory,
   InstructionSelector,
   DeliverableStatusReader,
@@ -9,6 +8,7 @@ import type {
 import type { ValidatedRunOptions } from './options'
 import { logSecurityWarnings } from './options'
 import { VERSION } from './version'
+import { handleSessionResult } from './resultHandler'
 
 export { VERSION }
 
@@ -45,7 +45,7 @@ export class RunCommandHandler {
     )
 
     this.logger.info('')
-    this.handleResult(result)
+    handleSessionResult(result, this.logger, { messagePrefix: 'Session' })
   }
 
   private logSecurityWarnings(): void {
@@ -72,28 +72,5 @@ export class RunCommandHandler {
       logger.info(`  Thinking: ${options.maxThinkingTokens} tokens`)
     }
     logger.info('')
-  }
-
-  private handleResult(result: SessionRunnerResult): void {
-    switch (result.exitReason) {
-      case 'interrupted':
-        this.logger.info('Session interrupted by user')
-        break
-      case 'quota_exceeded':
-        this.logger.error('Session stopped: quota exceeded')
-        process.exit(1)
-      case 'max_retries_exceeded':
-        this.logger.error(`Session stopped: ${result.error}`)
-        process.exit(1)
-      case 'all_passed':
-        this.logger.info('Session completed successfully')
-        break
-      case 'all_blocked':
-        this.logger.error('All deliverables blocked')
-        process.exit(1)
-      case 'max_iterations':
-        this.logger.info('Session stopped: max iterations reached')
-        break
-    }
   }
 }

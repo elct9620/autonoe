@@ -1,6 +1,5 @@
 import type {
   SessionRunner,
-  SessionRunnerResult,
   AgentClientFactory,
   InstructionSelector,
   DeliverableStatusReader,
@@ -8,6 +7,7 @@ import type {
 } from '@autonoe/core'
 import { logSecurityWarnings, type ValidatedSyncOptions } from './options'
 import { VERSION } from './version'
+import { handleSessionResult } from './resultHandler'
 
 export { VERSION }
 
@@ -49,7 +49,7 @@ export class SyncCommandHandler {
     )
 
     this.logger.info('')
-    this.handleResult(result)
+    handleSessionResult(result, this.logger, { messagePrefix: 'Sync' })
   }
 
   private logSecurityWarnings(): void {
@@ -72,28 +72,5 @@ export class SyncCommandHandler {
       logger.info(`  Thinking: ${options.maxThinkingTokens} tokens`)
     }
     logger.info('')
-  }
-
-  private handleResult(result: SessionRunnerResult): void {
-    switch (result.exitReason) {
-      case 'interrupted':
-        this.logger.info('Sync interrupted by user')
-        break
-      case 'quota_exceeded':
-        this.logger.error('Sync stopped: quota exceeded')
-        process.exit(1)
-      case 'max_retries_exceeded':
-        this.logger.error(`Sync stopped: ${result.error}`)
-        process.exit(1)
-      case 'all_passed':
-        this.logger.info('Sync completed: all deliverables verified')
-        break
-      case 'all_blocked':
-        this.logger.error('All deliverables blocked')
-        process.exit(1)
-      case 'max_iterations':
-        this.logger.info('Sync stopped: max iterations reached')
-        break
-    }
   }
 }

@@ -13,6 +13,8 @@ import {
   validatePrerequisites,
   type RunCommandOptions,
   type SyncCommandOptions,
+  type ValidatedRunOptions,
+  type ValidatedSyncOptions,
 } from './options'
 import { RunCommandHandler } from './runCommandHandler'
 import { SyncCommandHandler } from './syncCommandHandler'
@@ -40,6 +42,18 @@ interface CommonDependencies {
   abortController: AbortController
 }
 
+type ValidationResult<T> =
+  | { success: true; options: T }
+  | { success: false; error: string }
+
+interface CommandConfig<TOptions, TValidated extends { projectDir: string }> {
+  validate: (options: TOptions) => ValidationResult<TValidated>
+  createHandler: (
+    validated: TValidated,
+    deps: CommonDependencies,
+  ) => { execute(): Promise<void> }
+}
+
 async function initializeCommonDependencies(
   projectDir: string,
   logger: Logger,
@@ -64,72 +78,36 @@ async function initializeCommonDependencies(
   }
 }
 
-/**
- * Handle the 'run' command
- *
- * Entrypoint that:
- * 1. Validates options
- * 2. Initializes all dependencies
- * 3. Injects dependencies into Handler
- */
-export async function handleRunCommand(
-  options: RunCommandOptions,
-  processExit: ProcessExitStrategy = defaultProcessExit,
+async function executeCommand<
+  TOptions extends { debug?: boolean },
+  TValidated extends { projectDir: string },
+>(
+  options: TOptions,
+  config: CommandConfig<TOptions, TValidated>,
+  processExit: ProcessExitStrategy,
 ): Promise<void> {
   const logger = new ConsoleLogger({ debug: options.debug })
 
-  // 1. Validate options
-  const validation = validateRunOptions(options)
+  const validation = config.validate(options)
   if (!validation.success) {
     logger.error(validation.error)
     processExit.exit(1)
+    return
   }
   const validatedOptions = validation.options
 
-  // 1.5. Check prerequisites (SPEC.md exists)
   const prereqValidation = validatePrerequisites(validatedOptions.projectDir)
   if (!prereqValidation.success) {
     logger.error(prereqValidation.error)
     processExit.exit(1)
+    return
   }
 
-  // 2. Initialize all dependencies
   const deps = await initializeCommonDependencies(
     validatedOptions.projectDir,
     logger,
   )
-
-  const { factory: clientFactory } = new AgentClientFactoryBuilder()
-    .withProjectDir(validatedOptions.projectDir)
-    .withConfig(deps.config)
-    .withRepository(deps.repository)
-    .withStatusChangeCallback(deps.onStatusChange)
-    .withSandboxMode(validatedOptions.sandboxMode)
-    .withModel(validatedOptions.model)
-    .withMaxThinkingTokens(validatedOptions.maxThinkingTokens)
-    .withRunMode(validatedOptions.allowDestructive)
-    .build()
-
-  const runnerOptions = createRunnerOptions(validatedOptions)
-  const sessionRunner = new SessionRunner(runnerOptions)
-
-  const instructionResolver = createInstructionResolver(
-    validatedOptions.projectDir,
-  )
-  const instructionSelector = new DefaultInstructionSelector(
-    instructionResolver,
-  )
-
-  // 3. Inject dependencies into Handler
-  const handler = new RunCommandHandler(
-    validatedOptions,
-    logger,
-    deps.repository,
-    sessionRunner,
-    clientFactory,
-    instructionSelector,
-    deps.abortController.signal,
-  )
+  const handler = config.createHandler(validatedOptions, deps)
 
   try {
     await handler.execute()
@@ -140,16 +118,93 @@ export async function handleRunCommand(
   }
 }
 
+function createRunHandler(
+  options: ValidatedRunOptions,
+  deps: CommonDependencies,
+): { execute(): Promise<void> } {
+  const { factory: clientFactory } = new AgentClientFactoryBuilder()
+    .withProjectDir(options.projectDir)
+    .withConfig(deps.config)
+    .withRepository(deps.repository)
+    .withStatusChangeCallback(deps.onStatusChange)
+    .withSandboxMode(options.sandboxMode)
+    .withModel(options.model)
+    .withMaxThinkingTokens(options.maxThinkingTokens)
+    .withRunMode(options.allowDestructive)
+    .build()
+
+  const runnerOptions = createRunnerOptions(options)
+  const sessionRunner = new SessionRunner(runnerOptions)
+
+  const instructionResolver = createInstructionResolver(options.projectDir)
+  const instructionSelector = new DefaultInstructionSelector(
+    instructionResolver,
+  )
+
+  return new RunCommandHandler(
+    options,
+    deps.logger,
+    deps.repository,
+    sessionRunner,
+    clientFactory,
+    instructionSelector,
+    deps.abortController.signal,
+  )
+}
+
+function createSyncHandler(
+  options: ValidatedSyncOptions,
+  deps: CommonDependencies,
+): { execute(): Promise<void> } {
+  const { factory: clientFactory, getVerificationTracker } =
+    new AgentClientFactoryBuilder()
+      .withProjectDir(options.projectDir)
+      .withConfig(deps.config)
+      .withRepository(deps.repository)
+      .withStatusChangeCallback(deps.onStatusChange)
+      .withSandboxMode(options.sandboxMode)
+      .withModel(options.model)
+      .withMaxThinkingTokens(options.maxThinkingTokens)
+      .withSyncMode()
+      .build()
+
+  const runnerOptions = createRunnerOptions(options)
+  const sessionRunner = new SessionRunner({
+    ...runnerOptions,
+    useSyncTermination: true,
+    getVerificationTracker,
+  })
+
+  const instructionResolver = createInstructionResolver(options.projectDir)
+  const instructionSelector = new SyncInstructionSelector(instructionResolver)
+
+  return new SyncCommandHandler(
+    options,
+    deps.logger,
+    deps.repository,
+    sessionRunner,
+    clientFactory,
+    instructionSelector,
+    deps.abortController.signal,
+  )
+}
+
+/**
+ * Handle the 'run' command
+ */
+export async function handleRunCommand(
+  options: RunCommandOptions,
+  processExit: ProcessExitStrategy = defaultProcessExit,
+): Promise<void> {
+  await executeCommand(
+    options,
+    { validate: validateRunOptions, createHandler: createRunHandler },
+    processExit,
+  )
+}
+
 /**
  * Handle the 'sync' command
- *
- * Entrypoint that:
- * 1. Validates options
- * 2. Initializes all dependencies
- * 3. Injects dependencies into Handler
- *
- * Uses the same pattern as run command: single SessionRunner with
- * dynamic instruction selection via SyncInstructionSelector.
  *
  * @see SPEC.md Section 8.3
  */
@@ -157,71 +212,9 @@ export async function handleSyncCommand(
   options: SyncCommandOptions,
   processExit: ProcessExitStrategy = defaultProcessExit,
 ): Promise<void> {
-  const logger = new ConsoleLogger({ debug: options.debug })
-
-  // 1. Validate options
-  const validation = validateSyncOptions(options)
-  if (!validation.success) {
-    logger.error(validation.error)
-    processExit.exit(1)
-  }
-  const validatedOptions = validation.options
-
-  // 1.5. Check prerequisites (SPEC.md exists)
-  const prereqValidation = validatePrerequisites(validatedOptions.projectDir)
-  if (!prereqValidation.success) {
-    logger.error(prereqValidation.error)
-    processExit.exit(1)
-  }
-
-  // 2. Initialize all dependencies
-  const deps = await initializeCommonDependencies(
-    validatedOptions.projectDir,
-    logger,
+  await executeCommand(
+    options,
+    { validate: validateSyncOptions, createHandler: createSyncHandler },
+    processExit,
   )
-
-  const { factory: clientFactory, getVerificationTracker } =
-    new AgentClientFactoryBuilder()
-      .withProjectDir(validatedOptions.projectDir)
-      .withConfig(deps.config)
-      .withRepository(deps.repository)
-      .withStatusChangeCallback(deps.onStatusChange)
-      .withSandboxMode(validatedOptions.sandboxMode)
-      .withModel(validatedOptions.model)
-      .withMaxThinkingTokens(validatedOptions.maxThinkingTokens)
-      .withSyncMode()
-      .build()
-
-  // Single SessionRunner instance (same pattern as run command)
-  const runnerOptions = createRunnerOptions(validatedOptions)
-  const sessionRunner = new SessionRunner({
-    ...runnerOptions,
-    useSyncTermination: true,
-    getVerificationTracker,
-  })
-
-  // SyncInstructionSelector: session 1 uses 'sync', session 2+ uses 'verify'
-  const instructionResolver = createInstructionResolver(
-    validatedOptions.projectDir,
-  )
-  const instructionSelector = new SyncInstructionSelector(instructionResolver)
-
-  // 3. Inject dependencies into Handler (same pattern as run command)
-  const handler = new SyncCommandHandler(
-    validatedOptions,
-    logger,
-    deps.repository,
-    sessionRunner,
-    clientFactory,
-    instructionSelector,
-    deps.abortController.signal,
-  )
-
-  try {
-    await handler.execute()
-  } catch (error) {
-    const err = error instanceof Error ? error : new Error(String(error))
-    logger.error(`Error: ${err.message}`, err)
-    processExit.exit(1)
-  }
 }
