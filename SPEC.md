@@ -450,13 +450,23 @@ project/
 
 ### 5.2 Status Tracking (.autonoe/status.json)
 
+**Deliverable ID Format:**
+
+| Element | Specification |
+|---------|---------------|
+| Pattern | `{TYPE}-{NNN}` (e.g., UI-001, BE-042, API-003) |
+| Type Prefix | Agent-defined based on deliverable category (UI, BE, FE, API, UX, STYLE, etc.) |
+| Generation | Agent creates ID when calling `create` tool |
+| Uniqueness | Unique within status.json |
+| Immutability | ID never changes after creation |
+
 ```json
 {
   "createdAt": "YYYY-MM-DD",
   "updatedAt": "YYYY-MM-DD",
   "deliverables": [
     {
-      "id": "DL-001",
+      "id": "UI-001",
       "description": "User Authentication",
       "acceptanceCriteria": [
         "User can login with email and password",
