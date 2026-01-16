@@ -7,6 +7,15 @@ description: Review specification with spec-knowledge skill
 
 The `<execute>ARGUMENTS</execute>` will execute the main procedure.
 
+# Consistent
+
+The specification review should ensure consistency in terminology, formatting, and structure throughout the document.
+
+- Naming Consistency: Ensure that terms and names are used consistently.
+- Formatting: Check for uniform formatting styles (headings, lists, code blocks).
+- Structure: Verify that sections and subsections follow a logical order.
+- Clarity: Ensure that the specification is clear and unambiguous.
+
 # Definition
 
 <procedure name="main">
