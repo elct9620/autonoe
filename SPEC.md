@@ -11,7 +11,7 @@
   - [Domain Model](docs/domain-model.md) `[External]`
 - [3. Core Interfaces](#3-core-interfaces-design)
   - [Interfaces](docs/interfaces.md) `[External]`
-- [4. Browser Automation](#4-browser-automation-coding-agent-design)
+- [4. Browser Automation](#4-browser-automation-design)
 - [5. State Management](#5-state-management-design)
 - [6. Security](#6-security-design)
   - [Security Details](docs/security.md) `[External]`
@@ -370,7 +370,7 @@ Retry behavior:
 
 ---
 
-## 4. Browser Automation (Coding Agent) `[Design]`
+## 4. Browser Automation `[Design]`
 
 Autonoe supports Browser Automation for verifying UI behavior and executing E2E tests.
 
