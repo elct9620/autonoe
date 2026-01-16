@@ -352,6 +352,70 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | FAC-031 | createRunnerOptions        | all optional fields        | Complete options with all fields      |
 | FAC-032 | createRunnerOptions        | debug/sandbox/destructive  | Excludes CLI-only options from runner |
 
+### AgentClientFactoryBuilder
+
+| ID      | Input                           | Expected Output                         |
+| ------- | ------------------------------- | --------------------------------------- |
+| AFB-001 | withRunMode(false)              | Factory with run-specific hooks         |
+| AFB-002 | withRunMode(true)               | Factory with allowDestructive enabled   |
+| AFB-003 | withSyncMode()                  | Factory with sync-specific hooks        |
+| AFB-004 | withSyncMode() + verify session | VerificationTracker lazy initialization |
+| AFB-010 | Missing projectDir              | Throws configuration error              |
+| AFB-011 | Missing config                  | Throws configuration error              |
+| AFB-012 | Missing repository              | Throws configuration error              |
+| AFB-013 | Missing mode (no run/sync)      | Throws configuration error              |
+| AFB-020 | withSandboxMode(enabled)        | Client receives sandbox config          |
+| AFB-021 | withSandboxMode(disabled)       | Client receives undefined sandbox       |
+| AFB-030 | withModel('claude-sonnet-4')    | Client configured with model            |
+| AFB-031 | withMaxThinkingTokens(8192)     | Client configured with thinking tokens  |
+
+### CLI Command Functions (handleRunCommand / handleSyncCommand)
+
+**Validation Scenarios:**
+
+| ID      | Command | Input                    | Expected Output                   |
+| ------- | ------- | ------------------------ | --------------------------------- |
+| CMD-001 | run     | Non-existent project dir | Exit code 1, error message logged |
+| CMD-002 | run     | SPEC.md missing          | Exit code 1, error message logged |
+| CMD-003 | sync    | Non-existent project dir | Exit code 1, error message logged |
+| CMD-004 | sync    | SPEC.md missing          | Exit code 1, error message logged |
+
+**Successful Execution:**
+
+| ID      | Command | Input                     | Expected Output                     |
+| ------- | ------- | ------------------------- | ----------------------------------- |
+| CMD-010 | run     | Valid project, all pass   | Exit code 0, success message logged |
+| CMD-011 | run     | Valid project, partial    | Appropriate exit based on result    |
+| CMD-012 | sync    | Valid project, all verify | Exit code 0, success message logged |
+| CMD-013 | sync    | Valid project, partial    | Appropriate exit based on result    |
+
+**Signal Handling:**
+
+| ID      | Command | Input                   | Expected Output                    |
+| ------- | ------- | ----------------------- | ---------------------------------- |
+| CMD-020 | run     | SIGINT during execution | Graceful shutdown, interrupted log |
+| CMD-021 | sync    | SIGINT during execution | Graceful shutdown, interrupted log |
+| CMD-022 | run     | AbortController.abort() | Handler receives abort signal      |
+| CMD-023 | sync    | AbortController.abort() | Handler receives abort signal      |
+
+**Error Handling:**
+
+| ID      | Command | Input                | Expected Output                   |
+| ------- | ------- | -------------------- | --------------------------------- |
+| CMD-030 | run     | Handler throws error | Exit code 1, error message logged |
+| CMD-031 | sync    | Handler throws error | Exit code 1, error message logged |
+| CMD-032 | run     | Config loading fails | Exit code 1, error message logged |
+| CMD-033 | sync    | Config loading fails | Exit code 1, error message logged |
+
+**Dependency Injection (ProcessExitStrategy):**
+
+| ID      | Command | Input                       | Expected Output                  |
+| ------- | ------- | --------------------------- | -------------------------------- |
+| CMD-040 | run     | Mock ProcessExitStrategy    | Exit captured, no process.exit() |
+| CMD-041 | sync    | Mock ProcessExitStrategy    | Exit captured, no process.exit() |
+| CMD-042 | run     | Default ProcessExitStrategy | process.exit() called            |
+| CMD-043 | sync    | Default ProcessExitStrategy | process.exit() called            |
+
 ---
 
 ## Integration Test Scenarios `[Consistency]`

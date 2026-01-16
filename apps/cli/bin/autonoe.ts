@@ -1,8 +1,7 @@
 #!/usr/bin/env bun
 
 import cac from 'cac'
-import { handleRunCommand, VERSION } from '../src/run.ts'
-import { handleSyncCommand } from '../src/sync.ts'
+import { handleRunCommand, handleSyncCommand, VERSION } from '../src/index.ts'
 
 const cli = cac('autonoe')
 
