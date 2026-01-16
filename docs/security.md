@@ -8,10 +8,10 @@ This document contains detailed security configurations for Autonoe's security l
 
 Autonoe provides two execution modes built on a shared Base Security:
 
-| Mode   | Purpose        | Base | Modifications                             |
-| ------ | -------------- | ---- | ----------------------------------------- |
-| `run`  | Implementation | ✓    | + Write, + Profiles, + Playwright         |
-| `sync` | Verification   | ✓    | - Write scope, - Bash scope, - Playwright |
+| Mode   | Purpose        | Base | Modifications                                      |
+| ------ | -------------- | ---- | -------------------------------------------------- |
+| `run`  | Implementation | ✓    | + Write, + Profiles, + Playwright                  |
+| `sync` | Verification   | ✓    | - Write scope, - Bash scope, + Playwright (verify) |
 
 ---
 
