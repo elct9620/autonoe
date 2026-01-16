@@ -125,6 +125,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 | SC-C006 | User tries to remove .autonoe protection | Security baseline re-applied       |
 | SC-C007 | Verify sandbox configuration             | enabled=true, autoAllow=true       |
 | SC-C008 | Profile array normalization              | Array passed through unchanged     |
+| SC-C009 | Temp directory permissions               | /tmp/\*\* in security baseline     |
 
 ### Prerequisites
 

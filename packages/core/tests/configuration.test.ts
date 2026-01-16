@@ -292,6 +292,41 @@ describe('Configuration', () => {
     })
   })
 
+  describe('SC-C009: Temp directory permissions', () => {
+    it('includes /tmp read permission in security baseline', async () => {
+      const config = await loadConfig(testDir)
+      expect(config.permissions.allow).toContain('Read(/tmp/**)')
+    })
+
+    it('includes /tmp write permission in security baseline', async () => {
+      const config = await loadConfig(testDir)
+      expect(config.permissions.allow).toContain('Write(/tmp/**)')
+    })
+
+    it('includes /tmp edit permission in security baseline', async () => {
+      const config = await loadConfig(testDir)
+      expect(config.permissions.allow).toContain('Edit(/tmp/**)')
+    })
+
+    it('includes /tmp glob permission in security baseline', async () => {
+      const config = await loadConfig(testDir)
+      expect(config.permissions.allow).toContain('Glob(/tmp/**)')
+    })
+
+    it('includes /tmp grep permission in security baseline', async () => {
+      const config = await loadConfig(testDir)
+      expect(config.permissions.allow).toContain('Grep(/tmp/**)')
+    })
+
+    it('SECURITY_BASELINE has all /tmp permissions', () => {
+      expect(SECURITY_BASELINE.permissions.allow).toContain('Read(/tmp/**)')
+      expect(SECURITY_BASELINE.permissions.allow).toContain('Write(/tmp/**)')
+      expect(SECURITY_BASELINE.permissions.allow).toContain('Edit(/tmp/**)')
+      expect(SECURITY_BASELINE.permissions.allow).toContain('Glob(/tmp/**)')
+      expect(SECURITY_BASELINE.permissions.allow).toContain('Grep(/tmp/**)')
+    })
+  })
+
   describe('SC-C007: Verify sandbox configuration', () => {
     it('sandbox enabled is always true', async () => {
       const config = await loadConfig(testDir)
