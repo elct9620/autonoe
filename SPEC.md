@@ -201,7 +201,7 @@ Core interface definitions. For detailed specifications, see [Interfaces](docs/i
 | Logger | Logging output | info(), debug(), warn(), error() |
 | PreToolUseHook | Tool call interception | callback() |
 
-### 3.2 Deliverable Tools
+### 3.2 Autonoe Tool
 
 | Tool | Purpose |
 |------|---------|
@@ -223,7 +223,7 @@ Core interface definitions. For detailed specifications, see [Interfaces](docs/i
 Each session receives only the tools needed for its instruction type.
 AgentClientFactory creates a fresh MCP server with the appropriate tool set per session.
 
-For detailed tool specifications, see [Interfaces - Deliverable Tools](docs/interfaces.md#deliverable-management-tools).
+For detailed tool specifications, see [Interfaces - Autonoe Tool](docs/interfaces.md#autonoe-tool).
 
 ### 3.3 Dependency Injection
 
@@ -509,7 +509,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 | State                | Writer                       | Reader | Description                        |
 | -------------------- | ---------------------------- | ------ | ---------------------------------- |
 | Project Files        | Coding Agent (Direct)        | Both   | Application source code            |
-| .autonoe/status.json | Deliverable Tools            | Both   | Deliverable tracking               |
+| .autonoe/status.json | Autonoe Tool                 | Both   | Deliverable tracking               |
 | .autonoe-note.md    | Coding Agent (Direct)        | Both   | Session handoff notes (agent-maintained) |
 | Git History          | Coding Agent (Direct)        | Both   | Version control history            |
 

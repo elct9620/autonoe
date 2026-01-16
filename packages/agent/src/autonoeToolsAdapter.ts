@@ -32,7 +32,7 @@ export type DeliverableToolName =
 /**
  * Predefined tool sets for different instruction types
  * Each instruction type has a specific set of tools available
- * @see SPEC.md Section 3.2 Deliverable Tools
+ * @see SPEC.md Section 3.2 Autonoe Tool
  */
 export const DELIVERABLE_TOOL_SETS = {
   initializer: ['create'] as const,

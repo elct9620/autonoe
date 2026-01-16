@@ -30,7 +30,7 @@ For the main specification, see [SPEC.md](../SPEC.md).
 | SC-S016 | Session success after error        | Error counter reset, loop continues     |
 | SC-S017 | Session returns failure result     | Retry logic triggered                   |
 
-SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
+SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 
 ### TerminationEvaluator
 

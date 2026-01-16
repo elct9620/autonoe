@@ -1,7 +1,7 @@
 /**
  * VerificationTracker - In-memory tracker for sync command verification
  * Tracks which deliverables have been checked by the agent
- * @see SPEC.md Section 3.2 Deliverable Tools
+ * @see SPEC.md Section 3.2 Autonoe Tool
  */
 
 import type { DeliverableStatus } from './deliverableStatus'

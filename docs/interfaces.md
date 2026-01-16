@@ -178,6 +178,7 @@ interface SessionRunnerResult {
 // Exit reason type for unified exit point
 type ExitReason =
   | 'all_passed'
+  | 'all_verified'
   | 'all_blocked'
   | 'max_iterations'
   | 'quota_exceeded'
@@ -322,7 +323,7 @@ All duration displays use human-readable format with zero-value parts omitted:
 
 ---
 
-## Deliverable Management Tools
+## Autonoe Tool
 
 ### Architecture
 
