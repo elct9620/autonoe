@@ -25,7 +25,7 @@ Shared security capabilities for all execution modes.
 | --------------- | ---------- | ---------------------- |
 | File Read       | YES        | All files              |
 | Git             | YES        | Full access            |
-| Autonoe Tool    | YES        | status.json management |
+| Autonoe Tool    | YES        | Deliverable management |
 | .autonoe/ Write | NO         | Block direct writes    |
 
 ### Base Bash Commands
@@ -292,11 +292,11 @@ Sync mode restricts Base Security for verification-only operations. Prevents mod
 | Bash          | LIMITED   | Base read-only + profiles (no file ops) |
 | Git           | YES       | Full access                             |
 | Playwright    | YES       | Verification phase                      |
-| Autonoe Tool  | YES       | status.json updates                     |
+| Autonoe Tool  | YES       | Deliverable management                  |
 
 ### Allowed Bash Commands
 
-Sync uses **Base read-only commands** plus **all language profile commands**. The only difference from run mode is that file operation commands (mkdir, cp) are excluded.
+Sync uses **Base read-only commands** plus **all language profile commands**. The only difference from run command is that file operation commands (mkdir, cp) are excluded.
 
 | Profile | Commands                                                                                                   |
 | ------- | ---------------------------------------------------------------------------------------------------------- |
@@ -315,7 +315,7 @@ Sync uses **Base read-only commands** plus **all language profile commands**. Th
 | `"python"`         | Base read-only + Python profile            |
 | `["node", "go"]`   | Base read-only + Node profile + Go profile |
 
-**Note:** User extensions (`allowCommands`) with `sync` key are respected in sync mode.
+**Note:** User extensions (`allowCommands`) with `sync` key are respected in sync command.
 
 ### Blocked Commands
 

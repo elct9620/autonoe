@@ -540,16 +540,16 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-| Setting          | Source            | Layer | Customizable   |
-| ---------------- | ----------------- | ----- | -------------- |
-| sandbox          | Hardcoded         | SDK   | --no-sandbox   |
-| profile          | ALL by default    | Hook  | Restrict       |
-| allowCommands    | (none)            | Hook  | User-defined (tiered) |
-| allowPkillTargets| (none)            | Hook  | User-defined   |
-| permissions      | baseline + user   | SDK   | Merge          |
-| allowedTools     | baseline + user   | SDK   | Merge          |
-| hooks            | baseline + user   | Hook  | Merge          |
-| mcpServers       | Hardcoded + user  | SDK   | User priority  |
+| Setting          | Source            | Layer      | Customizable   |
+| ---------------- | ----------------- | ---------- | -------------- |
+| sandbox          | Hardcoded         | SDK        | --no-sandbox   |
+| profile          | ALL by default    | PreToolUse | Restrict       |
+| allowCommands    | (none)            | PreToolUse | User-defined (tiered) |
+| allowPkillTargets| (none)            | PreToolUse | User-defined   |
+| permissions      | baseline + user   | SDK        | Merge          |
+| allowedTools     | baseline + user   | SDK        | Merge          |
+| hooks            | baseline + user   | PreToolUse | Merge          |
+| mcpServers       | Hardcoded + user  | SDK        | User priority  |
 
 **Command Architecture:**
 
@@ -570,9 +570,9 @@ Command Extensions
 
 **Language Profile Commands:**
 
-Language profile commands (node, python, ruby, go) are available in both modes. The only difference is that `sync` excludes file operation commands (mkdir, cp).
+Language profile commands (node, python, ruby, go) are available in both commands. The only difference is that `sync` excludes file operation commands (mkdir, cp).
 
-**Mode × Profile → Commands:**
+**Command × Profile → Commands:**
 
 | Command | Base Commands | Extensions |
 |---------|---------------|------------|
@@ -627,19 +627,19 @@ Language profile commands (node, python, ruby, go) are available in both modes. 
 }
 ```
 
-| Field             | Type                        | Layer | Description                             |
-| ----------------- | --------------------------- | ----- | --------------------------------------- |
-| profile           | `string \| string[]`        | Hook  | Restrict to specific language profiles  |
-| allowCommands     | `string[] \| TieredAllowCommands` | Hook  | Additional bash commands (see below)    |
-| allowPkillTargets | `string[]`                  | Hook  | Additional pkill target processes       |
-| permissions.allow | `string[]`                  | SDK   | SDK permission rules (e.g., WebFetch)   |
-| allowedTools      | `string[]`                  | SDK   | Additional SDK tools to enable          |
-| mcpServers        | `Record<string, McpServer>` | SDK   | Additional MCP servers                  |
+| Field             | Type                        | Layer      | Description                             |
+| ----------------- | --------------------------- | ---------- | --------------------------------------- |
+| profile           | `string \| string[]`        | PreToolUse | Restrict to specific language profiles  |
+| allowCommands     | `string[] \| TieredAllowCommands` | PreToolUse | Additional bash commands (see below)    |
+| allowPkillTargets | `string[]`                  | PreToolUse | Additional pkill target processes       |
+| permissions.allow | `string[]`                  | SDK        | SDK permission rules (e.g., WebFetch)   |
+| allowedTools      | `string[]`                  | SDK        | Additional SDK tools to enable          |
+| mcpServers        | `Record<string, McpServer>` | SDK        | Additional MCP servers                  |
 
 **allowCommands Structure:**
 
-| Format | run mode | sync mode |
-|--------|----------|-----------|
+| Format | run command | sync command |
+|--------|-------------|--------------|
 | `["cmd"]` (legacy) | ✅ Allowed | ❌ Ignored |
 | `{ base: ["cmd"] }` | ✅ Allowed | ✅ Allowed |
 | `{ run: ["cmd"] }` | ✅ Allowed | ❌ Ignored |
@@ -716,7 +716,7 @@ Base security capabilities shared by all execution modes:
 | ------------------- | ---------- | ------------------------ |
 | File Read           | YES        | All files                |
 | Git                 | YES        | Full access              |
-| Autonoe Tool        | YES        | status.json management   |
+| Autonoe Tool        | YES        | Deliverable management   |
 | Bash                | LIMITED    | Read-only commands only  |
 | .autonoe/ Write     | NO         | Block direct writes      |
 

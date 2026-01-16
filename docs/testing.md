@@ -266,7 +266,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 
 ### CommandHandler
 
-Generic command handler for run and sync modes. Configured via `CommandHandlerConfig`.
+Generic command handler for run and sync commands. Configured via `CommandHandlerConfig`.
 
 **Run Mode (RCH tests):**
 
