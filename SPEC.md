@@ -276,7 +276,7 @@ The sync command uses an in-memory verification tracker to ensure all deliverabl
 | unverified | Coding Agent has not yet checked this deliverable     |
 
 **Initialization:**
-- Tracker is initialized **after session 1 (sync instruction) completes**
+- Tracker is initialized **after session 1 (`sync` instruction) completes**
 - Populated with all active deliverable IDs from the updated status.json
 - Session 1 does NOT check termination conditions (always proceeds to session 2)
 
@@ -908,8 +908,8 @@ Uses Common Options only. No additional options.
 
 - Reads SPEC.md and uses Coding Agent to parse deliverables
 - Creates or updates `.autonoe/status.json`
-- Uses verify instruction to validate existing code against deliverables
-- **Read-only for source code: does not modify project source files, but may commit status changes via git**
+- Uses `verify` instruction to validate existing code against deliverables
+- **Read-only for source code: Coding Agent does not modify project source files, but may commit status changes via git**
 
 **Status Sync Strategy:**
 
@@ -918,15 +918,15 @@ Uses Common Options only. No additional options.
 | status.json not exists | Create new file, all deliverables as pending |
 | New deliverable in SPEC | Add to status.json with pending status |
 | Removed deliverable from SPEC | Mark `deprecatedAt` date, retain record |
-| Verified as passed | AI validates code and marks passed=true |
+| Verified as passed | Coding Agent validates code and marks passed=true |
 
 #### 8.3.3 Execution Flow
 
 ```
-SPEC.md ──► sync instruction ──► Create/Update status.json
-                                           │
-                                           ▼
-                               verify instruction ──► Validate & Mark passed
+SPEC.md ──► `sync` instruction ──► Create/Update status.json
+                                              │
+                                              ▼
+                                  `verify` instruction ──► Validate & Mark passed
 ```
 
 **Session Structure (Single SessionRunner Loop):**
@@ -951,7 +951,7 @@ The sync command uses a single SessionRunner loop with dynamic instruction selec
 
 | .autonoe/status.json | --max-iterations | Action                                  |
 | -------------------- | ---------------- | --------------------------------------- |
-| NOT EXISTS           | any              | Use initializerInstruction, continue    |
+| NOT EXISTS           | any              | Use `initializer` instruction, continue |
 | EXISTS (none passed) | any              | Run all deliverables                    |
 | EXISTS (partial)     | any              | Run deliverables with passed=false      |
 | EXISTS (all passed)  | any              | Exit loop, success                      |
