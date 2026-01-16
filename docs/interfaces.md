@@ -15,9 +15,9 @@ Detailed interface definitions for Autonoe. For overview, see [SPEC.md Section 3
 
 **AgentClientFactory** - Factory for creating AgentClient instances
 
-| Method | Signature           | Description                     |
-| ------ | ------------------- | ------------------------------- |
-| create | `() => AgentClient` | Create new AgentClient instance |
+| Method | Signature                                           | Description                     |
+| ------ | --------------------------------------------------- | ------------------------------- |
+| create | `(instructionName: InstructionName) => AgentClient` | Create new AgentClient instance |
 
 **AgentClientOptions** - Constructor options for implementations
 
@@ -148,7 +148,7 @@ interface SessionRunner {
     clientFactory: AgentClientFactory,
     logger: Logger,
     statusReader?: DeliverableStatusReader,
-    instructionResolver?: InstructionResolver,
+    instructionSelector?: InstructionSelector,
     signal?: AbortSignal,
   ): Promise<SessionRunnerResult>
 }
@@ -163,23 +163,31 @@ interface SessionRunnerOptions {
   maxRetries?: number // default: 3, max consecutive errors before exit
 }
 
-interface SessionRunnerResult {
+// SessionRunnerResult - Discriminated union by exitReason
+type SessionRunnerResult = {
   iterations: number
   deliverablesPassedCount: number
   deliverablesTotalCount: number
   blockedCount: number
+  verifiedCount: number // sync mode verification count
+  verifiedTotalCount: number // sync mode total to verify
   totalDuration: number // displayed using formatDuration()
   totalCostUsd: number // sum of all session costs
-  interrupted?: boolean
-  quotaExceeded?: boolean
-  error?: string // error message when maxRetries exceeded
-}
+} & (
+  | { exitReason: 'all_passed' }
+  | { exitReason: 'all_blocked' }
+  | { exitReason: 'all_verified' }
+  | { exitReason: 'max_iterations' }
+  | { exitReason: 'quota_exceeded' }
+  | { exitReason: 'interrupted' }
+  | { exitReason: 'max_retries_exceeded'; error: string }
+)
 
 // Exit reason type for unified exit point
 type ExitReason =
   | 'all_passed'
-  | 'all_verified'
   | 'all_blocked'
+  | 'all_verified'
   | 'max_iterations'
   | 'quota_exceeded'
   | 'interrupted'
