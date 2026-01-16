@@ -126,6 +126,56 @@ describe('converters', () => {
       })
     })
 
+    it('SC-AC006: handles tool_result array content with missing text', () => {
+      const block = {
+        type: 'tool_result',
+        tool_use_id: 'id-456',
+        content: [
+          { type: 'text' },
+          { type: 'text', text: 'has text' },
+          { type: 'image' },
+        ],
+        is_error: false,
+      }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'stream_tool_response',
+        toolUseId: 'id-456',
+        content: 'has text',
+        isError: false,
+      })
+    })
+
+    it('SC-AC007: handles tool_result with empty array content', () => {
+      const block = {
+        type: 'tool_result',
+        tool_use_id: 'id-789',
+        content: [],
+        is_error: false,
+      }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'stream_tool_response',
+        toolUseId: 'id-789',
+        content: '',
+        isError: false,
+      })
+    })
+
+    it('SC-AC008: handles tool_result with undefined content', () => {
+      const block = {
+        type: 'tool_result',
+        tool_use_id: 'id-abc',
+      }
+      const result = toStreamEvent(block)
+      expect(result).toEqual({
+        type: 'stream_tool_response',
+        toolUseId: 'id-abc',
+        content: '',
+        isError: false,
+      })
+    })
+
     it('converts tool_result with is_error true', () => {
       const block = {
         type: 'tool_result',
@@ -254,6 +304,49 @@ describe('converters', () => {
         type: 'result',
         subtype: 'error_during_execution',
         errors: [],
+      }
+      const result = toSessionEnd(sdkMessage)
+      expect(result.outcome).toBe('execution_error')
+      if (result.outcome === 'execution_error') {
+        expect(result.messages).toEqual([])
+      }
+    })
+
+    it('SC-AC017: converts error_max_structured_output_retries to execution_error', () => {
+      const sdkMessage = {
+        type: 'result',
+        subtype: 'error_max_structured_output_retries',
+        errors: ['Structured output validation failed'],
+      }
+      const result = toSessionEnd(sdkMessage)
+      expect(result).toEqual({
+        type: 'stream_end',
+        outcome: 'execution_error',
+        messages: ['Structured output validation failed'],
+        totalCostUsd: undefined,
+      })
+    })
+
+    it('SC-AC018: converts unknown subtype to execution_error', () => {
+      const sdkMessage = {
+        type: 'result',
+        subtype: 'unknown_future_subtype',
+        errors: ['Unknown error'],
+        total_cost_usd: 0.1,
+      }
+      const result = toSessionEnd(sdkMessage)
+      expect(result).toEqual({
+        type: 'stream_end',
+        outcome: 'execution_error',
+        messages: ['Unknown error'],
+        totalCostUsd: 0.1,
+      })
+    })
+
+    it('SC-AC019: handles missing errors array in error result', () => {
+      const sdkMessage = {
+        type: 'result',
+        subtype: 'error_during_execution',
       }
       const result = toSessionEnd(sdkMessage)
       expect(result.outcome).toBe('execution_error')

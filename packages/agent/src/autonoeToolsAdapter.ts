@@ -169,6 +169,24 @@ export async function handleVerifyDeliverable(
 }
 
 /**
+ * Handler for verify tool when tracker is not available
+ * Returns error response indicating tracker is missing
+ */
+export function createVerifyWithoutTrackerResponse(): McpToolOutput {
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: JSON.stringify({
+          success: false,
+          message: 'Verification tracker not available',
+        }),
+      },
+    ],
+  }
+}
+
+/**
  * Filter options for list_deliverables tool
  */
 export type ListDeliverableFilter = {
@@ -314,17 +332,7 @@ export function createDeliverableMcpServer(
     },
     (input) => {
       if (!verificationTracker) {
-        return Promise.resolve({
-          content: [
-            {
-              type: 'text' as const,
-              text: JSON.stringify({
-                success: false,
-                message: 'Verification tracker not available',
-              }),
-            },
-          ],
-        })
+        return Promise.resolve(createVerifyWithoutTrackerResponse())
       }
       return handleVerifyDeliverable(verificationTracker, input)
     },

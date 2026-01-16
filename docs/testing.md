@@ -95,6 +95,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 | DL-T014 | deprecate  | Invalid deliverable ID         | Error: deliverable not found       |
 | DL-T015 | deprecate  | Already deprecated ID          | Error: already deprecated          |
 | DL-T016 | deprecate  | Empty deliverable ID           | Error: ID is required              |
+| DL-T017 | verify     | Tracker not available          | MCP error: tracker not available   |
 | DL-T020 | list       | filter: status=pending         | Only pending deliverables          |
 | DL-T021 | list       | filter: status=passed          | Only passed deliverables           |
 | DL-T022 | list       | filter: status=blocked         | Only blocked deliverables          |
@@ -178,21 +179,27 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 
 ### Claude Agent Client
 
-| ID       | Function             | Input                      | Expected Output                  |
-| -------- | -------------------- | -------------------------- | -------------------------------- |
-| SC-AC001 | toSdkMcpServers      | Empty record               | Empty record                     |
-| SC-AC002 | toSdkMcpServers      | Server with args           | SDK format preserved             |
-| SC-AC003 | toStreamEvent        | text block                 | StreamEventText                  |
-| SC-AC004 | toStreamEvent        | tool_use block             | StreamEventToolInvocation        |
-| SC-AC005 | toStreamEvent        | tool_result block          | StreamEventToolResponse          |
-| SC-AC016 | toStreamEvent        | thinking block             | StreamEventThinking              |
-| SC-AC011 | toStreamEvents       | SDK message with content   | Generator\<StreamEvent\>         |
-| SC-AC012 | toSessionEnd         | Result with total_cost_usd | StreamEventEnd with totalCostUsd |
-| SC-AC013 | detectClaudeCodePath | claude found               | Path string                      |
-| SC-AC014 | detectClaudeCodePath | claude not found           | undefined                        |
-| SC-AC020 | wrapSdkQuery         | SDK throws error           | Yields stream_error event        |
-| SC-AC021 | wrapSdkQuery         | Error with stack           | stream_error includes stack      |
-| SC-AC022 | wrapSdkQuery         | Non-Error thrown           | stream_error with String(error)  |
+| ID       | Function             | Input                              | Expected Output                     |
+| -------- | -------------------- | ---------------------------------- | ----------------------------------- |
+| SC-AC001 | toSdkMcpServers      | Empty record                       | Empty record                        |
+| SC-AC002 | toSdkMcpServers      | Server with args                   | SDK format preserved                |
+| SC-AC003 | toStreamEvent        | text block                         | StreamEventText                     |
+| SC-AC004 | toStreamEvent        | tool_use block                     | StreamEventToolInvocation           |
+| SC-AC005 | toStreamEvent        | tool_result block                  | StreamEventToolResponse             |
+| SC-AC006 | toStreamEvent        | tool_result array, missing text    | Defaults text to empty string       |
+| SC-AC007 | toStreamEvent        | tool_result with empty array       | Empty content string                |
+| SC-AC008 | toStreamEvent        | tool_result with undefined content | Empty content string                |
+| SC-AC011 | toStreamEvents       | SDK message with content           | Generator\<StreamEvent\>            |
+| SC-AC012 | toSessionEnd         | Result with total_cost_usd         | StreamEventEnd with totalCostUsd    |
+| SC-AC013 | detectClaudeCodePath | claude found                       | Path string                         |
+| SC-AC014 | detectClaudeCodePath | claude not found                   | undefined                           |
+| SC-AC016 | toStreamEvent        | thinking block                     | StreamEventThinking                 |
+| SC-AC017 | toSessionEnd         | error_max_structured_output        | execution_error with messages       |
+| SC-AC018 | toSessionEnd         | unknown subtype                    | execution_error (default case)      |
+| SC-AC019 | toSessionEnd         | error without errors array         | execution_error with empty messages |
+| SC-AC020 | wrapSdkQuery         | SDK throws error                   | Yields stream_error event           |
+| SC-AC021 | wrapSdkQuery         | Error with stack                   | stream_error includes stack         |
+| SC-AC022 | wrapSdkQuery         | Non-Error thrown                   | stream_error with String(error)     |
 
 ### Hook Callback Matchers
 
@@ -228,6 +235,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 | SC-CAC052 | preToolUseHooks   | `[hook]`                             | `hooks.PreToolUse` converted      |
 | SC-CAC060 | maxThinkingTokens | undefined                            | `maxThinkingTokens` undefined     |
 | SC-CAC061 | maxThinkingTokens | `8192`                               | `maxThinkingTokens` set           |
+| SC-CAC070 | dispose           | client.dispose()                     | Resolves without error            |
 
 ### ClientFactory Sandbox Passthrough
 

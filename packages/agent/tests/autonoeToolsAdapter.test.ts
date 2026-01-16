@@ -13,6 +13,7 @@ import {
   handleVerifyDeliverable,
   handleListDeliverables,
   createDeliverableMcpServer,
+  createVerifyWithoutTrackerResponse,
   DELIVERABLE_TOOL_SETS,
 } from '../src/autonoeToolsAdapter'
 
@@ -535,6 +536,21 @@ describe('autonoeToolsAdapter', () => {
         expect(parsedResult.success).toBe(false)
         expect(parsedResult.message).toContain('not found')
         expect(tracker.isVerified('DL-999')).toBe(false)
+      })
+    })
+  })
+
+  describe('createVerifyWithoutTrackerResponse', () => {
+    describe('DL-T017: tracker not available error response', () => {
+      it('returns MCP-compatible error response', () => {
+        const result = createVerifyWithoutTrackerResponse()
+
+        expect(result.content).toHaveLength(1)
+        expect(result.content[0]?.type).toBe('text')
+
+        const parsedResult = JSON.parse(result.content[0]?.text ?? '')
+        expect(parsedResult.success).toBe(false)
+        expect(parsedResult.message).toBe('Verification tracker not available')
       })
     })
   })

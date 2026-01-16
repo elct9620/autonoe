@@ -447,4 +447,16 @@ describe('ClaudeAgentClient', () => {
       })
     })
   })
+
+  describe('dispose()', () => {
+    describe('SC-CAC070: dispose returns void', () => {
+      it('completes without error', async () => {
+        const { ClaudeAgentClient } = await import('../src/claudeAgentClient')
+        const client = new ClaudeAgentClient({ cwd: '/project' })
+
+        // dispose() should complete without throwing
+        await expect(client.dispose()).resolves.toBeUndefined()
+      })
+    })
+  })
 })
