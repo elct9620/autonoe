@@ -25,7 +25,7 @@ Shared security capabilities for all execution modes.
 | --------------- | ---------- | ---------------------- |
 | File Read       | YES        | All files              |
 | Git             | YES        | Full access            |
-| autonoe         | YES        | status.json management |
+| Autonoe Tool    | YES        | status.json management |
 | .autonoe/ Write | NO         | Block direct writes    |
 
 ### Base Bash Commands
@@ -292,7 +292,7 @@ Sync mode restricts Base Security for verification-only operations. Prevents mod
 | Bash          | LIMITED   | Base read-only + profiles (no file ops) |
 | Git           | YES       | Full access                             |
 | Playwright    | YES       | Verification phase                      |
-| autonoe       | YES       | status.json updates                     |
+| Autonoe Tool  | YES       | status.json updates                     |
 
 ### Allowed Bash Commands
 

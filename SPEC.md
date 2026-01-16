@@ -716,7 +716,7 @@ Base security capabilities shared by all execution modes:
 | ------------------- | ---------- | ------------------------ |
 | File Read           | YES        | All files                |
 | Git                 | YES        | Full access              |
-| autonoe | YES        | status.json management   |
+| Autonoe Tool        | YES        | status.json management   |
 | Bash                | LIMITED    | Read-only commands only  |
 | .autonoe/ Write     | NO         | Block direct writes      |
 
@@ -970,7 +970,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | Bash (safe)          | YES       |
 | Git                  | YES       |
 | Playwright           | YES       |
-| autonoe  | YES       |
+| Autonoe Tool         | YES       |
 
 ### 9.3 Configuration Merge
 
@@ -1027,7 +1027,7 @@ Tools available to the Coding Agent (configured by Autonoe):
 | File Edit           | LIMITED   | .autonoe-note.md only              |
 | Bash                | LIMITED   | Test/lint/build commands only      |
 | Git                 | YES       | Full access                        |
-| autonoe | YES       | status.json updates                |
+| Autonoe Tool        | YES       | status.json updates                |
 | Playwright          | YES       | Verify phase only                  |
 
 See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.

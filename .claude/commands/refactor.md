@@ -40,4 +40,3 @@ Following is ordered by priority:
 # Task
 
 <execute name="main">$ARGUMENTS</execute>
-

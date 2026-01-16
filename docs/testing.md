@@ -75,7 +75,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 7.1 behavior.
 | SC-X025 | `mv src.ts ../dst.ts`     | true             | Denied (escape) |
 | SC-X026 | `mv ../src.ts dst.ts`     | true             | Denied (escape) |
 
-### Deliverable Tools (autonoe)
+### Autonoe Tool
 
 | ID      | Tool       | Input                          | Expected Output                    |
 | ------- | ---------- | ------------------------------ | ---------------------------------- |
