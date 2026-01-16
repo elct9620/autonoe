@@ -26,6 +26,7 @@ Shared security capabilities for all execution modes.
 | File Read       | YES        | All files              |
 | Git             | YES        | Full access            |
 | Autonoe Tool    | YES        | Deliverable management |
+| Temp Directory  | YES        | /tmp/\*\* (read/write) |
 | .autonoe/ Write | NO         | Block direct writes    |
 
 ### Base Bash Commands

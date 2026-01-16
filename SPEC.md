@@ -527,7 +527,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 │  └── mcpServers: { playwright: @playwright/mcp --headless --isolated }│
 │                                                                  │
 │  Security Baseline (packages/core, always enforced)              │
-│  ├── permissions.allow: [Read(./**), Write(./**), ...]           │
+│  ├── permissions.allow: [Read(./**), Write(./**), Read(/tmp/**), Write(/tmp/**), ...]│
 │  ├── allowedTools: [Read, Write, Edit, ..., mcp__playwright__*]  │
 │  └── hooks: [BashSecurity, .autonoe Protection]                  │
 │                                                                  │
@@ -693,7 +693,7 @@ See Section 6 for security layer architecture.
 │  └── Filesystem/network containment                 │
 ├─────────────────────────────────────────────────────┤
 │  Layer 2: Filesystem Scope (SDK permissions)        │
-│  └── Read/Write limited to project directory        │
+│  └── Read/Write: project directory + /tmp           │
 ├─────────────────────────────────────────────────────┤
 │  Layer 3: PreToolUse Hooks                          │
 │  ├── BashSecurity: Command allowlist                │
@@ -718,6 +718,7 @@ Base security capabilities shared by all execution modes:
 | File Read           | YES        | All files                |
 | Git                 | YES        | Full access              |
 | Autonoe Tool        | YES        | Deliverable management   |
+| Temp Directory      | YES        | /tmp/** (read/write)     |
 | Bash                | LIMITED    | Read-only commands only  |
 | .autonoe/ Write     | NO         | Block direct writes      |
 
