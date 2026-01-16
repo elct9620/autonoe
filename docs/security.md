@@ -326,9 +326,9 @@ Sync uses **Base read-only commands** plus **all language profile commands**. Th
 
 ### Protected Scope
 
-| Resource               | Access     | Enforcement                      |
-| ---------------------- | ---------- | -------------------------------- |
-| Project source files   | Read-only  | Write/Edit blocked               |
-| `.autonoe/status.json` | Tool-only  | Write only via deliverable tools |
-| `.autonoe-note.md`     | Read/Write | Status reporting allowed         |
-| Git                    | Full       | Commit sync results allowed      |
+| Resource               | Access     | Enforcement                 |
+| ---------------------- | ---------- | --------------------------- |
+| Project source files   | Read-only  | Write/Edit blocked          |
+| `.autonoe/status.json` | Tool-only  | Write only via Autonoe Tool |
+| `.autonoe-note.md`     | Read/Write | Status reporting allowed    |
+| Git                    | Full       | Commit sync results allowed |
