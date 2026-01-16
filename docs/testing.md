@@ -266,7 +266,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 
 ### CommandHandler
 
-Generic command handler for run and sync commands. Configured via `CommandHandlerConfig`.
+Generic command handler for `run` and `sync` commands. Configured via `CommandHandlerConfig`.
 
 **Run Mode (RCH tests):**
 
@@ -513,7 +513,7 @@ The `./tmp/` directory serves as the Docker volume mount point for test fixtures
 
 | Field        | Value                                            |
 | ------------ | ------------------------------------------------ |
-| **Scenario** | Sync command creates deliverables from SPEC.md   |
+| **Scenario** | `sync` command creates deliverables from SPEC.md |
 | **Command**  | `autonoe sync`                                   |
 | **Fixture**  | `tests/integration/fixtures/hello-world/`        |
 | **Expected** | `.autonoe/status.json` created with deliverables |
@@ -522,7 +522,7 @@ The `./tmp/` directory serves as the Docker volume mount point for test fixtures
 
 | Field        | Value                                               |
 | ------------ | --------------------------------------------------- |
-| **Scenario** | Sync command updates existing status                |
+| **Scenario** | `sync` command updates existing status              |
 | **Command**  | `autonoe sync`                                      |
 | **Fixture**  | `tests/integration/fixtures/sync-existing/`         |
 | **Expected** | New deliverable created, old deliverable deprecated |

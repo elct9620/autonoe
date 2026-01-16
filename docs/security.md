@@ -87,9 +87,9 @@ Command Input
 
 ---
 
-## Run Command Security
+## `run` Command Security
 
-Run mode extends Base Security with additional capabilities for implementation.
+`run` mode extends Base Security with additional capabilities for implementation.
 
 ### Additional Capabilities
 
@@ -269,9 +269,9 @@ Pattern: `Warning: [what is enabled/disabled]. [consequence/risk].`
 
 ---
 
-## Sync Command Security
+## `sync` Command Security
 
-Sync mode restricts Base Security for verification-only operations. Prevents modification of project source code while allowing status management.
+`sync` mode restricts Base Security for verification-only operations. Prevents modification of project source code while allowing status management.
 
 ### Restrictions from Base
 
@@ -280,7 +280,7 @@ Sync mode restricts Base Security for verification-only operations. Prevents mod
 | File Write | None               | .autonoe-note.md only          |
 | File Edit  | None               | .autonoe-note.md only          |
 | Bash       | Read-only commands | + Profile commands, - File ops |
-| Playwright | N/A                | Enabled (verify phase)         |
+| Playwright | N/A                | Enabled                        |
 
 ### Allowed Tools
 
@@ -291,12 +291,12 @@ Sync mode restricts Base Security for verification-only operations. Prevents mod
 | File Edit     | LIMITED   | .autonoe-note.md only                   |
 | Bash          | LIMITED   | Base read-only + profiles (no file ops) |
 | Git           | YES       | Full access                             |
-| Playwright    | YES       | Verification phase                      |
+| Playwright    | YES       | Browser automation                      |
 | Autonoe Tool  | YES       | Deliverable management                  |
 
 ### Allowed Bash Commands
 
-Sync uses **Base read-only commands** plus **all language profile commands**. The only difference from run command is that file operation commands (mkdir, cp) are excluded.
+Sync uses **Base read-only commands** plus **all language profile commands**. The only difference from `run` command is that file operation commands (mkdir, cp) are excluded.
 
 | Profile | Commands                                                                                                   |
 | ------- | ---------------------------------------------------------------------------------------------------------- |
@@ -315,13 +315,13 @@ Sync uses **Base read-only commands** plus **all language profile commands**. Th
 | `"python"`         | Base read-only + Python profile            |
 | `["node", "go"]`   | Base read-only + Node profile + Go profile |
 
-**Note:** User extensions (`allowCommands`) with `sync` key are respected in sync command.
+**Note:** User extensions (`allowCommands`) with `sync` key are respected in `sync` command.
 
 ### Blocked Commands
 
 | Category        | Commands      | Reason                 |
 | --------------- | ------------- | ---------------------- |
-| File operations | `mkdir`, `cp` | Run mode only          |
+| File operations | `mkdir`, `cp` | `run` mode only        |
 | Destructive     | `rm`, `mv`    | Always blocked in sync |
 
 ### Protected Scope

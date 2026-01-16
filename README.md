@@ -358,12 +358,12 @@ Override the default agent instructions by creating files in `.autonoe/`:
 
 ### Instruction Selection
 
-**run command:**
+**`run` command:**
 
 1. First session (no `.autonoe/status.json`): Uses `initializer.md`
 2. Subsequent sessions: Uses `coding.md`
 
-**sync command:**
+**`sync` command:**
 
 1. First session: Uses `sync.md`
 2. Subsequent sessions: Uses `verify.md`

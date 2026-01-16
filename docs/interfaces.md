@@ -385,7 +385,7 @@ All duration displays use human-readable format with zero-value parts omitted:
 - Code refactoring needed
 - Technical debt
 
-**deprecate** - Mark deliverable as deprecated (sync command only)
+**deprecate** - Mark deliverable as deprecated (`sync` command only)
 
 | Parameter     | Type   | Description           |
 | ------------- | ------ | --------------------- |
@@ -393,7 +393,7 @@ All duration displays use human-readable format with zero-value parts omitted:
 
 Returns: `{ success: boolean }`
 
-**verify** - Mark deliverable as verified (sync command only)
+**verify** - Mark deliverable as verified (`sync` command only)
 
 | Parameter     | Type   | Description           |
 | ------------- | ------ | --------------------- |

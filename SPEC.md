@@ -209,9 +209,9 @@ Autonoe Tool is a set of deliverable management tools exposed as an MCP Server t
 |------|---------|
 | create | Create deliverables with acceptance criteria |
 | set_status | Update status: pending, passed, or blocked |
-| deprecate | Mark deliverable as deprecated (sync command only) |
-| verify | Mark deliverable as verified (sync command only) |
-| list | List deliverables with filtering. Filters: `status` (pending/passed/blocked), `verified` (true/false, verify mode only). Optional `limit` (default: 5) |
+| deprecate | Mark deliverable as deprecated (`sync` command only) |
+| verify | Mark deliverable as verified (`sync` command only) |
+| list | List deliverables with optional filtering by status or verified state |
 
 **Tool Availability per Instruction:**
 
@@ -253,22 +253,22 @@ SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ─
 | 5        | Max iterations reached   | iteration >= maxIterations                    | success=false                     |
 | 6        | Max retries exceeded     | consecutiveErrors > maxRetries                | success=false, error=message      |
 
-**run Command Conditions:**
+**`run` Command Conditions:**
 
 | Priority | Condition             | Check                                         | Result                      |
 | -------- | --------------------- | --------------------------------------------- | --------------------------- |
 | 3        | All achievable passed | All non-blocked deliverables have passed=true | all_passed (goal achieved)  |
 | 4        | All blocked           | All deliverables have blocked=true            | all_blocked (cannot proceed)|
 
-**sync Command Conditions:**
+**`sync` Command Conditions:**
 
 | Priority | Condition    | Check                               | Result                       |
 | -------- | ------------ | ----------------------------------- | ---------------------------- |
 | 3        | All verified | verificationTracker.allVerified()   | all_verified (goal achieved) |
 
-**Verification Tracking (sync command only):**
+**Verification Tracking (`sync` command only):**
 
-The sync command uses an in-memory verification tracker to ensure all deliverables are checked:
+The `sync` command uses an in-memory verification tracker to ensure all deliverables are checked:
 
 | Concept    | Description                                           |
 | ---------- | ----------------------------------------------------- |
@@ -283,7 +283,7 @@ The sync command uses an in-memory verification tracker to ensure all deliverabl
 **Termination:**
 - Each deliverable must be explicitly marked via `verify` tool
 - Termination occurs when all deliverables are verified
-- Unlike run command, sync does NOT terminate on all_passed/all_blocked
+- Unlike `run` command, `sync` does NOT terminate on all_passed/all_blocked
 
 **Blocked Deliverable Rules:**
 - A deliverable can only be blocked when `passed=false` (mutual exclusion)
@@ -639,7 +639,7 @@ Language profile commands (node, python, ruby, go) are available in both command
 
 **allowCommands Structure:**
 
-| Format | run command | sync command |
+| Format | `run` command | `sync` command |
 |--------|-------------|--------------|
 | `["cmd"]` (legacy) | ✅ Allowed | ❌ Ignored |
 | `{ base: ["cmd"] }` | ✅ Allowed | ✅ Allowed |
@@ -735,7 +735,7 @@ See [Security Details - Base Security](docs/security.md#base-security) for valid
 
 ### 6.3 Run Command Security
 
-Run mode extends Base Security with additional capabilities for implementation:
+`run` mode extends Base Security with additional capabilities for implementation:
 
 | Addition         | Description                          |
 | ---------------- | ------------------------------------ |
@@ -754,21 +754,21 @@ Run mode extends Base Security with additional capabilities for implementation:
 | `"python"`           | base + python                          |
 | `["node", "python"]` | base + node + python                   |
 
-**Run Command:** Includes all language profile commands plus file operation commands (mkdir, cp).
+**`run` Command:** Includes all language profile commands plus file operation commands (mkdir, cp).
 
 See [Security Details - Run Command](docs/security.md#run-command-security) for command allowlists and runtime options.
 
 ### 6.4 Sync Command Security
 
-Sync mode restricts Run Command capabilities for verification-only operations:
+`sync` mode restricts `run` command capabilities for verification-only operations:
 
-| Capability       | Run Command        | Sync Command                   |
+| Capability       | `run` Command      | `sync` Command                 |
 | ---------------- | ------------------ | ------------------------------ |
 | File Write       | Full project       | .autonoe-note.md only          |
 | Bash             | Profile + File ops | Profile commands only          |
 | Browser Automation | Enabled          | Enabled                        |
 
-**Sync Command = Base Commands + Language Profiles (no file ops):**
+**`sync` Command = Base Commands + Language Profiles (no file ops):**
 
 | Profile | Commands |
 |---------|----------|
@@ -931,7 +931,7 @@ SPEC.md ──► `sync` instruction ──► Create/Update status.json
 
 **Session Structure (Single SessionRunner Loop):**
 
-The sync command uses a single SessionRunner loop with dynamic instruction selection:
+The `sync` command uses a single SessionRunner loop with dynamic instruction selection:
 
 | Session | Instruction | Purpose |
 |---------|-------------|---------|
@@ -941,7 +941,7 @@ The sync command uses a single SessionRunner loop with dynamic instruction selec
 **Termination:**
 - After session 1 completes, verification tracker is initialized with all active deliverable IDs from status.json
 - Loop continues until all deliverables are **verified** (checked), or max iterations reached
-- Unlike `run` command, sync terminates on `all_verified`, not `all_passed`
+- Unlike `run` command, `sync` terminates on `all_verified`, not `all_passed`
 
 ---
 
