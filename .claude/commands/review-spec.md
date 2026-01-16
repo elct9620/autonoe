@@ -26,7 +26,8 @@ The specification review should ensure consistency in terminology, formatting, a
     <step>4. pick high-priority items that need attention</step>
     <step>5. ask user to clarify with proposed changes or questions regarding the specification</step>
     <condition if="apply changes">
-        <step>6. document the proposed changes or questions in a structured format</step>
+        <step>6. create a plan to update the specification based on user feedback</step>
+        <step>7. apply changes to SPEC.md and related documentation</step>
     </condition>
     <return>Specification review summary and actions</return>
 </procedure>
