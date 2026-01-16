@@ -8,21 +8,21 @@
 ### Design Layer
 - [1. System Overview](#1-system-overview-design)
 - [2. Clean Architecture](#2-clean-architecture-design)
-  - [Domain Model](docs/domain-model.md) `[External]`
+  - [Domain Model](docs/domain-model.md)
 - [3. Core Interfaces](#3-core-interfaces-design)
-  - [Interfaces](docs/interfaces.md) `[External]`
+  - [Interfaces](docs/interfaces.md)
 - [4. Browser Automation](#4-browser-automation-design)
 - [5. State Management](#5-state-management-design)
 - [6. Security](#6-security-design)
-  - [Security Details](docs/security.md) `[External]`
+  - [Security Details](docs/security.md)
 - [7. Build & Distribution](#7-build--distribution-design)
-  - [Docker Configuration](docs/docker.md) `[External]`
+  - [Docker Configuration](docs/docker.md)
 - [8. CLI](#8-cli-design)
 - [Appendix A: Instructions](#appendix-a-instructions-design)
 
 ### Consistency Layer
 - [9. Decision Table](#9-decision-table-consistency)
-- [Test Scenarios](docs/testing.md) `[External]`
+- [Test Scenarios](docs/testing.md)
 
 ---
 
@@ -71,7 +71,7 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 
 ### 1.1 Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              Autonoe                                     │
 ├─────────────────────────────────────────────────────────────────────────┤
@@ -129,11 +129,11 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 
 ### 1.3 Coding Agent Tools
 
-| Tool        | Source                      | Purpose                            |
-| ----------- | --------------------------- | ---------------------------------- |
-| Browser     | Playwright MCP (pre-installed) | Browser automation for verification |
-| File System | SDK Built-in                | Read/Write project files           |
-| Bash        | SDK Built-in                | Execute allowed commands           |
+| Tool               | Source                         | Purpose                             |
+| ------------------ | ------------------------------ | ----------------------------------- |
+| Browser Automation | Playwright MCP (pre-installed) | UI verification and E2E testing     |
+| File System        | SDK Built-in                   | Read/Write project files            |
+| Bash               | SDK Built-in                   | Execute allowed commands            |
 
 ### 1.4 Coding Conventions
 
@@ -236,7 +236,7 @@ For detailed tool specifications, see [Interfaces - Autonoe Tool](docs/interface
 | Autonoe Tool           | MCP Server per session    | Deliverable management          |
 | Logger                 | SessionRunner.run()       | Enable output capture           |
 
-```
+```text
 SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ──▶ client.query()
               │                    │                    │
          Configuration        Dependency          Per-session
@@ -325,7 +325,7 @@ When `--wait-for-quota` is enabled and waiting for quota reset, the system provi
 | Display mode | Single-line overwrite (carriage return) |
 
 Output format:
-```
+```text
 Quota exceeded, waiting 2h 45m 30s until reset...
 Quota resets at: 6:00 PM UTC
 ⏳ Waiting... 2h 44m remaining
@@ -394,12 +394,12 @@ Uses Microsoft Playwright MCP server (`@playwright/mcp@latest`) with session iso
 
 #### 4.1.1 Browser Installation
 
-| Platform     | Sandbox | Browser Source       | Status              |
-|--------------|---------|----------------------|---------------------|
-| Linux x64    | Enabled | MCP browser_install  | ✓                   |
-| Linux ARM64  | Enabled | MCP browser_install  | ✗ (not supported)   |
-| Linux ARM64  | Disabled| npx playwright       | ✓                   |
-| Docker       | Disabled| npx playwright       | ✓ (recommended)     |
+| Platform     | Sandbox  | Browser Source      | Status        |
+|--------------|----------|---------------------|---------------|
+| Linux x64    | Enabled  | MCP browser_install | Supported     |
+| Linux ARM64  | Enabled  | MCP browser_install | Not supported |
+| Linux ARM64  | Disabled | npx playwright      | Supported     |
+| Docker       | Disabled | npx playwright      | Recommended   |
 
 **SDK Sandbox Limitations:**
 - MCP `browser_install` fails on Linux ARM64: "not supported on Linux Arm64"
@@ -418,7 +418,7 @@ npx playwright install --with-deps chromium
 
 #### 4.1.2 Browser Lifecycle
 
-```
+```text
 Session Start ─────► MCP Server Start ─────► Browser Launch
                                                    │
                                                    ▼
@@ -432,7 +432,7 @@ Session End ◄────── client.dispose() ◄────── Browser
 
 ### 4.2 Verification Flow
 
-```
+```text
 navigate ──▶ snapshot ──▶ interact ──▶ wait_for ──▶ verify_*
 ```
 
@@ -442,7 +442,7 @@ navigate ──▶ snapshot ──▶ interact ──▶ wait_for ──▶ veri
 
 ### 5.1 Directory Structure
 
-```
+```text
 project/
 ├── .autonoe/
 │   └── status.json
@@ -518,7 +518,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 
 **Configuration Sources:**
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Configuration Sources                         │
 ├─────────────────────────────────────────────────────────────────┤
@@ -556,7 +556,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 
 Commands are organized into Base (read-only, shared) and Command-specific extensions:
 
-```
+```text
 Base Commands (read-only, all commands share)
 ├── Navigation: ls, pwd, cat, head, tail, wc, find, grep
 ├── Text Processing: tree, sort, diff, date, printf, uniq, cut, tr, tac, jq
@@ -650,7 +650,7 @@ Legacy `string[]` format is treated as `{ run: [...] }` for backward compatibili
 
 **SDK Settings Bridge:**
 
-```
+```text
 .autonoe/agent.json → loadConfig() → SECURITY_BASELINE + user config → SDK settings
 
 SDK settingSources: ['project'] (hardcoded)
@@ -684,7 +684,7 @@ See Section 6 for security layer architecture.
 
 ### 6.1 Security Layers
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │              Autonoe Security Layers                │
 ├─────────────────────────────────────────────────────┤
@@ -760,13 +760,13 @@ See [Security Details - Run Command](docs/security.md#run-command-security) for 
 
 ### 6.4 Sync Command Security
 
-Sync mode restricts Base Security for verification-only operations:
+Sync mode restricts Run Command capabilities for verification-only operations:
 
-| Restriction | Base               | Sync                           |
-| ----------- | ------------------ | ------------------------------ |
-| File Write  | None               | .autonoe-note.md only          |
-| Bash        | Read-only commands | + Profile commands, - File ops |
-| Playwright  | N/A                | Enabled (verify phase)         |
+| Capability       | Run Command        | Sync Command                   |
+| ---------------- | ------------------ | ------------------------------ |
+| File Write       | Full project       | .autonoe-note.md only          |
+| Bash             | Profile + File ops | Profile commands only          |
+| Browser Automation | Enabled          | Enabled                        |
 
 **Sync Command = Base Commands + Language Profiles (no file ops):**
 
@@ -866,7 +866,7 @@ When a prerequisite is not met, the command exits immediately with a non-zero ex
 
 #### 8.2.1 Usage
 
-```
+```bash
 autonoe run [options]
 ```
 
@@ -898,7 +898,7 @@ In addition to Common Options, the following options are available:
 
 #### 8.3.1 Usage
 
-```
+```bash
 autonoe sync [options]
 ```
 
@@ -922,7 +922,7 @@ Uses Common Options only. No additional options.
 
 #### 8.3.3 Execution Flow
 
-```
+```text
 SPEC.md ──► `sync` instruction ──► Create/Update status.json
                                               │
                                               ▼
@@ -962,16 +962,17 @@ See [Appendix A](#appendix-a-instructions-design) for instruction selection rule
 
 ### 9.2 Coding Agent Tool Availability
 
-Default tool availability for `run` command. For command-specific restrictions (sync), see [Section 6](#6-security-design).
+Tool availability by command. For detailed restrictions, see [Section 6](#6-security-design).
 
-| Tool Category        | run | sync |
-| -------------------- | --- | ---- |
-| File Read            | YES | YES  |
-| File Write           | YES | LIMITED (.autonoe-note.md only) |
-| Bash                 | Profile commands + File ops | Profile commands only |
-| Git                  | YES | YES  |
-| Playwright           | YES | YES  |
-| Autonoe Tool         | YES | YES  |
+| Tool Category      | run                         | sync                        |
+| ------------------ | --------------------------- | --------------------------- |
+| File Read          | YES                         | YES                         |
+| File Write         | YES                         | LIMITED (.autonoe-note.md)  |
+| File Edit          | YES                         | LIMITED (.autonoe-note.md)  |
+| Bash               | Profile commands + File ops | Profile commands only       |
+| Git                | YES                         | YES                         |
+| Browser Automation | YES                         | YES                         |
+| Autonoe Tool       | YES                         | YES                         |
 
 ### 9.3 Configuration Merge
 
@@ -1019,21 +1020,7 @@ Default tool availability for `run` command. For command-specific restrictions (
 | passed=false      | not set      | Included               |
 | any               | set (dated)  | Excluded               |
 
-### 9.7 Sync Command Tool Availability
-
-| Tool Category        | Available | Scope                              |
-|---------------------|-----------|-----------------------------------|
-| File Read           | YES       | All files                          |
-| File Write          | LIMITED   | .autonoe-note.md only              |
-| File Edit           | LIMITED   | .autonoe-note.md only              |
-| Bash                | LIMITED   | Test/lint/build commands only      |
-| Git                 | YES       | Full access                        |
-| Autonoe Tool        | YES       | status.json updates                |
-| Playwright          | YES       | Verify phase only                  |
-
-See [Security Details - Sync Command](docs/security.md#sync-command-security) for detailed restrictions.
-
-### 9.8 Termination by Command
+### 9.7 Termination by Command
 
 | Command | Goal                      | Termination Triggers                                    |
 | ------- | ------------------------- | ------------------------------------------------------- |
@@ -1045,7 +1032,7 @@ See [Security Details - Sync Command](docs/security.md#sync-command-security) fo
 - **run**: Goal is to pass all deliverables. Stopping on all_blocked means implementation cannot continue, not failure.
 - **sync**: Goal is to confirm status of all deliverables. all_verified indicates verification complete.
 
-### 9.9 Verification Result (Sync Command)
+### 9.8 Verification Result (Sync Command)
 
 | All Verified | Deliverable Statuses      | Result Description                    |
 | ------------ | ------------------------- | ------------------------------------- |
@@ -1055,7 +1042,7 @@ See [Security Details - Sync Command](docs/security.md#sync-command-security) fo
 | YES          | some blocked              | Verification complete, some blocked   |
 | YES          | all blocked               | Verification complete, all blocked    |
 
-### 9.10 Session Runner Output Format
+### 9.9 Session Runner Output Format
 
 | Command | Overall Message Format |
 |---------|------------------------|
