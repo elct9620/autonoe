@@ -203,6 +203,8 @@ Core interface definitions. For detailed specifications, see [Interfaces](docs/i
 
 ### 3.2 Autonoe Tool
 
+Autonoe Tool is a set of deliverable management tools exposed as an MCP Server to the Coding Agent. Each session receives a fresh MCP Server instance with tools appropriate for its instruction type.
+
 | Tool | Purpose |
 |------|---------|
 | create | Create deliverables with acceptance criteria |
@@ -231,8 +233,7 @@ For detailed tool specifications, see [Interfaces - Autonoe Tool](docs/interface
 | ---------------------- | ------------------------- | ------------------------------- |
 | AgentClient            | SessionRunner.run()       | Enable testing with mocks       |
 | BashSecurity           | PreToolUse hook           | Validate bash commands          |
-| create                 | SDK createSdkMcpServer    | Create deliverables             |
-| set_status             | SDK createSdkMcpServer    | Set deliverable status          |
+| Autonoe Tool           | MCP Server per session    | Deliverable management          |
 | Logger                 | SessionRunner.run()       | Enable output capture           |
 
 ```
@@ -269,10 +270,10 @@ SessionRunner(options) ──▶ run(client, logger) ──▶ Session.run() ─
 
 The sync command uses an in-memory verification tracker to ensure all deliverables are checked:
 
-| Concept    | Description                                    |
-| ---------- | ---------------------------------------------- |
-| verified   | Agent has confirmed this deliverable's status  |
-| unverified | Agent has not yet checked this deliverable     |
+| Concept    | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| verified   | Coding Agent has confirmed this deliverable's status  |
+| unverified | Coding Agent has not yet checked this deliverable     |
 
 **Initialization:**
 - Tracker is initialized **after session 1 (sync instruction) completes**
@@ -455,8 +456,8 @@ project/
 | Element | Specification |
 |---------|---------------|
 | Pattern | `{TYPE}-{NNN}` (e.g., UI-001, BE-042, API-003) |
-| Type Prefix | Agent-defined based on deliverable category (UI, BE, FE, API, UX, STYLE, etc.) |
-| Generation | Agent creates ID when calling `create` tool |
+| Type Prefix | Coding Agent-defined based on deliverable category (UI, BE, FE, API, UX, STYLE, etc.) |
+| Generation | Coding Agent creates ID when calling `create` tool |
 | Uniqueness | Unique within status.json |
 | Immutability | ID never changes after creation |
 
@@ -961,16 +962,16 @@ See [Appendix A](#appendix-a-instructions-design) for instruction selection rule
 
 ### 9.2 Coding Agent Tool Availability
 
-Tools available to the Coding Agent (configured by Autonoe):
+Default tool availability for `run` command. For command-specific restrictions (sync), see [Section 6](#6-security-design).
 
-| Tool Category        | Available |
-| -------------------- | --------- |
-| File Read            | YES       |
-| File Write           | YES       |
-| Bash (safe)          | YES       |
-| Git                  | YES       |
-| Playwright           | YES       |
-| Autonoe Tool         | YES       |
+| Tool Category        | run | sync |
+| -------------------- | --- | ---- |
+| File Read            | YES | YES  |
+| File Write           | YES | LIMITED (.autonoe-note.md only) |
+| Bash                 | Profile commands + File ops | Profile commands only |
+| Git                  | YES | YES  |
+| Playwright           | YES | YES  |
+| Autonoe Tool         | YES | YES  |
 
 ### 9.3 Configuration Merge
 
