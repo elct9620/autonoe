@@ -198,6 +198,58 @@ export const GO_COMMANDS = new Set([
 ])
 
 // =============================================================================
+// Rust Profile
+// =============================================================================
+
+/**
+ * Rust commands (available in all modes)
+ */
+export const RUST_COMMANDS = new Set([
+  // Runtime
+  'rustc',
+  'rustup',
+  // Package manager and build
+  'cargo',
+  // Format
+  'rustfmt',
+  'cargo-fmt',
+  // Lint
+  'clippy',
+  'cargo-clippy',
+  // Tools
+  'rust-analyzer',
+  'cargo-watch',
+])
+
+// =============================================================================
+// PHP Profile
+// =============================================================================
+
+/**
+ * PHP commands (available in all modes)
+ */
+export const PHP_COMMANDS = new Set([
+  // Runtime
+  'php',
+  // Package manager
+  'composer',
+  // Test runners
+  'phpunit',
+  'pest',
+  'codeception',
+  // Lint and static analysis
+  'phpcs',
+  'phpcbf',
+  'phpstan',
+  'psalm',
+  'php-cs-fixer',
+  // Framework CLI
+  'artisan',
+  'symfony',
+  'laminas',
+])
+
+// =============================================================================
 // Profile Command Mapping
 // =============================================================================
 
@@ -213,6 +265,8 @@ export const PROFILE_COMMANDS: Record<
   python: PYTHON_COMMANDS,
   ruby: RUBY_COMMANDS,
   go: GO_COMMANDS,
+  rust: RUST_COMMANDS,
+  php: PHP_COMMANDS,
 }
 
 // =============================================================================
@@ -260,6 +314,8 @@ export const PYTHON_PKILL_TARGETS = new Set([
 ])
 export const RUBY_PKILL_TARGETS = new Set(['ruby', 'puma', 'unicorn', 'rails'])
 export const GO_PKILL_TARGETS = new Set(['go'])
+export const RUST_PKILL_TARGETS = new Set(['cargo'])
+export const PHP_PKILL_TARGETS = new Set(['php', 'artisan'])
 
 /**
  * Profile to pkill targets mapping
@@ -270,6 +326,8 @@ export const PROFILE_PKILL_TARGETS: Record<ProfileName, Set<string>> = {
   python: PYTHON_PKILL_TARGETS,
   ruby: RUBY_PKILL_TARGETS,
   go: GO_PKILL_TARGETS,
+  rust: RUST_PKILL_TARGETS,
+  php: PHP_PKILL_TARGETS,
 }
 
 // =============================================================================

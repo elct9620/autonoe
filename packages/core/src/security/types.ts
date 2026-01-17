@@ -16,7 +16,14 @@ export interface BashSecurity {
  * Available language profiles for bash command filtering
  * @see SPEC.md Section 6.3.1
  */
-export type ProfileName = 'base' | 'node' | 'python' | 'ruby' | 'go'
+export type ProfileName =
+  | 'base'
+  | 'node'
+  | 'python'
+  | 'ruby'
+  | 'go'
+  | 'rust'
+  | 'php'
 
 /**
  * All available profiles
@@ -27,6 +34,8 @@ export const ALL_PROFILES: readonly ProfileName[] = Object.freeze([
   'python',
   'ruby',
   'go',
+  'rust',
+  'php',
 ])
 
 /**

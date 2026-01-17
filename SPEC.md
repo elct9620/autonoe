@@ -672,7 +672,7 @@ Command Extensions
 
 **Language Profile Commands:**
 
-Language profile commands (node, python, ruby, go) are available in both commands. The only difference is that `sync` excludes file operation commands (mkdir, cp).
+Language profile commands (node, python, ruby, go, rust, php) are available in both commands. The only difference is that `sync` excludes file operation commands (mkdir, cp).
 
 **Command × Profile → Commands:**
 
@@ -849,12 +849,12 @@ See [Security Details - Base Security](docs/security.md#base-security) for valid
 
 **Profile Selection:**
 
-| agent.json profile   | Active Profiles                        |
-| -------------------- | -------------------------------------- |
-| (not set)            | ALL (base + node + python + ruby + go) |
-| `"node"`             | base + node                            |
-| `"python"`           | base + python                          |
-| `["node", "python"]` | base + node + python                   |
+| agent.json profile   | Active Profiles                                      |
+| -------------------- | ---------------------------------------------------- |
+| (not set)            | ALL (base + node + python + ruby + go + rust + php)  |
+| `"node"`             | base + node                                          |
+| `"python"`           | base + python                                        |
+| `["node", "python"]` | base + node + python                                 |
 
 **`run` Command:** Includes all language profile commands plus file operation commands (mkdir, cp).
 
@@ -879,6 +879,8 @@ See [Security Details - Run Command](docs/security.md#run-command-security) for 
 | python  | All Python commands (pip, python, pytest, mypy, ruff, etc.) |
 | ruby    | All Ruby commands (bundle, ruby, rspec, rubocop, etc.) |
 | go      | All Go commands (go, gofmt, golangci-lint, etc.) |
+| rust    | All Rust commands (cargo, rustc, rustfmt, clippy, etc.) |
+| php     | All PHP commands (php, composer, phpunit, phpstan, etc.) |
 
 **Restrictions:**
 - File operation commands (mkdir, cp) are excluded
@@ -915,6 +917,8 @@ See [Docker Configuration](docs/docker.md) for detailed build configuration.
 | python | `:python` | Backend / Data science |
 | golang | `:golang` | System programming |
 | ruby | `:ruby` | Web development |
+| rust | `:rust` | Systems programming |
+| php | `:php` | Web development |
 
 **Release Tools:**
 
@@ -1089,14 +1093,16 @@ Tool availability by command. For detailed restrictions, see [Section 6](#6-secu
 
 ### 9.4 Profile Selection
 
-| agent.json profile     | Active Profiles                        | Use Case                |
-| ---------------------- | -------------------------------------- | ----------------------- |
-| (not set)              | ALL (base + node + python + ruby + go) | Default, all languages  |
-| `"node"`               | base + node                            | Node.js only            |
-| `"python"`             | base + python                          | Python only             |
-| `"ruby"`               | base + ruby                            | Ruby only               |
-| `"go"`                 | base + go                              | Go only                 |
-| `["node", "python"]`   | base + node + python                   | Specific combination    |
+| agent.json profile     | Active Profiles                                     | Use Case                |
+| ---------------------- | --------------------------------------------------- | ----------------------- |
+| (not set)              | ALL (base + node + python + ruby + go + rust + php) | Default, all languages  |
+| `"node"`               | base + node                                         | Node.js only            |
+| `"python"`             | base + python                                       | Python only             |
+| `"ruby"`               | base + ruby                                         | Ruby only               |
+| `"go"`                 | base + go                                           | Go only                 |
+| `"rust"`               | base + rust                                         | Rust only               |
+| `"php"`                | base + php                                          | PHP only                |
+| `["node", "python"]`   | base + node + python                                | Specific combination    |
 
 **Profile × Command:**
 

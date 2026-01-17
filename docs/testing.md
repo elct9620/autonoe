@@ -150,22 +150,34 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 
 ### Language Profiles
 
-| ID      | Profile Config       | Command         | Expected Output                    |
-| ------- | -------------------- | --------------- | ---------------------------------- |
-| PR-X001 | (default)            | `npm install`   | Allowed (all profiles enabled)     |
-| PR-X002 | (default)            | `pip install`   | Allowed (all profiles enabled)     |
-| PR-X003 | (default)            | `go build`      | Allowed (all profiles enabled)     |
-| PR-X004 | `"node"`             | `npm install`   | Allowed (node profile active)      |
-| PR-X005 | `"node"`             | `pip install`   | Denied (python profile inactive)   |
-| PR-X006 | `"python"`           | `pip install`   | Allowed (python profile active)    |
-| PR-X007 | `"python"`           | `npm install`   | Denied (node profile inactive)     |
-| PR-X008 | `["node", "python"]` | `npm install`   | Allowed (node profile active)      |
-| PR-X009 | `["node", "python"]` | `pip install`   | Allowed (python profile active)    |
-| PR-X010 | `["node", "python"]` | `go build`      | Denied (go profile inactive)       |
-| PR-X011 | (default) + custom   | `custom-cli`    | Allowed (allowCommands)            |
-| PR-X012 | (default)            | `pkill uvicorn` | Allowed (python pkill targets)     |
-| PR-X013 | `"node"`             | `pkill uvicorn` | Denied (python pkill targets only) |
-| PR-X014 | (default) + custom   | `pkill custom`  | Allowed (allowPkillTargets)        |
+| ID      | Profile Config       | Command            | Expected Output                    |
+| ------- | -------------------- | ------------------ | ---------------------------------- |
+| PR-X001 | (default)            | `npm install`      | Allowed (all profiles enabled)     |
+| PR-X002 | (default)            | `pip install`      | Allowed (all profiles enabled)     |
+| PR-X003 | (default)            | `go build`         | Allowed (all profiles enabled)     |
+| PR-X004 | `"node"`             | `npm install`      | Allowed (node profile active)      |
+| PR-X005 | `"node"`             | `pip install`      | Denied (python profile inactive)   |
+| PR-X006 | `"python"`           | `pip install`      | Allowed (python profile active)    |
+| PR-X007 | `"python"`           | `npm install`      | Denied (node profile inactive)     |
+| PR-X008 | `["node", "python"]` | `npm install`      | Allowed (node profile active)      |
+| PR-X009 | `["node", "python"]` | `pip install`      | Allowed (python profile active)    |
+| PR-X010 | `["node", "python"]` | `go build`         | Denied (go profile inactive)       |
+| PR-X011 | (default) + custom   | `custom-cli`       | Allowed (allowCommands)            |
+| PR-X012 | (default)            | `pkill uvicorn`    | Allowed (python pkill targets)     |
+| PR-X013 | `"node"`             | `pkill uvicorn`    | Denied (python pkill targets only) |
+| PR-X014 | (default) + custom   | `pkill custom`     | Allowed (allowPkillTargets)        |
+| PR-X015 | (default)            | `cargo build`      | Allowed (all profiles enabled)     |
+| PR-X016 | (default)            | `composer install` | Allowed (all profiles enabled)     |
+| PR-X017 | `"rust"`             | `cargo build`      | Allowed (rust profile active)      |
+| PR-X018 | `"rust"`             | `npm install`      | Denied (node profile inactive)     |
+| PR-X019 | `"php"`              | `composer install` | Allowed (php profile active)       |
+| PR-X020 | `"php"`              | `npm install`      | Denied (node profile inactive)     |
+| PR-X021 | `["rust", "php"]`    | `cargo build`      | Allowed (rust profile active)      |
+| PR-X022 | `["rust", "php"]`    | `composer install` | Allowed (php profile active)       |
+| PR-X023 | `["rust", "php"]`    | `npm install`      | Denied (node profile inactive)     |
+| PR-X024 | `"rust"`             | `pkill cargo`      | Allowed (rust pkill targets)       |
+| PR-X025 | `"php"`              | `pkill php`        | Allowed (php pkill targets)        |
+| PR-X026 | `"php"`              | `pkill artisan`    | Allowed (php pkill targets)        |
 
 ### Logger
 

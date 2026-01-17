@@ -524,6 +524,16 @@ describe('Language Profiles', () => {
       const security = new DefaultBashSecurity()
       expect(security.isCommandAllowed('go build').allowed).toBe(true)
     })
+
+    it('allows cargo build with default config', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('cargo build').allowed).toBe(true)
+    })
+
+    it('allows composer install with default config', () => {
+      const security = new DefaultBashSecurity()
+      expect(security.isCommandAllowed('composer install').allowed).toBe(true)
+    })
   })
 
   describe('PR-X004 to PR-X007: Single profile selection', () => {
@@ -547,6 +557,28 @@ describe('Language Profiles', () => {
 
     it('PR-X007: python profile denies npm install', () => {
       const security = new DefaultBashSecurity({ activeProfiles: ['python'] })
+      const result = security.isCommandAllowed('npm install')
+      expect(result.allowed).toBe(false)
+    })
+
+    it('rust profile allows cargo build', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['rust'] })
+      expect(security.isCommandAllowed('cargo build').allowed).toBe(true)
+    })
+
+    it('rust profile denies npm install', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['rust'] })
+      const result = security.isCommandAllowed('npm install')
+      expect(result.allowed).toBe(false)
+    })
+
+    it('php profile allows composer install', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['php'] })
+      expect(security.isCommandAllowed('composer install').allowed).toBe(true)
+    })
+
+    it('php profile denies npm install', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['php'] })
       const result = security.isCommandAllowed('npm install')
       expect(result.allowed).toBe(false)
     })
@@ -574,6 +606,22 @@ describe('Language Profiles', () => {
         activeProfiles: ['node', 'python'],
       })
       const result = security.isCommandAllowed('go build')
+      expect(result.allowed).toBe(false)
+    })
+
+    it('rust+php profile allows both cargo and composer', () => {
+      const security = new DefaultBashSecurity({
+        activeProfiles: ['rust', 'php'],
+      })
+      expect(security.isCommandAllowed('cargo build').allowed).toBe(true)
+      expect(security.isCommandAllowed('composer install').allowed).toBe(true)
+    })
+
+    it('rust+php profile denies npm install', () => {
+      const security = new DefaultBashSecurity({
+        activeProfiles: ['rust', 'php'],
+      })
+      const result = security.isCommandAllowed('npm install')
       expect(result.allowed).toBe(false)
     })
   })
@@ -630,6 +678,21 @@ describe('Language Profiles', () => {
       const security = new DefaultBashSecurity({ activeProfiles: ['go'] })
       expect(security.isCommandAllowed('pkill go').allowed).toBe(true)
     })
+
+    it('rust profile allows pkill cargo', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['rust'] })
+      expect(security.isCommandAllowed('pkill cargo').allowed).toBe(true)
+    })
+
+    it('php profile allows pkill php', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['php'] })
+      expect(security.isCommandAllowed('pkill php').allowed).toBe(true)
+    })
+
+    it('php profile allows pkill artisan', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['php'] })
+      expect(security.isCommandAllowed('pkill artisan').allowed).toBe(true)
+    })
   })
 
   describe('Base profile always included', () => {
@@ -657,6 +720,18 @@ describe('Language Profiles', () => {
       expect(security.isCommandAllowed('find .').allowed).toBe(true)
       expect(security.isCommandAllowed('cp src dest').allowed).toBe(true)
     })
+
+    it('rust profile includes base commands', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['rust'] })
+      expect(security.isCommandAllowed('ls -la').allowed).toBe(true)
+      expect(security.isCommandAllowed('git status').allowed).toBe(true)
+    })
+
+    it('php profile includes base commands', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['php'] })
+      expect(security.isCommandAllowed('cat file.txt').allowed).toBe(true)
+      expect(security.isCommandAllowed('grep pattern file').allowed).toBe(true)
+    })
   })
 
   describe('Profile-specific commands', () => {
@@ -682,6 +757,33 @@ describe('Language Profiles', () => {
       const security = new DefaultBashSecurity({ activeProfiles: ['go'] })
       expect(security.isCommandAllowed('gofmt -w .').allowed).toBe(true)
       expect(security.isCommandAllowed('golangci-lint run').allowed).toBe(true)
+    })
+
+    it('rust profile allows rustfmt and clippy', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['rust'] })
+      expect(security.isCommandAllowed('rustfmt src/main.rs').allowed).toBe(
+        true,
+      )
+      expect(security.isCommandAllowed('cargo-clippy').allowed).toBe(true)
+    })
+
+    it('rust profile allows cargo subcommands', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['rust'] })
+      expect(security.isCommandAllowed('cargo test').allowed).toBe(true)
+      expect(security.isCommandAllowed('cargo-watch').allowed).toBe(true)
+      expect(security.isCommandAllowed('cargo-fmt').allowed).toBe(true)
+    })
+
+    it('php profile allows phpunit and phpstan', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['php'] })
+      expect(security.isCommandAllowed('phpunit tests/').allowed).toBe(true)
+      expect(security.isCommandAllowed('phpstan analyse').allowed).toBe(true)
+    })
+
+    it('php profile allows artisan and symfony', () => {
+      const security = new DefaultBashSecurity({ activeProfiles: ['php'] })
+      expect(security.isCommandAllowed('artisan migrate').allowed).toBe(true)
+      expect(security.isCommandAllowed('symfony console').allowed).toBe(true)
     })
   })
 })

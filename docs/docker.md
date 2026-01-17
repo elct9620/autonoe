@@ -30,19 +30,23 @@ Each publishable package maps to a separate image path under the organization na
 │      ├──▶ node (node:XX-bookworm-slim)                  │
 │      ├──▶ python (python:X.XX-slim-bookworm)            │
 │      ├──▶ golang (golang:X.XX-bookworm)                 │
-│      └──▶ ruby (ruby:X.X-slim-bookworm)                 │
+│      ├──▶ ruby (ruby:X.X-slim-bookworm)                 │
+│      ├──▶ rust (rust:X.XX-slim-bookworm)                │
+│      └──▶ php (php:X.X-cli-bookworm)                    │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ## Targets and Tags
 
-| Target | Base Image                | Tag                | Tools                                                                    | Use Case               |
-| ------ | ------------------------- | ------------------ | ------------------------------------------------------------------------ | ---------------------- |
-| base   | debian:bookworm-slim      | `:latest`, `:base` | git, curl, ca-certificates, openssh-client, gnupg                        | Minimal runtime        |
-| node   | node:XX-bookworm-slim     | `:node`            | git, curl, openssh-client, gnupg, npm, Playwright deps                   | Frontend development   |
-| python | python:X.XX-slim-bookworm | `:python`          | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, pip, uv | Backend / Data science |
-| golang | golang:X.XX-bookworm      | `:golang`          | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps          | System programming     |
-| ruby   | ruby:X.X-slim-bookworm    | `:ruby`            | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, Bundler | Web development        |
+| Target | Base Image                | Tag                | Tools                                                                     | Use Case               |
+| ------ | ------------------------- | ------------------ | ------------------------------------------------------------------------- | ---------------------- |
+| base   | debian:bookworm-slim      | `:latest`, `:base` | git, curl, ca-certificates, openssh-client, gnupg                         | Minimal runtime        |
+| node   | node:XX-bookworm-slim     | `:node`            | git, curl, openssh-client, gnupg, npm, Playwright deps                    | Frontend development   |
+| python | python:X.XX-slim-bookworm | `:python`          | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, pip, uv  | Backend / Data science |
+| golang | golang:X.XX-bookworm      | `:golang`          | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps           | System programming     |
+| ruby   | ruby:X.X-slim-bookworm    | `:ruby`            | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, Bundler  | Web development        |
+| rust   | rust:X.XX-slim-bookworm   | `:rust`            | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, cargo    | Systems programming    |
+| php    | php:X.X-cli-bookworm      | `:php`             | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, composer | Web development        |
 
 Each target must include base tools (git, curl, ca-certificates, openssh-client, gnupg) for Claude Code and Git signing to function properly.
 
@@ -62,6 +66,8 @@ Each target must include base tools (git, curl, ca-certificates, openssh-client,
 | `PYTHON_VERSION` | (see Dockerfile) | Python stable |
 | `GOLANG_VERSION` | (see Dockerfile) | Go stable     |
 | `RUBY_VERSION`   | (see Dockerfile) | Ruby stable   |
+| `RUST_VERSION`   | (see Dockerfile) | Rust stable   |
+| `PHP_VERSION`    | (see Dockerfile) | PHP stable    |
 
 ## Version Support Policy
 
@@ -71,6 +77,8 @@ Each target must include base tools (git, curl, ca-certificates, openssh-client,
 | Python   | Current stable |
 | Golang   | Current stable |
 | Ruby     | Current stable |
+| Rust     | Current stable |
+| PHP      | Current stable |
 
 **Version Updates**:
 

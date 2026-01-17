@@ -152,6 +152,26 @@ Language profile commands are available in both `run` and `sync` modes. The only
 | Lint     | golangci-lint, staticcheck, golint |
 | Tools    | gopls, dlv, goreleaser             |
 
+#### Rust Profile
+
+| Category | Commands                   |
+| -------- | -------------------------- |
+| Runtime  | rustc, rustup              |
+| Package  | cargo                      |
+| Format   | rustfmt, cargo-fmt         |
+| Lint     | clippy, cargo-clippy       |
+| Tools    | rust-analyzer, cargo-watch |
+
+#### PHP Profile
+
+| Category  | Commands                                    |
+| --------- | ------------------------------------------- |
+| Runtime   | php                                         |
+| Package   | composer                                    |
+| Test      | phpunit, pest, codeception                  |
+| Lint      | phpcs, phpcbf, phpstan, psalm, php-cs-fixer |
+| Framework | artisan, symfony, laminas                   |
+
 ### Argument Validation
 
 Commands requiring additional argument checks:
@@ -171,6 +191,8 @@ Commands requiring additional argument checks:
 | Python  | python, python3, uvicorn, gunicorn |
 | Ruby    | ruby, puma, unicorn, rails         |
 | Go      | go                                 |
+| Rust    | cargo                              |
+| PHP     | php, artisan                       |
 
 #### bin/dev.sh validation
 
@@ -306,6 +328,8 @@ Sync uses **Base read-only commands** plus **all language profile commands**. Th
 | python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint, python, python3, poetry, etc.  |
 | ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard, ruby, irb, rake, rails, etc.           |
 | go      | go, gofmt, goimports, golangci-lint, staticcheck, golint, gopls, dlv, goreleaser                           |
+| rust    | cargo, rustc, rustup, rustfmt, cargo-fmt, clippy, cargo-clippy, rust-analyzer, cargo-watch                 |
+| php     | php, composer, phpunit, pest, codeception, phpcs, phpcbf, phpstan, psalm, php-cs-fixer, artisan, etc.      |
 
 **Profile × Command Behavior:**
 

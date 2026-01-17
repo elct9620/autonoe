@@ -50,7 +50,7 @@ Integration tests are in `tests/integration/` and use Docker to run full end-to-
 docker compose build                               # Build CLI image (node target)
 docker compose run --rm cli autonoe run            # Run CLI in container
 
-# Dockerfile verification (build targets: base, node, python, golang, ruby)
+# Dockerfile verification (build targets: base, node, python, golang, ruby, rust, php)
 docker build --target python -f apps/cli/Dockerfile .
 ```
 
