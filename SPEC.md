@@ -612,7 +612,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 | -------------------- | ---------------------------- | ------ | ---------------------------------- |
 | Project Files        | Coding Agent (Direct)        | Both   | Application source code            |
 | .autonoe/status.json | Autonoe Tool                 | Both   | Deliverable tracking               |
-| .autonoe-note.md    | Coding Agent (Direct)        | Both   | Session handoff notes (agent-maintained) |
+| `.autonoe-note.md`    | Coding Agent (Direct)        | Both   | Session handoff notes (agent-maintained) |
 | Git History          | Coding Agent (Direct)        | Both   | Version control history            |
 
 ### 5.4 Configuration
@@ -866,7 +866,7 @@ See [Security Details - Run Command](docs/security.md#run-command-security) for 
 
 | Capability       | `run` Command      | `sync` Command                 |
 | ---------------- | ------------------ | ------------------------------ |
-| File Write       | Full project       | .autonoe-note.md only          |
+| File Write       | Full project       | `.autonoe-note.md` only          |
 | Bash             | Profile + File ops | Profile commands only          |
 | Browser Automation | Enabled          | Enabled                        |
 
@@ -1134,8 +1134,8 @@ Tool availability by command. For detailed restrictions, see [Section 6](#6-secu
 | Tool Category      | run                         | sync                        |
 | ------------------ | --------------------------- | --------------------------- |
 | File Read          | YES                         | YES                         |
-| File Write         | YES                         | LIMITED (.autonoe-note.md)  |
-| File Edit          | YES                         | LIMITED (.autonoe-note.md)  |
+| File Write         | YES                         | LIMITED (`.autonoe-note.md`)  |
+| File Edit          | YES                         | LIMITED (`.autonoe-note.md`)  |
 | Bash               | Profile commands + File ops | Profile commands only       |
 | Git                | YES                         | YES                         |
 | Browser Automation | YES                         | YES                         |

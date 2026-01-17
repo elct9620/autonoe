@@ -84,7 +84,7 @@ Command Input
 | ---------- | ---------------------------------------------------------- |
 | Operators  | `&&`, `\|\|`, `\|`, `;`                                    |
 | Validation | If ANY command in chain is blocked, ENTIRE chain is denied |
-| Parsing    | Shell-aware tokenizer (handle quotes, escapes)             |
+| Parsing    | Shell-aware tokenizer (handles quotes, escapes)            |
 
 ---
 
@@ -300,8 +300,8 @@ Pattern: `Warning: [what is enabled/disabled]. [consequence/risk].`
 
 | Capability | Base               | Sync                           |
 | ---------- | ------------------ | ------------------------------ |
-| File Write | None               | .autonoe-note.md only          |
-| File Edit  | None               | .autonoe-note.md only          |
+| File Write | None               | `.autonoe-note.md` only        |
+| File Edit  | None               | `.autonoe-note.md` only        |
 | Bash       | Read-only commands | + Profile commands, - File ops |
 | Playwright | N/A                | Enabled                        |
 
@@ -310,8 +310,8 @@ Pattern: `Warning: [what is enabled/disabled]. [consequence/risk].`
 | Tool Category | Available | Scope                                   |
 | ------------- | --------- | --------------------------------------- |
 | File Read     | YES       | All files                               |
-| File Write    | LIMITED   | .autonoe-note.md only                   |
-| File Edit     | LIMITED   | .autonoe-note.md only                   |
+| File Write    | LIMITED   | `.autonoe-note.md` only                 |
+| File Edit     | LIMITED   | `.autonoe-note.md` only                 |
 | Bash          | LIMITED   | Base read-only + profiles (no file ops) |
 | Git           | YES       | Full access                             |
 | Playwright    | YES       | Browser automation                      |

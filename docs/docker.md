@@ -84,5 +84,3 @@ Each target must include base tools (git, curl, ca-certificates, openssh-client,
 
 - Default versions follow official LTS/stable releases
 - Users can specify versions via Build Args for custom builds
-
-For CI/CD workflow configuration, see [CI/CD Workflows](ci-cd.md).

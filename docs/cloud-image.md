@@ -75,8 +75,6 @@ sudo virt-customize --no-network -a autonoe-ubuntu-24.04.img \
 | `sudo`         | Required to read `/boot/vmlinuz-*` for supermin appliance |
 | `--no-network` | Disable network to avoid passt errors in CI environment   |
 
-For CI/CD workflow configuration, see [CI/CD Workflows](ci-cd.md#build-cloud-imageyml).
-
 ## Image Contents
 
 ### File Layout
