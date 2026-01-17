@@ -6,14 +6,14 @@ Detailed type definitions for Autonoe domain model. For overview, see [SPEC.md S
 
 **StreamEvent** - Discriminated union of all event types
 
-| Type                      | Description                |
-| ------------------------- | -------------------------- |
-| StreamEventText           | Agent's text response      |
-| StreamEventThinking       | Agent's internal reasoning |
-| StreamEventToolInvocation | Agent's tool call request  |
-| StreamEventToolResponse   | Tool execution result      |
-| StreamEventEnd            | Session termination        |
-| StreamEventError          | SDK error wrapped as event |
+| Type                      | Description                       |
+| ------------------------- | --------------------------------- |
+| StreamEventText           | Coding Agent's text response      |
+| StreamEventThinking       | Coding Agent's internal reasoning |
+| StreamEventToolInvocation | Coding Agent's tool call request  |
+| StreamEventToolResponse   | Tool execution result             |
+| StreamEventEnd            | Session termination               |
+| StreamEventError          | SDK error wrapped as event        |
 
 ### StreamEventText
 

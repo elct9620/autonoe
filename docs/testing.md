@@ -528,7 +528,7 @@ The `./tmp/` directory serves as the Docker volume mount point for test fixtures
 | **Scenario** | Custom instruction loading                       |
 | **Command**  | `autonoe run`                                    |
 | **Fixture**  | `tests/integration/fixtures/custom-instruction/` |
-| **Expected** | Agent outputs custom marker text                 |
+| **Expected** | Coding Agent outputs custom marker text          |
 
 #### IT-003: Session Iteration Limit
 
@@ -590,5 +590,5 @@ Summary is generated only when `GITHUB_STEP_SUMMARY` environment variable is set
 
 | File                   | Description                               |
 | ---------------------- | ----------------------------------------- |
-| `.autonoe-note.md`     | Agent handoff notes (if created)          |
+| `.autonoe-note.md`     | Coding Agent handoff notes (if created)   |
 | `.autonoe/status.json` | Deliverable status with pass/block states |
