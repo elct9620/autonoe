@@ -32,6 +32,16 @@ For the main specification, see [SPEC.md](../SPEC.md).
 
 SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 
+### SessionRunner Quota Handling
+
+| ID      | Input                              | Expected Output                       |
+| ------- | ---------------------------------- | ------------------------------------- |
+| SR-Q001 | quota exceeded, waitForQuota=true  | Waits for reset, then retries         |
+| SR-Q002 | quota exceeded, waitForQuota=false | Exits immediately with quota_exceeded |
+| SR-Q003 | waiting for quota                  | Reports StreamEventWaiting events     |
+| SR-Q004 | timer throws error during wait     | Error propagates correctly            |
+| SR-Q005 | SIGINT during quota wait           | Interrupts immediately, exits clean   |
+
 ### TerminationEvaluator
 
 | ID     | Input                                      | Expected Output           |

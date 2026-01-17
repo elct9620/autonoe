@@ -339,6 +339,15 @@ Quota waiting displays progress with `remainingMs` and `resetTime`:
 
 The progress line is updated using the same single-line overwrite mechanism as other activity displays.
 
+**Interrupt During Quota Wait:**
+
+When waiting for quota reset, user interrupt (SIGINT/Ctrl+C) is handled immediately:
+- The timer is cancelled via AbortSignal
+- The system terminates with `interrupted` exit reason
+- No delay until the wait period completes
+
+This ensures the highest priority of user interrupt (Priority 1) is maintained even during long quota wait periods.
+
 **Session Error Retry:**
 
 When a session throws an error (e.g., context window exhaustion, SDK errors):

@@ -240,6 +240,7 @@ export class SessionRunner {
           postDecision,
           state,
           logger,
+          signal,
         )
         state = decisionResult.state
 
@@ -329,6 +330,7 @@ export class SessionRunner {
     decision: ReturnType<typeof evaluateTermination>,
     state: LoopState,
     logger: Logger,
+    signal?: AbortSignal,
   ): Promise<{ state: LoopState; action: 'break' | 'continue' | 'next' }> {
     switch (decision.action) {
       case 'terminate':
@@ -363,7 +365,18 @@ export class SessionRunner {
         const intervalId = setInterval(reportWaiting, 1000) // Update every second
 
         try {
-          await this.timer.delay(decision.durationMs)
+          await this.timer.delay(decision.durationMs, signal)
+        } catch (error) {
+          // Handle AbortError from signal - user interrupted during wait
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            clearInterval(intervalId)
+            this.logTermination(logger, 'interrupted', state)
+            return {
+              state: state.setExitReason('interrupted'),
+              action: 'break',
+            }
+          }
+          throw error
         } finally {
           clearInterval(intervalId)
         }

@@ -1098,6 +1098,63 @@ describe('SessionRunner', () => {
         'Timer error',
       )
     })
+
+    it('SR-Q005: can be interrupted during quota wait', async () => {
+      const client = new MockAgentClient()
+      const resetTime = new Date(Date.now() + 60000) // 1 minute from now
+      client.setResponses([
+        createMockQuotaExceededStreamEnd('Quota exceeded', resetTime),
+      ])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+      ])
+
+      const controller = new AbortController()
+
+      // Mock timer that respects abort signal
+      const mockTimer = {
+        delay: vi.fn((ms: number, signal?: AbortSignal): Promise<void> => {
+          return new Promise<void>((resolve, reject) => {
+            const timeoutId = setTimeout(resolve, ms)
+            signal?.addEventListener(
+              'abort',
+              () => {
+                clearTimeout(timeoutId)
+                reject(new DOMException('Aborted', 'AbortError'))
+              },
+              { once: true },
+            )
+          })
+        }),
+      }
+
+      const logger = new TestLogger()
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delayBetweenSessions: 0,
+        waitForQuota: true,
+        timer: mockTimer,
+      })
+
+      // Abort after a short delay to simulate Ctrl+C during wait
+      setTimeout(() => controller.abort(), 10)
+
+      const result = await runner.run(
+        factory,
+        logger,
+        statusReader,
+        undefined,
+        controller.signal,
+      )
+
+      // Should have been interrupted during quota wait
+      expect(result.exitReason).toBe('interrupted')
+      expect(logger.hasMessage('User interrupted')).toBe(true)
+      expect(logger.hasMessage('Quota exceeded, waiting')).toBe(true)
+    })
   })
 
   describe('Interrupt handling', () => {
