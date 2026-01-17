@@ -80,7 +80,7 @@ jobs:
         run: |
           cp "${{ env.UBUNTU_CODENAME }}-server-cloudimg-amd64.img" "${{ steps.filename.outputs.name }}"
 
-          sudo virt-customize -a "${{ steps.filename.outputs.name }}" \
+          sudo virt-customize --no-network -a "${{ steps.filename.outputs.name }}" \
             --copy-in apps/cli/dist/autonoe:/usr/local/bin \
             --chmod 0755:/usr/local/bin/autonoe
 
