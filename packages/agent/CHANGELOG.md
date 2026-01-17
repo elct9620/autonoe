@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/elct9620/autonoe/compare/agent-v0.3.1...agent-v0.4.0) (2026-01-17)
+
+
+### Features
+
+* **core:** replace WaitProgressReporter with unified ActivityReporter ([de626d2](https://github.com/elct9620/autonoe/commit/de626d25b4ecde945a740e5e22a1f48d538b8a46))
+
 ## [0.3.1](https://github.com/elct9620/autonoe/compare/agent-v0.3.0...agent-v0.3.1) (2026-01-15)
 
 
