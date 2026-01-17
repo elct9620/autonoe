@@ -8,15 +8,19 @@ import {
   type ProcessExitStrategy,
 } from '../src/index'
 
-// Mock ConsoleLogger to suppress output during tests
-vi.mock('../src/consoleLogger', () => {
+// Mock ConsolePresenter to suppress output during tests
+vi.mock('../src/consolePresenter', () => {
   return {
-    ConsoleLogger: class MockConsoleLogger {
-      constructor(_options?: any) {}
+    ConsolePresenter: class MockConsolePresenter {
+      constructor(_options?: unknown) {}
       info() {}
       error() {}
       debug() {}
       warn() {}
+      activity() {}
+      clearActivity() {}
+      start() {}
+      stop() {}
     },
   }
 })

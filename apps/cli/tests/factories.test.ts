@@ -19,7 +19,6 @@ import {
   sandboxDisabledByCli,
   type ValidatedRunOptions,
 } from '../src/options'
-import { ConsoleActivityReporter } from '../src/consoleActivityReporter'
 
 describe('createInstructionResolver', () => {
   let tempDir: string
@@ -182,8 +181,8 @@ describe('createRunnerOptions', () => {
       model: undefined,
       waitForQuota: false,
       maxThinkingTokens: undefined,
+      onStreamEvent: undefined,
     })
-    expect(result.activityReporter).toBeInstanceOf(ConsoleActivityReporter)
   })
 
   it('FAC-031: builds options with all optional fields', () => {
@@ -196,7 +195,8 @@ describe('createRunnerOptions', () => {
       maxThinkingTokens: 16384,
     }
 
-    const result = createRunnerOptions(options)
+    const onStreamEvent = vi.fn()
+    const result = createRunnerOptions(options, onStreamEvent)
 
     expect(result).toMatchObject({
       projectDir: '/test/project',
@@ -205,8 +205,8 @@ describe('createRunnerOptions', () => {
       model: 'claude-3-opus',
       waitForQuota: true,
       maxThinkingTokens: 16384,
+      onStreamEvent,
     })
-    expect(result.activityReporter).toBeInstanceOf(ConsoleActivityReporter)
   })
 
   it('FAC-032: excludes debug, sandboxMode, allowDestructive', () => {

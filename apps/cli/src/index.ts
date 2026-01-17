@@ -2,9 +2,9 @@ import {
   SessionRunner,
   loadConfig,
   DefaultInstructionSelector,
-  type Logger,
   type AgentConfig,
   type DeliverableStatusCallback,
+  type StreamEvent,
 } from '@autonoe/core'
 import { FileDeliverableRepository } from '@autonoe/agent'
 import {
@@ -17,7 +17,7 @@ import {
   type ValidatedSyncOptions,
 } from './options'
 import { CommandHandler } from './commandHandler'
-import { ConsoleLogger } from './consoleLogger'
+import { ConsolePresenter } from './consolePresenter'
 import { VERSION } from './version'
 import {
   createInstructionResolver,
@@ -27,6 +27,7 @@ import {
 import { SyncInstructionSelector } from './syncInstructionSelector'
 import { createAgentClientFactory } from './agentClientFactory'
 import { defaultProcessExit, type ProcessExitStrategy } from './processExit'
+import type { Presenter } from './presenter'
 
 // Re-export for backward compatibility
 export { VERSION }
@@ -34,7 +35,7 @@ export type { RunCommandOptions, SyncCommandOptions }
 export type { ProcessExitStrategy }
 
 interface CommonDependencies {
-  logger: Logger
+  presenter: Presenter
   config: AgentConfig
   repository: FileDeliverableRepository
   onStatusChange: DeliverableStatusCallback
@@ -43,21 +44,21 @@ interface CommonDependencies {
 
 async function initializeCommonDependencies(
   projectDir: string,
-  logger: Logger,
+  presenter: Presenter,
 ): Promise<CommonDependencies> {
   const config = await loadConfig(projectDir)
   const repository = new FileDeliverableRepository(projectDir)
-  const onStatusChange = createStatusChangeCallback(logger)
+  const onStatusChange = createStatusChangeCallback(presenter)
 
   const abortController = new AbortController()
   process.on('SIGINT', () => {
-    logger.info('')
-    logger.info('Received SIGINT, stopping...')
+    presenter.info('')
+    presenter.info('Received SIGINT, stopping...')
     abortController.abort()
   })
 
   return {
-    logger,
+    presenter,
     config,
     repository,
     onStatusChange,
@@ -81,7 +82,8 @@ function createRunHandler(
     allowDestructive: options.allowDestructive,
   })
 
-  const runnerOptions = createRunnerOptions(options)
+  const onStreamEvent = (event: StreamEvent) => deps.presenter.activity(event)
+  const runnerOptions = createRunnerOptions(options, onStreamEvent)
   const sessionRunner = new SessionRunner(runnerOptions)
 
   const instructionResolver = createInstructionResolver(options.projectDir)
@@ -97,7 +99,7 @@ function createRunHandler(
       startupMessage: 'Starting coding agent session...',
       allowDestructive: options.allowDestructive,
     },
-    deps.logger,
+    deps.presenter,
     deps.repository,
     sessionRunner,
     clientFactory,
@@ -122,7 +124,8 @@ function createSyncHandler(
       maxThinkingTokens: options.maxThinkingTokens,
     })
 
-  const runnerOptions = createRunnerOptions(options)
+  const onStreamEvent = (event: StreamEvent) => deps.presenter.activity(event)
+  const runnerOptions = createRunnerOptions(options, onStreamEvent)
   const sessionRunner = new SessionRunner({
     ...runnerOptions,
     useSyncTermination: true,
@@ -140,7 +143,7 @@ function createSyncHandler(
       startupMessage: 'Starting sync mode...',
       allowDestructive: false,
     },
-    deps.logger,
+    deps.presenter,
     deps.repository,
     sessionRunner,
     clientFactory,
@@ -156,32 +159,35 @@ export async function handleRunCommand(
   options: RunCommandOptions,
   processExit: ProcessExitStrategy = defaultProcessExit,
 ): Promise<void> {
-  const logger = new ConsoleLogger({ debug: options.debug })
+  const presenter = new ConsolePresenter({ debug: options.debug })
 
   const validation = validateRunOptions(options)
   if (!validation.success) {
-    logger.error(validation.error)
+    presenter.error(validation.error)
     return processExit.exit(1)
   }
 
   const prereqValidation = validatePrerequisites(validation.options.projectDir)
   if (!prereqValidation.success) {
-    logger.error(prereqValidation.error)
+    presenter.error(prereqValidation.error)
     return processExit.exit(1)
   }
 
   const deps = await initializeCommonDependencies(
     validation.options.projectDir,
-    logger,
+    presenter,
   )
   const handler = createRunHandler(validation.options, deps)
 
+  presenter.start()
   try {
     await handler.execute()
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error))
-    logger.error(`Error: ${err.message}`, err)
+    presenter.error(`Error: ${err.message}`, err)
     processExit.exit(1)
+  } finally {
+    presenter.stop()
   }
 }
 
@@ -194,31 +200,34 @@ export async function handleSyncCommand(
   options: SyncCommandOptions,
   processExit: ProcessExitStrategy = defaultProcessExit,
 ): Promise<void> {
-  const logger = new ConsoleLogger({ debug: options.debug })
+  const presenter = new ConsolePresenter({ debug: options.debug })
 
   const validation = validateSyncOptions(options)
   if (!validation.success) {
-    logger.error(validation.error)
+    presenter.error(validation.error)
     return processExit.exit(1)
   }
 
   const prereqValidation = validatePrerequisites(validation.options.projectDir)
   if (!prereqValidation.success) {
-    logger.error(prereqValidation.error)
+    presenter.error(prereqValidation.error)
     return processExit.exit(1)
   }
 
   const deps = await initializeCommonDependencies(
     validation.options.projectDir,
-    logger,
+    presenter,
   )
   const handler = createSyncHandler(validation.options, deps)
 
+  presenter.start()
   try {
     await handler.execute()
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error))
-    logger.error(`Error: ${err.message}`, err)
+    presenter.error(`Error: ${err.message}`, err)
     processExit.exit(1)
+  } finally {
+    presenter.stop()
   }
 }

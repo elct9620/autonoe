@@ -11,9 +11,9 @@ import {
   type DeliverableStatusCallback,
   type DeliverableStatusNotification,
   type Logger,
+  type StreamEventCallback,
 } from '@autonoe/core'
 import type { ValidatedCommonOptions } from './options'
-import { ConsoleActivityReporter } from './consoleActivityReporter'
 
 /**
  * Create an instruction resolver with override support
@@ -76,6 +76,7 @@ export function createStatusChangeCallback(
  */
 export function createRunnerOptions(
   options: ValidatedCommonOptions,
+  onStreamEvent?: StreamEventCallback,
 ): SessionRunnerOptions {
   return {
     projectDir: options.projectDir,
@@ -84,6 +85,6 @@ export function createRunnerOptions(
     model: options.model,
     waitForQuota: options.waitForQuota,
     maxThinkingTokens: options.maxThinkingTokens,
-    activityReporter: new ConsoleActivityReporter(),
+    onStreamEvent,
   }
 }

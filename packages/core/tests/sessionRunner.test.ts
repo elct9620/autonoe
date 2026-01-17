@@ -6,7 +6,6 @@ import type { MessageStream } from '../src/types'
 import { VerificationTracker } from '../src/verificationTracker'
 import {
   MockAgentClient,
-  MockActivityReporter,
   MockDeliverableStatusReader,
   createMockStreamText,
   createMockStreamEnd,
@@ -1042,29 +1041,38 @@ describe('SessionRunner', () => {
         createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
       ])
 
-      const mockActivityReporter = new MockActivityReporter()
+      const waitingEvents: Array<{
+        type: string
+        remainingMs: number
+        resetTime: Date
+      }> = []
+      const onStreamEvent = vi.fn((event: { type: string }) => {
+        if (event.type === 'stream_waiting') {
+          waitingEvents.push(
+            event as { type: string; remainingMs: number; resetTime: Date },
+          )
+        }
+      })
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
         delayBetweenSessions: 0,
         waitForQuota: true,
-        activityReporter: mockActivityReporter,
+        onStreamEvent,
       })
 
       await runner.run(factory, silentLogger, statusReader)
 
       // Check that waiting events were reported
-      const waitingEvents = mockActivityReporter.getEventsByType('waiting')
       expect(waitingEvents.length).toBeGreaterThan(0)
       expect(waitingEvents[0]).toMatchObject({
-        type: 'waiting',
+        type: 'stream_waiting',
         remainingMs: expect.any(Number),
         resetTime: expect.any(Date),
-        elapsedMs: expect.any(Number),
       })
     })
 
-    it('SR-Q004: calls cleanup even if delay throws', async () => {
+    it('SR-Q004: timer error propagates correctly', async () => {
       const client = new MockAgentClient()
       const resetTime = new Date(Date.now() + 10)
       client.setResponses([
@@ -1072,7 +1080,7 @@ describe('SessionRunner', () => {
       ])
       const factory = createMockClientFactory(client)
 
-      const mockActivityReporter = new MockActivityReporter()
+      const onStreamEvent = vi.fn()
 
       const mockTimer = {
         delay: vi.fn().mockRejectedValue(new Error('Timer error')),
@@ -1082,15 +1090,13 @@ describe('SessionRunner', () => {
         projectDir: '/test/project',
         delayBetweenSessions: 0,
         waitForQuota: true,
-        activityReporter: mockActivityReporter,
+        onStreamEvent,
         timer: mockTimer,
       })
 
       await expect(runner.run(factory, silentLogger)).rejects.toThrow(
         'Timer error',
       )
-      // Cleanup should still be called (session starts and ends)
-      expect(mockActivityReporter.getCleanupCallCount()).toBe(1)
     })
   })
 

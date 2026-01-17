@@ -1,5 +1,4 @@
 export * from './mockAgentClient'
-export * from './mockActivityReporter'
 export * from './mockDeliverableStatusReader'
 export * from './testLogger'
 export * from './fixtures'

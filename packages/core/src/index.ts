@@ -8,6 +8,8 @@ export type {
   StreamEventEnd,
   SessionOutcome,
   StreamEventError,
+  StreamEventWaiting,
+  StreamEventCallback,
   MessageStream,
   McpServer,
   PermissionLevel,
@@ -141,16 +143,6 @@ export { DefaultInstructionSelector } from './instructionSelector'
 // Timer exports
 export type { Timer } from './timer'
 export { realTimer } from './timer'
-
-// ActivityReporter exports
-export type {
-  ActivityEvent,
-  ActivityEventType,
-  RawActivityEvent,
-  ActivityCallback,
-  ActivityReporter,
-} from './activityReporter'
-export { silentActivityReporter } from './activityReporter'
 
 // LoopState exports
 export { LoopState } from './loopState'

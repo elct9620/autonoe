@@ -63,6 +63,13 @@ export interface StreamEventError {
   stack?: string
 }
 
+// StreamEventWaiting - Waiting for quota reset
+export interface StreamEventWaiting {
+  type: 'stream_waiting'
+  remainingMs: number
+  resetTime: Date
+}
+
 // StreamEvent - discriminated union of all event types
 export type StreamEvent =
   | StreamEventText
@@ -71,6 +78,10 @@ export type StreamEvent =
   | StreamEventToolResponse
   | StreamEventEnd
   | StreamEventError
+  | StreamEventWaiting
+
+// StreamEventCallback - Callback type for receiving StreamEvents
+export type StreamEventCallback = (event: StreamEvent) => void
 
 // MessageStream - async generator yielding StreamEvents with interrupt capability
 export interface MessageStream extends AsyncGenerator<StreamEvent, void> {
