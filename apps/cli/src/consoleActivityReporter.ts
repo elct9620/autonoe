@@ -108,7 +108,7 @@ export class ConsoleActivityReporter implements ActivityReporter {
 
     const line = this.formatActivityLine()
     process.stdout.write(
-      `\r${ConsoleActivityReporter.CYAN}${line}${ConsoleActivityReporter.RESET}`,
+      `\r\x1b[K${ConsoleActivityReporter.CYAN}${line}${ConsoleActivityReporter.RESET}`,
     )
   }
 

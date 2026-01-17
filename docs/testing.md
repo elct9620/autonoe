@@ -347,6 +347,7 @@ Generic command handler for `run` and `sync` commands. Configured via `CommandHa
 | AR-028 | activity emoji               | Uses lightning emoji (⚡)            |
 | AR-029 | waiting emoji                | Uses hourglass emoji (⏳)            |
 | AR-030 | periodic updates             | Updates display at interval          |
+| AR-031 | render() output              | Contains `\r\x1b[K` (clear sequence) |
 
 ### Session onActivity Callback
 

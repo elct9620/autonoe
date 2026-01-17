@@ -247,4 +247,18 @@ describe('ConsoleActivityReporter', () => {
       expect(stdoutWriteSpy).toHaveBeenCalled()
     })
   })
+
+  describe('line clearing', () => {
+    it('AR-031: clears line before writing to prevent residual content', () => {
+      const reporter = new ConsoleActivityReporter()
+      reporter.startSession()
+
+      reporter.reportActivity({ type: 'thinking', elapsedMs: 1000 })
+
+      // Verify output contains the clear sequence \r\x1b[K
+      expect(stdoutWriteSpy).toHaveBeenCalledWith(
+        expect.stringContaining('\r\x1b[K'),
+      )
+    })
+  })
 })
