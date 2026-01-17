@@ -904,7 +904,15 @@ See [Security Details - Sync Command](docs/security.md#sync-command-security) fo
 
 Package configurations are defined in their respective `package.json` files.
 
-### 7.1 Docker & CI/CD
+### 7.1 Distribution Formats
+
+| Format | Platform | Use Case |
+|--------|----------|----------|
+| Binary | Linux, macOS, Windows | Direct execution |
+| Docker | Container platforms | Containerized deployment |
+| Cloud Image | KVM/QEMU environments | VM deployment |
+
+### 7.2 Docker Images
 
 See [Docker Configuration](docs/docker.md) for detailed build configuration.
 
@@ -920,13 +928,66 @@ See [Docker Configuration](docs/docker.md) for detailed build configuration.
 | rust | `:rust` | Systems programming |
 | php | `:php` | Web development |
 
-**Release Tools:**
+### 7.3 Cloud Image
+
+See [Cloud Image Configuration](docs/cloud-image.md) for detailed build configuration.
+
+**Image Specification:**
+
+| Attribute | Value |
+|-----------|-------|
+| Base Image | Ubuntu 24.04 LTS Cloud Image |
+| Format | `.img` (raw disk image) |
+| Variant | Base only |
+| Target | KVM/QEMU compatible hypervisors |
+
+**Build Tool:**
+
+| Tool | Purpose |
+|------|---------|
+| libguestfs-tools | Image modification (Ubuntu official package) |
+| virt-customize | Inject files and run commands |
+
+**Pre-installed Components:**
+
+| Component | Path |
+|-----------|------|
+| Autonoe CLI | `/usr/local/bin/autonoe` |
+| Git | (system) |
+| curl, ca-certificates | (system) |
+| openssh-server | (system) |
+
+**Image Naming Convention:**
+
+| Pattern | Example |
+|---------|---------|
+| `autonoe-ubuntu-{os-version}.img` | `autonoe-ubuntu-24.04.img` |
+| `autonoe-{version}-ubuntu-{os-version}.img` | `autonoe-1.0.0-ubuntu-24.04.img` |
+
+**Cloud-Init Support:**
+
+| Feature | Support |
+|---------|---------|
+| User creation | Yes |
+| SSH key injection | Yes |
+| Hostname configuration | Yes |
+| Network configuration | DHCP default |
+
+**Release Assets:**
+
+| File | Description |
+|------|-------------|
+| `autonoe-{version}-ubuntu-24.04.img` | Cloud Image |
+| `autonoe-{version}-ubuntu-24.04.img.sha256` | Checksum |
+
+### 7.4 Release Tools
 
 | Tool | Purpose |
 |------|---------|
 | Release Please | Version management, CHANGELOG |
 | Bun cross-compile | Multi-platform binary distribution |
 | docker/build-push-action | Multi-platform Docker images |
+| libguestfs (virt-customize) | Cloud image generation |
 
 ---
 
