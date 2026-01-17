@@ -327,22 +327,38 @@ Generic command handler for `run` and `sync` commands. Configured via `CommandHa
 | LOG-032 | error(message, error), debug=true  | Stack trace logged                  |
 | LOG-033 | error with undefined stack         | Handles gracefully                  |
 
-### ConsoleWaitProgressReporter
+### ConsoleActivityReporter
 
-| ID      | Input                        | Expected Output                      |
-| ------- | ---------------------------- | ------------------------------------ |
-| WPR-001 | constructor()                | Default updateIntervalMs=60000       |
-| WPR-002 | constructor(custom interval) | Custom updateIntervalMs applied      |
-| WPR-010 | startWait with resetTime     | Reset time displayed                 |
-| WPR-011 | startWait without resetTime  | No reset time displayed              |
-| WPR-012 | startWait(120000)            | Progress message with remaining time |
-| WPR-013 | after interval elapsed       | Progress updated                     |
-| WPR-014 | cleanup() called             | Timer stopped, no more updates       |
-| WPR-015 | cleanup()                    | Progress line cleared                |
-| WPR-016 | remaining time reaches zero  | Ticking stops automatically          |
-| WPR-017 | startWait return value       | Returns cleanup function             |
-| WPR-018 | progress message             | Includes emoji (⏳)                  |
-| WPR-019 | output color                 | Uses cyan color                      |
+| ID     | Input                        | Expected Output                      |
+| ------ | ---------------------------- | ------------------------------------ |
+| AR-001 | constructor()                | Default updateIntervalMs=1000        |
+| AR-002 | constructor(custom interval) | Custom updateIntervalMs applied      |
+| AR-010 | startSession()               | Returns cleanup function             |
+| AR-011 | cleanup() called             | Activity line cleared                |
+| AR-012 | cleanup() called             | Periodic updates stopped             |
+| AR-020 | thinking event               | Displays "Thinking..."               |
+| AR-021 | tool_start event             | Displays "Running {toolName}..."     |
+| AR-022 | tool_complete event          | Increments tool count                |
+| AR-023 | responding event             | Displays "Responding..."             |
+| AR-024 | waiting event                | Displays waiting with remaining time |
+| AR-025 | elapsedMs format             | Formats as M:SS                      |
+| AR-026 | output color                 | Uses cyan color                      |
+| AR-027 | multiple tools               | Shows plural "tools"                 |
+| AR-028 | activity emoji               | Uses lightning emoji (⚡)            |
+| AR-029 | waiting emoji                | Uses hourglass emoji (⏳)            |
+| AR-030 | periodic updates             | Updates display at interval          |
+
+### Session onActivity Callback
+
+| ID      | Input                       | Expected Output                         |
+| ------- | --------------------------- | --------------------------------------- |
+| SC-A001 | thinking StreamEvent        | Reports thinking RawActivityEvent       |
+| SC-A002 | tool_invocation StreamEvent | Reports tool_start with toolName        |
+| SC-A003 | tool_response StreamEvent   | Reports tool_complete with correct name |
+| SC-A004 | text StreamEvent            | Reports responding event                |
+| SC-A005 | multiple tools with IDs     | Tracks tool name by toolUseId           |
+| SC-A006 | failed tool response        | Reports isError=true                    |
+| SC-A007 | no callback provided        | Does not throw                          |
 
 ### Factory Functions
 
