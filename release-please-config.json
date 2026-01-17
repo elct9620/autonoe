@@ -29,6 +29,5 @@
     }
   ],
   "release-search-depth": 400,
-  "separate-pull-requests": true,
   "include-component-in-tag": true
 }
