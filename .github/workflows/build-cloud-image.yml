@@ -77,12 +77,10 @@ jobs:
         env:
           LIBGUESTFS_BACKEND: direct
           LIBGUESTFS_BACKEND_SETTINGS: force_tcg
-          LIBGUESTFS_DEBUG: 1
-          LIBGUESTFS_TRACE: 1
         run: |
           cp "${{ env.UBUNTU_CODENAME }}-server-cloudimg-amd64.img" "${{ steps.filename.outputs.name }}"
 
-          virt-customize -v -x -a "${{ steps.filename.outputs.name }}" \
+          sudo virt-customize -a "${{ steps.filename.outputs.name }}" \
             --copy-in apps/cli/dist/autonoe:/usr/local/bin \
             --chmod 0755:/usr/local/bin/autonoe
 
