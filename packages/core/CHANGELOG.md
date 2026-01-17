@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/elct9620/autonoe/compare/core-v0.4.0...core-v0.4.1) (2026-01-17)
+
+
+### Bug Fixes
+
+* **core:** update quota wait event interval to match presenter render rate ([ed02174](https://github.com/elct9620/autonoe/commit/ed02174f1931cc240b9806c1fc9802d000b3418c))
+
 ## [0.4.0](https://github.com/elct9620/autonoe/compare/core-v0.3.1...core-v0.4.0) (2026-01-17)
 
 
