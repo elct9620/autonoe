@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/elct9620/autonoe/compare/core-v0.3.1...core-v0.4.0) (2026-01-17)
+
+
+### Features
+
+* **core:** add /tmp directory read/write permissions to security baseline ([11e3dcd](https://github.com/elct9620/autonoe/commit/11e3dcd237db6016dfa947d877b5cc0858b7652f))
+* **core:** replace WaitProgressReporter with unified ActivityReporter ([de626d2](https://github.com/elct9620/autonoe/commit/de626d25b4ecde945a740e5e22a1f48d538b8a46))
+
 ## [0.3.1](https://github.com/elct9620/autonoe/compare/core-v0.3.0...core-v0.3.1) (2026-01-15)
 
 
