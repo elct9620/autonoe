@@ -327,39 +327,44 @@ Generic command handler for `run` and `sync` commands. Configured via `CommandHa
 | LOG-032 | error(message, error), debug=true  | Stack trace logged                  |
 | LOG-033 | error with undefined stack         | Handles gracefully                  |
 
-### ConsoleActivityReporter
+### ConsolePresenter
 
-| ID     | Input                        | Expected Output                      |
-| ------ | ---------------------------- | ------------------------------------ |
-| AR-001 | constructor()                | Default updateIntervalMs=1000        |
-| AR-002 | constructor(custom interval) | Custom updateIntervalMs applied      |
-| AR-010 | startSession()               | Returns cleanup function             |
-| AR-011 | cleanup() called             | Activity line cleared                |
-| AR-012 | cleanup() called             | Periodic updates stopped             |
-| AR-020 | thinking event               | Displays "Thinking..."               |
-| AR-021 | tool_start event             | Displays "Running {toolName}..."     |
-| AR-022 | tool_complete event          | Increments tool count                |
-| AR-023 | responding event             | Displays "Responding..."             |
-| AR-024 | waiting event                | Displays waiting with remaining time |
-| AR-025 | elapsedMs format             | Formats as M:SS                      |
-| AR-026 | output color                 | Uses cyan color                      |
-| AR-027 | multiple tools               | Shows plural "tools"                 |
-| AR-028 | activity emoji               | Uses lightning emoji (⚡)            |
-| AR-029 | waiting emoji                | Uses hourglass emoji (⏳)            |
-| AR-030 | periodic updates             | Updates display at interval          |
-| AR-031 | render() output              | Contains `\r\x1b[K` (clear sequence) |
+| ID     | Input                            | Expected Output                        |
+| ------ | -------------------------------- | -------------------------------------- |
+| PR-001 | constructor()                    | Default updateIntervalMs=1000          |
+| PR-002 | constructor(custom interval)     | Custom updateIntervalMs applied        |
+| PR-010 | start()                          | Starts tick timer                      |
+| PR-011 | stop()                           | Stops tick timer, clears activity line |
+| PR-020 | log() with hasActivityLine=false | Prints log with newline                |
+| PR-021 | log() with hasActivityLine=true  | Clears activity, prints log, redraws   |
+| PR-022 | log() preserves activity state   | Activity redraw shows same state       |
+| PR-030 | activity(thinking)               | Displays "Thinking..."                 |
+| PR-031 | activity(tool_start)             | Displays "Running {toolName}..."       |
+| PR-032 | activity(tool_complete)          | Increments tool count                  |
+| PR-033 | activity(responding)             | Displays "Responding..."               |
+| PR-034 | activity(waiting)                | Displays waiting with remaining time   |
+| PR-035 | activity() sets hasActivityLine  | hasActivityLine becomes true           |
+| PR-040 | clearActivity() with activity    | Clears line, hasActivityLine=false     |
+| PR-041 | clearActivity() without activity | No-op                                  |
+| PR-050 | elapsedMs format                 | Formats as M:SS                        |
+| PR-051 | output color                     | Uses cyan color for activity           |
+| PR-052 | multiple tools                   | Shows plural "tools"                   |
+| PR-053 | activity emoji                   | Uses lightning emoji (⚡)              |
+| PR-054 | waiting emoji                    | Uses hourglass emoji (⏳)              |
+| PR-055 | periodic updates                 | Updates display at interval            |
+| PR-056 | render() output                  | Contains `\r\x1b[K` (clear sequence)   |
 
-### Session onActivity Callback
+### StreamEvent to ActivityEvent Mapping
 
 | ID      | Input                       | Expected Output                         |
 | ------- | --------------------------- | --------------------------------------- |
-| SC-A001 | thinking StreamEvent        | Reports thinking RawActivityEvent       |
-| SC-A002 | tool_invocation StreamEvent | Reports tool_start with toolName        |
-| SC-A003 | tool_response StreamEvent   | Reports tool_complete with correct name |
-| SC-A004 | text StreamEvent            | Reports responding event                |
-| SC-A005 | multiple tools with IDs     | Tracks tool name by toolUseId           |
-| SC-A006 | failed tool response        | Reports isError=true                    |
-| SC-A007 | no callback provided        | Does not throw                          |
+| SE-A001 | thinking StreamEvent        | Maps to thinking ActivityEvent          |
+| SE-A002 | tool_invocation StreamEvent | Maps to tool_start with toolName        |
+| SE-A003 | tool_response StreamEvent   | Maps to tool_complete with correct name |
+| SE-A004 | text StreamEvent            | Maps to responding event                |
+| SE-A005 | multiple tools with IDs     | Tracks tool name by toolUseId           |
+| SE-A006 | failed tool response        | Maps to isError=true                    |
+| SE-A007 | stream_end event            | Triggers clearActivity()                |
 
 ### Factory Functions
 

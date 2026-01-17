@@ -331,16 +331,46 @@ All duration displays use human-readable format with zero-value parts omitted:
 
 ---
 
-## ActivityReporter
+## Presenter
 
-ActivityReporter provides activity feedback during Session execution, allowing users to understand Agent operation status in normal mode.
+Presenter is a CLI-layer interface that coordinates all console output. It ensures log messages and activity updates don't conflict.
+
+**Architecture:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  apps/cli (Presentation Layer)                                   │
+├─────────────────────────────────────────────────────────────────┤
+│  ConsolePresenter                                                │
+│  ├── log(level, message)     → Permanent output                  │
+│  ├── activity(event)         → Transient output (single line)    │
+│  └── clearActivity()         → Clear activity line               │
+│                                                                  │
+│  Internal State:                                                 │
+│  ├── hasActivityLine: boolean                                    │
+│  ├── currentActivity: ActivityState                              │
+│  └── intervalId: Timer                                           │
+└─────────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  stdout (coordinated output)                                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Interface Definition
 
 ```typescript
-// packages/core/src/activityReporter.ts
-interface ActivityReporter {
-  startSession(): () => void
-  reportActivity(event: ActivityEvent): void
+// apps/cli/src/presenter.ts
+interface Presenter {
+  log(level: LogLevel, message: string): void
+  activity(event: ActivityEvent): void
+  clearActivity(): void
+  start(): void
+  stop(): void
 }
+
+type LogLevel = 'info' | 'debug' | 'warning' | 'error'
 
 // Discriminated union by 'type' field
 type ActivityEvent =
@@ -354,22 +384,40 @@ type ActivityEvent =
   | { type: 'thinking'; elapsedMs: number }
   | { type: 'responding'; elapsedMs: number }
   | { type: 'waiting'; remainingMs: number; resetTime: Date; elapsedMs: number }
-
-type ActivityEventType = ActivityEvent['type']
-
-const silentActivityReporter: ActivityReporter
 ```
 
 ### Interface Methods
 
-| Method         | Signature                        | Description                                        |
-| -------------- | -------------------------------- | -------------------------------------------------- |
-| startSession   | `() => () => void`               | Start activity reporting, returns cleanup function |
-| reportActivity | `(event: ActivityEvent) => void` | Report activity event                              |
+| Method        | Signature                                    | Description                    |
+| ------------- | -------------------------------------------- | ------------------------------ |
+| log           | `(level: LogLevel, message: string) => void` | Output permanent log message   |
+| activity      | `(event: ActivityEvent) => void`             | Update transient activity line |
+| clearActivity | `() => void`                                 | Clear activity line            |
+| start         | `() => void`                                 | Start tick timer               |
+| stop          | `() => void`                                 | Stop tick timer                |
+
+### Output Coordination
+
+The Presenter ensures log messages are never overwritten by activity updates:
+
+```typescript
+log(level, message):
+  if (hasActivityLine) clearLine()      // \r\x1b[K
+  console.log(formatMessage(level, message))
+  if (hasActivityLine) redrawActivityLine()
+
+activity(event):
+  updateActivityState(event)
+  renderActivityLine()                  // \r\x1b[K + content (no newline)
+  hasActivityLine = true
+
+clearActivity():
+  if (hasActivityLine):
+    clearLine()                         // \r\x1b[K
+    hasActivityLine = false
+```
 
 ### ActivityEvent Variants
-
-ActivityEvent is a discriminated union with `type` as the discriminator field.
 
 | Variant         | Fields                                          | Trigger                   |
 | --------------- | ----------------------------------------------- | ------------------------- |
@@ -379,32 +427,21 @@ ActivityEvent is a discriminated union with `type` as the discriminator field.
 | `responding`    | `type`, `elapsedMs`                             | StreamEventText           |
 | `waiting`       | `type`, `remainingMs`, `resetTime`, `elapsedMs` | Quota exceeded detection  |
 
-### Field Definitions
-
-| Field       | Type      | Description                        |
-| ----------- | --------- | ---------------------------------- |
-| type        | `string`  | Discriminator field                |
-| toolName    | `string`  | Tool name                          |
-| isError     | `boolean` | Whether tool result is error       |
-| elapsedMs   | `number`  | Milliseconds elapsed since start   |
-| remainingMs | `number`  | Milliseconds remaining until reset |
-| resetTime   | `Date`    | Quota reset time                   |
-
 ### StreamEvent to ActivityEvent Mapping
 
-| StreamEvent Type       | ActivityEventType  | Display Content                                |
-| ---------------------- | ------------------ | ---------------------------------------------- |
-| stream_thinking        | thinking           | "Thinking..."                                  |
-| stream_tool_invocation | tool_start         | "Running {toolName}..."                        |
-| stream_tool_response   | tool_complete      | (Updates tool count)                           |
-| stream_text            | responding         | "Responding..."                                |
-| stream_end             | (Triggers cleanup) | (Clears activity line)                         |
-| stream_error           | (No change)        | -                                              |
-| (quota exceeded)       | waiting            | "⏳ Waiting... {remaining} (resets at {time})" |
+| StreamEvent Type       | Presenter Action        | Display Content                                |
+| ---------------------- | ----------------------- | ---------------------------------------------- |
+| stream_thinking        | activity(thinking)      | "Thinking..."                                  |
+| stream_tool_invocation | activity(tool_start)    | "Running {toolName}..."                        |
+| stream_tool_response   | activity(tool_complete) | (Updates tool count)                           |
+| stream_text            | activity(responding)    | "Responding..."                                |
+| stream_end             | clearActivity()         | (Clears activity line)                         |
+| stream_error           | (No change)             | -                                              |
+| (quota exceeded)       | activity(waiting)       | "⏳ Waiting... {remaining} (resets at {time})" |
 
 ### Display Format
 
-The console implementation displays activity in a single line that updates in place:
+**Activity Line:**
 
 ```text
 ⚡ [elapsed] [activity] [tool count]
@@ -419,61 +456,85 @@ The console implementation displays activity in a single line that updates in pl
 ⚡ 1:23 Responding... (7 tools)
 ```
 
-**Waiting Display Format:**
+**Waiting Display:**
 
 ```text
 ⏳ Waiting... 2h 44m remaining (resets at 6:00 PM UTC)
 ```
 
+### Visual Example
+
+```text
+Initial:
+(empty)
+
+After activity(thinking):
+⚡ 0:05 Thinking..._              <- cursor here, no newline
+
+After log("info", "Session 2 started"):
+1. Clear activity line (\r\x1b[K)
+2. Print "Session 2 started\n"
+3. Redraw activity line
+
+Result:
+Session 2 started                 <- Log (permanent)
+⚡ 0:05 Thinking..._              <- Activity (transient)
+
+After activity(tool_start):
+Session 2 started                 <- Log unchanged
+⚡ 0:08 Running bash..._          <- Activity updated (overwrites previous)
+```
+
 ### Update Behavior
 
-| Parameter       | Value                                               |
-| --------------- | --------------------------------------------------- |
-| Update interval | 1 second (default)                                  |
-| Display mode    | Single-line overwrite (carriage return)             |
-| Clear sequence  | `\r\x1b[K` (carriage return + clear to end of line) |
+| Parameter        | Value                              |
+| ---------------- | ---------------------------------- |
+| Update interval  | 1 second (default)                 |
+| Activity display | Single-line overwrite (`\r\x1b[K`) |
+| Log display      | Multi-line accumulation            |
 
-### Implementation Notes
+### Core Layer Integration
 
-**ConsoleActivityReporter** (apps/cli):
-
-- Uses `\r\x1b[K` to clear and overwrite the current line
-- Maintains internal state: `currentTool`, `toolCount`, `elapsedMs`
-- Starts a 1-second interval timer on `startSession()`
-- Cleanup function stops timer and clears the activity line
-
-**silentActivityReporter** (packages/core):
-
-- Default implementation that does nothing
-- Used for testing and non-interactive environments
-- `startSession()` returns a no-op cleanup function
-- `reportActivity()` is a no-op
-
-### Dependency Injection
-
-| Component        | Injected Via         | Purpose                   |
-| ---------------- | -------------------- | ------------------------- |
-| ActivityReporter | SessionRunnerOptions | Enable testing with mocks |
-
-**SessionRunnerOptions extension:**
+SessionRunner provides a `StreamEventCallback` to receive events from Session:
 
 ```typescript
+// packages/core/src/sessionRunner.ts
+type StreamEventCallback = (event: StreamEvent) => void
+
 interface SessionRunnerOptions {
   // ... existing options ...
-  activityReporter?: ActivityReporter // defaults to silentActivityReporter
+  onStreamEvent?: StreamEventCallback
 }
+```
+
+The CLI layer connects this to the Presenter:
+
+```typescript
+// apps/cli - wiring
+const presenter = new ConsolePresenter()
+
+const onStreamEvent = (event: StreamEvent) => {
+  const activityEvent = mapToActivityEvent(event, startTime)
+  if (activityEvent) {
+    presenter.activity(activityEvent)
+  }
+  if (event.type === 'stream_end') {
+    presenter.clearActivity()
+  }
+}
+
+sessionRunner.run(clientFactory, { onStreamEvent })
 ```
 
 ### Comparison with Debug Mode
 
-| Aspect            | Debug Mode                       | Normal Mode (Activity) |
-| ----------------- | -------------------------------- | ---------------------- |
-| Information level | Full event details               | Summary only           |
-| Output style      | Multi-line accumulation          | Single-line overwrite  |
-| Event content     | Shows payload data               | Activity type only     |
-| Tool details      | Full input/output                | Tool name only         |
-| Thinking          | Content (truncated to 200 chars) | Just "Thinking..."     |
-| Persistence       | Scrolls up in history            | Cleared on completion  |
+| Aspect            | Debug Mode                       | Normal Mode        |
+| ----------------- | -------------------------------- | ------------------ |
+| Information level | Full event details               | Summary only       |
+| Output style      | All via log()                    | log() + activity() |
+| Event content     | Shows payload data               | Activity type only |
+| Tool details      | Full input/output                | Tool name only     |
+| Thinking          | Content (truncated to 200 chars) | Just "Thinking..." |
 
 ---
 

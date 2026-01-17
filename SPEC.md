@@ -316,9 +316,9 @@ Quota detection utilities in `quotaManager.ts`:
 
 **Quota Wait Progress Feedback:**
 
-When `--wait-for-quota` is enabled and waiting for quota reset, the system provides progress feedback using the unified `ActivityReporter` interface (see Section 3.5).
+When `--wait-for-quota` is enabled and waiting for quota reset, the system provides progress feedback via the Presenter (see Section 3.5).
 
-Quota waiting uses the `waiting` event type with `remainingMs` and `resetTime` fields:
+Quota waiting uses the `waiting` ActivityEvent with `remainingMs` and `resetTime` fields:
 
 ```text
 ⏳ Waiting... 2h 44m remaining (resets at 6:00 PM UTC)
@@ -347,16 +347,24 @@ Retry behavior:
 | 'quota_exceeded' | SDK | API subscription quota exhausted | Controlled by `waitForQuota` option |
 | 'execution_error' | SDK/Session | Internal SDK errors or runtime errors | Count toward `consecutiveErrors` |
 
-### 3.5 Activity Feedback
+### 3.5 Console Output
 
-Provides activity feedback during Session execution, allowing users to understand Agent operation status in normal mode.
+Defines how CLI presents information to users. All output coordination is handled in the Presentation layer (apps/cli).
 
-**ActivityReporter Interface:**
+**Output Types:**
+
+| Type | Persistence | Behavior |
+|------|-------------|----------|
+| Log | Permanent | Once printed, stays in terminal history |
+| Activity | Transient | Single-line, can be overwritten, always at bottom |
+
+**Presenter Interface (CLI layer):**
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| startSession | `() => () => void` | Start activity reporting, returns cleanup function |
-| reportActivity | `(event: ActivityEvent) => void` | Report activity event |
+| log | `(level: LogLevel, message: string) => void` | Output permanent log message |
+| activity | `(event: ActivityEvent) => void` | Update transient activity line |
+| clearActivity | `() => void` | Clear activity line (session end) |
 
 **ActivityEvent Type (Discriminated Union):**
 
@@ -368,28 +376,37 @@ Provides activity feedback during Session execution, allowing users to understan
 | `responding` | `type`, `elapsedMs` | Agent is generating text response |
 | `waiting` | `type`, `remainingMs`, `resetTime`, `elapsedMs` | Waiting for quota reset |
 
-**Field Definitions:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| type | `ActivityEventType` | Discriminator field |
-| toolName | `string` | Tool name |
-| isError | `boolean` | Whether tool result is error |
-| elapsedMs | `number` | Milliseconds elapsed since start |
-| remainingMs | `number` | Milliseconds remaining until reset |
-| resetTime | `Date` | Quota reset time |
-
 **StreamEvent to ActivityEvent Mapping:**
 
-| StreamEvent Type | ActivityEventType | Display Content |
-|-----------------|-------------------|-----------------|
+| StreamEvent Type | ActivityEvent | Display Content |
+|-----------------|---------------|-----------------|
 | stream_thinking | thinking | "Thinking..." |
 | stream_tool_invocation | tool_start | "Running {toolName}..." |
 | stream_tool_response | tool_complete | (Updates tool count) |
 | stream_text | responding | "Responding..." |
-| stream_end | (Triggers cleanup) | (Clears activity line) |
+| stream_end | clearActivity() | (Clears activity line) |
 | stream_error | (No change) | - |
 | (quota exceeded) | waiting | "⏳ Waiting... {remaining} (resets at {time})" |
+
+**Output Coordination:**
+
+The Presenter ensures Log and Activity outputs don't conflict:
+
+```text
+log(message):
+  1. if hasActivityLine: clearActivityLine()
+  2. console.log(message)
+  3. if hasActivityLine: redrawActivityLine()
+
+activity(event):
+  1. updateState(event)
+  2. renderActivityLine()  // \r\x1b[K + content (no newline)
+  3. hasActivityLine = true
+
+clearActivity():
+  1. if hasActivityLine: clearActivityLine()
+  2. hasActivityLine = false
+```
 
 **Display Format:**
 
@@ -405,34 +422,62 @@ Examples:
 ⚡ 1:23 Responding... (7 tools)
 ```
 
+**Waiting Display:**
+```text
+⏳ Waiting... 2h 44m remaining (resets at 6:00 PM UTC)
+```
+
 **Update Behavior:**
 
 | Parameter | Value |
 |-----------|-------|
 | Update interval | 1 second (default) |
-| Display mode | Single-line overwrite (carriage return) |
-| Clear sequence | `\r\x1b[K` |
+| Activity display | Single-line overwrite (`\r\x1b[K`) |
+| Log display | Multi-line accumulation |
+
+**Visual Example:**
+
+```text
+Initial:
+(empty)
+
+After activity(thinking):
+⚡ 0:05 Thinking..._              <- cursor here, no newline
+
+After log("Session 2 started"):
+1. Clear activity line
+2. Print log with newline
+3. Redraw activity line
+
+Result:
+Session 2 started                 <- Log (permanent)
+⚡ 0:05 Thinking..._              <- Activity (transient)
+
+After activity(tool_start):
+Session 2 started                 <- Log unchanged
+⚡ 0:08 Running bash..._          <- Activity updated
+```
 
 **Comparison with Debug Mode:**
 
-| Aspect | Debug Mode | Normal Mode (Activity) |
-|--------|------------|------------------------|
+| Aspect | Debug Mode | Normal Mode |
+|--------|------------|-------------|
 | Information level | Full event details | Summary only |
-| Output style | Multi-line accumulation | Single-line overwrite |
+| Output style | All via log() | log() + activity() |
 | Event content | Shows payload data | Activity type only |
 | Tool details | Full input/output | Tool name only |
 | Thinking | Content (truncated) | Just "Thinking..." |
-| Persistence | Scrolls up in history | Cleared on completion |
 
-**Dependency Injection:**
+**Core Layer Integration:**
 
-| Component | Injected Via | Purpose |
-|-----------|--------------|---------|
-| ActivityReporter | SessionRunnerOptions | Enable testing with mocks |
+SessionRunner receives a `StreamEventCallback` for activity reporting:
 
-Default implementation: `silentActivityReporter` (no output, for testing)
+| Component | Layer | Responsibility |
+|-----------|-------|----------------|
+| StreamEventCallback | Core (interface) | Receive StreamEvent from Session |
+| Presenter | CLI | Convert StreamEvent to display, coordinate output |
 
-For detailed specifications, see [Interfaces - ActivityReporter](docs/interfaces.md#activityreporter).
+For detailed specifications, see [Interfaces - Presenter](docs/interfaces.md#presenter).
 
 ---
 
@@ -1127,21 +1172,41 @@ Tool availability by command. For detailed restrictions, see [Section 6](#6-secu
 | quota_exceeded | both | `Quota exceeded` |
 | interrupted | both | `User interrupted` |
 
-### 9.10 Activity Feedback Behavior
+### 9.10 Console Output Behavior
+
+**Activity State Transitions:**
 
 | Condition | Action |
 |-----------|--------|
-| Session starts | Clear line, start tick timer |
+| SessionRunner starts | Start tick timer, hasActivityLine = false |
 | Tool starts | Update currentTool, increment toolCount |
 | Tool completes | Clear currentTool |
 | Thinking event | Display "Thinking..." |
 | Text event | Display "Responding..." |
-| Tick timer fires | Redraw current state with updated elapsed time |
-| Session ends | Stop timer, clear activity line |
+| Tick timer fires | Redraw activity line with updated elapsed time |
+| Session ends | clearActivity(), reset activity state |
 | Error event | No change |
-| Quota exceeded | Report `waiting` event with remainingMs/resetTime |
-| Remaining time updates | Report `waiting` event (every tick) |
-| Quota wait ends | Clear activity line |
+| Quota exceeded | Display waiting state with remainingMs/resetTime |
+| Quota wait ends | clearActivity() |
+
+**Output Coordination:**
+
+| Event | hasActivityLine | Action |
+|-------|-----------------|--------|
+| log() | false | Print log with newline |
+| log() | true | Clear activity → print log → redraw activity |
+| activity() | any | Update state, render activity line, hasActivityLine = true |
+| clearActivity() | true | Clear line (`\r\x1b[K`), hasActivityLine = false |
+| clearActivity() | false | No-op |
+
+**Session Boundary Behavior:**
+
+| Boundary | Action |
+|----------|--------|
+| Session N ends | clearActivity(), log session result |
+| Session N+1 starts | log "Session N+1 started", activity events resume |
+
+This ensures log messages are never overwritten by activity updates.
 
 ---
 
