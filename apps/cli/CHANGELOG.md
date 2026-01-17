@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/elct9620/autonoe/compare/cli-v0.3.1...cli-v0.4.0) (2026-01-17)
+
+
+### Features
+
+* **core:** replace WaitProgressReporter with unified ActivityReporter ([de626d2](https://github.com/elct9620/autonoe/commit/de626d25b4ecde945a740e5e22a1f48d538b8a46))
+
+
+### Bug Fixes
+
+* **cli:** add clear sequence to prevent residual content in activity line ([d3a4cba](https://github.com/elct9620/autonoe/commit/d3a4cba330a072ff53a4bddb57bf9be7451bfdda))
+* **cli:** add missing option validations per SPEC.md Section 8.1 ([f62db28](https://github.com/elct9620/autonoe/commit/f62db28aeefc95ba3d5b15fe992c9930ceece349))
+* **cli:** align thinking option error message with SPEC.md ([58f7085](https://github.com/elct9620/autonoe/commit/58f708556fd95d91945753dd7afb75cf6dbbb42d))
+
 ## [0.3.1](https://github.com/elct9620/autonoe/compare/cli-v0.3.0...cli-v0.3.1) (2026-01-15)
 
 
