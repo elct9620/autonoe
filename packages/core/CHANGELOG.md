@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/elct9620/autonoe/compare/core-v0.4.1...core-v0.4.2) (2026-01-17)
+
+
+### Bug Fixes
+
+* **agent:** bump version for core 0.4.1 dependency update ([3edfa93](https://github.com/elct9620/autonoe/commit/3edfa9372f09b637f138860aff44a0d79415a45f))
+
 ## [0.4.1](https://github.com/elct9620/autonoe/compare/core-v0.4.0...core-v0.4.1) (2026-01-17)
 
 
