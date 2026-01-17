@@ -7,6 +7,19 @@ description: Align specification and codebase with spec-knowledge skill
 
 The `<execute>ARGUMENTS</execute>` will execute the main procedure.
 
+# Principles
+
+When aligning the specification and codebase, follow these principles:
+
+- Refactor first: Always consider refactoring existing code to better match the specification before adding new code.
+- Renaming: If a feature or function has been renamed in the specification, ensure that the codebase reflects this change.
+- Backward compatibility: Internally changes only apply for user facing features. Internal changes do not need to maintain backward compatibility.
+
+# Tools
+
+- Use plan mode after clarifying before making changes.
+- Use ask question tools with proposed changes to get user confirmation before proceeding.
+
 # Definition
 
 <procedure name="main">
