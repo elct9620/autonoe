@@ -360,7 +360,7 @@ export class SessionRunner {
         reportWaiting()
 
         // Report periodically during wait
-        const intervalId = setInterval(reportWaiting, 60000) // Update every minute
+        const intervalId = setInterval(reportWaiting, 1000) // Update every second
 
         try {
           await this.timer.delay(decision.durationMs)
