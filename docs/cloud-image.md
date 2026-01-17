@@ -68,34 +68,7 @@ virt-customize -a autonoe-ubuntu-24.04.img \
   --chmod 0755:/usr/local/bin/autonoe
 ```
 
-## CI/CD Integration
-
-### Workflow Triggers
-
-| Trigger         | Action                             |
-| --------------- | ---------------------------------- |
-| Release created | Build and upload to GitHub Release |
-| Manual dispatch | Build for testing                  |
-
-### GitHub Actions Workflow
-
-Location: `.github/workflows/build-cloud-image.yml`
-
-**Key Steps:**
-
-1. Install libguestfs-tools from Ubuntu package repository
-2. Download Ubuntu Cloud Image
-3. Build Autonoe CLI binary (linux-x64)
-4. Use virt-customize to inject binary
-5. Generate SHA256 checksum
-6. Upload to GitHub Release
-
-### Reusable Workflow Inputs
-
-| Input          | Type   | Required | Description                              |
-| -------------- | ------ | -------- | ---------------------------------------- |
-| `tag-strategy` | string | Yes      | `snapshot` or `release`                  |
-| `version-tag`  | string | No       | Version tag for release (e.g., `v1.0.0`) |
+For CI/CD workflow configuration, see [CI/CD Workflows](ci-cd.md#build-cloud-imageyml).
 
 ## Image Contents
 
