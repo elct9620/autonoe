@@ -19,18 +19,27 @@ Detailed interface definitions for Autonoe. For overview, see [SPEC.md Section 3
 | ------ | --------------------------------------------------- | ------------------------------- |
 | create | `(instructionName: InstructionName) => AgentClient` | Create new AgentClient instance |
 
-**AgentClientOptions** - Constructor options for implementations
+**AgentClientOptions** - Constructor options for implementations (Core layer)
 
 | Field             | Type                        | Description               |
 | ----------------- | --------------------------- | ------------------------- |
 | cwd               | string                      | Working directory         |
 | mcpServers        | Record\<string, McpServer\> | MCP server configurations |
-| permissionLevel   | PermissionLevel             | Security permission level |
 | allowedTools      | string[]                    | Enabled SDK tools         |
 | sandbox           | SandboxConfig               | Sandbox configuration     |
 | preToolUseHooks   | PreToolUseHook[]            | Tool validation hooks     |
 | model             | string                      | Claude model identifier   |
 | maxThinkingTokens | number                      | Extended thinking budget  |
+
+**ClaudeAgentClientOptions** - Extended options for ClaudeAgentClient (Agent layer)
+
+Extends `AgentClientOptions` with SDK-specific fields:
+
+| Field         | Type                             | Description            |
+| ------------- | -------------------------------- | ---------------------- |
+| sdkMcpServers | McpSdkServerConfigWithInstance[] | In-process MCP servers |
+
+SDK permission mode is fixed to `'acceptEdits'` for autonomous operation.
 
 ### Session Lifecycle
 

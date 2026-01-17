@@ -90,15 +90,6 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 
 ## Value Objects
 
-### McpServer
-
-External tool server configuration.
-
-| Field   | Type      | Description               |
-| ------- | --------- | ------------------------- |
-| command | string    | Server executable command |
-| args    | string[]? | Command arguments         |
-
 ### DeliverableInput
 
 Single deliverable definition (for create tool).
@@ -264,13 +255,20 @@ Implementation lives in infrastructure layer (`packages/agent`).
 | 'budget_exceeded' | API cost limit hit        |
 | 'quota_exceeded'  | Subscription quota hit    |
 
-### PermissionLevel
+---
 
-| Value             | Description                |
-| ----------------- | -------------------------- |
-| default           | Standard permissions       |
-| acceptEdits       | Auto-accept file edits     |
-| bypassPermissions | Skip all permission checks |
+## Interface Types
+
+Types that define the contract between Core and Infrastructure layers. These are not pure domain concepts but necessary abstractions for dependency inversion.
+
+### McpServer
+
+External tool server configuration. Defines how Core communicates tool server requirements to Infrastructure.
+
+| Field   | Type      | Description               |
+| ------- | --------- | ------------------------- |
+| command | string    | Server executable command |
+| args    | string[]? | Command arguments         |
 
 ---
 

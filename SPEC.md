@@ -169,11 +169,12 @@ See [Domain Model](docs/domain-model.md) for detailed type definitions.
 | Category | Types |
 |----------|-------|
 | Stream Events | StreamEvent (Text, Thinking, ToolInvocation, ToolResponse, End, Error) |
-| Value Objects | McpServer, DeliverableInput, OperationResult |
+| Value Objects | DeliverableInput, OperationResult |
 | Entities | Deliverable (with state machine: pending → passed/blocked) |
 | Aggregates | DeliverableStatus (persisted to `.autonoe/status.json`) |
-| Enums | SessionOutcome, PermissionLevel |
+| Enums | SessionOutcome |
 | Type Aliases | MessageStream |
+| Interface Types | McpServer (defines contract between Core and Infrastructure) |
 
 **Key Behaviors:**
 

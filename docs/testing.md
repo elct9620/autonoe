@@ -225,8 +225,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 | SC-CAC011 | mcpServers        | external only                        | converted via toSdkMcpServers     |
 | SC-CAC012 | mcpServers        | SDK MCP only                         | converted to record format        |
 | SC-CAC013 | mcpServers        | both external + SDK                  | merged, SDK takes precedence      |
-| SC-CAC020 | permissionLevel   | undefined                            | `permissionMode` undefined        |
-| SC-CAC021 | permissionLevel   | `'acceptEdits'`                      | `permissionMode` set              |
+| SC-CAC020 | permissionMode    | (always)                             | `permissionMode` = 'acceptEdits'  |
 | SC-CAC030 | allowedTools      | undefined                            | `allowedTools` undefined          |
 | SC-CAC031 | allowedTools      | `['Read', 'Write']`                  | `allowedTools` set                |
 | SC-CAC040 | sandbox           | undefined                            | `sandbox` undefined               |

@@ -89,10 +89,8 @@ export interface MessageStream extends AsyncGenerator<StreamEvent, void> {
 }
 
 // McpServer - external tool server configuration
+// Interface type: defines contract between Core and Infrastructure
 export interface McpServer {
   command: string
   args?: string[]
 }
-
-// PermissionLevel - security permission level
-export type PermissionLevel = 'default' | 'acceptEdits' | 'bypassPermissions'

@@ -126,7 +126,6 @@ function buildRunFactory(
 
       return new ClaudeAgentClient({
         cwd: projectDir,
-        permissionLevel: 'acceptEdits',
         sandbox,
         mcpServers: config.mcpServers,
         preToolUseHooks,
@@ -170,7 +169,6 @@ function buildSyncFactory(
 
       return new ClaudeAgentClient({
         cwd: projectDir,
-        permissionLevel: 'acceptEdits',
         sandbox,
         mcpServers: config.mcpServers,
         preToolUseHooks,

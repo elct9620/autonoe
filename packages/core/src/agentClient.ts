@@ -1,4 +1,4 @@
-import type { MessageStream, McpServer, PermissionLevel } from './types'
+import type { MessageStream, McpServer } from './types'
 import type { SandboxConfig } from './configuration'
 import type { InstructionName } from './instructions'
 
@@ -55,7 +55,6 @@ export interface PreToolUseHook {
 export interface AgentClientOptions {
   cwd: string
   mcpServers?: Record<string, McpServer>
-  permissionLevel?: PermissionLevel
   allowedTools?: string[]
   sandbox?: SandboxConfig
   preToolUseHooks?: PreToolUseHook[]

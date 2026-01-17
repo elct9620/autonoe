@@ -12,7 +12,6 @@ export type {
   StreamEventCallback,
   MessageStream,
   McpServer,
-  PermissionLevel,
 } from './types'
 
 // Duration formatting utilities

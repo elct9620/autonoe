@@ -2,7 +2,6 @@ import { query as sdkQuery } from '@anthropic-ai/claude-agent-sdk'
 import type {
   Query as SDKQuery,
   Options as SDKOptions,
-  PermissionMode as SDKPermissionMode,
   SandboxSettings as SDKSandboxSettings,
   McpSdkServerConfigWithInstance,
 } from '@anthropic-ai/claude-agent-sdk'
@@ -20,7 +19,7 @@ import {
 
 /**
  * Extended options for ClaudeAgentClient
- * Includes SDK-specific MCP server support
+ * Includes SDK-specific options not part of core AgentClientOptions
  */
 export interface ClaudeAgentClientOptions extends AgentClientOptions {
   /**
@@ -72,9 +71,8 @@ export class ClaudeAgentClient implements AgentClient {
       sdkOptions.mcpServers = mergedMcpServers
     }
 
-    if (options.permissionLevel) {
-      sdkOptions.permissionMode = options.permissionLevel as SDKPermissionMode
-    }
+    // Autonoe requires acceptEdits to operate autonomously
+    sdkOptions.permissionMode = 'acceptEdits'
 
     if (options.allowedTools) {
       sdkOptions.allowedTools = options.allowedTools

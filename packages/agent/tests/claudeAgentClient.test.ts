@@ -200,23 +200,10 @@ describe('ClaudeAgentClient', () => {
       })
     })
 
-    describe('permissionLevel', () => {
-      it('SC-CAC020: omits permissionMode when undefined', async () => {
+    describe('permissionMode', () => {
+      it('SC-CAC020: always sets permissionMode to acceptEdits', async () => {
         const { ClaudeAgentClient } = await import('../src/claudeAgentClient')
         const client = new ClaudeAgentClient({ cwd: '/project' })
-
-        client.query('test')
-
-        const options = getCapturedSdkOptions(sdkQueryMock)
-        expect(options.permissionMode).toBeUndefined()
-      })
-
-      it('SC-CAC021: sets permissionMode for acceptEdits', async () => {
-        const { ClaudeAgentClient } = await import('../src/claudeAgentClient')
-        const client = new ClaudeAgentClient({
-          cwd: '/project',
-          permissionLevel: 'acceptEdits',
-        })
 
         client.query('test')
 
