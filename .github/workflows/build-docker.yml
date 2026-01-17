@@ -20,7 +20,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        target: [base, node, python, golang, ruby]
+        target: [base, node, python, golang, ruby, rust, php]
     steps:
       - uses: actions/checkout@v6
 

@@ -5,6 +5,8 @@ ARG NODE_VERSION=24
 ARG PYTHON_VERSION=3.14
 ARG GOLANG_VERSION=1.25
 ARG RUBY_VERSION=4.0
+ARG RUST_VERSION=1.84
+ARG PHP_VERSION=8.5
 
 # =============================================================================
 # Builder Stage: Compile autonoe binary
@@ -185,6 +187,82 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
+
+# Install claude-code CLI (required by claude-agent-sdk)
+RUN npm install -g @anthropic-ai/claude-code
+
+# Install Playwright system dependencies (browser installed via npx at runtime)
+RUN npx playwright install-deps chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
+
+# Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
+ENV AUTONOE_NO_SANDBOX=1
+
+WORKDIR /workspace
+
+# Copy compiled binary (last to maximize cache hits)
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
+
+CMD ["autonoe"]
+
+# =============================================================================
+# Rust Stage
+# =============================================================================
+FROM rust:${RUST_VERSION}-slim-bookworm AS rust
+
+ARG NODE_VERSION
+
+# Install essential tools and Node.js (including Git signing support)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    jq \
+    openssh-client \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install claude-code CLI (required by claude-agent-sdk)
+RUN npm install -g @anthropic-ai/claude-code
+
+# Install Playwright system dependencies (browser installed via npx at runtime)
+RUN npx playwright install-deps chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
+
+# Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
+ENV AUTONOE_NO_SANDBOX=1
+
+WORKDIR /workspace
+
+# Copy compiled binary (last to maximize cache hits)
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
+
+CMD ["autonoe"]
+
+# =============================================================================
+# PHP Stage
+# =============================================================================
+FROM php:${PHP_VERSION}-cli-bookworm AS php
+
+ARG NODE_VERSION
+
+# Install essential tools and Node.js (including Git signing support)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    jq \
+    openssh-client \
+    gnupg \
+    unzip \
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
