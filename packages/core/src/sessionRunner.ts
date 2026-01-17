@@ -4,14 +4,12 @@ import {
   type DeliverableStatusReader,
 } from './deliverableStatus'
 import type { Logger } from './logger'
-import type { Timer } from './timer'
 import type { TerminationContext } from './terminationEvaluator'
 import { silentLogger } from './logger'
 import { Session } from './session'
 import { createDefaultInstructionResolver } from './instructions'
 import { nullDeliverableStatusReader } from './deliverableStatus'
 import { formatDuration } from './duration'
-import { realTimer } from './timer'
 import { LoopState } from './loopState'
 import { evaluateTermination } from './terminationEvaluator'
 import type { VerificationTracker } from './verificationTracker'
@@ -26,19 +24,27 @@ import {
 export type { ExitReason } from './exitReason'
 
 /**
+ * Delay abstraction for dependency injection
+ * Enables testability by allowing mock implementations
+ */
+export interface Delay {
+  (ms: number, signal?: AbortSignal): Promise<void>
+}
+
+/**
  * SessionRunner configuration options
  * @see SPEC.md Section 3.9.4
  */
 export interface SessionRunnerOptions {
   projectDir: string
+  /** Delay function for wait operations (injected from infrastructure) */
+  delay: Delay
   maxIterations?: number
   delayBetweenSessions?: number
   model?: string
   waitForQuota?: boolean
   maxThinkingTokens?: number
   maxRetries?: number
-  /** Timer for delay operations (default: realTimer) */
-  timer?: Timer
   /** Callback for receiving StreamEvents (activity feedback) */
   onStreamEvent?: StreamEventCallback
   /** Use sync termination mode (allVerified instead of allPassed/allBlocked) */
@@ -112,14 +118,14 @@ export class SessionRunner {
   private readonly delayBetweenSessions: number
   private readonly maxIterations: number | undefined
   private readonly maxRetries: number
-  private readonly timer: Timer
+  private readonly delay: Delay
   private readonly onStreamEvent: StreamEventCallback | undefined
 
   constructor(private options: SessionRunnerOptions) {
     this.delayBetweenSessions = options.delayBetweenSessions ?? 3000
     this.maxIterations = options.maxIterations
     this.maxRetries = options.maxRetries ?? 3
-    this.timer = options.timer ?? realTimer
+    this.delay = options.delay
     this.onStreamEvent = options.onStreamEvent
   }
 
@@ -253,7 +259,7 @@ export class SessionRunner {
 
         // Delay before next session
         if (this.delayBetweenSessions > 0) {
-          await this.timer.delay(this.delayBetweenSessions)
+          await this.delay(this.delayBetweenSessions)
         }
       } catch (error) {
         const errorResult = await this.handleSessionError(
@@ -365,7 +371,7 @@ export class SessionRunner {
         const intervalId = setInterval(reportWaiting, 1000) // Update every second
 
         try {
-          await this.timer.delay(decision.durationMs, signal)
+          await this.delay(decision.durationMs, signal)
         } catch (error) {
           // Handle AbortError from signal - user interrupted during wait
           if (error instanceof DOMException && error.name === 'AbortError') {
@@ -414,7 +420,7 @@ export class SessionRunner {
     logger.warn(
       `Session error (${newState.consecutiveErrors}/${this.maxRetries}), starting new session...`,
     )
-    await this.timer.delay(this.delayBetweenSessions)
+    await this.delay(this.delayBetweenSessions)
     return { state: newState, shouldBreak: false }
   }
 

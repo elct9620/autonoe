@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import {
   SessionRunner,
   DefaultInstructionSelector,
+  type Delay,
   type Logger,
   type InstructionResolver,
   type InstructionSelector,
@@ -13,6 +14,9 @@ import {
   type MessageStream,
   Deliverable,
 } from '@autonoe/core'
+
+// Mock delay for testing - resolves immediately
+const mockDelay: Delay = async () => {}
 import { FileDeliverableRepository } from '@autonoe/agent'
 import {
   CommandHandler,
@@ -177,6 +181,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
         })
 
@@ -209,6 +214,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
         })
 
@@ -239,6 +245,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
         })
 
@@ -269,6 +276,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
         })
 
@@ -301,6 +309,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
           delayBetweenSessions: 0,
         })
@@ -334,6 +343,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
         })
 
@@ -366,6 +376,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
         })
 
@@ -402,6 +413,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
           waitForQuota: false,
         })
@@ -434,6 +446,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
           delayBetweenSessions: 0,
         })
@@ -472,6 +485,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
         })
 
@@ -505,6 +519,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
         })
 
@@ -535,6 +550,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
         })
 
@@ -570,6 +586,7 @@ describe('CommandHandler', () => {
         const repository = new FileDeliverableRepository(tempDir)
         const sessionRunner = new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 1,
         })
 
@@ -611,6 +628,7 @@ describe('CommandHandler', () => {
         overrides?.sessionRunner ??
         new SessionRunner({
           projectDir: tempDir,
+          delay: mockDelay,
           maxIterations: 2,
           delayBetweenSessions: 0,
         })
@@ -751,6 +769,7 @@ describe('CommandHandler', () => {
           logger,
           sessionRunner: new SessionRunner({
             projectDir: tempDir,
+            delay: mockDelay,
             maxIterations: 1,
             delayBetweenSessions: 0,
           }),

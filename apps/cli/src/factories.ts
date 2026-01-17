@@ -14,6 +14,7 @@ import {
   type StreamEventCallback,
 } from '@autonoe/core'
 import type { ValidatedCommonOptions } from './options'
+import { delay } from './delay'
 
 /**
  * Create an instruction resolver with override support
@@ -80,6 +81,7 @@ export function createRunnerOptions(
 ): SessionRunnerOptions {
   return {
     projectDir: options.projectDir,
+    delay,
     maxIterations: options.maxIterations,
     maxRetries: options.maxRetries,
     model: options.model,

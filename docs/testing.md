@@ -16,12 +16,12 @@ For the main specification, see [SPEC.md](../SPEC.md).
 | SC-S002 | No .autonoe/status.json            | Use initializerInstruction              |
 | SC-S003 | All deliverables passed            | Session completes with success          |
 | SC-S004 | maxIterations: 2, not all pass     | Loop stops after 2 sessions             |
-| SC-S005 | Agent interruption                 | Session stops cleanly                   |
+| SC-S005 | Abort before session               | Session stops cleanly                   |
 | SC-S006 | Result event (success)             | Result text + cost displayed via logger |
 | SC-S007 | Result event (error)               | Error messages displayed via logger     |
 | SC-S008 | All deliverables pass on iter 1    | Loop exits immediately with success     |
 | SC-S009 | No maxIterations, partial progress | Loop continues to next session          |
-| SC-S010 | delayBetweenSessions: 5000         | 5s delay observed between sessions      |
+| SC-S010 | delayBetweenSessions: 5000         | Delay function called with value        |
 | SC-S011 | All passed, 2 sessions             | Overall log with cost and duration      |
 | SC-S012 | Partial with blocked               | Overall log shows "(N blocked)"         |
 | SC-S013 | Max iterations reached             | Overall logged before exit              |
@@ -39,8 +39,18 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 | SR-Q001 | quota exceeded, waitForQuota=true  | Waits for reset, then retries         |
 | SR-Q002 | quota exceeded, waitForQuota=false | Exits immediately with quota_exceeded |
 | SR-Q003 | waiting for quota                  | Reports StreamEventWaiting events     |
-| SR-Q004 | timer throws error during wait     | Error propagates correctly            |
-| SR-Q005 | SIGINT during quota wait           | Interrupts immediately, exits clean   |
+| SR-Q004 | Delay throws error during wait     | Error propagates correctly            |
+| SR-Q005 | AbortError during quota wait       | Exits cleanly with abort handling     |
+
+### Delay Function (CLI)
+
+| ID      | Input                          | Expected Output               |
+| ------- | ------------------------------ | ----------------------------- |
+| DL-D001 | delay(1000)                    | Resolves after specified time |
+| DL-D002 | delay(0)                       | Resolves immediately          |
+| DL-D003 | delay with aborted signal      | Rejects with AbortError       |
+| DL-D004 | delay aborted mid-wait         | Clears timeout, rejects       |
+| DL-D005 | delay without signal parameter | Resolves without error        |
 
 ### TerminationEvaluator
 

@@ -1,12 +1,18 @@
 import {
   Deliverable,
   DeliverableStatus,
+  type Delay,
   type StreamEventText,
   type StreamEventToolInvocation,
   type StreamEventToolResponse,
   type StreamEventEnd,
   type StreamEventError,
 } from '../../src/index'
+
+/**
+ * Mock delay for testing - resolves immediately
+ */
+export const mockDelay: Delay = async () => {}
 
 /**
  * Create mock status.json content

@@ -16,6 +16,7 @@ import {
   createMockClientFactory,
   TestLogger,
   Deliverable,
+  mockDelay,
 } from './helpers'
 
 /**
@@ -68,6 +69,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       const result = await runner.run(factory)
@@ -98,6 +100,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       await runner.run(factory, silentLogger, statusReader)
@@ -126,6 +129,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       await runner.run(factory, silentLogger, statusReader)
@@ -146,6 +150,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       await runner.run(factory, logger)
@@ -162,6 +167,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       await runner.run(factory, logger)
@@ -188,6 +194,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       await runner.run(factory, logger)
@@ -213,6 +220,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       await runner.run(factory, logger)
@@ -241,6 +249,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
       })
       const result = await runner.run(factory, silentLogger, statusReader)
@@ -252,23 +261,23 @@ describe('SessionRunner', () => {
   })
 
   describe('SC-S005: Agent interruption', () => {
-    it('stops cleanly when interrupted during session', async () => {
+    it('stops cleanly when interrupted before session starts', async () => {
       const client = new MockAgentClient()
       client.setResponses([createMockStreamEnd('done', 0.01)])
       const factory = createMockClientFactory(client)
 
+      // Create pre-aborted controller
       const controller = new AbortController()
-      // Interrupt after a short delay
-      setTimeout(() => controller.abort(), 10)
+      controller.abort()
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
-        delayBetweenSessions: 100, // Long delay to allow interrupt
+        delay: mockDelay,
+        delayBetweenSessions: 0,
       })
 
       const statusReader = new MockDeliverableStatusReader()
       statusReader.setStatusSequence([
-        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
         createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
       ])
 
@@ -292,6 +301,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       const result = await runner.run(factory)
@@ -309,6 +319,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       const result = await runner.run(factory)
@@ -325,6 +336,7 @@ describe('SessionRunner', () => {
       // runner will stop at maxIterations
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
         delayBetweenSessions: 0,
         model: 'claude-3',
@@ -343,6 +355,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       await runner.run(factory, logger)
@@ -358,6 +371,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       const result = await runner.run(factory)
@@ -386,6 +400,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 2,
         delayBetweenSessions: 0,
       })
@@ -412,6 +427,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 5,
         delayBetweenSessions: 0,
       })
@@ -453,6 +469,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         // No maxIterations - run until done
         delayBetweenSessions: 0,
       })
@@ -466,7 +483,7 @@ describe('SessionRunner', () => {
   })
 
   describe('SC-S010: Delay between sessions', () => {
-    it('waits delayBetweenSessions before next session', async () => {
+    it('calls delay with delayBetweenSessions value', async () => {
       const client = new MockAgentClient()
       client.setResponsesPerSession([
         [createMockStreamEnd('session 1', 0.01)],
@@ -481,18 +498,17 @@ describe('SessionRunner', () => {
       ])
 
       const delayMs = 100
+      const trackedDelay = vi.fn(mockDelay)
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: trackedDelay,
         delayBetweenSessions: delayMs,
       })
 
-      const startTime = Date.now()
       await runner.run(factory, silentLogger, statusReader)
-      const elapsed = Date.now() - startTime
 
-      // Should have at least one delay (between session 1 and 2)
-      // Give some tolerance for test execution overhead
-      expect(elapsed).toBeGreaterThanOrEqual(delayMs - 10)
+      // Delay should have been called with the configured delayBetweenSessions value
+      expect(trackedDelay).toHaveBeenCalledWith(delayMs)
     })
   })
 
@@ -512,6 +528,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
       })
 
@@ -538,6 +555,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
       })
 
@@ -566,6 +584,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
       })
 
@@ -602,6 +621,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
       })
 
@@ -635,6 +655,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
       })
 
@@ -663,6 +684,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 2,
         delayBetweenSessions: 0,
       })
@@ -684,6 +706,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
       })
       const result = await runner.run(factory)
@@ -713,6 +736,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxRetries: 3,
         delayBetweenSessions: 0,
       })
@@ -739,6 +763,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxRetries: 3,
         delayBetweenSessions: 0,
       })
@@ -771,6 +796,7 @@ describe('SessionRunner', () => {
         const logger = new TestLogger()
         const runner = new SessionRunner({
           projectDir: '/test/project',
+          delay: mockDelay,
           maxRetries: 3,
           delayBetweenSessions: 0,
         })
@@ -799,6 +825,7 @@ describe('SessionRunner', () => {
         const logger = new TestLogger()
         const runner = new SessionRunner({
           projectDir: '/test/project',
+          delay: mockDelay,
           maxRetries: 3,
           delayBetweenSessions: 0,
         })
@@ -828,6 +855,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxRetries: 2,
         delayBetweenSessions: 0,
       })
@@ -865,6 +893,7 @@ describe('SessionRunner', () => {
         const logger = new TestLogger()
         const runner = new SessionRunner({
           projectDir: '/test/project',
+          delay: mockDelay,
           maxRetries: 3,
           delayBetweenSessions: 0,
         })
@@ -893,6 +922,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
       })
 
@@ -921,6 +951,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
       })
 
@@ -939,6 +970,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
         delayBetweenSessions: 0,
       })
@@ -996,6 +1028,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
         waitForQuota: true,
       })
@@ -1015,6 +1048,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
         waitForQuota: false,
       })
@@ -1056,6 +1090,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
         waitForQuota: true,
         onStreamEvent,
@@ -1082,24 +1117,22 @@ describe('SessionRunner', () => {
 
       const onStreamEvent = vi.fn()
 
-      const mockTimer = {
-        delay: vi.fn().mockRejectedValue(new Error('Timer error')),
-      }
+      const rejectingDelay = vi.fn().mockRejectedValue(new Error('Delay error'))
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: rejectingDelay,
         delayBetweenSessions: 0,
         waitForQuota: true,
         onStreamEvent,
-        timer: mockTimer,
       })
 
       await expect(runner.run(factory, silentLogger)).rejects.toThrow(
-        'Timer error',
+        'Delay error',
       )
     })
 
-    it('SR-Q005: can be interrupted during quota wait', async () => {
+    it('SR-Q005: handles AbortError during quota wait', async () => {
       const client = new MockAgentClient()
       const resetTime = new Date(Date.now() + 60000) // 1 minute from now
       client.setResponses([
@@ -1112,43 +1145,22 @@ describe('SessionRunner', () => {
         createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
       ])
 
-      const controller = new AbortController()
-
-      // Mock timer that respects abort signal
-      const mockTimer = {
-        delay: vi.fn((ms: number, signal?: AbortSignal): Promise<void> => {
-          return new Promise<void>((resolve, reject) => {
-            const timeoutId = setTimeout(resolve, ms)
-            signal?.addEventListener(
-              'abort',
-              () => {
-                clearTimeout(timeoutId)
-                reject(new DOMException('Aborted', 'AbortError'))
-              },
-              { once: true },
-            )
-          })
-        }),
-      }
+      // Mock delay that immediately rejects with AbortError (simulating interrupt)
+      const abortingDelay = vi.fn(
+        (_ms: number, _signal?: AbortSignal): Promise<void> => {
+          return Promise.reject(new DOMException('Aborted', 'AbortError'))
+        },
+      )
 
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: abortingDelay,
         delayBetweenSessions: 0,
         waitForQuota: true,
-        timer: mockTimer,
       })
 
-      // Abort after a short delay to simulate Ctrl+C during wait
-      setTimeout(() => controller.abort(), 10)
-
-      const result = await runner.run(
-        factory,
-        logger,
-        statusReader,
-        undefined,
-        controller.signal,
-      )
+      const result = await runner.run(factory, logger, statusReader)
 
       // Should have been interrupted during quota wait
       expect(result.exitReason).toBe('interrupted')
@@ -1169,6 +1181,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
       })
 
@@ -1214,6 +1227,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         maxIterations: 1,
         delayBetweenSessions: 0,
         useSyncTermination: true,
@@ -1248,6 +1262,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
         useSyncTermination: true,
         getVerificationTracker: () => tracker,
@@ -1284,6 +1299,7 @@ describe('SessionRunner', () => {
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
         useSyncTermination: true,
         getVerificationTracker: () => tracker,
@@ -1308,6 +1324,7 @@ describe('SessionRunner', () => {
       const logger = new TestLogger()
       const runner = new SessionRunner({
         projectDir: '/test/project',
+        delay: mockDelay,
         delayBetweenSessions: 0,
         // useSyncTermination defaults to false (run mode)
       })

@@ -47,6 +47,7 @@ export { Session, type SessionResult } from './session'
 // SessionRunner exports
 export {
   SessionRunner,
+  type Delay,
   type SessionRunnerOptions,
   type SessionRunnerResult,
 } from './sessionRunner'
@@ -138,10 +139,6 @@ export type {
   InstructionSelectionResult,
 } from './instructionSelector'
 export { DefaultInstructionSelector } from './instructionSelector'
-
-// Timer exports
-export type { Timer } from './timer'
-export { realTimer } from './timer'
 
 // LoopState exports
 export { LoopState } from './loopState'
