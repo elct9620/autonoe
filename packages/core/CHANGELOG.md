@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/elct9620/autonoe/compare/core-v0.4.2...core-v0.5.0) (2026-01-17)
+
+
+### Features
+
+* **core:** add Rust and PHP language profiles ([c1a2953](https://github.com/elct9620/autonoe/commit/c1a29538eb642748c7c3d3e38e96b74435b547bf))
+
+
+### Bug Fixes
+
+* **core:** allow SIGINT to interrupt quota wait ([ec73cf8](https://github.com/elct9620/autonoe/commit/ec73cf8499d09379c97673ae451bb9173fd330ac))
+
 ## [0.4.2](https://github.com/elct9620/autonoe/compare/core-v0.4.1...core-v0.4.2) (2026-01-17)
 
 
