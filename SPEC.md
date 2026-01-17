@@ -318,13 +318,13 @@ Quota detection utilities in `quotaManager.ts`:
 
 When `--wait-for-quota` is enabled and waiting for quota reset, the system provides progress feedback via the Presenter (see Section 3.5).
 
-Quota waiting uses the `waiting` ActivityEvent with `remainingMs` and `resetTime` fields:
+Quota waiting displays progress with `remainingMs` and `resetTime`:
 
 ```text
 ⏳ Waiting... 2h 44m remaining (resets at 6:00 PM UTC)
 ```
 
-The progress line is updated using the same single-line overwrite mechanism as other activity events.
+The progress line is updated using the same single-line overwrite mechanism as other activity displays.
 
 **Session Error Retry:**
 
@@ -363,30 +363,19 @@ Defines how CLI presents information to users. All output coordination is handle
 | Method | Signature | Description |
 |--------|-----------|-------------|
 | log | `(level: LogLevel, message: string) => void` | Output permanent log message |
-| activity | `(event: ActivityEvent) => void` | Update transient activity line |
+| activity | `(event: StreamEvent) => void` | Update transient activity line |
 | clearActivity | `() => void` | Clear activity line (session end) |
 
-**ActivityEvent Type (Discriminated Union):**
+**StreamEvent to Activity Display:**
 
-| Variant | Fields | Description |
-|---------|--------|-------------|
-| `tool_start` | `type`, `toolName`, `elapsedMs` | Agent starts using a tool |
-| `tool_complete` | `type`, `toolName`, `isError`, `elapsedMs` | Tool execution completed |
-| `thinking` | `type`, `elapsedMs` | Agent is thinking |
-| `responding` | `type`, `elapsedMs` | Agent is generating text response |
-| `waiting` | `type`, `remainingMs`, `resetTime`, `elapsedMs` | Waiting for quota reset |
-
-**StreamEvent to ActivityEvent Mapping:**
-
-| StreamEvent Type | ActivityEvent | Display Content |
-|-----------------|---------------|-----------------|
-| stream_thinking | thinking | "Thinking..." |
-| stream_tool_invocation | tool_start | "Running {toolName}..." |
-| stream_tool_response | tool_complete | (Updates tool count) |
-| stream_text | responding | "Responding..." |
-| stream_end | clearActivity() | (Clears activity line) |
-| stream_error | (No change) | - |
-| (quota exceeded) | waiting | "⏳ Waiting... {remaining} (resets at {time})" |
+| StreamEvent Type | Display Content |
+|-----------------|-----------------|
+| stream_thinking | "Thinking..." |
+| stream_tool_invocation | "Running {toolName}..." |
+| stream_tool_response | (Updates tool count) |
+| stream_text | "Responding..." |
+| stream_end | clearActivity() |
+| stream_error | (No change) |
 
 **Output Coordination:**
 

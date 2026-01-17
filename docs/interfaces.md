@@ -364,26 +364,13 @@ Presenter is a CLI-layer interface that coordinates all console output. It ensur
 // apps/cli/src/presenter.ts
 interface Presenter {
   log(level: LogLevel, message: string): void
-  activity(event: ActivityEvent): void
+  activity(event: StreamEvent): void
   clearActivity(): void
   start(): void
   stop(): void
 }
 
 type LogLevel = 'info' | 'debug' | 'warning' | 'error'
-
-// Discriminated union by 'type' field
-type ActivityEvent =
-  | { type: 'tool_start'; toolName: string; elapsedMs: number }
-  | {
-      type: 'tool_complete'
-      toolName: string
-      isError: boolean
-      elapsedMs: number
-    }
-  | { type: 'thinking'; elapsedMs: number }
-  | { type: 'responding'; elapsedMs: number }
-  | { type: 'waiting'; remainingMs: number; resetTime: Date; elapsedMs: number }
 ```
 
 ### Interface Methods
@@ -391,7 +378,7 @@ type ActivityEvent =
 | Method        | Signature                                    | Description                    |
 | ------------- | -------------------------------------------- | ------------------------------ |
 | log           | `(level: LogLevel, message: string) => void` | Output permanent log message   |
-| activity      | `(event: ActivityEvent) => void`             | Update transient activity line |
+| activity      | `(event: StreamEvent) => void`               | Update transient activity line |
 | clearActivity | `() => void`                                 | Clear activity line            |
 | start         | `() => void`                                 | Start tick timer               |
 | stop          | `() => void`                                 | Stop tick timer                |
@@ -417,27 +404,16 @@ clearActivity():
     hasActivityLine = false
 ```
 
-### ActivityEvent Variants
+### StreamEvent to Display
 
-| Variant         | Fields                                          | Trigger                   |
-| --------------- | ----------------------------------------------- | ------------------------- |
-| `tool_start`    | `type`, `toolName`, `elapsedMs`                 | StreamEventToolInvocation |
-| `tool_complete` | `type`, `toolName`, `isError`, `elapsedMs`      | StreamEventToolResponse   |
-| `thinking`      | `type`, `elapsedMs`                             | StreamEventThinking       |
-| `responding`    | `type`, `elapsedMs`                             | StreamEventText           |
-| `waiting`       | `type`, `remainingMs`, `resetTime`, `elapsedMs` | Quota exceeded detection  |
-
-### StreamEvent to ActivityEvent Mapping
-
-| StreamEvent Type       | Presenter Action        | Display Content                                |
-| ---------------------- | ----------------------- | ---------------------------------------------- |
-| stream_thinking        | activity(thinking)      | "Thinking..."                                  |
-| stream_tool_invocation | activity(tool_start)    | "Running {toolName}..."                        |
-| stream_tool_response   | activity(tool_complete) | (Updates tool count)                           |
-| stream_text            | activity(responding)    | "Responding..."                                |
-| stream_end             | clearActivity()         | (Clears activity line)                         |
-| stream_error           | (No change)             | -                                              |
-| (quota exceeded)       | activity(waiting)       | "⏳ Waiting... {remaining} (resets at {time})" |
+| StreamEvent Type       | Display Content         |
+| ---------------------- | ----------------------- |
+| stream_thinking        | "Thinking..."           |
+| stream_tool_invocation | "Running {toolName}..." |
+| stream_tool_response   | (Updates tool count)    |
+| stream_text            | "Responding..."         |
+| stream_end             | clearActivity()         |
+| stream_error           | (No change)             |
 
 ### Display Format
 
@@ -514,10 +490,7 @@ The CLI layer connects this to the Presenter:
 const presenter = new ConsolePresenter()
 
 const onStreamEvent = (event: StreamEvent) => {
-  const activityEvent = mapToActivityEvent(event, startTime)
-  if (activityEvent) {
-    presenter.activity(activityEvent)
-  }
+  presenter.activity(event)
   if (event.type === 'stream_end') {
     presenter.clearActivity()
   }
