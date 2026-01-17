@@ -331,6 +331,152 @@ All duration displays use human-readable format with zero-value parts omitted:
 
 ---
 
+## ActivityReporter
+
+ActivityReporter provides activity feedback during Session execution, allowing users to understand Agent operation status in normal mode.
+
+```typescript
+// packages/core/src/activityReporter.ts
+interface ActivityReporter {
+  startSession(): () => void
+  reportActivity(event: ActivityEvent): void
+}
+
+// Discriminated union by 'type' field
+type ActivityEvent =
+  | { type: 'tool_start'; toolName: string; elapsedMs: number }
+  | {
+      type: 'tool_complete'
+      toolName: string
+      isError: boolean
+      elapsedMs: number
+    }
+  | { type: 'thinking'; elapsedMs: number }
+  | { type: 'responding'; elapsedMs: number }
+  | { type: 'waiting'; remainingMs: number; resetTime: Date; elapsedMs: number }
+
+type ActivityEventType = ActivityEvent['type']
+
+const silentActivityReporter: ActivityReporter
+```
+
+### Interface Methods
+
+| Method         | Signature                        | Description                                        |
+| -------------- | -------------------------------- | -------------------------------------------------- |
+| startSession   | `() => () => void`               | Start activity reporting, returns cleanup function |
+| reportActivity | `(event: ActivityEvent) => void` | Report activity event                              |
+
+### ActivityEvent Variants
+
+ActivityEvent is a discriminated union with `type` as the discriminator field.
+
+| Variant         | Fields                                          | Trigger                   |
+| --------------- | ----------------------------------------------- | ------------------------- |
+| `tool_start`    | `type`, `toolName`, `elapsedMs`                 | StreamEventToolInvocation |
+| `tool_complete` | `type`, `toolName`, `isError`, `elapsedMs`      | StreamEventToolResponse   |
+| `thinking`      | `type`, `elapsedMs`                             | StreamEventThinking       |
+| `responding`    | `type`, `elapsedMs`                             | StreamEventText           |
+| `waiting`       | `type`, `remainingMs`, `resetTime`, `elapsedMs` | Quota exceeded detection  |
+
+### Field Definitions
+
+| Field       | Type      | Description                        |
+| ----------- | --------- | ---------------------------------- |
+| type        | `string`  | Discriminator field                |
+| toolName    | `string`  | Tool name                          |
+| isError     | `boolean` | Whether tool result is error       |
+| elapsedMs   | `number`  | Milliseconds elapsed since start   |
+| remainingMs | `number`  | Milliseconds remaining until reset |
+| resetTime   | `Date`    | Quota reset time                   |
+
+### StreamEvent to ActivityEvent Mapping
+
+| StreamEvent Type       | ActivityEventType  | Display Content                                |
+| ---------------------- | ------------------ | ---------------------------------------------- |
+| stream_thinking        | thinking           | "Thinking..."                                  |
+| stream_tool_invocation | tool_start         | "Running {toolName}..."                        |
+| stream_tool_response   | tool_complete      | (Updates tool count)                           |
+| stream_text            | responding         | "Responding..."                                |
+| stream_end             | (Triggers cleanup) | (Clears activity line)                         |
+| stream_error           | (No change)        | -                                              |
+| (quota exceeded)       | waiting            | "⏳ Waiting... {remaining} (resets at {time})" |
+
+### Display Format
+
+The console implementation displays activity in a single line that updates in place:
+
+```text
+⚡ [elapsed] [activity] [tool count]
+```
+
+**Examples:**
+
+```text
+⚡ 0:05 Thinking...
+⚡ 0:12 Running bash... (1 tool)
+⚡ 0:45 Running Read... (3 tools)
+⚡ 1:23 Responding... (7 tools)
+```
+
+**Waiting Display Format:**
+
+```text
+⏳ Waiting... 2h 44m remaining (resets at 6:00 PM UTC)
+```
+
+### Update Behavior
+
+| Parameter       | Value                                               |
+| --------------- | --------------------------------------------------- |
+| Update interval | 1 second (default)                                  |
+| Display mode    | Single-line overwrite (carriage return)             |
+| Clear sequence  | `\r\x1b[K` (carriage return + clear to end of line) |
+
+### Implementation Notes
+
+**ConsoleActivityReporter** (apps/cli):
+
+- Uses `\r\x1b[K` to clear and overwrite the current line
+- Maintains internal state: `currentTool`, `toolCount`, `elapsedMs`
+- Starts a 1-second interval timer on `startSession()`
+- Cleanup function stops timer and clears the activity line
+
+**silentActivityReporter** (packages/core):
+
+- Default implementation that does nothing
+- Used for testing and non-interactive environments
+- `startSession()` returns a no-op cleanup function
+- `reportActivity()` is a no-op
+
+### Dependency Injection
+
+| Component        | Injected Via         | Purpose                   |
+| ---------------- | -------------------- | ------------------------- |
+| ActivityReporter | SessionRunnerOptions | Enable testing with mocks |
+
+**SessionRunnerOptions extension:**
+
+```typescript
+interface SessionRunnerOptions {
+  // ... existing options ...
+  activityReporter?: ActivityReporter // defaults to silentActivityReporter
+}
+```
+
+### Comparison with Debug Mode
+
+| Aspect            | Debug Mode                       | Normal Mode (Activity) |
+| ----------------- | -------------------------------- | ---------------------- |
+| Information level | Full event details               | Summary only           |
+| Output style      | Multi-line accumulation          | Single-line overwrite  |
+| Event content     | Shows payload data               | Activity type only     |
+| Tool details      | Full input/output                | Tool name only         |
+| Thinking          | Content (truncated to 200 chars) | Just "Thinking..."     |
+| Persistence       | Scrolls up in history            | Cleared on completion  |
+
+---
+
 ## Autonoe Tool
 
 ### Architecture

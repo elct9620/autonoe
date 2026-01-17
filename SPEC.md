@@ -316,36 +316,15 @@ Quota detection utilities in `quotaManager.ts`:
 
 **Quota Wait Progress Feedback:**
 
-When `--wait-for-quota` is enabled and waiting for quota reset, the system provides periodic progress feedback.
+When `--wait-for-quota` is enabled and waiting for quota reset, the system provides progress feedback using the unified `ActivityReporter` interface (see Section 3.5).
 
-| Component | Description |
-|-----------|-------------|
-| WaitProgressReporter | Interface for progress reporting during wait |
-| Update interval | 60 seconds |
-| Display mode | Single-line overwrite (carriage return) |
+Quota waiting uses the `waiting` event type with `remainingMs` and `resetTime` fields:
 
-Output format:
 ```text
-Quota exceeded, waiting 2h 45m 30s until reset...
-Quota resets at: 6:00 PM UTC
-⏳ Waiting... 2h 44m remaining
+⏳ Waiting... 2h 44m remaining (resets at 6:00 PM UTC)
 ```
 
-The progress line is updated every 60 seconds using recursive `setTimeout`, overwriting the previous line to keep terminal output clean.
-
-WaitProgressReporter interface:
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| startWait | `(totalMs: number, resetTime?: Date) => () => void` | Start progress reporting, returns cleanup function |
-
-Dependency injection follows existing pattern:
-
-| Component | Injected Via | Purpose |
-|-----------|--------------|---------|
-| WaitProgressReporter | SessionRunnerOptions | Enable progress testing with mocks |
-
-Default implementation: `silentWaitProgressReporter` (no output, for testing)
+The progress line is updated using the same single-line overwrite mechanism as other activity events.
 
 **Session Error Retry:**
 
@@ -367,6 +346,93 @@ Retry behavior:
 |---------|--------|-------------|----------------|
 | 'quota_exceeded' | SDK | API subscription quota exhausted | Controlled by `waitForQuota` option |
 | 'execution_error' | SDK/Session | Internal SDK errors or runtime errors | Count toward `consecutiveErrors` |
+
+### 3.5 Activity Feedback
+
+Provides activity feedback during Session execution, allowing users to understand Agent operation status in normal mode.
+
+**ActivityReporter Interface:**
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| startSession | `() => () => void` | Start activity reporting, returns cleanup function |
+| reportActivity | `(event: ActivityEvent) => void` | Report activity event |
+
+**ActivityEvent Type (Discriminated Union):**
+
+| Variant | Fields | Description |
+|---------|--------|-------------|
+| `tool_start` | `type`, `toolName`, `elapsedMs` | Agent starts using a tool |
+| `tool_complete` | `type`, `toolName`, `isError`, `elapsedMs` | Tool execution completed |
+| `thinking` | `type`, `elapsedMs` | Agent is thinking |
+| `responding` | `type`, `elapsedMs` | Agent is generating text response |
+| `waiting` | `type`, `remainingMs`, `resetTime`, `elapsedMs` | Waiting for quota reset |
+
+**Field Definitions:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| type | `ActivityEventType` | Discriminator field |
+| toolName | `string` | Tool name |
+| isError | `boolean` | Whether tool result is error |
+| elapsedMs | `number` | Milliseconds elapsed since start |
+| remainingMs | `number` | Milliseconds remaining until reset |
+| resetTime | `Date` | Quota reset time |
+
+**StreamEvent to ActivityEvent Mapping:**
+
+| StreamEvent Type | ActivityEventType | Display Content |
+|-----------------|-------------------|-----------------|
+| stream_thinking | thinking | "Thinking..." |
+| stream_tool_invocation | tool_start | "Running {toolName}..." |
+| stream_tool_response | tool_complete | (Updates tool count) |
+| stream_text | responding | "Responding..." |
+| stream_end | (Triggers cleanup) | (Clears activity line) |
+| stream_error | (No change) | - |
+| (quota exceeded) | waiting | "⏳ Waiting... {remaining} (resets at {time})" |
+
+**Display Format:**
+
+```text
+⚡ [elapsed] [activity] [tool count]
+```
+
+Examples:
+```text
+⚡ 0:05 Thinking...
+⚡ 0:12 Running bash... (1 tool)
+⚡ 0:45 Running Read... (3 tools)
+⚡ 1:23 Responding... (7 tools)
+```
+
+**Update Behavior:**
+
+| Parameter | Value |
+|-----------|-------|
+| Update interval | 1 second (default) |
+| Display mode | Single-line overwrite (carriage return) |
+| Clear sequence | `\r\x1b[K` |
+
+**Comparison with Debug Mode:**
+
+| Aspect | Debug Mode | Normal Mode (Activity) |
+|--------|------------|------------------------|
+| Information level | Full event details | Summary only |
+| Output style | Multi-line accumulation | Single-line overwrite |
+| Event content | Shows payload data | Activity type only |
+| Tool details | Full input/output | Tool name only |
+| Thinking | Content (truncated) | Just "Thinking..." |
+| Persistence | Scrolls up in history | Cleared on completion |
+
+**Dependency Injection:**
+
+| Component | Injected Via | Purpose |
+|-----------|--------------|---------|
+| ActivityReporter | SessionRunnerOptions | Enable testing with mocks |
+
+Default implementation: `silentActivityReporter` (no output, for testing)
+
+For detailed specifications, see [Interfaces - ActivityReporter](docs/interfaces.md#activityreporter).
 
 ---
 
@@ -1060,6 +1126,22 @@ Tool availability by command. For detailed restrictions, see [Section 6](#6-secu
 | max_iterations | both | `Max iterations (N) reached` |
 | quota_exceeded | both | `Quota exceeded` |
 | interrupted | both | `User interrupted` |
+
+### 9.10 Activity Feedback Behavior
+
+| Condition | Action |
+|-----------|--------|
+| Session starts | Clear line, start tick timer |
+| Tool starts | Update currentTool, increment toolCount |
+| Tool completes | Clear currentTool |
+| Thinking event | Display "Thinking..." |
+| Text event | Display "Responding..." |
+| Tick timer fires | Redraw current state with updated elapsed time |
+| Session ends | Stop timer, clear activity line |
+| Error event | No change |
+| Quota exceeded | Report `waiting` event with remainingMs/resetTime |
+| Remaining time updates | Report `waiting` event (every tick) |
+| Quota wait ends | Clear activity line |
 
 ---
 
