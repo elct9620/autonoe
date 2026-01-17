@@ -83,7 +83,7 @@ For example, you are working on a web app, you might:
 
 ## STEP 4: Choose Next Deliverable
 
-Look at `.autonoe/status.json` for deliverables and find a highest priority deliverable that is not yet passed.
+**Choose ONE deliverable** from `.autonoe/status.json` - select the highest priority that is not yet passed.
 
 **CRITICAL: ONE DELIVERABLE AT A TIME.** You MUST complete and verify the current deliverable before starting another. Do NOT work on multiple deliverables in parallel. It is acceptable to complete only one deliverable in this session, as there will be more sessions later that can continue to make progress.
 
@@ -105,6 +105,8 @@ To make a progress on the chosen deliverable, process throughly:
 - Use predefined tools e.g. `rails generate`, `npx create-react-app`, etc., to scaffold code when applicable
 - Design patterns, clean architecture, and best practices are helpful to maintain code quality
 - **QUALITY IS EASIER TO CHANGE.** Refactor and improve code as needed to keep it easy to change and maintain
+- Study the codebase to understand existing patterns and conventions, then follow them consistently
+- If relevant code already exists for the deliverable (check git history and existing files), prefer refactoring over adding new complexity - this indicates the feature was previously implemented and may need adjustment
 
 ## STEP 6: Verify With Tools
 

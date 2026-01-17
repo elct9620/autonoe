@@ -66,9 +66,9 @@ chmod +x bin/dev.sh
 
 Otherwise, manually start any required services for verification.
 
-## STEP 3: Choose Deliverable to Verify
+## STEP 3: Choose ONE Deliverable to Verify
 
-Use the `list` tool to see deliverables that haven't been verified yet:
+**Choose ONE deliverable** to verify. Use the `list` tool to see deliverables that haven't been verified yet:
 
 - Tool: `mcp__autonoe__list`
 - Input: `{"filter": {"verified": false}, "limit": 5}`
@@ -162,6 +162,13 @@ Acceptance Criteria Verification:
 - `passed`: All acceptance criteria verified through actual testing
 - `pending`: Keep as-is when insufficient evidence or verification incomplete
 - `blocked`: After 2-3 different attempts using various approaches, you still cannot verify the deliverable due to external constraints (e.g., deployment requires production access, external API credentials unavailable)
+
+**Spec Change Handling:**
+
+If a deliverable was previously `passed` but no longer meets the current acceptance criteria in SPEC.md:
+
+- Reset status to `pending` using `set_status` tool
+- Document the mismatch in `.autonoe-note.md` for the coding session to address
 
 **CRITICAL:** If you CANNOT verify a deliverable, you MUST mark it as `blocked`, NOT `passed`. Never mark passed based on code logic alone - actual verification is required.
 

@@ -114,6 +114,16 @@ For deliverables that require actions outside Autonoe's capabilities (e.g., depl
 - External APIs: Verify integration code and configuration are in place (e.g., "API client is configured with placeholder credentials", "error handling for API failures is implemented")
 - Manual steps: Document what human operators need to do and verify automation covers everything possible
 
+**Understanding Spec Changes:**
+
+When SPEC.md evolves, recognize the nature of changes:
+
+- **New functionality**: Truly new features → create new deliverables
+- **Refined functionality**: Same feature with updated requirements → preserve existing deliverable ID (verify phase will re-check)
+- **Removed functionality**: Features no longer needed → deprecate
+
+Avoid creating duplicate deliverables for the same logical feature. If a feature's description or acceptance criteria changed but the core functionality is the same, preserve the existing deliverable ID - the verify phase will detect any mismatches and reset status as needed.
+
 **Sync Rules:**
 
 - **New deliverables**: Create with `create` tool
