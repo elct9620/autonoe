@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.1](https://github.com/elct9620/autonoe/compare/cli-v0.4.0...cli-v0.4.1) (2026-01-17)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @autonoe/core bumped to 0.4.1
+    * @autonoe/agent bumped to 0.4.1
+
 ## [0.4.0](https://github.com/elct9620/autonoe/compare/cli-v0.3.1...cli-v0.4.0) (2026-01-17)
 
 
