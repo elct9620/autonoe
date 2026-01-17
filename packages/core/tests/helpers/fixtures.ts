@@ -85,9 +85,11 @@ export function createMockStreamText(text: string): StreamEventText {
 export function createMockToolInvocation(
   name: string,
   input: Record<string, unknown> = {},
+  toolUseId = 'test-tool-use-id',
 ): StreamEventToolInvocation {
   return {
     type: 'stream_tool_invocation',
+    toolUseId,
     name,
     input,
   }

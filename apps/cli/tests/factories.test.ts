@@ -19,7 +19,7 @@ import {
   sandboxDisabledByCli,
   type ValidatedRunOptions,
 } from '../src/options'
-import { ConsoleWaitProgressReporter } from '../src/consoleWaitProgressReporter'
+import { ConsoleActivityReporter } from '../src/consoleActivityReporter'
 
 describe('createInstructionResolver', () => {
   let tempDir: string
@@ -175,7 +175,7 @@ describe('createRunnerOptions', () => {
   it('FAC-030: builds options with required fields only', () => {
     const result = createRunnerOptions(baseOptions)
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       projectDir: '/test/project',
       maxIterations: undefined,
       maxRetries: undefined,
@@ -183,6 +183,7 @@ describe('createRunnerOptions', () => {
       waitForQuota: false,
       maxThinkingTokens: undefined,
     })
+    expect(result.activityReporter).toBeInstanceOf(ConsoleActivityReporter)
   })
 
   it('FAC-031: builds options with all optional fields', () => {
@@ -205,9 +206,7 @@ describe('createRunnerOptions', () => {
       waitForQuota: true,
       maxThinkingTokens: 16384,
     })
-    expect(result.waitProgressReporter).toBeInstanceOf(
-      ConsoleWaitProgressReporter,
-    )
+    expect(result.activityReporter).toBeInstanceOf(ConsoleActivityReporter)
   })
 
   it('FAC-032: excludes debug, sandboxMode, allowDestructive', () => {

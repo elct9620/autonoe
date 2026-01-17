@@ -78,6 +78,7 @@ export function toStreamEvent(block: SDKContentBlock): StreamEvent | undefined {
     case 'tool_use':
       return {
         type: 'stream_tool_invocation',
+        toolUseId: block.tool_use_id ?? '',
         name: block.name ?? '',
         input: block.input ?? {},
       }

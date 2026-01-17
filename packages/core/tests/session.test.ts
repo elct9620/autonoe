@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { Session } from '../src/session'
+import type { RawActivityEvent } from '../src/activityReporter'
 import {
   MockAgentClient,
   createMockStreamText,
@@ -7,6 +8,8 @@ import {
   createMockErrorStreamEnd,
   createMockQuotaExceededStreamEnd,
   createMockStreamError,
+  createMockToolInvocation,
+  createMockToolResponse,
   TestLogger,
 } from './helpers'
 
@@ -223,6 +226,140 @@ describe('Session', () => {
       await session.run(client, 'test')
 
       expect(client.getDisposeCount()).toBe(1)
+    })
+  })
+
+  describe('onActivity callback', () => {
+    it('SC-A001: reports thinking events', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        { type: 'stream_thinking', thinking: 'Analyzing...' },
+        createMockStreamEnd('done', 0.01),
+      ])
+      const events: RawActivityEvent[] = []
+      const onActivity = vi.fn((event: RawActivityEvent) => events.push(event))
+
+      const session = new Session()
+      await session.run(client, 'test', undefined, onActivity)
+
+      expect(onActivity).toHaveBeenCalled()
+      expect(events.some((e) => e.type === 'thinking')).toBe(true)
+    })
+
+    it('SC-A002: reports tool_start events', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockToolInvocation('bash', { command: 'ls' }, 'tool-1'),
+        createMockStreamEnd('done', 0.01),
+      ])
+      const events: RawActivityEvent[] = []
+      const onActivity = vi.fn((event: RawActivityEvent) => events.push(event))
+
+      const session = new Session()
+      await session.run(client, 'test', undefined, onActivity)
+
+      const toolStartEvents = events.filter((e) => e.type === 'tool_start')
+      expect(toolStartEvents.length).toBe(1)
+      expect(toolStartEvents[0]).toEqual({
+        type: 'tool_start',
+        toolName: 'bash',
+      })
+    })
+
+    it('SC-A003: reports tool_complete events with correct tool name', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockToolInvocation('bash', { command: 'ls' }, 'tool-1'),
+        createMockToolResponse('file1.txt', false, 'tool-1'),
+        createMockStreamEnd('done', 0.01),
+      ])
+      const events: RawActivityEvent[] = []
+      const onActivity = vi.fn((event: RawActivityEvent) => events.push(event))
+
+      const session = new Session()
+      await session.run(client, 'test', undefined, onActivity)
+
+      const toolCompleteEvents = events.filter(
+        (e) => e.type === 'tool_complete',
+      )
+      expect(toolCompleteEvents.length).toBe(1)
+      expect(toolCompleteEvents[0]).toEqual({
+        type: 'tool_complete',
+        toolName: 'bash',
+        isError: false,
+      })
+    })
+
+    it('SC-A004: reports responding events for text', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockStreamText('Hello'),
+        createMockStreamEnd('done', 0.01),
+      ])
+      const events: RawActivityEvent[] = []
+      const onActivity = vi.fn((event: RawActivityEvent) => events.push(event))
+
+      const session = new Session()
+      await session.run(client, 'test', undefined, onActivity)
+
+      expect(events.some((e) => e.type === 'responding')).toBe(true)
+    })
+
+    it('SC-A005: tracks tool name by toolUseId', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockToolInvocation('bash', { command: 'ls' }, 'tool-1'),
+        createMockToolInvocation('Read', { file: 'test.txt' }, 'tool-2'),
+        createMockToolResponse('file1.txt', false, 'tool-1'),
+        createMockToolResponse('content', false, 'tool-2'),
+        createMockStreamEnd('done', 0.01),
+      ])
+      const events: RawActivityEvent[] = []
+      const onActivity = vi.fn((event: RawActivityEvent) => events.push(event))
+
+      const session = new Session()
+      await session.run(client, 'test', undefined, onActivity)
+
+      const toolCompleteEvents = events.filter(
+        (e) => e.type === 'tool_complete',
+      ) as Array<{ type: 'tool_complete'; toolName: string; isError: boolean }>
+      expect(toolCompleteEvents.length).toBe(2)
+      expect(toolCompleteEvents[0]?.toolName).toBe('bash')
+      expect(toolCompleteEvents[1]?.toolName).toBe('Read')
+    })
+
+    it('SC-A006: reports isError true for failed tool', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockToolInvocation('bash', { command: 'bad' }, 'tool-1'),
+        createMockToolResponse('command not found', true, 'tool-1'),
+        createMockStreamEnd('done', 0.01),
+      ])
+      const events: RawActivityEvent[] = []
+      const onActivity = vi.fn((event: RawActivityEvent) => events.push(event))
+
+      const session = new Session()
+      await session.run(client, 'test', undefined, onActivity)
+
+      const toolCompleteEvents = events.filter(
+        (e) => e.type === 'tool_complete',
+      ) as Array<{ type: 'tool_complete'; toolName: string; isError: boolean }>
+      expect(toolCompleteEvents.length).toBe(1)
+      expect(toolCompleteEvents[0]?.isError).toBe(true)
+    })
+
+    it('SC-A007: does not call callback when not provided', async () => {
+      const client = new MockAgentClient()
+      client.setResponses([
+        createMockStreamText('Hello'),
+        createMockStreamEnd('done', 0.01),
+      ])
+
+      const session = new Session()
+      // Should not throw when onActivity is undefined
+      const result = await session.run(client, 'test')
+
+      expect(result.success).toBe(true)
     })
   })
 })

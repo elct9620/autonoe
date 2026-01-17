@@ -1,3 +1,9 @@
+import type {
+  ActivityReporter,
+  ActivityCallback,
+  RawActivityEvent,
+} from './activityReporter'
+import { silentActivityReporter } from './activityReporter'
 import type { AgentClientFactory } from './agentClient'
 import {
   DeliverableStatus,
@@ -5,10 +11,8 @@ import {
 } from './deliverableStatus'
 import type { Logger } from './logger'
 import type { Timer } from './timer'
-import type { WaitProgressReporter } from './waitProgressReporter'
 import type { TerminationContext } from './terminationEvaluator'
 import { silentLogger } from './logger'
-import { silentWaitProgressReporter } from './waitProgressReporter'
 import { Session } from './session'
 import { createDefaultInstructionResolver } from './instructions'
 import { nullDeliverableStatusReader } from './deliverableStatus'
@@ -40,8 +44,8 @@ export interface SessionRunnerOptions {
   maxRetries?: number
   /** Timer for delay operations (default: realTimer) */
   timer?: Timer
-  /** Progress reporter for quota wait (default: silentWaitProgressReporter) */
-  waitProgressReporter?: WaitProgressReporter
+  /** Activity reporter for session feedback (default: silentActivityReporter) */
+  activityReporter?: ActivityReporter
   /** Use sync termination mode (allVerified instead of allPassed/allBlocked) */
   useSyncTermination?: boolean
   /** Callback to get verification tracker for sync termination */
@@ -114,15 +118,14 @@ export class SessionRunner {
   private readonly maxIterations: number | undefined
   private readonly maxRetries: number
   private readonly timer: Timer
-  private readonly waitProgressReporter: WaitProgressReporter
+  private readonly activityReporter: ActivityReporter
 
   constructor(private options: SessionRunnerOptions) {
     this.delayBetweenSessions = options.delayBetweenSessions ?? 3000
     this.maxIterations = options.maxIterations
     this.maxRetries = options.maxRetries ?? 3
     this.timer = options.timer ?? realTimer
-    this.waitProgressReporter =
-      options.waitProgressReporter ?? silentWaitProgressReporter
+    this.activityReporter = options.activityReporter ?? silentActivityReporter
   }
 
   /**
@@ -140,80 +143,21 @@ export class SessionRunner {
     const startTime = Date.now()
     let state = LoopState.create()
 
-    // Main loop - use break to exit to unified exit point
-    while (!state.exitReason) {
-      // Update verification counts before pre-session check (for sync mode)
-      if (this.options.useSyncTermination) {
-        const tracker = this.options.getVerificationTracker?.()
-        if (tracker) {
-          state = state.updateVerificationCounts(
-            tracker.verifiedCount,
-            tracker.totalCount,
-          )
-        }
-      }
+    // Start activity reporting
+    const stopActivity = this.activityReporter.startSession()
 
-      // Pre-session: check interrupt
-      const preDecision = this.runTerminationEvaluation(state, { signal })
-      if (preDecision.action === 'terminate') {
-        this.logTermination(logger, preDecision.exitReason, state)
-        state = state.setExitReason(preDecision.exitReason)
-        break
-      }
+    // Create onActivity callback that adds elapsedMs
+    const onActivity: ActivityCallback = (event: RawActivityEvent) => {
+      this.activityReporter.reportActivity({
+        ...event,
+        elapsedMs: Date.now() - startTime,
+      })
+    }
 
-      state = state.incrementIterations()
-
-      // Select instruction via strategy pattern
-      // @see SPEC.md Section A.1
-      const effectiveStatusReader = statusReader ?? nullDeliverableStatusReader
-      const effectiveSelector =
-        instructionSelector ??
-        new DefaultInstructionSelector(createDefaultInstructionResolver())
-      const { name: instructionName, content: instruction } =
-        await effectiveSelector.select({
-          iteration: state.iterations,
-          statusReader: effectiveStatusReader,
-        })
-      logger.info(`Session ${state.iterations} started`)
-
-      try {
-        // Create fresh client per session with appropriate tool set
-        const client = clientFactory.create(instructionName)
-        const session = new Session()
-        const result = await session.run(client, instruction, logger)
-
-        // Handle session failure (Result Pattern)
-        if (!result.success) {
-          const errorResult = await this.handleSessionError(
-            new Error(result.error),
-            state,
-            signal,
-            logger,
-          )
-          state = errorResult.state
-          if (errorResult.shouldBreak) {
-            break
-          }
-          continue
-        }
-
-        // Reset error counter on successful session and add cost
-        state = state.resetErrors().addCost(result.costUsd)
-        logger.info(
-          `Session ${state.iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${formatDuration(result.duration)}`,
-        )
-
-        // Load deliverable status and update counts
-        const status = statusReader
-          ? await statusReader.load()
-          : DeliverableStatus.empty()
-        state = state.updateDeliverableCounts(
-          status.countPassed(),
-          status.deliverables.length,
-          status.countBlocked(),
-        )
-
-        // Update verification counts for sync mode
+    try {
+      // Main loop - use break to exit to unified exit point
+      while (!state.exitReason) {
+        // Update verification counts before pre-session check (for sync mode)
         if (this.options.useSyncTermination) {
           const tracker = this.options.getVerificationTracker?.()
           if (tracker) {
@@ -224,57 +168,139 @@ export class SessionRunner {
           }
         }
 
-        // Post-session: evaluate all termination conditions
-        const postDecision = this.runTerminationEvaluation(state, {
-          sessionOutcome: result.outcome,
-          quotaResetTime: result.quotaResetTime,
-          deliverableStatus: statusReader ? status : undefined,
-          signal,
-        })
-
-        // Handle decision
-        const decisionResult = await this.handleTerminationDecision(
-          postDecision,
-          state,
-          logger,
-        )
-        state = decisionResult.state
-
-        if (decisionResult.action === 'break') {
+        // Pre-session: check interrupt
+        const preDecision = this.runTerminationEvaluation(state, { signal })
+        if (preDecision.action === 'terminate') {
+          this.logTermination(logger, preDecision.exitReason, state)
+          state = state.setExitReason(preDecision.exitReason)
           break
         }
-        if (decisionResult.action === 'continue') {
-          continue
-        }
 
-        // Delay before next session
-        if (this.delayBetweenSessions > 0) {
-          await this.timer.delay(this.delayBetweenSessions)
-        }
-      } catch (error) {
-        const errorResult = await this.handleSessionError(
-          error,
-          state,
-          signal,
-          logger,
-        )
-        state = errorResult.state
-        if (errorResult.shouldBreak) {
-          break
+        state = state.incrementIterations()
+
+        // Select instruction via strategy pattern
+        // @see SPEC.md Section A.1
+        const effectiveStatusReader =
+          statusReader ?? nullDeliverableStatusReader
+        const effectiveSelector =
+          instructionSelector ??
+          new DefaultInstructionSelector(createDefaultInstructionResolver())
+        const { name: instructionName, content: instruction } =
+          await effectiveSelector.select({
+            iteration: state.iterations,
+            statusReader: effectiveStatusReader,
+          })
+        logger.info(`Session ${state.iterations} started`)
+
+        try {
+          // Create fresh client per session with appropriate tool set
+          const client = clientFactory.create(instructionName)
+          const session = new Session()
+          const result = await session.run(
+            client,
+            instruction,
+            logger,
+            onActivity,
+          )
+
+          // Handle session failure (Result Pattern)
+          if (!result.success) {
+            const errorResult = await this.handleSessionError(
+              new Error(result.error),
+              state,
+              signal,
+              logger,
+            )
+            state = errorResult.state
+            if (errorResult.shouldBreak) {
+              break
+            }
+            continue
+          }
+
+          // Reset error counter on successful session and add cost
+          state = state.resetErrors().addCost(result.costUsd)
+          logger.info(
+            `Session ${state.iterations}: cost=$${result.costUsd.toFixed(4)}, duration=${formatDuration(result.duration)}`,
+          )
+
+          // Load deliverable status and update counts
+          const status = statusReader
+            ? await statusReader.load()
+            : DeliverableStatus.empty()
+          state = state.updateDeliverableCounts(
+            status.countPassed(),
+            status.deliverables.length,
+            status.countBlocked(),
+          )
+
+          // Update verification counts for sync mode
+          if (this.options.useSyncTermination) {
+            const tracker = this.options.getVerificationTracker?.()
+            if (tracker) {
+              state = state.updateVerificationCounts(
+                tracker.verifiedCount,
+                tracker.totalCount,
+              )
+            }
+          }
+
+          // Post-session: evaluate all termination conditions
+          const postDecision = this.runTerminationEvaluation(state, {
+            sessionOutcome: result.outcome,
+            quotaResetTime: result.quotaResetTime,
+            deliverableStatus: statusReader ? status : undefined,
+            signal,
+          })
+
+          // Handle decision
+          const decisionResult = await this.handleTerminationDecision(
+            postDecision,
+            state,
+            logger,
+            startTime,
+          )
+          state = decisionResult.state
+
+          if (decisionResult.action === 'break') {
+            break
+          }
+          if (decisionResult.action === 'continue') {
+            continue
+          }
+
+          // Delay before next session
+          if (this.delayBetweenSessions > 0) {
+            await this.timer.delay(this.delayBetweenSessions)
+          }
+        } catch (error) {
+          const errorResult = await this.handleSessionError(
+            error,
+            state,
+            signal,
+            logger,
+          )
+          state = errorResult.state
+          if (errorResult.shouldBreak) {
+            break
+          }
         }
       }
+
+      // =============================================
+      // Unified exit point - all termination conditions reach here
+      // =============================================
+      const totalDuration = Date.now() - startTime
+      const result = buildResult(state, totalDuration)
+
+      // Log overall summary
+      this.logOverall(logger, state, totalDuration)
+
+      return result
+    } finally {
+      // Clean up activity reporting
+      stopActivity()
     }
-
-    // =============================================
-    // Unified exit point - all termination conditions reach here
-    // =============================================
-    const totalDuration = Date.now() - startTime
-    const result = buildResult(state, totalDuration)
-
-    // Log overall summary
-    this.logOverall(logger, state, totalDuration)
-
-    return result
   }
 
   /**
@@ -326,6 +352,7 @@ export class SessionRunner {
     decision: ReturnType<typeof evaluateTermination>,
     state: LoopState,
     logger: Logger,
+    startTime: number,
   ): Promise<{ state: LoopState; action: 'break' | 'continue' | 'next' }> {
     switch (decision.action) {
       case 'terminate':
@@ -338,14 +365,31 @@ export class SessionRunner {
         logger.info(
           `Quota exceeded, waiting ${formatDuration(decision.durationMs)} until reset...`,
         )
-        const stopProgress = this.waitProgressReporter.startWait(
-          decision.durationMs,
-          decision.resetTime,
-        )
+
+        // Report waiting events periodically via activityReporter
+        const endTime = Date.now() + decision.durationMs
+        const resetTime = decision.resetTime ?? new Date(endTime)
+
+        const reportWaiting = () => {
+          const remainingMs = Math.max(0, endTime - Date.now())
+          this.activityReporter.reportActivity({
+            type: 'waiting',
+            remainingMs,
+            resetTime,
+            elapsedMs: Date.now() - startTime,
+          })
+        }
+
+        // Report initial waiting state
+        reportWaiting()
+
+        // Report periodically during wait
+        const intervalId = setInterval(reportWaiting, 60000) // Update every minute
+
         try {
           await this.timer.delay(decision.durationMs)
         } finally {
-          stopProgress()
+          clearInterval(intervalId)
         }
         return {
           state: state.decrementIterations(),

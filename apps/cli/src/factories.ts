@@ -13,7 +13,7 @@ import {
   type Logger,
 } from '@autonoe/core'
 import type { ValidatedCommonOptions } from './options'
-import { ConsoleWaitProgressReporter } from './consoleWaitProgressReporter'
+import { ConsoleActivityReporter } from './consoleActivityReporter'
 
 /**
  * Create an instruction resolver with override support
@@ -84,8 +84,6 @@ export function createRunnerOptions(
     model: options.model,
     waitForQuota: options.waitForQuota,
     maxThinkingTokens: options.maxThinkingTokens,
-    waitProgressReporter: options.waitForQuota
-      ? new ConsoleWaitProgressReporter()
-      : undefined,
+    activityReporter: new ConsoleActivityReporter(),
   }
 }

@@ -142,9 +142,15 @@ export { DefaultInstructionSelector } from './instructionSelector'
 export type { Timer } from './timer'
 export { realTimer } from './timer'
 
-// WaitProgressReporter exports
-export type { WaitProgressReporter } from './waitProgressReporter'
-export { silentWaitProgressReporter } from './waitProgressReporter'
+// ActivityReporter exports
+export type {
+  ActivityEvent,
+  ActivityEventType,
+  RawActivityEvent,
+  ActivityCallback,
+  ActivityReporter,
+} from './activityReporter'
+export { silentActivityReporter } from './activityReporter'
 
 // LoopState exports
 export { LoopState } from './loopState'

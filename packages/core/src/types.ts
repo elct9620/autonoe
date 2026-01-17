@@ -43,6 +43,7 @@ export interface StreamEventThinking {
 // StreamEventToolInvocation - Agent's tool call request
 export interface StreamEventToolInvocation {
   type: 'stream_tool_invocation'
+  toolUseId: string
   name: string
   input: Record<string, unknown>
 }

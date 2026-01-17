@@ -61,6 +61,7 @@ describe('formatStreamEvent', () => {
     it('formats tool name and input', () => {
       const event: StreamEventToolInvocation = {
         type: 'stream_tool_invocation',
+        toolUseId: 'test-id',
         name: 'bash',
         input: { command: 'ls' },
       }
@@ -71,6 +72,7 @@ describe('formatStreamEvent', () => {
       const longInput = 'a'.repeat(150)
       const event: StreamEventToolInvocation = {
         type: 'stream_tool_invocation',
+        toolUseId: 'test-id',
         name: 'bash',
         input: { command: longInput },
       }
@@ -83,6 +85,7 @@ describe('formatStreamEvent', () => {
     it('handles empty input', () => {
       const event: StreamEventToolInvocation = {
         type: 'stream_tool_invocation',
+        toolUseId: 'test-id',
         name: 'bash',
         input: {},
       }

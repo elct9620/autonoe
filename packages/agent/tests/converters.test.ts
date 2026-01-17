@@ -70,12 +70,14 @@ describe('converters', () => {
     it('SC-AC004: converts tool_use block to ToolInvocation', () => {
       const block = {
         type: 'tool_use',
+        tool_use_id: 'tool-123',
         name: 'bash',
         input: { command: 'ls' },
       }
       const result = toStreamEvent(block)
       expect(result).toEqual({
         type: 'stream_tool_invocation',
+        toolUseId: 'tool-123',
         name: 'bash',
         input: { command: 'ls' },
       })
@@ -86,6 +88,7 @@ describe('converters', () => {
       const result = toStreamEvent(block)
       expect(result).toEqual({
         type: 'stream_tool_invocation',
+        toolUseId: '',
         name: '',
         input: {},
       })
@@ -379,7 +382,12 @@ describe('converters', () => {
         message: {
           content: [
             { type: 'text', text: 'Hello' },
-            { type: 'tool_use', name: 'bash', input: { cmd: 'ls' } },
+            {
+              type: 'tool_use',
+              tool_use_id: 'tool-456',
+              name: 'bash',
+              input: { cmd: 'ls' },
+            },
           ],
         },
       }
@@ -388,6 +396,7 @@ describe('converters', () => {
       expect(events[0]).toEqual({ type: 'stream_text', text: 'Hello' })
       expect(events[1]).toEqual({
         type: 'stream_tool_invocation',
+        toolUseId: 'tool-456',
         name: 'bash',
         input: { cmd: 'ls' },
       })

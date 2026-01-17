@@ -3,10 +3,10 @@ import { SessionRunner } from '../src/sessionRunner'
 import { silentLogger } from '../src/logger'
 import type { AgentClient, AgentClientFactory } from '../src/agentClient'
 import type { MessageStream } from '../src/types'
-import type { WaitProgressReporter } from '../src/waitProgressReporter'
 import { VerificationTracker } from '../src/verificationTracker'
 import {
   MockAgentClient,
+  MockActivityReporter,
   MockDeliverableStatusReader,
   createMockStreamText,
   createMockStreamEnd,
@@ -1027,7 +1027,7 @@ describe('SessionRunner', () => {
       expect(logger.hasMessage('Quota exceeded')).toBe(true)
     })
 
-    it('SR-Q003: calls waitProgressReporter.startWait during quota wait', async () => {
+    it('SR-Q003: reports waiting events through activityReporter during quota wait', async () => {
       const client = new MockAgentClient()
       const resetTime = new Date(Date.now() + 10)
       client.setResponsesPerSession([
@@ -1042,25 +1042,26 @@ describe('SessionRunner', () => {
         createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
       ])
 
-      const mockCleanup = vi.fn()
-      const mockWaitProgressReporter: WaitProgressReporter = {
-        startWait: vi.fn().mockReturnValue(mockCleanup),
-      }
+      const mockActivityReporter = new MockActivityReporter()
 
       const runner = new SessionRunner({
         projectDir: '/test/project',
         delayBetweenSessions: 0,
         waitForQuota: true,
-        waitProgressReporter: mockWaitProgressReporter,
+        activityReporter: mockActivityReporter,
       })
 
       await runner.run(factory, silentLogger, statusReader)
 
-      expect(mockWaitProgressReporter.startWait).toHaveBeenCalledWith(
-        expect.any(Number),
-        resetTime,
-      )
-      expect(mockCleanup).toHaveBeenCalled()
+      // Check that waiting events were reported
+      const waitingEvents = mockActivityReporter.getEventsByType('waiting')
+      expect(waitingEvents.length).toBeGreaterThan(0)
+      expect(waitingEvents[0]).toMatchObject({
+        type: 'waiting',
+        remainingMs: expect.any(Number),
+        resetTime: expect.any(Date),
+        elapsedMs: expect.any(Number),
+      })
     })
 
     it('SR-Q004: calls cleanup even if delay throws', async () => {
@@ -1071,10 +1072,7 @@ describe('SessionRunner', () => {
       ])
       const factory = createMockClientFactory(client)
 
-      const mockCleanup = vi.fn()
-      const mockWaitProgressReporter: WaitProgressReporter = {
-        startWait: vi.fn().mockReturnValue(mockCleanup),
-      }
+      const mockActivityReporter = new MockActivityReporter()
 
       const mockTimer = {
         delay: vi.fn().mockRejectedValue(new Error('Timer error')),
@@ -1084,14 +1082,15 @@ describe('SessionRunner', () => {
         projectDir: '/test/project',
         delayBetweenSessions: 0,
         waitForQuota: true,
-        waitProgressReporter: mockWaitProgressReporter,
+        activityReporter: mockActivityReporter,
         timer: mockTimer,
       })
 
       await expect(runner.run(factory, silentLogger)).rejects.toThrow(
         'Timer error',
       )
-      expect(mockCleanup).toHaveBeenCalled()
+      // Cleanup should still be called (session starts and ends)
+      expect(mockActivityReporter.getCleanupCallCount()).toBe(1)
     })
   })
 
