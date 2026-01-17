@@ -65,6 +65,18 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 | Deployment automation | Scope ends at code generation and verification |
 | Runtime monitoring | Focus on development phase, not production operation |
 
+### 0.6 Glossary
+
+| Term | Definition |
+|------|------------|
+| Coding Agent | The autonomous Claude instance controlled by Autonoe that implements deliverables |
+| Agent SDK | The @anthropic-ai/claude-agent-sdk package that provides the underlying agent infrastructure |
+| AgentClient | Internal interface for agent communication (query/dispose) |
+| Autonoe Tool | MCP Server exposing deliverable management tools to the Coding Agent |
+| Session | A single agent query execution cycle |
+| Deliverable | A verifiable work unit with acceptance criteria |
+| Instruction | Prompt template that guides Coding Agent behavior (initializer, coding, sync, verify) |
+
 ---
 
 ## 1. System Overview `[Design]`
