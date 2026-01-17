@@ -83,8 +83,15 @@ Builds Ubuntu Cloud Image with Autonoe CLI pre-installed.
 1. Build Autonoe CLI binary (linux-x64)
 2. Install libguestfs-tools from Ubuntu package repository
 3. Download Ubuntu Cloud Image
-4. Use virt-customize to inject binary
+4. Use `sudo virt-customize --no-network` to inject binary
 5. Generate SHA256 checksum (release only)
+
+**Required Options:**
+
+| Option         | Purpose                                       |
+| -------------- | --------------------------------------------- |
+| `sudo`         | Read `/boot/vmlinuz-*` for supermin appliance |
+| `--no-network` | Avoid passt network errors in CI              |
 
 ### Environment
 

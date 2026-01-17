@@ -63,10 +63,17 @@ cp noble-server-cloudimg-amd64.img autonoe-ubuntu-24.04.img
 export LIBGUESTFS_BACKEND=direct
 export LIBGUESTFS_BACKEND_SETTINGS=force_tcg
 
-virt-customize -a autonoe-ubuntu-24.04.img \
+sudo virt-customize --no-network -a autonoe-ubuntu-24.04.img \
   --copy-in /path/to/autonoe:/usr/local/bin \
   --chmod 0755:/usr/local/bin/autonoe
 ```
+
+**Command Options:**
+
+| Option         | Purpose                                                   |
+| -------------- | --------------------------------------------------------- |
+| `sudo`         | Required to read `/boot/vmlinuz-*` for supermin appliance |
+| `--no-network` | Disable network to avoid passt errors in CI environment   |
 
 For CI/CD workflow configuration, see [CI/CD Workflows](ci-cd.md#build-cloud-imageyml).
 
