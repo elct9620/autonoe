@@ -99,6 +99,8 @@ Choose the image tag that matches your project's language:
 | `python` | Python with pip and Playwright       |
 | `golang` | Go toolchain with Playwright         |
 | `ruby`   | Ruby with gem/bundler and Playwright |
+| `rust`   | Rust toolchain with Playwright       |
+| `php`    | PHP with Composer and Playwright     |
 
 Example for a Python project:
 
@@ -344,6 +346,8 @@ Legacy `string[]` format is treated as `{ run: [...] }` for backward compatibili
 | `python` | python, pip, uv, pytest, django, flask, etc. |
 | `ruby`   | ruby, gem, bundle, rails, rspec, etc.        |
 | `go`     | go, gofmt, golangci-lint, etc.               |
+| `rust`   | cargo, rustc, rustfmt, clippy, etc.          |
+| `php`    | php, composer, phpunit, phpstan, etc.        |
 
 ## Custom Instructions
 
@@ -495,9 +499,24 @@ docker compose build
 # Run CLI in container
 docker compose run --rm cli autonoe run
 
-# Build specific target (base, node, python, golang, ruby)
+# Build specific target (base, node, python, golang, ruby, rust, php)
 docker build --target python -f apps/cli/Dockerfile .
 ```
+
+### Cloud Image
+
+Pre-built Ubuntu cloud images are available for KVM/QEMU environments:
+
+| File                                        | Description |
+| ------------------------------------------- | ----------- |
+| `autonoe-{version}-ubuntu-24.04.img`        | Cloud Image |
+| `autonoe-{version}-ubuntu-24.04.img.sha256` | Checksum    |
+
+**Pre-installed:** Autonoe CLI, Git, curl, openssh-server
+
+**Cloud-Init Support:** User creation, SSH key injection, hostname and network configuration
+
+Download from [GitHub Releases](https://github.com/elct9620/autonoe/releases).
 
 ## License
 
