@@ -78,6 +78,7 @@ function createRunHandler(
     mode: 'run',
     onStatusChange: deps.onStatusChange,
     model: options.model,
+    planModel: options.planModel,
     maxThinkingTokens: options.maxThinkingTokens,
     allowDestructive: options.allowDestructive,
   })
@@ -121,6 +122,7 @@ function createSyncHandler(
       mode: 'sync',
       onStatusChange: deps.onStatusChange,
       model: options.model,
+      planModel: options.planModel,
       maxThinkingTokens: options.maxThinkingTokens,
     })
 

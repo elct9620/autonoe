@@ -310,39 +310,43 @@ Generic command handler for `run` and `sync` commands. Configured via `CommandHa
 
 **Run Mode (RCH tests):**
 
-| ID      | Input                        | Expected Output                 |
-| ------- | ---------------------------- | ------------------------------- |
-| RCH-001 | execute()                    | Logs startup info with version  |
-| RCH-002 | maxIterations specified      | Logs max iterations             |
-| RCH-003 | model specified              | Logs model                      |
-| RCH-004 | thinking tokens specified    | Logs thinking tokens            |
-| RCH-010 | result: all_passed           | Logs success message            |
-| RCH-011 | result: all_blocked          | Logs error message              |
-| RCH-012 | result: interrupted          | Logs interrupted, does not exit |
-| RCH-013 | result: quota_exceeded       | Logs error and exits            |
-| RCH-014 | result: max_iterations       | Logs info message               |
-| RCH-020 | sandbox disabled via CLI     | Logs sandbox warning            |
-| RCH-021 | sandbox disabled via env     | Logs sandbox warning            |
-| RCH-022 | allowDestructive enabled     | Logs destructive warning        |
-| RCH-023 | sandbox enabled, no destruct | No warnings logged              |
+| ID      | Input                        | Expected Output                   |
+| ------- | ---------------------------- | --------------------------------- |
+| RCH-001 | execute()                    | Logs startup info with version    |
+| RCH-002 | maxIterations specified      | Logs max iterations               |
+| RCH-003 | no model/planModel specified | Logs default models (sonnet/opus) |
+| RCH-004 | thinking tokens specified    | Logs thinking tokens              |
+| RCH-005 | planModel specified          | Logs custom plan model            |
+| RCH-006 | model specified              | Logs custom model                 |
+| RCH-010 | result: all_passed           | Logs success message              |
+| RCH-011 | result: all_blocked          | Logs error message                |
+| RCH-012 | result: interrupted          | Logs interrupted, does not exit   |
+| RCH-013 | result: quota_exceeded       | Logs error and exits              |
+| RCH-014 | result: max_iterations       | Logs info message                 |
+| RCH-020 | sandbox disabled via CLI     | Logs sandbox warning              |
+| RCH-021 | sandbox disabled via env     | Logs sandbox warning              |
+| RCH-022 | allowDestructive enabled     | Logs destructive warning          |
+| RCH-023 | sandbox enabled, no destruct | No warnings logged                |
 
 **Sync Mode (SCH tests):**
 
-| ID      | Input                     | Expected Output                      |
-| ------- | ------------------------- | ------------------------------------ |
-| SCH-001 | execute()                 | Logs startup info with version       |
-| SCH-002 | maxIterations specified   | Logs max iterations                  |
-| SCH-003 | model specified           | Logs model                           |
-| SCH-004 | thinking tokens specified | Logs thinking tokens                 |
-| SCH-010 | session sequence          | Sync instruction first, verify after |
-| SCH-020 | result: all_passed        | Logs success message                 |
-| SCH-021 | result: interrupted       | Logs interruption message            |
-| SCH-022 | result: max_iterations    | Logs max iterations reached          |
-| SCH-030 | result: all_blocked       | Exits with code 1                    |
-| SCH-031 | result: quota_exceeded    | Logs error and exits with code 1     |
-| SCH-032 | result: max_retries       | Logs error and exits with code 1     |
-| SCH-040 | sandbox disabled via env  | Logs sandbox warning                 |
-| SCH-041 | sandbox enabled           | No warning logged                    |
+| ID      | Input                        | Expected Output                      |
+| ------- | ---------------------------- | ------------------------------------ |
+| SCH-001 | execute()                    | Logs startup info with version       |
+| SCH-002 | maxIterations specified      | Logs max iterations                  |
+| SCH-003 | no model/planModel specified | Logs default models (sonnet/opus)    |
+| SCH-004 | thinking tokens specified    | Logs thinking tokens                 |
+| SCH-005 | planModel specified          | Logs custom plan model               |
+| SCH-006 | model specified              | Logs custom model                    |
+| SCH-010 | session sequence             | Sync instruction first, verify after |
+| SCH-020 | result: all_passed           | Logs success message                 |
+| SCH-021 | result: interrupted          | Logs interruption message            |
+| SCH-022 | result: max_iterations       | Logs max iterations reached          |
+| SCH-030 | result: all_blocked          | Exits with code 1                    |
+| SCH-031 | result: quota_exceeded       | Logs error and exits with code 1     |
+| SCH-032 | result: max_retries          | Logs error and exits with code 1     |
+| SCH-040 | sandbox disabled via env     | Logs sandbox warning                 |
+| SCH-041 | sandbox enabled              | No warning logged                    |
 
 ### ConsoleLogger
 
@@ -416,9 +420,14 @@ Generic command handler for `run` and `sync` commands. Configured via `CommandHa
 | ACF-004 | mode: 'sync' + verify session       | VerificationTracker lazy initialization |
 | ACF-020 | sandboxMode: enabled                | Client receives sandbox config          |
 | ACF-021 | sandboxMode: disabled               | Client receives undefined sandbox       |
-| ACF-030 | model: 'claude-sonnet-4'            | Client configured with model            |
-| ACF-031 | maxThinkingTokens: 8192             | Client configured with thinking tokens  |
-| ACF-032 | onStatusChange callback             | Callback passed to MCP server           |
+| ACF-030 | planModel + initializer instruction | Client uses planModel                   |
+| ACF-031 | model + coding instruction          | Client uses model                       |
+| ACF-032 | planModel + sync instruction        | Client uses planModel                   |
+| ACF-033 | model + verify instruction          | Client uses model                       |
+| ACF-034 | initializer, no planModel           | Client uses DEFAULT_PLANNING_MODEL      |
+| ACF-035 | coding, no model                    | Client uses DEFAULT_CODING_MODEL        |
+| ACF-040 | maxThinkingTokens: 8192             | Client configured with thinking tokens  |
+| ACF-041 | onStatusChange callback             | Callback passed to MCP server           |
 
 Note: Required field validation (projectDir, config, repository, sandboxMode, mode) is enforced by TypeScript at compile time.
 

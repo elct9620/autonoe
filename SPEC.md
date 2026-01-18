@@ -380,6 +380,29 @@ Defines how CLI presents information to users. All output coordination is handle
 | Log | Permanent | Once printed, stays in terminal history |
 | Activity | Transient | Single-line, can be overwritten, always at bottom |
 
+**Startup Display:**
+
+```text
+Autonoe v{VERSION}
+
+{startupMessage}
+  Working directory: {projectDir}
+  Max iterations: {maxIterations}      # if specified
+  Plan model: {planModel}              # always shown, default: opus
+  Model: {model}                       # always shown, default: sonnet
+  Thinking: {tokens} tokens            # if specified
+```
+
+| Field | Source | Display Condition |
+|-------|--------|-------------------|
+| VERSION | Package version | Always |
+| startupMessage | Command-specific | Always |
+| projectDir | Validated option | Always |
+| maxIterations | CLI option | If specified |
+| planModel | CLI option or default | Always (default: opus) |
+| model | CLI option or default | Always (default: sonnet) |
+| tokens | Thinking budget | If --thinking specified |
+
 **Presenter Interface (CLI layer):**
 
 | Method | Signature | Description |

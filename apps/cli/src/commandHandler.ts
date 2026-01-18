@@ -5,8 +5,13 @@ import type {
   DeliverableStatusReader,
   Logger,
 } from '@autonoe/core'
-import type { SandboxMode, ValidatedCommonOptions } from './options'
-import { logSecurityWarnings } from './options'
+import {
+  DEFAULT_CODING_MODEL,
+  DEFAULT_PLANNING_MODEL,
+  logSecurityWarnings,
+  type SandboxMode,
+  type ValidatedCommonOptions,
+} from './options'
 import { VERSION } from './version'
 import { handleSessionResult } from './resultHandler'
 
@@ -72,9 +77,8 @@ export class CommandHandler {
     if (options.maxIterations) {
       logger.info(`  Max iterations: ${options.maxIterations}`)
     }
-    if (options.model) {
-      logger.info(`  Model: ${options.model}`)
-    }
+    logger.info(`  Plan model: ${options.planModel ?? DEFAULT_PLANNING_MODEL}`)
+    logger.info(`  Model: ${options.model ?? DEFAULT_CODING_MODEL}`)
     if (options.maxThinkingTokens) {
       logger.info(`  Thinking: ${options.maxThinkingTokens} tokens`)
     }

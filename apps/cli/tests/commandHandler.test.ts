@@ -28,6 +28,8 @@ import {
   sandboxEnabled,
   sandboxDisabledByCli,
   sandboxDisabledByEnv,
+  DEFAULT_CODING_MODEL,
+  DEFAULT_PLANNING_MODEL,
   type SandboxMode,
   type ValidatedCommonOptions,
 } from '../src/options'
@@ -239,7 +241,78 @@ describe('CommandHandler', () => {
         ).toBe(true)
       })
 
-      it('RCH-003: logs model when specified', async () => {
+      it('RCH-003: logs default models when not specified', async () => {
+        const options = createBaseOptions()
+        const logger = createMockLogger()
+        const repository = new FileDeliverableRepository(tempDir)
+        const sessionRunner = new SessionRunner({
+          projectDir: tempDir,
+          delay: mockDelay,
+          maxIterations: 1,
+        })
+
+        createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
+
+        const handler = new CommandHandler(
+          options,
+          options.sandboxMode,
+          runConfig,
+          logger,
+          repository,
+          sessionRunner,
+          createMockClientFactory(),
+          createTestInstructionSelector(),
+          new AbortController().signal,
+        )
+
+        await handler.execute()
+
+        expect(
+          logger.infoMessages.some((m) =>
+            m.includes(`Plan model: ${DEFAULT_PLANNING_MODEL}`),
+          ),
+        ).toBe(true)
+        expect(
+          logger.infoMessages.some((m) =>
+            m.includes(`Model: ${DEFAULT_CODING_MODEL}`),
+          ),
+        ).toBe(true)
+      })
+
+      it('RCH-005: logs custom plan model when specified', async () => {
+        const options = { ...createBaseOptions(), planModel: 'custom-opus' }
+        const logger = createMockLogger()
+        const repository = new FileDeliverableRepository(tempDir)
+        const sessionRunner = new SessionRunner({
+          projectDir: tempDir,
+          delay: mockDelay,
+          maxIterations: 1,
+        })
+
+        createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
+
+        const handler = new CommandHandler(
+          options,
+          options.sandboxMode,
+          runConfig,
+          logger,
+          repository,
+          sessionRunner,
+          createMockClientFactory(),
+          createTestInstructionSelector(),
+          new AbortController().signal,
+        )
+
+        await handler.execute()
+
+        expect(
+          logger.infoMessages.some((m) =>
+            m.includes('Plan model: custom-opus'),
+          ),
+        ).toBe(true)
+      })
+
+      it('RCH-006: logs custom model when specified', async () => {
         const options = { ...createBaseOptions(), model: 'claude-3-opus' }
         const logger = createMockLogger()
         const repository = new FileDeliverableRepository(tempDir)
@@ -682,7 +755,43 @@ describe('CommandHandler', () => {
         ).toBe(true)
       })
 
-      it('SCH-003: logs model when specified', async () => {
+      it('SCH-003: logs default models when not specified', async () => {
+        const logger = createMockLogger()
+        createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
+
+        const handler = createHandler({ logger })
+        await handler.execute()
+
+        expect(
+          logger.infoMessages.some((m) =>
+            m.includes(`Plan model: ${DEFAULT_PLANNING_MODEL}`),
+          ),
+        ).toBe(true)
+        expect(
+          logger.infoMessages.some((m) =>
+            m.includes(`Model: ${DEFAULT_CODING_MODEL}`),
+          ),
+        ).toBe(true)
+      })
+
+      it('SCH-005: logs custom plan model when specified', async () => {
+        const logger = createMockLogger()
+        createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
+
+        const handler = createHandler({
+          options: { planModel: 'custom-opus' },
+          logger,
+        })
+        await handler.execute()
+
+        expect(
+          logger.infoMessages.some((m) =>
+            m.includes('Plan model: custom-opus'),
+          ),
+        ).toBe(true)
+      })
+
+      it('SCH-006: logs custom model when specified', async () => {
         const logger = createMockLogger()
         createStatusFile([Deliverable.passed('DL-001', 'Test', ['AC'])])
 

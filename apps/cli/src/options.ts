@@ -2,6 +2,11 @@ import { resolve, join } from 'node:path'
 import { existsSync, statSync } from 'node:fs'
 import type { Logger } from '@autonoe/core'
 
+// ========== Model Defaults ==========
+
+export const DEFAULT_CODING_MODEL = 'sonnet'
+export const DEFAULT_PLANNING_MODEL = 'opus'
+
 // ========== Common Options (Cost Control + Base) ==========
 
 /**
@@ -12,6 +17,7 @@ export interface CommonCommandOptions {
   maxIterations?: string
   maxRetries?: string
   model?: string
+  planModel?: string
   debug?: boolean
   waitForQuota?: boolean
   thinking?: string | boolean
@@ -25,6 +31,7 @@ export interface ValidatedCommonOptions {
   maxIterations?: number
   maxRetries?: number
   model?: string
+  planModel?: string
   debug: boolean
   waitForQuota: boolean
   maxThinkingTokens?: number
@@ -275,6 +282,7 @@ export function validateCommonOptions(
       maxIterations,
       maxRetries,
       model: options.model,
+      planModel: options.planModel,
       debug: options.debug ?? false,
       waitForQuota: options.waitForQuota ?? false,
       maxThinkingTokens:

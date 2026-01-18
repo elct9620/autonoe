@@ -15,7 +15,11 @@ import {
   createDeliverableMcpServer,
   type FileDeliverableRepository,
 } from '@autonoe/agent'
-import type { SandboxMode } from './options'
+import {
+  DEFAULT_CODING_MODEL,
+  DEFAULT_PLANNING_MODEL,
+  type SandboxMode,
+} from './options'
 
 export interface AgentClientFactoryResult {
   factory: AgentClientFactory
@@ -30,6 +34,7 @@ export interface AgentClientFactoryOptions {
   mode: 'run' | 'sync'
   onStatusChange?: DeliverableStatusCallback
   model?: string
+  planModel?: string
   maxThinkingTokens?: number
   allowDestructive?: boolean
 }
@@ -45,6 +50,7 @@ export function createAgentClientFactory(
     mode,
     onStatusChange,
     model,
+    planModel,
     maxThinkingTokens,
     allowDestructive = false,
   } = options
@@ -66,6 +72,7 @@ export function createAgentClientFactory(
       sandbox,
       preToolUseHooks,
       model,
+      planModel,
       maxThinkingTokens,
     )
   }
@@ -79,6 +86,7 @@ export function createAgentClientFactory(
       sandbox,
       preToolUseHooks,
       model,
+      planModel,
       maxThinkingTokens,
     ),
   }
@@ -114,10 +122,16 @@ function buildRunFactory(
   sandbox: AgentConfig['sandbox'] | undefined,
   preToolUseHooks: PreToolUseHook[],
   model: string | undefined,
+  planModel: string | undefined,
   maxThinkingTokens: number | undefined,
 ): AgentClientFactory {
   return {
     create: (instructionName: InstructionName) => {
+      const isPlanningInstruction = instructionName === 'initializer'
+      const selectedModel = isPlanningInstruction
+        ? (planModel ?? DEFAULT_PLANNING_MODEL)
+        : (model ?? DEFAULT_CODING_MODEL)
+
       const { server: deliverableMcpServer, allowedTools: deliverableTools } =
         createDeliverableMcpServer(repository, {
           toolSet: instructionName,
@@ -131,7 +145,7 @@ function buildRunFactory(
         preToolUseHooks,
         sdkMcpServers: [deliverableMcpServer],
         allowedTools: [...config.allowedTools, ...deliverableTools],
-        model,
+        model: selectedModel,
         maxThinkingTokens,
       })
     },
@@ -146,12 +160,18 @@ function buildSyncFactory(
   sandbox: AgentConfig['sandbox'] | undefined,
   preToolUseHooks: PreToolUseHook[],
   model: string | undefined,
+  planModel: string | undefined,
   maxThinkingTokens: number | undefined,
 ): AgentClientFactoryResult {
   let verificationTracker: VerificationTracker | undefined
 
   const factory: AgentClientFactory = {
     create: (instructionName: InstructionName) => {
+      const isPlanningInstruction = instructionName === 'sync'
+      const selectedModel = isPlanningInstruction
+        ? (planModel ?? DEFAULT_PLANNING_MODEL)
+        : (model ?? DEFAULT_CODING_MODEL)
+
       if (instructionName === 'verify' && !verificationTracker) {
         const status = repository.loadSync()
         if (status) {
@@ -174,7 +194,7 @@ function buildSyncFactory(
         preToolUseHooks,
         sdkMcpServers: [deliverableMcpServer],
         allowedTools: [...config.allowedTools, ...deliverableTools],
-        model,
+        model: selectedModel,
         maxThinkingTokens,
       })
     },

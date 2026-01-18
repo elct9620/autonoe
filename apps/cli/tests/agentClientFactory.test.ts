@@ -5,7 +5,12 @@ import {
   DeliverableStatus,
 } from '@autonoe/core'
 import { createAgentClientFactory } from '../src/agentClientFactory'
-import { sandboxEnabled, sandboxDisabledByCli } from '../src/options'
+import {
+  sandboxEnabled,
+  sandboxDisabledByCli,
+  DEFAULT_CODING_MODEL,
+  DEFAULT_PLANNING_MODEL,
+} from '../src/options'
 
 // Mock @autonoe/agent
 vi.mock('@autonoe/agent', () => {
@@ -145,22 +150,96 @@ describe('createAgentClientFactory', () => {
     })
   })
 
-  describe('optional configurations', () => {
-    it('ACF-030: passes model to client', () => {
+  describe('model selection', () => {
+    it('ACF-030: uses planModel for initializer instruction', () => {
       const result = createAgentClientFactory({
         projectDir: '/test',
         config: mockConfig,
         repository: mockRepository,
         sandboxMode: sandboxEnabled(),
         mode: 'run',
-        model: 'claude-sonnet-4',
+        model: 'sonnet',
+        planModel: 'opus',
+      })
+
+      const client = result.factory.create('initializer') as any
+      expect(client.options.model).toBe('opus')
+    })
+
+    it('ACF-031: uses model for coding instruction', () => {
+      const result = createAgentClientFactory({
+        projectDir: '/test',
+        config: mockConfig,
+        repository: mockRepository,
+        sandboxMode: sandboxEnabled(),
+        mode: 'run',
+        model: 'sonnet',
+        planModel: 'opus',
       })
 
       const client = result.factory.create('coding') as any
-      expect(client.options.model).toBe('claude-sonnet-4')
+      expect(client.options.model).toBe('sonnet')
     })
 
-    it('ACF-031: passes maxThinkingTokens to client', () => {
+    it('ACF-032: uses planModel for sync instruction', () => {
+      const result = createAgentClientFactory({
+        projectDir: '/test',
+        config: mockConfig,
+        repository: mockRepository,
+        sandboxMode: sandboxEnabled(),
+        mode: 'sync',
+        model: 'sonnet',
+        planModel: 'opus',
+      })
+
+      const client = result.factory.create('sync') as any
+      expect(client.options.model).toBe('opus')
+    })
+
+    it('ACF-033: uses model for verify instruction', () => {
+      const result = createAgentClientFactory({
+        projectDir: '/test',
+        config: mockConfig,
+        repository: mockRepository,
+        sandboxMode: sandboxEnabled(),
+        mode: 'sync',
+        model: 'sonnet',
+        planModel: 'opus',
+      })
+
+      const client = result.factory.create('verify') as any
+      expect(client.options.model).toBe('sonnet')
+    })
+
+    it('ACF-034: defaults initializer to DEFAULT_PLANNING_MODEL when planModel not specified', () => {
+      const result = createAgentClientFactory({
+        projectDir: '/test',
+        config: mockConfig,
+        repository: mockRepository,
+        sandboxMode: sandboxEnabled(),
+        mode: 'run',
+      })
+
+      const client = result.factory.create('initializer') as any
+      expect(client.options.model).toBe(DEFAULT_PLANNING_MODEL)
+    })
+
+    it('ACF-035: defaults coding to DEFAULT_CODING_MODEL when model not specified', () => {
+      const result = createAgentClientFactory({
+        projectDir: '/test',
+        config: mockConfig,
+        repository: mockRepository,
+        sandboxMode: sandboxEnabled(),
+        mode: 'run',
+      })
+
+      const client = result.factory.create('coding') as any
+      expect(client.options.model).toBe(DEFAULT_CODING_MODEL)
+    })
+  })
+
+  describe('optional configurations', () => {
+    it('ACF-040: passes maxThinkingTokens to client', () => {
       const result = createAgentClientFactory({
         projectDir: '/test',
         config: mockConfig,
@@ -174,7 +253,7 @@ describe('createAgentClientFactory', () => {
       expect(client.options.maxThinkingTokens).toBe(8192)
     })
 
-    it('ACF-032: passes onStatusChange callback', () => {
+    it('ACF-041: passes onStatusChange callback', () => {
       const onStatusChange = vi.fn()
       createAgentClientFactory({
         projectDir: '/test',

@@ -16,7 +16,11 @@ cli
     '--max-retries <count>',
     'Maximum retries on session error (default: 3)',
   )
-  .option('-m, --model <model>', 'Claude model to use')
+  .option('-m, --model <model>', 'Claude model for coding sessions')
+  .option(
+    '-pm, --plan-model <model>',
+    'Claude model for planning sessions (initializer/sync)',
+  )
   .option('-d, --debug', 'Show debug output')
   .option('--no-sandbox', 'Disable SDK sandbox')
   .option('--wait-for-quota', 'Wait for quota reset instead of exiting')
@@ -31,6 +35,7 @@ cli
       maxIterations: options.maxIterations,
       maxRetries: options.maxRetries,
       model: options.model,
+      planModel: options.planModel,
       debug: options.debug,
       sandbox: options.sandbox,
       waitForQuota: options.waitForQuota,
@@ -50,7 +55,11 @@ cli
     '--max-retries <count>',
     'Maximum retries on session error (default: 3)',
   )
-  .option('-m, --model <model>', 'Claude model to use')
+  .option('-m, --model <model>', 'Claude model for coding sessions')
+  .option(
+    '-pm, --plan-model <model>',
+    'Claude model for planning sessions (initializer/sync)',
+  )
   .option('-d, --debug', 'Show debug output')
   .option('--wait-for-quota', 'Wait for quota reset instead of exiting')
   .option(
@@ -63,6 +72,7 @@ cli
       maxIterations: options.maxIterations,
       maxRetries: options.maxRetries,
       model: options.model,
+      planModel: options.planModel,
       debug: options.debug,
       waitForQuota: options.waitForQuota,
       thinking: options.thinking,
