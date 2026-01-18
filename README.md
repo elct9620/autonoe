@@ -16,7 +16,7 @@ This project is inspired by:
 Autonoe builds on these concepts by adding:
 
 - **Deliverable-based workflow** - Break work into verifiable units with acceptance criteria
-- **Multi-language support** - Pre-configured profiles for Node.js, Python, Ruby, Go, Rust, and PHP
+- **Multi-language support** - Pre-configured profiles for Node.js, Bun, Python, Ruby, Go, Rust, and PHP
 - **Three-layer security** - SDK sandbox, filesystem scope, and command allowlists
 - **Session iteration** - Automatic retry until all deliverables pass
 
@@ -96,6 +96,7 @@ Choose the image tag that matches your project's language:
 | -------- | ------------------------------------ |
 | `base`   | Minimal runtime (git, curl only)     |
 | `node`   | Node.js with npm and Playwright      |
+| `bun`    | Bun runtime with Playwright          |
 | `python` | Python with pip and Playwright       |
 | `golang` | Go toolchain with Playwright         |
 | `ruby`   | Ruby with gem/bundler and Playwright |
@@ -419,7 +420,8 @@ Legacy `string[]` format is treated as `{ run: [...] }` for backward compatibili
 
 | Profile  | Includes                                     |
 | -------- | -------------------------------------------- |
-| `node`   | node, npm, bun, yarn, pnpm, vite, next, etc. |
+| `node`   | node, npm, npx, yarn, pnpm, vite, next, etc. |
+| `bun`    | bun, bunx                                    |
 | `python` | python, pip, uv, pytest, django, flask, etc. |
 | `ruby`   | ruby, gem, bundle, rails, rspec, etc.        |
 | `go`     | go, gofmt, golangci-lint, etc.               |
