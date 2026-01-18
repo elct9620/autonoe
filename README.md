@@ -16,7 +16,7 @@ This project is inspired by:
 Autonoe builds on these concepts by adding:
 
 - **Deliverable-based workflow** - Break work into verifiable units with acceptance criteria
-- **Multi-language support** - Pre-configured profiles for Node.js, Python, Ruby, and Go
+- **Multi-language support** - Pre-configured profiles for Node.js, Python, Ruby, Go, Rust, and PHP
 - **Three-layer security** - SDK sandbox, filesystem scope, and command allowlists
 - **Session iteration** - Automatic retry until all deliverables pass
 
@@ -134,15 +134,23 @@ CLAUDE_CODE_OAUTH_TOKEN=your-oauth-token
 
 All commands share the following options:
 
-| Option             | Short | Description                                   | Default   |
-| ------------------ | ----- | --------------------------------------------- | --------- |
-| `--project-dir`    | `-p`  | Project directory                             | cwd       |
-| `--max-iterations` | `-n`  | Maximum coding sessions                       | unlimited |
-| `--max-retries`    |       | Maximum retries on session error              | 3         |
-| `--model`          | `-m`  | Claude model to use                           | -         |
-| `--debug`          | `-d`  | Show debug output                             | false     |
-| `--wait-for-quota` |       | Wait for quota reset instead of exiting       | false     |
-| `--thinking`       |       | Enable extended thinking mode (budget tokens) | 8192      |
+| Option             | Short | Description                                      | Default |
+| ------------------ | ----- | ------------------------------------------------ | ------- |
+| `--project-dir`    | `-p`  | Project directory                                | cwd     |
+| `--max-iterations` | `-n`  | Maximum coding sessions                          | -       |
+| `--max-retries`    |       | Maximum retries on session error                 | 3       |
+| `--model`          | `-m`  | Claude model for coding/verify sessions          | sonnet  |
+| `--plan-model`     | `-pm` | Claude model for planning sessions               | opus    |
+| `--debug`          | `-d`  | Show debug output                                | false   |
+| `--wait-for-quota` |       | Wait for quota reset instead of exiting          | false   |
+| `--thinking`       |       | Enable extended thinking mode (budget in tokens) | 8192    |
+
+**Model Selection by Phase:**
+
+| Phase          | Sessions          | Option         | Default |
+| -------------- | ----------------- | -------------- | ------- |
+| Planning       | initializer, sync | `--plan-model` | opus    |
+| Implementation | coding, verify    | `--model`      | sonnet  |
 
 ### run Command
 
