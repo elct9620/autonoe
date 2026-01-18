@@ -147,6 +147,7 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 | Browser Automation | Playwright MCP (pre-installed) | UI verification and E2E testing     |
 | File System        | SDK Built-in                   | Read/Write project files            |
 | Bash               | SDK Built-in                   | Execute allowed commands            |
+| Skill              | SDK Built-in                   | Invoke Claude Code skills           |
 
 ---
 
@@ -630,7 +631,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 │                                                                  │
 │  Security Baseline (packages/core, always enforced)              │
 │  ├── permissions.allow: [Read(./**), Write(./**), Read(/tmp/**), Write(/tmp/**), ...]│
-│  ├── allowedTools: [Read, Write, Edit, ..., mcp__playwright__*]  │
+│  ├── allowedTools: [Read, Write, Edit, Skill, ..., mcp__playwright__*]│
 │  └── hooks: [BashSecurity, .autonoe Protection]                  │
 │                                                                  │
 │  User Config (.autonoe/agent.json)                               │
@@ -1150,6 +1151,7 @@ Tool availability by command. For detailed restrictions, see [Section 6](#6-secu
 | Bash               | Profile commands + File ops | Profile commands only       |
 | Git                | YES                         | YES                         |
 | Browser Automation | YES                         | YES                         |
+| Skill              | YES                         | YES                         |
 | Autonoe Tool       | YES                         | YES                         |
 
 ### 9.3 Configuration Merge
