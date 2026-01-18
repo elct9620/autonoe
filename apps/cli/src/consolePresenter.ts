@@ -50,6 +50,7 @@ export class ConsolePresenter implements Presenter {
   }
   private timeoutId?: ReturnType<typeof setTimeout>
   private hasActivityLine = false
+  private isRunning = false
 
   constructor(options: ConsolePresenterOptions = {}) {
     this.showDebug = options.debug ?? false
@@ -68,12 +69,14 @@ export class ConsolePresenter implements Presenter {
       startTime: Date.now(),
     }
     this.hasActivityLine = false
+    this.isRunning = true
 
     // Start periodic display update using recursive setTimeout
     this.scheduleNextRender()
   }
 
   stop(): void {
+    this.isRunning = false
     if (this.timeoutId) {
       clearTimeout(this.timeoutId)
       this.timeoutId = undefined
@@ -83,9 +86,8 @@ export class ConsolePresenter implements Presenter {
 
   private scheduleNextRender(): void {
     this.timeoutId = setTimeout(() => {
-      this.render()
-      // Only schedule next render if not stopped
-      if (this.timeoutId !== undefined) {
+      if (this.isRunning) {
+        this.render()
         this.scheduleNextRender()
       }
     }, this.updateIntervalMs)

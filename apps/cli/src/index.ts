@@ -52,7 +52,7 @@ async function initializeCommonDependencies(
   const onStatusChange = createStatusChangeCallback(presenter)
 
   const abortController = new AbortController()
-  process.on('SIGINT', () => {
+  process.once('SIGINT', () => {
     presenter.info('')
     presenter.info('Received SIGINT, stopping...')
     abortController.abort()

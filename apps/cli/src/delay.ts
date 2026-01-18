@@ -6,14 +6,15 @@ import type { Delay } from '@autonoe/core'
  */
 export const delay: Delay = (ms: number, signal?: AbortSignal) =>
   new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(resolve, ms)
+    const abortHandler = () => {
+      clearTimeout(timeoutId)
+      reject(new DOMException('Aborted', 'AbortError'))
+    }
 
-    signal?.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timeoutId)
-        reject(new DOMException('Aborted', 'AbortError'))
-      },
-      { once: true },
-    )
+    const timeoutId = setTimeout(() => {
+      signal?.removeEventListener('abort', abortHandler)
+      resolve()
+    }, ms)
+
+    signal?.addEventListener('abort', abortHandler, { once: true })
   })
