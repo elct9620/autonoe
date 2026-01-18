@@ -28,6 +28,7 @@ Each publishable package maps to a separate image path under the organization na
 │      │                                                  │
 │      ├──▶ base (debian:bookworm-slim)                   │
 │      ├──▶ node (node:XX-bookworm-slim)                  │
+│      ├──▶ bun (oven/bun:X.X-slim)                       │
 │      ├──▶ python (python:X.XX-slim-bookworm)            │
 │      ├──▶ golang (golang:X.XX-bookworm)                 │
 │      ├──▶ ruby (ruby:X.X-slim-bookworm)                 │
@@ -42,6 +43,7 @@ Each publishable package maps to a separate image path under the organization na
 | ------ | ------------------------- | ------------------ | ------------------------------------------------------------------------- | ---------------------- |
 | base   | debian:bookworm-slim      | `:latest`, `:base` | git, curl, ca-certificates, openssh-client, gnupg                         | Minimal runtime        |
 | node   | node:XX-bookworm-slim     | `:node`            | git, curl, openssh-client, gnupg, npm, Playwright deps                    | Frontend development   |
+| bun    | oven/bun:X.X-slim         | `:bun`             | git, curl, openssh-client, gnupg, bun, Playwright deps                    | Full-stack development |
 | python | python:X.XX-slim-bookworm | `:python`          | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, pip, uv  | Backend / Data science |
 | golang | golang:X.XX-bookworm      | `:golang`          | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps           | System programming     |
 | ruby   | ruby:X.X-slim-bookworm    | `:ruby`            | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, Bundler  | Web development        |
@@ -63,6 +65,7 @@ Each target must include base tools (git, curl, ca-certificates, openssh-client,
 | Arg              | Default          | Description   |
 | ---------------- | ---------------- | ------------- |
 | `NODE_VERSION`   | (see Dockerfile) | Node.js LTS   |
+| `BUN_VERSION`    | (see Dockerfile) | Bun stable    |
 | `PYTHON_VERSION` | (see Dockerfile) | Python stable |
 | `GOLANG_VERSION` | (see Dockerfile) | Go stable     |
 | `RUBY_VERSION`   | (see Dockerfile) | Ruby stable   |
@@ -74,6 +77,7 @@ Each target must include base tools (git, curl, ca-certificates, openssh-client,
 | Language | Policy         |
 | -------- | -------------- |
 | Node.js  | Current LTS    |
+| Bun      | Current stable |
 | Python   | Current stable |
 | Golang   | Current stable |
 | Ruby     | Current stable |

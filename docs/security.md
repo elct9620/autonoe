@@ -112,7 +112,7 @@ Language profile commands are available in both `run` and `sync` modes. The only
 | Category  | Commands                        |
 | --------- | ------------------------------- |
 | Runtime   | node, deno                      |
-| Package   | npm, npx, bun, yarn, pnpm       |
+| Package   | npm, npx, yarn, pnpm            |
 | Test      | vitest, jest, playwright, mocha |
 | Type      | tsc                             |
 | Lint      | eslint, prettier, biome         |
@@ -172,6 +172,13 @@ Language profile commands are available in both `run` and `sync` modes. The only
 | Lint      | phpcs, phpcbf, phpstan, psalm, php-cs-fixer |
 | Framework | artisan, symfony, laminas                   |
 
+#### Bun Profile
+
+| Category | Commands |
+| -------- | -------- |
+| Runtime  | bun      |
+| Package  | bunx     |
+
 ### Argument Validation
 
 Commands requiring additional argument checks:
@@ -188,6 +195,7 @@ Commands requiring additional argument checks:
 | ------- | ---------------------------------- |
 | Base    | (none)                             |
 | Node.js | node, npm, npx, vite, next         |
+| Bun     | bun                                |
 | Python  | python, python3, uvicorn, gunicorn |
 | Ruby    | ruby, puma, unicorn, rails         |
 | Go      | go                                 |
@@ -321,15 +329,16 @@ Pattern: `Warning: [what is enabled/disabled]. [consequence/risk].`
 
 Sync uses **Base read-only commands** plus **all language profile commands**. The only difference from `run` command is that file operation commands (mkdir, cp) are excluded.
 
-| Profile | Commands                                                                                                   |
-| ------- | ---------------------------------------------------------------------------------------------------------- |
-| base    | All read-only commands (see Base Bash Commands above)                                                      |
-| node    | npm, npx, bun, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome, node, deno, etc. |
-| python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint, python, python3, poetry, etc.  |
-| ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard, ruby, irb, rake, rails, etc.           |
-| go      | go, gofmt, goimports, golangci-lint, staticcheck, golint, gopls, dlv, goreleaser                           |
-| rust    | cargo, rustc, rustup, rustfmt, cargo-fmt, clippy, cargo-clippy, rust-analyzer, cargo-watch                 |
-| php     | php, composer, phpunit, pest, codeception, phpcs, phpcbf, phpstan, psalm, php-cs-fixer, artisan, etc.      |
+| Profile | Commands                                                                                                  |
+| ------- | --------------------------------------------------------------------------------------------------------- |
+| base    | All read-only commands (see Base Bash Commands above)                                                     |
+| node    | npm, npx, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome, node, deno, etc.     |
+| bun     | bun, bunx                                                                                                 |
+| python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint, python, python3, poetry, etc. |
+| ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard, ruby, irb, rake, rails, etc.          |
+| go      | go, gofmt, goimports, golangci-lint, staticcheck, golint, gopls, dlv, goreleaser                          |
+| rust    | cargo, rustc, rustup, rustfmt, cargo-fmt, clippy, cargo-clippy, rust-analyzer, cargo-watch                |
+| php     | php, composer, phpunit, pest, codeception, phpcs, phpcbf, phpstan, psalm, php-cs-fixer, artisan, etc.     |
 
 **Profile × Command Behavior:**
 
@@ -337,6 +346,7 @@ Sync uses **Base read-only commands** plus **all language profile commands**. Th
 | ------------------ | ------------------------------------------ |
 | (not set)          | Base read-only + All profiles              |
 | `"node"`           | Base read-only + Node profile              |
+| `"bun"`            | Base read-only + Bun profile               |
 | `"python"`         | Base read-only + Python profile            |
 | `["node", "go"]`   | Base read-only + Node profile + Go profile |
 

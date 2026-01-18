@@ -634,6 +634,9 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 │  ├── allowedTools: [Read, Write, Edit, Skill, ..., mcp__playwright__*]│
 │  └── hooks: [BashSecurity, .autonoe Protection]                  │
 │                                                                  │
+│  Language Profiles                                               │
+│  └── node, bun, python, ruby, go, rust, php                      │
+│                                                                  │
 │  User Config (.autonoe/agent.json)                               │
 │  ├── profile: "node" | ["node", "python"]  # Language profiles   │
 │  ├── allowCommands: { base?, run?, sync? }  # Hook layer (tiered)│
@@ -674,7 +677,7 @@ Command Extensions
 
 **Language Profile Commands:**
 
-Language profile commands (node, python, ruby, go, rust, php) are available in both commands. The only difference is that `sync` excludes file operation commands (mkdir, cp).
+Language profile commands (node, bun, python, ruby, go, rust, php) are available in both commands. The only difference is that `sync` excludes file operation commands (mkdir, cp).
 
 **Command × Profile → Commands:**
 
@@ -851,12 +854,13 @@ See [Security Details - Base Security](docs/security.md#base-security) for valid
 
 **Profile Selection:**
 
-| agent.json profile   | Active Profiles                                      |
-| -------------------- | ---------------------------------------------------- |
-| (not set)            | ALL (base + node + python + ruby + go + rust + php)  |
-| `"node"`             | base + node                                          |
-| `"python"`           | base + python                                        |
-| `["node", "python"]` | base + node + python                                 |
+| agent.json profile   | Active Profiles                                            |
+| -------------------- | ---------------------------------------------------------- |
+| (not set)            | ALL (base + node + bun + python + ruby + go + rust + php)  |
+| `"node"`             | base + node                                                |
+| `"bun"`              | base + bun                                                 |
+| `"python"`           | base + python                                              |
+| `["node", "python"]` | base + node + python                                       |
 
 **`run` Command:** Includes all language profile commands plus file operation commands (mkdir, cp).
 
@@ -878,6 +882,7 @@ See [Security Details - Run Command](docs/security.md#run-command-security) for 
 |---------|----------|
 | base    | All read-only commands (see Section 6.2) |
 | node    | All Node.js commands (npm, npx, node, vitest, jest, eslint, prettier, etc.) |
+| bun     | All Bun commands (bun, bunx) |
 | python  | All Python commands (pip, python, pytest, mypy, ruff, etc.) |
 | ruby    | All Ruby commands (bundle, ruby, rspec, rubocop, etc.) |
 | go      | All Go commands (go, gofmt, golangci-lint, etc.) |
@@ -924,6 +929,7 @@ See [Docker Configuration](docs/docker.md) for detailed build configuration.
 |--------|-----|----------|
 | base | `:latest`, `:base` | Minimal runtime |
 | node | `:node` | Frontend development |
+| bun | `:bun` | Full-stack development |
 | python | `:python` | Backend / Data science |
 | golang | `:golang` | System programming |
 | ruby | `:ruby` | Web development |
@@ -1169,11 +1175,12 @@ Tool availability by command. For detailed restrictions, see [Section 6](#6-secu
 
 See [Section 6.3](#63-run-command-security) for profile details.
 
-| agent.json profile     | Active Profiles                                     |
-| ---------------------- | --------------------------------------------------- |
-| (not set)              | ALL (base + node + python + ruby + go + rust + php) |
-| `"node"`               | base + node                                         |
-| `["node", "python"]`   | base + node + python                                |
+| agent.json profile     | Active Profiles                                           |
+| ---------------------- | --------------------------------------------------------- |
+| (not set)              | ALL (base + node + bun + python + ruby + go + rust + php) |
+| `"node"`               | base + node                                               |
+| `"bun"`                | base + bun                                                |
+| `["node", "python"]`   | base + node + python                                      |
 
 ### 9.5 Sync Command Behavior
 
