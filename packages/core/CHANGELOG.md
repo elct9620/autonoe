@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/elct9620/autonoe/compare/core-v0.6.0...core-v0.7.0) (2026-01-18)
+
+
+### Features
+
+* **core:** implement Bun language profile ([0395427](https://github.com/elct9620/autonoe/commit/0395427c8c7eef39802b321b8447051356b99cdd))
+
 ## [0.6.0](https://github.com/elct9620/autonoe/compare/core-v0.5.0...core-v0.6.0) (2026-01-18)
 
 
