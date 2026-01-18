@@ -234,10 +234,7 @@ export class ConsolePresenter implements Presenter {
 
   private formatElapsedTime(): string {
     const elapsedMs = Date.now() - this.state.startTime
-    const totalSeconds = Math.floor(elapsedMs / 1000)
-    const minutes = Math.floor(totalSeconds / 60)
-    const seconds = totalSeconds % 60
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+    return formatDuration(elapsedMs)
   }
 
   private formatResetTime(date: Date): string {

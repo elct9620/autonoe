@@ -429,12 +429,17 @@ clearActivity():
 ⚡ [elapsed] [activity] [tool count]
 ```
 
+**Elapsed Time Format:** Uses `formatDuration()` from `packages/core/src/duration.ts`:
+- Zero-value parts are omitted (e.g., `1h`, `1m 30s`, `5s`)
+- Examples: `5s`, `1m 30s`, `1h`, `1h 1m 1s`
+
 Examples:
 ```text
-⚡ 0:05 Thinking...
-⚡ 0:12 Running bash... (1 tool)
-⚡ 0:45 Running Read... (3 tools)
-⚡ 1:23 Responding... (7 tools)
+⚡ 5s Thinking...
+⚡ 12s Running bash... (1 tool)
+⚡ 45s Running Read... (3 tools)
+⚡ 1m 23s Responding... (7 tools)
+⚡ 1h 5m Responding... (42 tools)
 ```
 
 **Waiting Display:**

@@ -390,22 +390,36 @@ describe('ConsolePresenter', () => {
   })
 
   describe('Elapsed time formatting', () => {
-    it('PRE-040: formats elapsed time as M:SS', () => {
+    it('PRE-040: formats elapsed time using formatDuration', () => {
       const presenter = new ConsolePresenter()
       presenter.start()
 
       presenter.activity({ type: 'stream_thinking', thinking: 'test' })
 
-      expect(stdoutWriteSpy).toHaveBeenCalledWith(
-        expect.stringContaining('0:00'),
-      )
+      expect(stdoutWriteSpy).toHaveBeenCalledWith(expect.stringContaining('0s'))
 
       stdoutWriteSpy.mockClear()
       vi.advanceTimersByTime(65000) // 1 minute 5 seconds
 
       // Trigger render via periodic update
       expect(stdoutWriteSpy).toHaveBeenCalledWith(
-        expect.stringContaining('1:05'),
+        expect.stringContaining('1m 5s'),
+      )
+      presenter.stop()
+    })
+
+    it('PRE-041: formats elapsed time over 1 hour correctly', () => {
+      const presenter = new ConsolePresenter()
+      presenter.start()
+
+      presenter.activity({ type: 'stream_thinking', thinking: 'test' })
+
+      stdoutWriteSpy.mockClear()
+      vi.advanceTimersByTime(3665000) // 1 hour, 1 minute, 5 seconds
+
+      // Trigger render via periodic update
+      expect(stdoutWriteSpy).toHaveBeenCalledWith(
+        expect.stringContaining('1h 1m 5s'),
       )
       presenter.stop()
     })
