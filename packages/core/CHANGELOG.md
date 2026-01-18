@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/elct9620/autonoe/compare/core-v0.7.0...core-v0.7.1) (2026-01-18)
+
+
+### Bug Fixes
+
+* **core:** prioritize project testing tools over Playwright MCP ([19b1d5d](https://github.com/elct9620/autonoe/commit/19b1d5da7fb55f89745702c70b43c3393ed31b00))
+
 ## [0.7.0](https://github.com/elct9620/autonoe/compare/core-v0.6.0...core-v0.7.0) (2026-01-18)
 
 
