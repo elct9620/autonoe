@@ -1,5 +1,5 @@
 {
-  "packages/core": "0.7.0",
-  "packages/agent": "0.4.4",
-  "apps/cli": "0.7.0"
+  "packages/core": "0.7.1",
+  "packages/agent": "0.4.5",
+  "apps/cli": "0.7.1"
 }

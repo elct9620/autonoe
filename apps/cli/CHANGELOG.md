@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.1](https://github.com/elct9620/autonoe/compare/cli-v0.7.0...cli-v0.7.1) (2026-01-18)
+
+
+### Bug Fixes
+
+* **cli:** prevent event listener leaks in delay and SIGINT handling ([fb07c14](https://github.com/elct9620/autonoe/commit/fb07c14d310be13acf15bd1e91a918c5ca62ad28))
+* **cli:** use formatDuration for activity elapsed time display ([08bd7b9](https://github.com/elct9620/autonoe/commit/08bd7b9a9d6cb244734f9df6ca67a0a693f1dd34))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @autonoe/core bumped to 0.7.1
+    * @autonoe/agent bumped to 0.4.5
+
 ## [0.7.0](https://github.com/elct9620/autonoe/compare/cli-v0.6.0...cli-v0.7.0) (2026-01-18)
 
 
