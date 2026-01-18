@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/elct9620/autonoe/compare/core-v0.5.0...core-v0.6.0) (2026-01-18)
+
+
+### Features
+
+* **core:** add Skill tool to allowedTools ([33e5326](https://github.com/elct9620/autonoe/commit/33e53266ed53f144be096771044b47bf80e71160))
+
 ## [0.5.0](https://github.com/elct9620/autonoe/compare/core-v0.4.2...core-v0.5.0) (2026-01-17)
 
 

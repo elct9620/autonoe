@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/elct9620/autonoe/compare/cli-v0.5.0...cli-v0.6.0) (2026-01-18)
+
+
+### Features
+
+* **cli:** implement --plan-model option for model selection ([e422439](https://github.com/elct9620/autonoe/commit/e422439243b9941537fc23358daabaa79ca04cf2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @autonoe/core bumped to 0.6.0
+    * @autonoe/agent bumped to 0.4.3
+
 ## [0.5.0](https://github.com/elct9620/autonoe/compare/cli-v0.4.1...cli-v0.5.0) (2026-01-17)
 
 
