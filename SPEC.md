@@ -1023,7 +1023,8 @@ All commands share the following options:
 | `--project-dir` | `-p` | Project directory | cwd |
 | `--max-iterations` | `-n` | Maximum coding sessions | - |
 | `--max-retries` | - | Maximum retries on session error | 3 |
-| `--model` | `-m` | Claude model to use | - |
+| `--model` | `-m` | Claude model for coding/verify sessions | sonnet |
+| `--plan-model` | `-pm` | Claude model for planning sessions (initializer/sync) | opus |
 | `--debug` | `-d` | Show debug output | false |
 | `--wait-for-quota` | - | Wait for quota reset instead of exiting | false |
 | `--thinking` | - | Enable extended thinking mode (budget tokens) | 8192 |
@@ -1038,7 +1039,16 @@ All commands share the following options:
 
 When validation fails, the command exits immediately with a non-zero exit code.
 
-### 8.1.1 Prerequisites
+### 8.1.1 Model Selection
+
+| Instruction | Model Option | Default |
+|-------------|--------------|---------|
+| initializer | `--plan-model` | opus |
+| sync | `--plan-model` | opus |
+| coding | `--model` | sonnet |
+| verify | `--model` | sonnet |
+
+### 8.1.2 Prerequisites
 
 All commands require the following conditions:
 
