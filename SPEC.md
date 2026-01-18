@@ -148,10 +148,6 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 | File System        | SDK Built-in                   | Read/Write project files            |
 | Bash               | SDK Built-in                   | Execute allowed commands            |
 
-### 1.4 Coding Conventions
-
-See `CLAUDE.md` for TypeScript coding conventions used in this project.
-
 ---
 
 ## 2. Clean Architecture `[Design]`
@@ -176,24 +172,6 @@ Package structure follows Clean Architecture (see Section 1.1 for diagram):
 ### 2.3 Domain Model
 
 See [Domain Model](docs/domain-model.md) for detailed type definitions.
-
-**Core Types:**
-
-| Category | Types |
-|----------|-------|
-| Stream Events | StreamEvent (Text, Thinking, ToolInvocation, ToolResponse, End, Error) |
-| Value Objects | DeliverableInput, OperationResult |
-| Entities | Deliverable (with state machine: pending → passed/blocked) |
-| Aggregates | DeliverableStatus (persisted to `.autonoe/status.json`) |
-| Enums | SessionOutcome |
-| Type Aliases | MessageStream |
-| Interface Types | McpServer (defines contract between Core and Infrastructure) |
-
-**Key Behaviors:**
-
-- StreamEvent is a discriminated union processed by Session
-- Deliverable uses single `status` field (pending/passed/blocked) to eliminate invalid states
-- DeliverableStatusReader used by SessionRunner for termination decisions
 
 **Type Definitions:** `packages/core/src/types.ts`
 
@@ -470,29 +448,6 @@ Examples:
 | Update interval | 1 second (default) |
 | Activity display | Single-line overwrite (`\r\x1b[K`) |
 | Log display | Multi-line accumulation |
-
-**Visual Example:**
-
-```text
-Initial:
-(empty)
-
-After activity(thinking):
-⚡ 0:05 Thinking..._              <- cursor here, no newline
-
-After log("Session 2 started"):
-1. Clear activity line
-2. Print log with newline
-3. Redraw activity line
-
-Result:
-Session 2 started                 <- Log (permanent)
-⚡ 0:05 Thinking..._              <- Activity (transient)
-
-After activity(tool_start):
-Session 2 started                 <- Log unchanged
-⚡ 0:08 Running bash..._          <- Activity updated
-```
 
 **Comparison with Debug Mode:**
 
@@ -1210,23 +1165,13 @@ Tool availability by command. For detailed restrictions, see [Section 6](#6-secu
 
 ### 9.4 Profile Selection
 
-| agent.json profile     | Active Profiles                                     | Use Case                |
-| ---------------------- | --------------------------------------------------- | ----------------------- |
-| (not set)              | ALL (base + node + python + ruby + go + rust + php) | Default, all languages  |
-| `"node"`               | base + node                                         | Node.js only            |
-| `"python"`             | base + python                                       | Python only             |
-| `"ruby"`               | base + ruby                                         | Ruby only               |
-| `"go"`                 | base + go                                           | Go only                 |
-| `"rust"`               | base + rust                                         | Rust only               |
-| `"php"`                | base + php                                          | PHP only                |
-| `["node", "python"]`   | base + node + python                                | Specific combination    |
+See [Section 6.3](#63-run-command-security) for profile details.
 
-**Profile × Command:**
-
-| Command | Language Commands | File Operations |
-|---------|-------------------|-----------------|
-| `run`   | All               | mkdir, cp       |
-| `sync`  | All               | (excluded)      |
+| agent.json profile     | Active Profiles                                     |
+| ---------------------- | --------------------------------------------------- |
+| (not set)              | ALL (base + node + python + ruby + go + rust + php) |
+| `"node"`               | base + node                                         |
+| `["node", "python"]`   | base + node + python                                |
 
 ### 9.5 Sync Command Behavior
 
@@ -1247,15 +1192,12 @@ Tool availability by command. For detailed restrictions, see [Section 6](#6-secu
 
 ### 9.7 Termination by Command
 
-| Command | Goal                      | Termination Triggers                                    |
-| ------- | ------------------------- | ------------------------------------------------------- |
-| run     | All deliverables passed   | all_passed (goal achieved), all_blocked (cannot proceed)|
-| sync    | All deliverables verified | all_verified (goal achieved)                            |
+See [Section 3.4](#34-termination-conditions) for details.
 
-**Design Principle**: Commands continue running until "goal achieved" or "cannot proceed".
-
-- **run**: Goal is to pass all deliverables. Stopping on all_blocked means implementation cannot continue, not failure.
-- **sync**: Goal is to confirm status of all deliverables. all_verified indicates verification complete.
+| Command | Goal                      | Termination Triggers        |
+| ------- | ------------------------- | --------------------------- |
+| run     | All deliverables passed   | all_passed, all_blocked     |
+| sync    | All deliverables verified | all_verified                |
 
 ### 9.8 Verification Result (Sync Command)
 
@@ -1287,39 +1229,7 @@ Tool availability by command. For detailed restrictions, see [Section 6](#6-secu
 
 ### 9.10 Console Output Behavior
 
-**Activity State Transitions:**
-
-| Condition | Action |
-|-----------|--------|
-| SessionRunner starts | Start tick timer, hasActivityLine = false |
-| Tool starts | Update currentTool, increment toolCount |
-| Tool completes | Clear currentTool |
-| Thinking event | Display "Thinking..." |
-| Text event | Display "Responding..." |
-| Tick timer fires | Redraw activity line with updated elapsed time |
-| Session ends | clearActivity(), reset activity state |
-| Error event | No change |
-| Quota exceeded | Display waiting state with remainingMs/resetTime |
-| Quota wait ends | clearActivity() |
-
-**Output Coordination:**
-
-| Event | hasActivityLine | Action |
-|-------|-----------------|--------|
-| log() | false | Print log with newline |
-| log() | true | Clear activity → print log → redraw activity |
-| activity() | any | Update state, render activity line, hasActivityLine = true |
-| clearActivity() | true | Clear line (`\r\x1b[K`), hasActivityLine = false |
-| clearActivity() | false | No-op |
-
-**Session Boundary Behavior:**
-
-| Boundary | Action |
-|----------|--------|
-| Session N ends | clearActivity(), log session result |
-| Session N+1 starts | log "Session N+1 started", activity events resume |
-
-This ensures log messages are never overwritten by activity updates.
+See [Section 3.5](#35-console-output) and [Interfaces - Presenter](docs/interfaces.md#presenter) for details.
 
 ---
 
