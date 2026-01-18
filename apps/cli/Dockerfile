@@ -2,6 +2,7 @@
 
 # Build arguments
 ARG NODE_VERSION=24
+ARG BUN_VERSION=1.3
 ARG PYTHON_VERSION=3.14
 ARG GOLANG_VERSION=1.25
 ARG RUBY_VERSION=4.0
@@ -84,6 +85,42 @@ RUN npx playwright install-deps chromium
 ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
 
 # Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
+ENV AUTONOE_NO_SANDBOX=1
+
+WORKDIR /workspace
+
+# Copy compiled binary (last to maximize cache hits)
+COPY --from=builder /app/dist/autonoe /usr/local/bin/autonoe
+
+CMD ["autonoe"]
+
+# =============================================================================
+# Bun Stage
+# =============================================================================
+FROM oven/bun:${BUN_VERSION}-slim AS bun
+
+ARG NODE_VERSION
+
+# Install essential tools (including Git signing support)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    jq \
+    openssh-client \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install claude-code CLI (required by claude-agent-sdk)
+RUN npm install -g @anthropic-ai/claude-code
+
+# Install Playwright system dependencies (browser installed via npx at runtime)
+RUN npx playwright install-deps chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
+
+# Disable SDK sandbox for Docker compatibility
 ENV AUTONOE_NO_SANDBOX=1
 
 WORKDIR /workspace

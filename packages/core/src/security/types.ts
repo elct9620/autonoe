@@ -19,6 +19,7 @@ export interface BashSecurity {
 export type ProfileName =
   | 'base'
   | 'node'
+  | 'bun'
   | 'python'
   | 'ruby'
   | 'go'
@@ -31,6 +32,7 @@ export type ProfileName =
 export const ALL_PROFILES: readonly ProfileName[] = Object.freeze([
   'base',
   'node',
+  'bun',
   'python',
   'ruby',
   'go',

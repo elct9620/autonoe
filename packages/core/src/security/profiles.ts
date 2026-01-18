@@ -68,7 +68,6 @@ export const NODE_COMMANDS = new Set([
   // Package managers
   'npm',
   'npx',
-  'bun',
   'yarn',
   'pnpm',
   // Test runners
@@ -95,6 +94,19 @@ export const NODE_COMMANDS = new Set([
   'nuxt',
   'astro',
   'remix',
+])
+
+// =============================================================================
+// Bun Profile
+// =============================================================================
+
+/**
+ * Bun commands (available in all modes)
+ */
+export const BUN_COMMANDS = new Set([
+  // Runtime and package manager
+  'bun',
+  'bunx',
 ])
 
 // =============================================================================
@@ -262,6 +274,7 @@ export const PROFILE_COMMANDS: Record<
   Set<string>
 > = {
   node: NODE_COMMANDS,
+  bun: BUN_COMMANDS,
   python: PYTHON_COMMANDS,
   ruby: RUBY_COMMANDS,
   go: GO_COMMANDS,
@@ -306,6 +319,7 @@ export const NODE_PKILL_TARGETS = new Set([
   'vite',
   'next',
 ])
+export const BUN_PKILL_TARGETS = new Set(['bun'])
 export const PYTHON_PKILL_TARGETS = new Set([
   'python',
   'python3',
@@ -323,6 +337,7 @@ export const PHP_PKILL_TARGETS = new Set(['php', 'artisan'])
 export const PROFILE_PKILL_TARGETS: Record<ProfileName, Set<string>> = {
   base: new Set(),
   node: NODE_PKILL_TARGETS,
+  bun: BUN_PKILL_TARGETS,
   python: PYTHON_PKILL_TARGETS,
   ruby: RUBY_PKILL_TARGETS,
   go: GO_PKILL_TARGETS,
