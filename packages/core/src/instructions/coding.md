@@ -112,7 +112,7 @@ To make a progress on the chosen deliverable, process throughly:
 
 **CRITICAL:** You must verify the deliverable close to real user with all possible tools, e.g. browser automation tools, API testing tools, CLI tools, etc.
 
-**PREFER Browser Automation:** When verifying web UI deliverables, you MUST use browser automation tools as the PRIMARY verification method. Playwright MCP tools are built-in, but if unavailable, explore the project for alternative browser automation methods before giving up. API/curl testing is supplementary, not a replacement for real browser verification.
+**PREFER Browser Automation:** When verifying web UI deliverables, you MUST use browser automation tools as the PRIMARY verification method. First, check if the project has its own browser automation setup (e.g., Playwright, Puppeteer, Cypress tests). Only use Playwright MCP tools as a FALLBACK when the project has no browser automation configured. API/curl testing is acceptable for pure API deliverables, but NOT a replacement for E2E browser verification on UI deliverables.
 
 For example, if you are working on a web app and Playwright MCP tools is available:
 
@@ -249,11 +249,11 @@ Ensure no breaking features or incomplete work should be left behind. The next s
 
 **ALL acceptance criteria must verified use end-to-end verification or manual verification.**
 
-Search available MCP tools for testing like a real user. Examples:
+**Priority:** Always check if the project provides testing tools FIRST, then use MCP tools as fallback:
 
-- Puppeter or Playwright for web apps
-- Postman or curl for APIs
-- CLI tools for command-line applications
+- **Web apps**: Project's browser automation tests (Playwright/Puppeteer/Cypress) → Playwright MCP as fallback
+- **APIs**: Project's API tests → curl/Postman for manual verification
+- **CLI apps**: Project's CLI tests → direct command execution
 
 ## IMPORTANT REMINDERS
 
