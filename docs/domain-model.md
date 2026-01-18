@@ -107,11 +107,12 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 
 **Methods:**
 
-| Method                | Signature                                     | Description                            |
-| --------------------- | --------------------------------------------- | -------------------------------------- |
-| fromType              | `(type: WorkflowType) => Workflow`            | Get workflow by type                   |
-| isPlanningInstruction | `(instruction: InstructionName) => boolean`   | Check if instruction is planning phase |
-| getPhaseType          | `(instruction: InstructionName) => PhaseType` | Get phase type for instruction         |
+| Method                | Signature                                      | Description                                  |
+| --------------------- | ---------------------------------------------- | -------------------------------------------- |
+| fromType              | `(type: WorkflowType) => Workflow`             | Get workflow by type                         |
+| isPlanningInstruction | `(instruction: InstructionName) => boolean`    | Check if instruction is planning phase       |
+| getPhaseType          | `(instruction: InstructionName) => PhaseType`  | Get phase type for instruction               |
+| selectInstruction     | `(isFirstSession: boolean) => InstructionName` | Select instruction based on session position |
 
 **Usage:**
 
@@ -123,6 +124,12 @@ Workflow.run.isPlanningInstruction('coding') // false
 // Get phase type for model selection
 Workflow.sync.getPhaseType('sync') // 'planning'
 Workflow.sync.getPhaseType('verify') // 'implementation'
+
+// Select instruction based on session position
+Workflow.run.selectInstruction(true) // 'initializer' (first session)
+Workflow.run.selectInstruction(false) // 'coding' (subsequent sessions)
+Workflow.sync.selectInstruction(true) // 'sync' (first session)
+Workflow.sync.selectInstruction(false) // 'verify' (subsequent sessions)
 ```
 
 ---
