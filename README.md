@@ -115,6 +115,75 @@ services:
       CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
 ```
 
+### Custom Image with Additional Tools
+
+To extend language profiles with additional tools, use `dockerfile_inline` combined with `agent.json`.
+
+**Example: Adding SQLite3 support**
+
+1. Create `compose.yml` with inline Dockerfile:
+
+```yaml
+services:
+  autonoe:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM ghcr.io/elct9620/autonoe/cli:python
+        RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+```
+
+2. Create `.autonoe/agent.json` to allow the new command:
+
+```json
+{
+  "allowCommands": {
+    "base": ["sqlite3"]
+  }
+}
+```
+
+3. Run with Docker Compose:
+
+```bash
+docker compose run --rm autonoe autonoe run
+```
+
+**Key points:**
+
+- Use `dockerfile_inline` to install additional packages on top of language profiles
+- Use `allowCommands.base` to permit the command for both `run` and `sync`
+- Use `allowCommands.run` for commands only needed during implementation
+
+**Advanced: SSH and Git configuration**
+
+For workflows requiring Git operations with SSH authentication:
+
+```yaml
+services:
+  autonoe:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM ghcr.io/elct9620/autonoe/cli:python
+        RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
+    volumes:
+      - .:/workspace
+      - ./.gitconfig.container:/root/.gitconfig:ro
+      - /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock
+    working_dir: /workspace
+    environment:
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      SSH_AUTH_SOCK: /run/host-services/ssh-auth.sock
+```
+
+This mounts the host's SSH agent socket (macOS Docker Desktop) and a custom `.gitconfig` for container use.
+
 ### Authentication
 
 | Variable                  | Description                                  |
