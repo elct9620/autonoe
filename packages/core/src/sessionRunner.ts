@@ -367,15 +367,28 @@ export class SessionRunner {
         // Report initial waiting state
         reportWaiting()
 
-        // Report periodically during wait
-        const intervalId = setInterval(reportWaiting, 1000) // Update every second
+        // Report periodically during wait using recursive setTimeout
+        let timeoutId: ReturnType<typeof setTimeout> | undefined
+        const scheduleNextReport = () => {
+          timeoutId = setTimeout(() => {
+            reportWaiting()
+            // Only schedule next report if not cleared
+            if (timeoutId !== undefined) {
+              scheduleNextReport()
+            }
+          }, 1000) // Update every second
+        }
+        scheduleNextReport()
 
         try {
           await this.delay(decision.durationMs, signal)
         } catch (error) {
           // Handle AbortError from signal - user interrupted during wait
           if (error instanceof DOMException && error.name === 'AbortError') {
-            clearInterval(intervalId)
+            if (timeoutId) {
+              clearTimeout(timeoutId)
+              timeoutId = undefined
+            }
             this.logTermination(logger, 'interrupted', state)
             return {
               state: state.setExitReason('interrupted'),
@@ -384,7 +397,10 @@ export class SessionRunner {
           }
           throw error
         } finally {
-          clearInterval(intervalId)
+          if (timeoutId) {
+            clearTimeout(timeoutId)
+            timeoutId = undefined
+          }
         }
         return {
           state: state.decrementIterations(),

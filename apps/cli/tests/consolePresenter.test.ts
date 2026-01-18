@@ -76,6 +76,33 @@ describe('ConsolePresenter', () => {
       expect(stdoutWriteSpy).not.toHaveBeenCalled()
       presenter.stop()
     })
+
+    it('PRE-004: stop() calls clearTimeout to cleanup timer', () => {
+      const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout')
+      const presenter = new ConsolePresenter({ updateIntervalMs: 100 })
+      presenter.start()
+      presenter.stop()
+      expect(clearTimeoutSpy).toHaveBeenCalled()
+      clearTimeoutSpy.mockRestore()
+    })
+
+    it('PRE-005: multiple start/stop cycles do not leak timers', () => {
+      const presenter = new ConsolePresenter({ updateIntervalMs: 100 })
+      presenter.start()
+      presenter.activity({ type: 'stream_thinking', thinking: 'test' })
+      presenter.stop()
+      presenter.start()
+      presenter.activity({
+        type: 'stream_tool_invocation',
+        name: 'Bash',
+        input: {},
+        toolUseId: 'id',
+      })
+      presenter.stop()
+      stdoutWriteSpy.mockClear()
+      vi.advanceTimersByTime(1000)
+      expect(stdoutWriteSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe('Logger methods', () => {

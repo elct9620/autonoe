@@ -41,6 +41,7 @@ SC-S002, SC-S004, SC-S008, SC-S009 validate Decision Table 9.1 behavior.
 | SR-Q003 | waiting for quota                  | Reports StreamEventWaiting events     |
 | SR-Q004 | Delay throws error during wait     | Error propagates correctly            |
 | SR-Q005 | AbortError during quota wait       | Exits cleanly with abort handling     |
+| SR-Q006 | waiting, recursive setTimeout      | Multiple waiting events reported      |
 
 ### Delay Function (CLI)
 
@@ -388,6 +389,8 @@ Generic command handler for `run` and `sync` commands. Configured via `CommandHa
 | PR-054 | waiting emoji                    | Uses hourglass emoji (⏳)              |
 | PR-055 | periodic updates                 | Updates display at interval            |
 | PR-056 | render() output                  | Contains `\r\x1b[K` (clear sequence)   |
+| PR-057 | stop() after start()             | clearTimeout called                    |
+| PR-058 | multiple start/stop cycles       | No timer leaks after final stop        |
 
 ### Factory Functions
 

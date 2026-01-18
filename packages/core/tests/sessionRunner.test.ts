@@ -2,7 +2,11 @@ import { describe, it, expect, vi } from 'vitest'
 import { SessionRunner } from '../src/sessionRunner'
 import { silentLogger } from '../src/logger'
 import type { AgentClient, AgentClientFactory } from '../src/agentClient'
-import type { MessageStream } from '../src/types'
+import type {
+  MessageStream,
+  StreamEvent,
+  StreamEventWaiting,
+} from '../src/types'
 import { VerificationTracker } from '../src/verificationTracker'
 import {
   MockAgentClient,
@@ -1166,6 +1170,71 @@ describe('SessionRunner', () => {
       expect(result.exitReason).toBe('interrupted')
       expect(logger.hasMessage('User interrupted')).toBe(true)
       expect(logger.hasMessage('Quota exceeded, waiting')).toBe(true)
+    })
+
+    it('SR-Q006: reports waiting events periodically during quota wait', async () => {
+      vi.useFakeTimers()
+
+      const client = new MockAgentClient()
+      // Reset time 3 seconds from now
+      const resetTime = new Date(Date.now() + 3000)
+      client.setResponsesPerSession([
+        [createMockQuotaExceededStreamEnd('Quota exceeded', resetTime)],
+        [createMockStreamEnd('done', 0.01)],
+      ])
+      const factory = createMockClientFactory(client)
+
+      const statusReader = new MockDeliverableStatusReader()
+      statusReader.setStatusSequence([
+        createMockStatusJson([Deliverable.pending('DL-001', 'Test', ['AC'])]),
+        createMockStatusJson([Deliverable.passed('DL-001', 'Test', ['AC'])]),
+      ])
+
+      const waitingEvents: StreamEventWaiting[] = []
+      const onStreamEvent = vi.fn((event: StreamEvent) => {
+        if (event.type === 'stream_waiting') {
+          waitingEvents.push(event)
+        }
+      })
+
+      // Delay that works with fake timers
+      const fakeDelay = (ms: number, signal?: AbortSignal): Promise<void> =>
+        new Promise((resolve, reject) => {
+          const id = setTimeout(resolve, ms)
+          signal?.addEventListener('abort', () => {
+            clearTimeout(id)
+            reject(new DOMException('Aborted', 'AbortError'))
+          })
+        })
+
+      const runner = new SessionRunner({
+        projectDir: '/test/project',
+        delay: fakeDelay,
+        delayBetweenSessions: 0,
+        waitForQuota: true,
+        onStreamEvent,
+      })
+
+      const runPromise = runner.run(factory, silentLogger, statusReader)
+
+      // Advance time to trigger recursive setTimeout
+      await vi.advanceTimersByTimeAsync(1000) // 1st interval
+      await vi.advanceTimersByTimeAsync(1000) // 2nd interval
+      await vi.advanceTimersByTimeAsync(1000) // 3rd interval - delay completes
+
+      await runPromise
+
+      // Verify multiple waiting events were reported (initial + periodic)
+      expect(waitingEvents.length).toBeGreaterThan(1)
+
+      // Verify remainingMs decreases over time
+      for (let i = 1; i < waitingEvents.length; i++) {
+        const current = waitingEvents[i]
+        const previous = waitingEvents[i - 1]
+        expect(current!.remainingMs).toBeLessThan(previous!.remainingMs)
+      }
+
+      vi.useRealTimers()
     })
   })
 

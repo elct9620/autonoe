@@ -48,7 +48,7 @@ export class ConsolePresenter implements Presenter {
     toolCount: 0,
     startTime: Date.now(),
   }
-  private intervalId?: ReturnType<typeof setInterval>
+  private timeoutId?: ReturnType<typeof setTimeout>
   private hasActivityLine = false
 
   constructor(options: ConsolePresenterOptions = {}) {
@@ -69,18 +69,26 @@ export class ConsolePresenter implements Presenter {
     }
     this.hasActivityLine = false
 
-    // Start periodic display update
-    this.intervalId = setInterval(() => {
-      this.render()
-    }, this.updateIntervalMs)
+    // Start periodic display update using recursive setTimeout
+    this.scheduleNextRender()
   }
 
   stop(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId)
-      this.intervalId = undefined
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId)
+      this.timeoutId = undefined
     }
     this.clearActivity()
+  }
+
+  private scheduleNextRender(): void {
+    this.timeoutId = setTimeout(() => {
+      this.render()
+      // Only schedule next render if not stopped
+      if (this.timeoutId !== undefined) {
+        this.scheduleNextRender()
+      }
+    }, this.updateIntervalMs)
   }
 
   // =============================================
@@ -248,7 +256,11 @@ export class ConsolePresenter implements Presenter {
         return `Running ${this.state.currentTool}...`
       case 'responding':
         return 'Responding...'
-      default:
+      case 'idle':
+      case 'waiting':
+        // These cases are handled before this method is called:
+        // - idle: render() returns early
+        // - waiting: formatActivityLine() calls formatWaitingLine()
         return ''
     }
   }
