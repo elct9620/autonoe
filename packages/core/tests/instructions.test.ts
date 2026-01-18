@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest'
 import {
   initializerInstruction,
   codingInstruction,
+  syncInstruction,
+  verifyInstruction,
+  defaultInstructions,
   createDefaultInstructionResolver,
-  selectInstruction,
 } from '../src/instructions'
-import { DeliverableStatus } from '../src/deliverableStatus'
-import { MockDeliverableStatusReader } from './helpers'
 
 describe('instructions', () => {
   describe('exports', () => {
@@ -33,6 +33,19 @@ describe('instructions', () => {
     })
   })
 
+  describe('defaultInstructions', () => {
+    it('contains all instruction types', () => {
+      expect(defaultInstructions.initializer).toBe(initializerInstruction)
+      expect(defaultInstructions.coding).toBe(codingInstruction)
+      expect(defaultInstructions.sync).toBe(syncInstruction)
+      expect(defaultInstructions.verify).toBe(verifyInstruction)
+    })
+
+    it('has exactly 4 instruction types', () => {
+      expect(Object.keys(defaultInstructions)).toHaveLength(4)
+    })
+  })
+
   describe('createDefaultInstructionResolver', () => {
     it('returns initializer instruction for initializer name', async () => {
       const resolver = createDefaultInstructionResolver()
@@ -45,28 +58,17 @@ describe('instructions', () => {
       const instruction = await resolver.resolve('coding')
       expect(instruction).toBe(codingInstruction)
     })
-  })
 
-  describe('selectInstruction', () => {
-    it('SC-S002: returns initializer when status.json does not exist', async () => {
-      const statusReader = new MockDeliverableStatusReader()
-      // Empty sequence means exists() returns false
+    it('returns sync instruction for sync name', async () => {
       const resolver = createDefaultInstructionResolver()
-
-      const instruction = await selectInstruction(statusReader, resolver)
-      expect(instruction).toBe(initializerInstruction)
+      const instruction = await resolver.resolve('sync')
+      expect(instruction).toBe(syncInstruction)
     })
 
-    it('returns coding instruction when status.json exists', async () => {
-      const statusReader = new MockDeliverableStatusReader()
-      // Setting any status makes exists() return true
-      statusReader.setStatusSequence([
-        DeliverableStatus.create('2025-01-01', '2025-01-01', []),
-      ])
+    it('returns verify instruction for verify name', async () => {
       const resolver = createDefaultInstructionResolver()
-
-      const instruction = await selectInstruction(statusReader, resolver)
-      expect(instruction).toBe(codingInstruction)
+      const instruction = await resolver.resolve('verify')
+      expect(instruction).toBe(verifyInstruction)
     })
   })
 })

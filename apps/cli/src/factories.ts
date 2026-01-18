@@ -1,10 +1,7 @@
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import {
-  initializerInstruction,
-  codingInstruction,
-  syncInstruction,
-  verifyInstruction,
+  defaultInstructions,
   type SessionRunnerOptions,
   type InstructionResolver,
   type InstructionName,
@@ -23,13 +20,6 @@ import { delay } from './delay'
 export function createInstructionResolver(
   projectDir: string,
 ): InstructionResolver {
-  const defaultInstructions: Record<InstructionName, string> = {
-    initializer: initializerInstruction,
-    coding: codingInstruction,
-    sync: syncInstruction,
-    verify: verifyInstruction,
-  }
-
   return {
     async resolve(name: InstructionName): Promise<string> {
       const overridePath = join(projectDir, '.autonoe', `${name}.md`)

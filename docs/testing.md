@@ -410,24 +410,42 @@ Generic command handler for `run` and `sync` commands. Configured via `CommandHa
 | FAC-031 | createRunnerOptions        | all optional fields        | Complete options with all fields      |
 | FAC-032 | createRunnerOptions        | debug/sandbox/destructive  | Excludes CLI-only options from runner |
 
+### Workflow
+
+| ID     | Method                | Input              | Expected Output  |
+| ------ | --------------------- | ------------------ | ---------------- |
+| WF-001 | Workflow.run          | (static instance)  | type='run'       |
+| WF-002 | Workflow.sync         | (static instance)  | type='sync'      |
+| WF-003 | fromType              | 'run'              | Workflow.run     |
+| WF-004 | fromType              | 'sync'             | Workflow.sync    |
+| WF-010 | isPlanningInstruction | run, 'initializer' | true             |
+| WF-011 | isPlanningInstruction | run, 'coding'      | false            |
+| WF-012 | isPlanningInstruction | sync, 'sync'       | true             |
+| WF-013 | isPlanningInstruction | sync, 'verify'     | false            |
+| WF-020 | getPhaseType          | run, 'initializer' | 'planning'       |
+| WF-021 | getPhaseType          | run, 'coding'      | 'implementation' |
+| WF-022 | getPhaseType          | sync, 'sync'       | 'planning'       |
+| WF-023 | getPhaseType          | sync, 'verify'     | 'implementation' |
+| WF-030 | SYNC_FIRST_SESSION    | (constant)         | 1                |
+
 ### createAgentClientFactory
 
-| ID      | Input                               | Expected Output                         |
-| ------- | ----------------------------------- | --------------------------------------- |
-| ACF-001 | mode: 'run', allowDestructive=false | Factory with run-specific hooks         |
-| ACF-002 | mode: 'run', allowDestructive=true  | Factory with allowDestructive enabled   |
-| ACF-003 | mode: 'sync'                        | Factory with sync-specific hooks        |
-| ACF-004 | mode: 'sync' + verify session       | VerificationTracker lazy initialization |
-| ACF-020 | sandboxMode: enabled                | Client receives sandbox config          |
-| ACF-021 | sandboxMode: disabled               | Client receives undefined sandbox       |
-| ACF-030 | planModel + initializer instruction | Client uses planModel                   |
-| ACF-031 | model + coding instruction          | Client uses model                       |
-| ACF-032 | planModel + sync instruction        | Client uses planModel                   |
-| ACF-033 | model + verify instruction          | Client uses model                       |
-| ACF-034 | initializer, no planModel           | Client uses DEFAULT_PLANNING_MODEL      |
-| ACF-035 | coding, no model                    | Client uses DEFAULT_CODING_MODEL        |
-| ACF-040 | maxThinkingTokens: 8192             | Client configured with thinking tokens  |
-| ACF-041 | onStatusChange callback             | Callback passed to MCP server           |
+| ID      | Input                               | Expected Output                           |
+| ------- | ----------------------------------- | ----------------------------------------- |
+| ACF-001 | mode: 'run', allowDestructive=false | Factory with run-specific hooks           |
+| ACF-002 | mode: 'run', allowDestructive=true  | Factory with allowDestructive enabled     |
+| ACF-003 | mode: 'sync'                        | Factory with sync-specific hooks          |
+| ACF-004 | mode: 'sync' + verify session       | VerificationTracker lazy initialization   |
+| ACF-020 | sandboxMode: enabled                | Client receives sandbox config            |
+| ACF-021 | sandboxMode: disabled               | Client receives undefined sandbox         |
+| ACF-030 | planModel + initializer instruction | Uses planModel (Workflow.run.planning)    |
+| ACF-031 | model + coding instruction          | Uses model (Workflow.run.implementation)  |
+| ACF-032 | planModel + sync instruction        | Uses planModel (Workflow.sync.planning)   |
+| ACF-033 | model + verify instruction          | Uses model (Workflow.sync.implementation) |
+| ACF-034 | initializer, no planModel           | Client uses DEFAULT_PLANNING_MODEL        |
+| ACF-035 | coding, no model                    | Client uses DEFAULT_CODING_MODEL          |
+| ACF-040 | maxThinkingTokens: 8192             | Client configured with thinking tokens    |
+| ACF-041 | onStatusChange callback             | Callback passed to MCP server             |
 
 Note: Required field validation (projectDir, config, repository, sandboxMode, mode) is enforced by TypeScript at compile time.
 

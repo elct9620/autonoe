@@ -129,8 +129,12 @@ export {
   syncInstruction,
   verifyInstruction,
   createDefaultInstructionResolver,
-  selectInstruction,
+  defaultInstructions,
 } from './instructions'
+
+// Workflow exports
+export type { WorkflowType, PhaseType } from './workflow'
+export { Workflow, SYNC_FIRST_SESSION } from './workflow'
 
 // InstructionSelector exports
 export type {

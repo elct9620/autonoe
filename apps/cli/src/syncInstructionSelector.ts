@@ -1,9 +1,10 @@
-import type {
-  InstructionSelector,
-  InstructionSelectionContext,
-  InstructionSelectionResult,
-  InstructionResolver,
-  InstructionName,
+import {
+  SYNC_FIRST_SESSION,
+  type InstructionSelector,
+  type InstructionSelectionContext,
+  type InstructionSelectionResult,
+  type InstructionResolver,
+  type InstructionName,
 } from '@autonoe/core'
 
 /**
@@ -20,7 +21,8 @@ export class SyncInstructionSelector implements InstructionSelector {
   async select(
     context: InstructionSelectionContext,
   ): Promise<InstructionSelectionResult> {
-    const name: InstructionName = context.iteration === 1 ? 'sync' : 'verify'
+    const name: InstructionName =
+      context.iteration === SYNC_FIRST_SESSION ? 'sync' : 'verify'
     const content = await this.resolver.resolve(name)
     return { name, content }
   }

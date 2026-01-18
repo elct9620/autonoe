@@ -4,6 +4,7 @@ import {
   createAutonoeProtectionHook,
   createSyncWriteRestrictionHook,
   VerificationTracker,
+  Workflow,
   type AgentClientFactory,
   type AgentConfig,
   type InstructionName,
@@ -127,8 +128,8 @@ function buildRunFactory(
 ): AgentClientFactory {
   return {
     create: (instructionName: InstructionName) => {
-      const isPlanningInstruction = instructionName === 'initializer'
-      const selectedModel = isPlanningInstruction
+      const isPlanning = Workflow.run.isPlanningInstruction(instructionName)
+      const selectedModel = isPlanning
         ? (planModel ?? DEFAULT_PLANNING_MODEL)
         : (model ?? DEFAULT_CODING_MODEL)
 
@@ -167,8 +168,8 @@ function buildSyncFactory(
 
   const factory: AgentClientFactory = {
     create: (instructionName: InstructionName) => {
-      const isPlanningInstruction = instructionName === 'sync'
-      const selectedModel = isPlanningInstruction
+      const isPlanning = Workflow.sync.isPlanningInstruction(instructionName)
+      const selectedModel = isPlanning
         ? (planModel ?? DEFAULT_PLANNING_MODEL)
         : (model ?? DEFAULT_CODING_MODEL)
 

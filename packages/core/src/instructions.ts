@@ -7,7 +7,6 @@ import initializerInstruction from './instructions/initializer.md' with { type: 
 import codingInstruction from './instructions/coding.md' with { type: 'text' }
 import syncInstruction from './instructions/sync.md' with { type: 'text' }
 import verifyInstruction from './instructions/verify.md' with { type: 'text' }
-import type { DeliverableStatusReader } from './deliverableStatus'
 
 export {
   initializerInstruction,
@@ -22,6 +21,16 @@ export {
 export type InstructionName = 'initializer' | 'coding' | 'sync' | 'verify'
 
 /**
+ * Default instructions mapping
+ */
+export const defaultInstructions: Record<InstructionName, string> = {
+  initializer: initializerInstruction,
+  coding: codingInstruction,
+  sync: syncInstruction,
+  verify: verifyInstruction,
+}
+
+/**
  * Interface for resolving instructions with optional override support
  * Implementation in CLI layer handles filesystem access for overrides
  */
@@ -34,32 +43,9 @@ export interface InstructionResolver {
  * Use this when no override resolution is needed
  */
 export function createDefaultInstructionResolver(): InstructionResolver {
-  const instructions: Record<InstructionName, string> = {
-    initializer: initializerInstruction,
-    coding: codingInstruction,
-    sync: syncInstruction,
-    verify: verifyInstruction,
-  }
-
   return {
     async resolve(name: InstructionName): Promise<string> {
-      return instructions[name]
+      return defaultInstructions[name]
     },
   }
-}
-
-/**
- * Select the appropriate instruction based on deliverable status existence
- * @param statusReader - Reader to check if status.json exists
- * @param resolver - Resolver to get instruction content (with optional overrides)
- * @returns The instruction content for the current phase
- * @see SPEC.md Section 7.2
- */
-export async function selectInstruction(
-  statusReader: DeliverableStatusReader,
-  resolver: InstructionResolver,
-): Promise<string> {
-  const statusExists = await statusReader.exists()
-  const name: InstructionName = statusExists ? 'coding' : 'initializer'
-  return resolver.resolve(name)
 }

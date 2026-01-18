@@ -88,6 +88,45 @@ This encapsulates SDK-specific behavior in the infrastructure layer, keeping the
 
 ---
 
+## Workflow
+
+**Workflow** - Value Object encapsulating instruction pairs for each command.
+
+| Property                  | Type            | Description                           |
+| ------------------------- | --------------- | ------------------------------------- |
+| type                      | WorkflowType    | Workflow identifier ('run' \| 'sync') |
+| planningInstruction       | InstructionName | Planning phase instruction            |
+| implementationInstruction | InstructionName | Implementation phase instruction      |
+
+**Static Instances:**
+
+| Instance      | Planning    | Implementation |
+| ------------- | ----------- | -------------- |
+| Workflow.run  | initializer | coding         |
+| Workflow.sync | sync        | verify         |
+
+**Methods:**
+
+| Method                | Signature                                     | Description                            |
+| --------------------- | --------------------------------------------- | -------------------------------------- |
+| fromType              | `(type: WorkflowType) => Workflow`            | Get workflow by type                   |
+| isPlanningInstruction | `(instruction: InstructionName) => boolean`   | Check if instruction is planning phase |
+| getPhaseType          | `(instruction: InstructionName) => PhaseType` | Get phase type for instruction         |
+
+**Usage:**
+
+```typescript
+// Check if instruction is planning phase
+Workflow.run.isPlanningInstruction('initializer') // true
+Workflow.run.isPlanningInstruction('coding') // false
+
+// Get phase type for model selection
+Workflow.sync.getPhaseType('sync') // 'planning'
+Workflow.sync.getPhaseType('verify') // 'implementation'
+```
+
+---
+
 ## Value Objects
 
 ### DeliverableInput

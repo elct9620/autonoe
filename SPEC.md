@@ -76,6 +76,7 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 | Session | A single agent query execution cycle |
 | Deliverable | A verifiable work unit with acceptance criteria |
 | Instruction | Prompt template that guides Coding Agent behavior (initializer, coding, sync, verify) |
+| Workflow | Domain model encapsulating the instruction pair for each command (run, sync) |
 
 ---
 
@@ -228,15 +229,16 @@ Autonoe Tool is a set of deliverable management tools exposed as an MCP Server t
 
 **Tool Availability per Instruction:**
 
-| Instruction | Available Tools |
-|-------------|-----------------|
-| initializer | `create` |
-| coding | `set_status`, `list` |
-| sync | `create`, `deprecate`, `list` |
-| verify | `set_status`, `verify`, `list` |
+| Workflow | Phase | Instruction | Available Tools |
+|----------|-------|-------------|-----------------|
+| run | planning | initializer | `create` |
+| run | implementation | coding | `set_status`, `list` |
+| sync | planning | sync | `create`, `deprecate`, `list` |
+| sync | implementation | verify | `set_status`, `verify`, `list` |
 
 Each session receives only the tools needed for its instruction type.
 AgentClientFactory creates a fresh MCP server with the appropriate tool set per session.
+See [Appendix A.4](#a4-workflow) for workflow definitions.
 
 For detailed tool specifications, see [Interfaces - Autonoe Tool](docs/interfaces.md#autonoe-tool).
 
@@ -1348,4 +1350,40 @@ This ensures log messages are never overwritten by activity updates.
 | Method | Signature | Description |
 |--------|-----------|-------------|
 | resolve | `(name: InstructionName) => Promise<string>` | Resolve instruction by name |
+
+### A.4 Workflow
+
+Workflow is a Domain Model (Value Object) that encapsulates instruction pairs. Each workflow contains a planning instruction and an implementation instruction.
+
+**WorkflowType** - Available workflow types: `'run'` | `'sync'`
+
+**PhaseType** - Phase classification: `'planning'` | `'implementation'`
+
+**Workflow Class:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| type | WorkflowType | Workflow identifier |
+| planningInstruction | InstructionName | Planning phase instruction |
+| implementationInstruction | InstructionName | Implementation phase instruction |
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| fromType | `(type: WorkflowType) => Workflow` | Get workflow by type |
+| isPlanningInstruction | `(instruction: InstructionName) => boolean` | Check if instruction is planning phase |
+| getPhaseType | `(instruction: InstructionName) => PhaseType` | Get phase type for instruction |
+
+**Workflow Definitions:**
+
+| Static Instance | Type | Planning | Implementation |
+|-----------------|------|----------|----------------|
+| Workflow.run | run | initializer | coding |
+| Workflow.sync | sync | sync | verify |
+
+**Model Selection by Phase:**
+
+| Phase | CLI Option | Default Model | Purpose |
+|-------|------------|---------------|---------|
+| planning | `--plan-model` | opus | Understand problem, parse specification |
+| implementation | `--model` | sonnet | Execute solution, verify results |
 
