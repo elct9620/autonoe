@@ -149,6 +149,7 @@ export const SECURITY_BASELINE: Readonly<AgentConfig> = Object.freeze({
     'Glob',
     'Grep',
     'Bash',
+    'Skill',
     ...PLAYWRIGHT_MCP_TOOLS,
   ]),
   hooks: Object.freeze({
