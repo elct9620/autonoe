@@ -38,6 +38,13 @@ export class Workflow {
       ? 'planning'
       : 'implementation'
   }
+
+  /** Select instruction based on session position */
+  selectInstruction(isFirstSession: boolean): InstructionName {
+    return isFirstSession
+      ? this.planningInstruction
+      : this.implementationInstruction
+  }
 }
 
 /** Sync command first session constant */

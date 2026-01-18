@@ -142,7 +142,10 @@ export type {
   InstructionSelectionContext,
   InstructionSelectionResult,
 } from './instructionSelector'
-export { DefaultInstructionSelector } from './instructionSelector'
+export {
+  DefaultInstructionSelector,
+  createInstructionSelector,
+} from './instructionSelector'
 
 // LoopState exports
 export { LoopState } from './loopState'

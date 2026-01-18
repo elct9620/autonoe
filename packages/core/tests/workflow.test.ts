@@ -50,6 +50,18 @@ describe('Workflow', () => {
     })
   })
 
+  describe('selectInstruction', () => {
+    it('returns planning instruction when isFirstSession is true', () => {
+      expect(Workflow.run.selectInstruction(true)).toBe('initializer')
+      expect(Workflow.sync.selectInstruction(true)).toBe('sync')
+    })
+
+    it('returns implementation instruction when isFirstSession is false', () => {
+      expect(Workflow.run.selectInstruction(false)).toBe('coding')
+      expect(Workflow.sync.selectInstruction(false)).toBe('verify')
+    })
+  })
+
   describe('SYNC_FIRST_SESSION', () => {
     it('equals 1', () => {
       expect(SYNC_FIRST_SESSION).toBe(1)

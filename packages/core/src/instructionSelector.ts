@@ -1,5 +1,6 @@
 import type { DeliverableStatusReader } from './deliverableStatus'
 import type { InstructionName, InstructionResolver } from './instructions'
+import type { Workflow } from './workflow'
 
 /**
  * Context provided to instruction selector
@@ -52,5 +53,28 @@ export class DefaultInstructionSelector implements InstructionSelector {
     const name: InstructionName = statusExists ? 'coding' : 'initializer'
     const content = await this.resolver.resolve(name)
     return { name, content }
+  }
+}
+
+/**
+ * Factory function to create InstructionSelector from Workflow
+ *
+ * Reduces boilerplate when the selection logic is "first session vs subsequent".
+ * Uses Workflow.selectInstruction() internally to determine instruction name.
+ *
+ * @see SPEC.md Section A.5
+ */
+export function createInstructionSelector(
+  workflow: Workflow,
+  resolver: InstructionResolver,
+  isFirstSession: (context: InstructionSelectionContext) => Promise<boolean>,
+): InstructionSelector {
+  return {
+    async select(context) {
+      const first = await isFirstSession(context)
+      const name = workflow.selectInstruction(first)
+      const content = await resolver.resolve(name)
+      return { name, content }
+    },
   }
 }

@@ -1,7 +1,9 @@
 import {
   SessionRunner,
   loadConfig,
-  DefaultInstructionSelector,
+  createInstructionSelector,
+  Workflow,
+  SYNC_FIRST_SESSION,
   type AgentConfig,
   type DeliverableStatusCallback,
   type StreamEvent,
@@ -24,7 +26,6 @@ import {
   createStatusChangeCallback,
   createRunnerOptions,
 } from './factories'
-import { SyncInstructionSelector } from './syncInstructionSelector'
 import { createAgentClientFactory } from './agentClientFactory'
 import { defaultProcessExit, type ProcessExitStrategy } from './processExit'
 import type { Presenter } from './presenter'
@@ -88,8 +89,10 @@ function createRunHandler(
   const sessionRunner = new SessionRunner(runnerOptions)
 
   const instructionResolver = createInstructionResolver(options.projectDir)
-  const instructionSelector = new DefaultInstructionSelector(
+  const instructionSelector = createInstructionSelector(
+    Workflow.run,
     instructionResolver,
+    async (ctx) => !(await ctx.statusReader.exists()),
   )
 
   return new CommandHandler(
@@ -135,7 +138,11 @@ function createSyncHandler(
   })
 
   const instructionResolver = createInstructionResolver(options.projectDir)
-  const instructionSelector = new SyncInstructionSelector(instructionResolver)
+  const instructionSelector = createInstructionSelector(
+    Workflow.sync,
+    instructionResolver,
+    async (ctx) => ctx.iteration === SYNC_FIRST_SESSION,
+  )
 
   return new CommandHandler(
     options,

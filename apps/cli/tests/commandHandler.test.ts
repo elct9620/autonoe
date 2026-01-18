@@ -5,6 +5,9 @@ import { join } from 'node:path'
 import {
   SessionRunner,
   DefaultInstructionSelector,
+  createInstructionSelector,
+  Workflow,
+  SYNC_FIRST_SESSION,
   type Delay,
   type Logger,
   type InstructionResolver,
@@ -23,7 +26,6 @@ import {
   VERSION,
   type CommandHandlerConfig,
 } from '../src/commandHandler'
-import { SyncInstructionSelector } from '../src/syncInstructionSelector'
 import {
   sandboxEnabled,
   sandboxDisabledByCli,
@@ -709,7 +711,11 @@ describe('CommandHandler', () => {
         overrides?.clientFactory ?? createMockClientFactory()
       const instructionSelector =
         overrides?.instructionSelector ??
-        new SyncInstructionSelector(createTrackingInstructionResolver())
+        createInstructionSelector(
+          Workflow.sync,
+          createTrackingInstructionResolver(),
+          async (ctx) => ctx.iteration === SYNC_FIRST_SESSION,
+        )
       const abortSignal = overrides?.abortSignal ?? new AbortController().signal
 
       return new CommandHandler(
@@ -825,8 +831,10 @@ describe('CommandHandler', () => {
     describe('instruction selection', () => {
       it('SCH-010: uses sync instruction for first session, verify for subsequent', async () => {
         const instructionResolver = createTrackingInstructionResolver()
-        const instructionSelector = new SyncInstructionSelector(
+        const instructionSelector = createInstructionSelector(
+          Workflow.sync,
           instructionResolver,
+          async (ctx) => ctx.iteration === SYNC_FIRST_SESSION,
         )
         createStatusFile([Deliverable.pending('DL-001', 'Test', ['AC'])])
 

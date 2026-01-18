@@ -1372,6 +1372,7 @@ Workflow is a Domain Model (Value Object) that encapsulates instruction pairs. E
 | fromType | `(type: WorkflowType) => Workflow` | Get workflow by type |
 | isPlanningInstruction | `(instruction: InstructionName) => boolean` | Check if instruction is planning phase |
 | getPhaseType | `(instruction: InstructionName) => PhaseType` | Get phase type for instruction |
+| selectInstruction | `(isFirstSession: boolean) => InstructionName` | Select instruction based on session position |
 
 **Workflow Definitions:**
 
@@ -1386,4 +1387,36 @@ Workflow is a Domain Model (Value Object) that encapsulates instruction pairs. E
 |-------|------------|---------------|---------|
 | planning | `--plan-model` | opus | Understand problem, parse specification |
 | implementation | `--model` | sonnet | Execute solution, verify results |
+
+### A.5 InstructionSelector
+
+InstructionSelector is a strategy interface for dynamically selecting instructions per session.
+
+**InstructionSelectionContext:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| iteration | number | Current session iteration (1-based) |
+| statusReader | DeliverableStatusReader | Reader for status.json |
+
+**InstructionSelectionResult:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| name | InstructionName | Selected instruction name |
+| content | string | Resolved instruction content |
+
+**InstructionSelector Interface:**
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| select | `(context: InstructionSelectionContext) => Promise<InstructionSelectionResult>` | Select instruction for session |
+
+**Factory Function:**
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| createInstructionSelector | `(workflow: Workflow, resolver: InstructionResolver, isFirstSession: (ctx) => Promise<boolean>) => InstructionSelector` | Create selector from workflow and predicate |
+
+The factory function reduces boilerplate when the selection logic is "first session vs subsequent". It uses `Workflow.selectInstruction()` internally to determine the instruction name based on the `isFirstSession` predicate result.
 
