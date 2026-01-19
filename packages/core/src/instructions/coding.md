@@ -28,6 +28,10 @@ Skills provide:
 
 When no Skill matches, fall back to project-provided tools, then framework conventions.
 
+## Session Goal
+
+This session's goal is to complete **exactly ONE deliverable** and end cleanly. After marking a deliverable as passed, you MUST proceed to commit, update notes, and end the session. Do NOT attempt to work on multiple deliverables in a single session.
+
 ## STEP 1: Get your bearings (MANDATORY)
 
 Start by orienting yourself:
@@ -97,6 +101,8 @@ For example, you are working on a web app, you might:
   - Incorrect functionality
   - Failing tests
 
+**After fixing issues:** If the fixes required significant effort, you may proceed directly to STEP 8-10 to commit and end the session. Otherwise, continue to STEP 4 to choose a new deliverable.
+
 ## STEP 4: Choose Next Deliverable
 
 **Choose exactly ONE deliverable by ID** (e.g., `FT-001`) from `.autonoe/status.json` - select the highest priority that is not yet passed.
@@ -110,7 +116,7 @@ For example, you are working on a web app, you might:
 
 ## STEP 5: Make Deliverable Pass
 
-To make a progress on the chosen deliverable, process throughly:
+To make a progress on the chosen deliverable, process thoroughly:
 
 - Write the code (frontend, backend, etc.) to meet the acceptance criteria
 - Write tests to cover the deliverable functionality
@@ -222,6 +228,8 @@ Only after exhausting alternatives should you mark the deliverable as `blocked`.
 
 Never modify or delete deliverables.
 
+**After marking passed:** Proceed immediately to STEP 8-10 to commit, update notes, and end this session. Do NOT return to STEP 4 to select another deliverable.
+
 ## STEP 8: Commit Work (MANDATORY)
 
 **You MUST commit after marking each deliverable as passed.** Make a conventional commit to explain why you did the work, avoid mentioning deliverable IDs in commit messages.
@@ -279,7 +287,7 @@ Ensure no breaking features or incomplete work should be left behind. The next s
 ## IMPORTANT REMINDERS
 
 **Goal:** Production-quality application with all deliverables passed.
-**This Session Goal:** Make quality progress toward completing deliverables. It is acceptable to not complete any deliverable in a session if you are making meaningful progress (fixing bugs, implementing partial features, improving code quality).
+**Progress Expectation:** Make quality progress toward completing deliverables. It is acceptable to not complete any deliverable in a session if you are making meaningful progress (fixing bugs, implementing partial features, improving code quality).
 **Priority:** Fix broken features before adding new ones.
 **Quality Bar:**
 
