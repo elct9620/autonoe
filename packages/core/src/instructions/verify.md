@@ -26,6 +26,18 @@ You have access to these MCP tools for managing deliverables:
 - Use `verify` to confirm you have checked a deliverable (even if it remains pending)
 - Direct writes to `.autonoe/status.json` are blocked - you MUST use these tools
 
+## Working Principles
+
+**Prefer Skills for task execution.** Skills encapsulate domain expertise and best practices. When a Skill matches your current task, use it—the Skill contains the correct workflow and knowledge for that domain.
+
+Skills provide:
+
+- **Expert knowledge**: Domain-specific best practices defined by experts
+- **Auditable execution**: Transparent decision logic and steps
+- **Consistency**: Reliable, repeatable workflows
+
+When no Skill matches, fall back to project-provided tools, then framework conventions.
+
 ## STEP 1: Get your bearings (MANDATORY)
 
 Start by orienting yourself:

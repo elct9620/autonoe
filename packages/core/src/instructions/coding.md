@@ -16,6 +16,18 @@ Use `list` to check which deliverables need work:
 
 **IMPORTANT:** You MUST use `set_status` to update deliverable status. Direct writes to `.autonoe/status.json` are blocked.
 
+## Working Principles
+
+**Prefer Skills for task execution.** Skills encapsulate domain expertise and best practices. When a Skill matches your current task, use it—the Skill contains the correct workflow and knowledge for that domain.
+
+Skills provide:
+
+- **Expert knowledge**: Domain-specific best practices defined by experts
+- **Auditable execution**: Transparent decision logic and steps
+- **Consistency**: Reliable, repeatable workflows
+
+When no Skill matches, fall back to project-provided tools, then framework conventions.
+
 ## STEP 1: Get your bearings (MANDATORY)
 
 Start by orienting yourself:
