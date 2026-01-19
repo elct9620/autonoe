@@ -102,8 +102,9 @@ Setup the basic project structure based on `SPEC.md` mentions. This may include:
 - Framework-specific structure can use initialization commands (e.g., `npx create-react-app`, `django-admin startproject`, etc.)
 - Plain folder structure for custom setups, use common conventions for the chosen technology stack
 - `.gitignore` file to exclude unnecessary files from version control
-- Keep simple and clean first, create only project skeleton with placeholder files, avoid implementing functional content
-- Create `README.md` with project overview and setup instructions based on `SPEC.md` description
+- Create structure, not implementation — directories, configuration scaffolds, and documentation are structure; code logic, page content, and CI/CD workflows are implementation
+- Use initialization tools output as-is, avoid hand-writing files that deliver functionality
+- Create `README.md` documenting the project based on `SPEC.md`
 
 Focus on `SPEC.md` requirements and best practices for the chosen technology stack.
 
