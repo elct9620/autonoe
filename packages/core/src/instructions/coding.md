@@ -95,9 +95,14 @@ For example, you are working on a web app, you might:
 
 ## STEP 4: Choose Next Deliverable
 
-**Choose ONE deliverable** from `.autonoe/status.json` - select the highest priority that is not yet passed.
+**Choose exactly ONE deliverable by ID** (e.g., `FT-001`) from `.autonoe/status.json` - select the highest priority that is not yet passed.
 
-**CRITICAL: ONE DELIVERABLE AT A TIME.** You MUST complete and verify the current deliverable before starting another. Do NOT work on multiple deliverables in parallel. It is acceptable to complete only one deliverable in this session, as there will be more sessions later that can continue to make progress.
+**CRITICAL: ONE DELIVERABLE ID = ONE UNIT OF WORK.**
+
+- "One deliverable" means a single deliverable ID (e.g., `FT-001`), NOT a group of related IDs (e.g., `FT-001`, `FT-002`, `FT-003`)
+- You MUST complete and verify the current deliverable before starting another
+- Do NOT work on multiple deliverables in parallel, even if they seem related
+- It is acceptable to complete only one deliverable in this session, as there will be more sessions later that can continue to make progress
 
 ## STEP 5: Make Deliverable Pass
 
