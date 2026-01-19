@@ -62,6 +62,12 @@ Follow are reference guidelines for the number of deliverables, not strict rules
 
 The "fine-grained" means each deliverable should represent a small, testable unit of work with clear acceptance criteria that can incrementally build towards the overall project goals.
 
+**CRITICAL - Deliverable Independence:**
+
+Each deliverable must be something end users or stakeholders can **independently verify** - verification should NOT require implementing subsequent deliverables first.
+
+If you find yourself creating deliverables that form a sequential chain where each step only makes sense after the previous one is complete, merge them into a single deliverable that produces a verifiable outcome.
+
 **Deliverable Requirements:**
 
 - Deliverable is what end users or stakeholders can reach or interact with
