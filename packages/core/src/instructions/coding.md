@@ -47,7 +47,11 @@ cat .autonoe/status.json | head -50
 
 # 5. Read notes from previous agents if available
 cat .autonoe-note.md || echo "No notes found"
+```
 
+**NOTE:** The notes may mention multiple tasks or priorities. Remember: you will only work on ONE deliverable this session. Use the notes to understand context, not as a task list.
+
+```bash
 # 6. Check recent git history
 git log --oneline -20
 
@@ -246,7 +250,7 @@ Update `.autonoe-note.md` with helpful information for handing off to the next a
 - What you accomplished this session
 - Which acceptance criteria were completed
 - Any issues found and fixed
-- What should be worked on next session
+- Next deliverable ID to work on (only ONE, based on priority order in status.json)
 - Current status of the project (e.g. 50% deliverables passed, all unit tests passing, etc.)
 
 ## STEP 10: End Session

@@ -181,7 +181,7 @@ If time permits, you may start implementing the highest priority deliverable fro
 Before context fills up, ensure you have:
 
 - Commit all works with conventional commit messages with why you did it, avoid mention deliverable ids in commit messages
-- Create `.autonoe-note.md` summarizing what you accomplished
+- Create `.autonoe-note.md` summarizing what you accomplished and noting the next deliverable ID to work on (only ONE, based on priority order)
 - Use `mcp__autonoe__set_status` tool to update deliverable statuses (do NOT write directly to `.autonoe/status.json`)
 - Delete any temporary files you created and leave environment in a clean state
 
