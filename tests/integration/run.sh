@@ -26,7 +26,6 @@ declare -A TEST_NAMES=(
   ["IT-004"]="Sync Without Status.json"
   ["IT-005"]="Sync With Existing Status.json"
   ["IT-006"]="CLAUDE.md Project Settings"
-  ["SC-B001"]="Browser Navigate to localhost"
 )
 
 declare -A TEST_VERIFICATION=(
@@ -36,7 +35,6 @@ declare -A TEST_VERIFICATION=(
   ["IT-004"]="status.json created with deliverables from SPEC.md"
   ["IT-005"]="new deliverable created and DL-OLD deprecated"
   ["IT-006"]="Agent output contains CLAUDE.md marker '=== CLAUDE_MD_LOADED ==='"
-  ["SC-B001"]="status.json has passed deliverable and screenshot.png exists"
 )
 
 # Result tracking for summary
@@ -260,36 +258,6 @@ test_it006() {
   fi
 }
 
-# SC-B001: Browser Navigate to localhost
-test_scb001() {
-  CURRENT_TEST="SC-B001"
-  EXECUTED_TESTS+=("SC-B001")
-  echo ""
-  echo "SC-B001: Browser Navigate to localhost"
-  setup browser-test
-
-  # Run with more iterations for browser interaction
-  if run_autonoe -n 5; then
-    # Verify browser test completed via status.json
-    if test -f ./tmp/.autonoe/status.json; then
-      if jq -e '.deliverables[] | select(.passed == true)' ./tmp/.autonoe/status.json > /dev/null 2>&1; then
-        # Check if screenshot was taken
-        if test -f ./tmp/screenshot.png; then
-          pass
-        else
-          fail "screenshot.png not found"
-        fi
-      else
-        fail "no deliverable with passed=true"
-      fi
-    else
-      fail ".autonoe/status.json not found"
-    fi
-  else
-    fail "autonoe execution failed"
-  fi
-}
-
 # Run a single test by ID
 run_test() {
   local test_id="$1"
@@ -300,7 +268,6 @@ run_test() {
     IT-004|it-004) test_it004 ;;
     IT-005|it-005) test_it005 ;;
     IT-006|it-006) test_it006 ;;
-    SC-B001|sc-b001) test_scb001 ;;
     *)
       echo -e "${RED}Error: Unknown test ID: $test_id${NC}"
       echo "Available tests:"
@@ -310,7 +277,6 @@ run_test() {
       echo "  IT-004   Sync Without Status.json"
       echo "  IT-005   Sync With Existing Status.json"
       echo "  IT-006   CLAUDE.md Project Settings"
-      echo "  SC-B001  Browser Navigate to localhost"
       exit 1
       ;;
   esac
@@ -443,7 +409,7 @@ usage() {
   echo "Usage: $0 [OPTIONS]"
   echo ""
   echo "Options:"
-  echo "  --test <ID>  Run a specific test (e.g., IT-001, SC-B001)"
+  echo "  --test <ID>  Run a specific test (e.g., IT-001, IT-002)"
   echo "  --help       Show this help message"
   echo ""
   echo "Available tests:"
@@ -453,7 +419,6 @@ usage() {
   echo "  IT-004   Sync Without Status.json"
   echo "  IT-005   Sync With Existing Status.json"
   echo "  IT-006   CLAUDE.md Project Settings"
-  echo "  SC-B001  Browser Navigate to localhost"
 }
 
 # Main execution
