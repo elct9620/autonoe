@@ -166,7 +166,12 @@ Commit message: "chore: initialize project with deliverables and dev setup"
 
 If time permits, you may start implementing the highest priority deliverable from the list you created.
 
-**CRITICAL: ONE DELIVERABLE AT A TIME.** You MUST complete and verify the current deliverable before starting another. Do NOT work on multiple deliverables in parallel. It is acceptable to complete only one deliverable in this session, as there will be more sessions later that can continue to make progress.
+**CRITICAL: ONE DELIVERABLE ID = ONE UNIT OF WORK.**
+
+- "One deliverable" means a single deliverable ID (e.g., `FT-001`), NOT a group of related IDs (e.g., `FT-001`, `FT-002`, `FT-003`)
+- You MUST complete and verify the current deliverable before starting another
+- Do NOT work on multiple deliverables in parallel, even if they seem related
+- It is acceptable to complete only one deliverable in this session, as there will be more sessions later that can continue to make progress
 
 - Test thoroughly before marking it as passed
 - Commit your progress before session ends
