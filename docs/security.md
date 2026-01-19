@@ -108,15 +108,15 @@ Language profile commands are available in both `run` and `sync` modes. The only
 
 #### Node.js Profile
 
-| Category  | Commands                        |
-| --------- | ------------------------------- |
-| Runtime   | node, deno                      |
-| Package   | npm, npx, yarn, pnpm            |
-| Test      | vitest, jest, playwright, mocha |
-| Type      | tsc                             |
-| Lint      | eslint, prettier, biome         |
-| Build     | esbuild, vite, webpack, rollup  |
-| Framework | next, nuxt, astro, remix        |
+| Category  | Commands                       |
+| --------- | ------------------------------ |
+| Runtime   | node, deno                     |
+| Package   | npm, npx, yarn, pnpm           |
+| Test      | vitest, jest, mocha            |
+| Type      | tsc                            |
+| Lint      | eslint, prettier, biome        |
+| Build     | esbuild, vite, webpack, rollup |
+| Framework | next, nuxt, astro, remix       |
 
 #### Python Profile
 
@@ -329,7 +329,7 @@ Sync uses **Base read-only commands** plus **all language profile commands**. Th
 | Profile | Commands                                                                                                  |
 | ------- | --------------------------------------------------------------------------------------------------------- |
 | base    | All read-only commands (see Base Bash Commands above)                                                     |
-| node    | npm, npx, yarn, pnpm, vitest, jest, playwright, mocha, tsc, eslint, prettier, biome, node, deno, etc.     |
+| node    | npm, npx, yarn, pnpm, vitest, jest, mocha, tsc, eslint, prettier, biome, node, deno, etc.                 |
 | bun     | bun, bunx                                                                                                 |
 | python  | pip, pip3, pipx, uv, pytest, tox, nox, mypy, pyright, ruff, flake8, pylint, python, python3, poetry, etc. |
 | ruby    | bundle, bundler, gem, rspec, minitest, cucumber, rubocop, standard, ruby, irb, rake, rails, etc.          |

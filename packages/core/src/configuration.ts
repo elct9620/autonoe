@@ -76,49 +76,6 @@ export interface UserConfig {
 }
 
 /**
- * Built-in MCP servers (hardcoded)
- * Uses Microsoft Playwright MCP with headless mode for browser automation
- * --isolated allows multiple browser instances across sessions
- * @see https://github.com/microsoft/playwright-mcp
- */
-export const BUILTIN_MCP_SERVERS: Readonly<Record<string, McpServer>> =
-  Object.freeze({
-    playwright: Object.freeze({
-      command: 'npx',
-      args: ['@playwright/mcp@latest', '--headless', '--isolated'],
-    }),
-  })
-
-/**
- * Playwright MCP tools that should be allowed
- * These are the tools provided by the Microsoft Playwright MCP server
- */
-export const PLAYWRIGHT_MCP_TOOLS = [
-  'mcp__playwright__browser_install',
-  'mcp__playwright__browser_navigate',
-  'mcp__playwright__browser_snapshot',
-  'mcp__playwright__browser_click',
-  'mcp__playwright__browser_close',
-  'mcp__playwright__browser_console_messages',
-  'mcp__playwright__browser_drag',
-  'mcp__playwright__browser_evaluate',
-  'mcp__playwright__browser_file_upload',
-  'mcp__playwright__browser_fill_form',
-  'mcp__playwright__browser_handle_dialog',
-  'mcp__playwright__browser_hover',
-  'mcp__playwright__browser_navigate_back',
-  'mcp__playwright__browser_network_requests',
-  'mcp__playwright__browser_press_key',
-  'mcp__playwright__browser_resize',
-  'mcp__playwright__browser_run_code',
-  'mcp__playwright__browser_select_option',
-  'mcp__playwright__browser_tabs',
-  'mcp__playwright__browser_take_screenshot',
-  'mcp__playwright__browser_type',
-  'mcp__playwright__browser_wait_for',
-] as const
-
-/**
  * Security baseline - always enforced, cannot be overridden
  * @see SPEC.md Section 5.4, 7.4
  */
@@ -150,7 +107,6 @@ export const SECURITY_BASELINE: Readonly<AgentConfig> = Object.freeze({
     'Grep',
     'Bash',
     'Skill',
-    ...PLAYWRIGHT_MCP_TOOLS,
   ]),
   hooks: Object.freeze({
     PreToolUse: ['bash-security', 'autonoe-protection'],
@@ -209,25 +165,20 @@ function normalizeProfiles(
  * Resolve MCP servers based on user configuration
  *
  * Rules:
- * - undefined: Use built-in servers (default Playwright)
+ * - undefined: No MCP servers (default)
  * - {}: No servers (user explicitly disabled all)
- * - { ...servers }: Merge built-in + user, user takes precedence for same names
+ * - { ...servers }: User-defined servers
  */
 function resolveMcpServers(
   userMcpServers: Record<string, McpServer> | undefined,
 ): Record<string, McpServer> {
-  // Case 1: Not specified → use built-in defaults
+  // Case 1: Not specified → no MCP servers
   if (userMcpServers === undefined) {
-    return { ...BUILTIN_MCP_SERVERS }
-  }
-
-  // Case 2: Explicitly empty {} → no servers
-  if (Object.keys(userMcpServers).length === 0) {
     return {}
   }
 
-  // Case 3: Has servers → merge, user takes precedence
-  return { ...BUILTIN_MCP_SERVERS, ...userMcpServers }
+  // Case 2: User-defined servers (including empty {} to explicitly disable)
+  return { ...userMcpServers }
 }
 
 /**

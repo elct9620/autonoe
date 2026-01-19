@@ -18,11 +18,11 @@ describe('converters', () => {
 
     it('SC-AC002: converts server with args to SDK format', () => {
       const input = {
-        playwright: { command: 'npx', args: ['playwright-mcp'] },
+        'custom-mcp': { command: 'npx', args: ['custom-mcp-server'] },
       }
       const result = toSdkMcpServers(input)
       expect(result).toEqual({
-        playwright: { command: 'npx', args: ['playwright-mcp'] },
+        'custom-mcp': { command: 'npx', args: ['custom-mcp-server'] },
       })
     })
 

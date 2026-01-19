@@ -73,7 +73,6 @@ export const NODE_COMMANDS = new Set([
   // Test runners
   'vitest',
   'jest',
-  'playwright',
   'mocha',
   // Type check
   'tsc',

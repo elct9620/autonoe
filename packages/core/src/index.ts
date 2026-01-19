@@ -76,13 +76,7 @@ export type {
   AgentConfig,
   UserConfig,
 } from './configuration'
-export {
-  loadConfig,
-  mergeConfig,
-  SECURITY_BASELINE,
-  BUILTIN_MCP_SERVERS,
-  PLAYWRIGHT_MCP_TOOLS,
-} from './configuration'
+export { loadConfig, mergeConfig, SECURITY_BASELINE } from './configuration'
 
 // Autonoe Protection exports
 export {

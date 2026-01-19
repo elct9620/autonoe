@@ -6,8 +6,6 @@ import {
   loadConfig,
   mergeConfig,
   SECURITY_BASELINE,
-  BUILTIN_MCP_SERVERS,
-  PLAYWRIGHT_MCP_TOOLS,
 } from '../src/configuration'
 
 describe('Configuration', () => {
@@ -35,39 +33,22 @@ describe('Configuration', () => {
       expect(config.hooks.PreToolUse).toContain('autonoe-protection')
     })
 
-    it('returns default MCP servers with Microsoft Playwright MCP', async () => {
+    it('returns empty MCP servers by default', async () => {
       const config = await loadConfig(testDir)
 
-      expect(config.mcpServers.playwright).toBeDefined()
-      expect(config.mcpServers.playwright!.command).toBe('npx')
-      expect(config.mcpServers.playwright!.args).toContain(
-        '@playwright/mcp@latest',
-      )
-      expect(config.mcpServers.playwright!.args).toContain('--headless')
-    })
-
-    it('includes Playwright MCP tools in allowedTools', async () => {
-      const config = await loadConfig(testDir)
-
-      // Verify all Playwright tools are in allowedTools
-      for (const tool of PLAYWRIGHT_MCP_TOOLS) {
-        expect(config.allowedTools).toContain(tool)
-      }
+      expect(Object.keys(config.mcpServers)).toHaveLength(0)
     })
   })
 
   describe('SC-C002: MCP servers user priority', () => {
-    it('uses built-in servers when mcpServers is undefined', async () => {
+    it('returns empty servers when mcpServers is undefined', async () => {
       // No agent.json = mcpServers undefined
       const config = await loadConfig(testDir)
 
-      expect(config.mcpServers.playwright).toBeDefined()
-      expect(config.mcpServers.playwright).toEqual(
-        BUILTIN_MCP_SERVERS.playwright,
-      )
+      expect(Object.keys(config.mcpServers)).toHaveLength(0)
     })
 
-    it('disables all servers when mcpServers is empty {}', async () => {
+    it('returns empty servers when mcpServers is empty {}', async () => {
       mkdirSync(join(testDir, '.autonoe'), { recursive: true })
       writeFileSync(
         join(testDir, '.autonoe', 'agent.json'),
@@ -81,33 +62,13 @@ describe('Configuration', () => {
       expect(Object.keys(config.mcpServers)).toHaveLength(0)
     })
 
-    it('allows user to override built-in playwright config', async () => {
+    it('uses user-defined servers when configured', async () => {
       mkdirSync(join(testDir, '.autonoe'), { recursive: true })
       writeFileSync(
         join(testDir, '.autonoe', 'agent.json'),
         JSON.stringify({
           mcpServers: {
-            playwright: {
-              command: 'npx',
-              args: ['@playwright/mcp@latest'], // No headless flag
-            },
-          },
-        }),
-      )
-
-      const config = await loadConfig(testDir)
-
-      expect(config.mcpServers.playwright!.command).toBe('npx')
-      expect(config.mcpServers.playwright!.args).not.toContain('--headless')
-    })
-
-    it('merges user servers with built-in when adding new servers', async () => {
-      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
-      writeFileSync(
-        join(testDir, '.autonoe', 'agent.json'),
-        JSON.stringify({
-          mcpServers: {
-            'custom-tool': {
+            'custom-mcp': {
               command: 'npx',
               args: ['custom-mcp-server'],
             },
@@ -117,25 +78,37 @@ describe('Configuration', () => {
 
       const config = await loadConfig(testDir)
 
-      // Built-in playwright still present
-      expect(config.mcpServers.playwright).toBeDefined()
-      expect(config.mcpServers.playwright).toEqual(
-        BUILTIN_MCP_SERVERS.playwright,
+      expect(Object.keys(config.mcpServers)).toHaveLength(1)
+      expect(config.mcpServers['custom-mcp']).toBeDefined()
+      expect(config.mcpServers['custom-mcp']!.command).toBe('npx')
+      expect(config.mcpServers['custom-mcp']!.args).toContain(
+        'custom-mcp-server',
       )
-      // Custom tool added
-      expect(config.mcpServers['custom-tool']).toBeDefined()
-      expect(config.mcpServers['custom-tool']!.command).toBe('npx')
     })
 
-    it('user playwright takes precedence over built-in', async () => {
-      const result = mergeConfig(SECURITY_BASELINE, {
-        mcpServers: {
-          playwright: { command: 'custom', args: ['custom-playwright'] },
-        },
-      })
+    it('allows multiple user-defined servers', async () => {
+      mkdirSync(join(testDir, '.autonoe'), { recursive: true })
+      writeFileSync(
+        join(testDir, '.autonoe', 'agent.json'),
+        JSON.stringify({
+          mcpServers: {
+            'mcp-server-1': {
+              command: 'npx',
+              args: ['server-1'],
+            },
+            'mcp-server-2': {
+              command: 'node',
+              args: ['server-2.js'],
+            },
+          },
+        }),
+      )
 
-      expect(result.mcpServers.playwright!.command).toBe('custom')
-      expect(result.mcpServers.playwright!.args).toContain('custom-playwright')
+      const config = await loadConfig(testDir)
+
+      expect(Object.keys(config.mcpServers)).toHaveLength(2)
+      expect(config.mcpServers['mcp-server-1']!.command).toBe('npx')
+      expect(config.mcpServers['mcp-server-2']!.command).toBe('node')
     })
   })
 
