@@ -49,15 +49,13 @@ Each session follows a strict lifecycle to ensure proper resource management:
 Session.run() called
     │
     ├── client.query(instruction)
-    │       ├── Start MCP servers
-    │       ├── Launch browser (if Playwright)
+    │       ├── Start MCP servers (if configured)
     │       └── Return MessageStream
     │
     ├── Process MessageStream until completion
     │
     ├── client.dispose()
     │       ├── Stop MCP server processes
-    │       ├── Close browser instances
     │       └── Release system resources
     │
     └── Return SessionResult

@@ -8,10 +8,10 @@ This document contains detailed security configurations for Autonoe's security l
 
 Autonoe provides two execution modes built on a shared Base Security:
 
-| Mode   | Purpose        | Base | Modifications                                      |
-| ------ | -------------- | ---- | -------------------------------------------------- |
-| `run`  | Implementation | ✓    | + Write, + Profiles, + Playwright                  |
-| `sync` | Verification   | ✓    | - Write scope, - Bash scope, + Playwright (verify) |
+| Mode   | Purpose        | Base | Modifications               |
+| ------ | -------------- | ---- | --------------------------- |
+| `run`  | Implementation | ✓    | + Write, + Profiles         |
+| `sync` | Verification   | ✓    | - Write scope, - Bash scope |
 
 ---
 
@@ -98,7 +98,6 @@ Command Input
 | ---------------- | --------------------------------- |
 | File Write       | Full project access               |
 | File Edit        | Full project access               |
-| Playwright       | Browser automation via MCP        |
 | Profile Commands | Language-specific allowlists      |
 | User Extensions  | Custom commands via agent.json    |
 | Runtime Options  | --allow-destructive, --no-sandbox |
@@ -311,7 +310,6 @@ Pattern: `Warning: [what is enabled/disabled]. [consequence/risk].`
 | File Write | None               | `.autonoe-note.md` only        |
 | File Edit  | None               | `.autonoe-note.md` only        |
 | Bash       | Read-only commands | + Profile commands, - File ops |
-| Playwright | N/A                | Enabled                        |
 
 ### Allowed Tools
 
@@ -322,7 +320,6 @@ Pattern: `Warning: [what is enabled/disabled]. [consequence/risk].`
 | File Edit     | LIMITED   | `.autonoe-note.md` only                 |
 | Bash          | LIMITED   | Base read-only + profiles (no file ops) |
 | Git           | YES       | Full access                             |
-| Playwright    | YES       | Browser automation                      |
 | Autonoe Tool  | YES       | Deliverable management                  |
 
 ### Allowed Bash Commands

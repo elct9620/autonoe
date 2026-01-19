@@ -1,6 +1,6 @@
 # Docker Configuration
 
-Docker image configuration for Autonoe CLI. For overview, see [SPEC.md Section 7](../SPEC.md#7-build--distribution-design).
+Docker image configuration for Autonoe CLI. For overview, see [SPEC.md Section 6](../SPEC.md#6-build--distribution-design).
 
 ## Image Strategy
 
@@ -39,26 +39,26 @@ Each publishable package maps to a separate image path under the organization na
 
 ## Targets and Tags
 
-| Target | Base Image                | Tag                | Tools                                                                     | Use Case               |
-| ------ | ------------------------- | ------------------ | ------------------------------------------------------------------------- | ---------------------- |
-| base   | debian:bookworm-slim      | `:latest`, `:base` | git, curl, ca-certificates, openssh-client, gnupg                         | Minimal runtime        |
-| node   | node:XX-bookworm-slim     | `:node`            | git, curl, openssh-client, gnupg, npm, Playwright deps                    | Frontend development   |
-| bun    | oven/bun:X.X-slim         | `:bun`             | git, curl, openssh-client, gnupg, bun, Playwright deps                    | Full-stack development |
-| python | python:X.XX-slim-bookworm | `:python`          | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, pip, uv  | Backend / Data science |
-| golang | golang:X.XX-bookworm      | `:golang`          | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps           | System programming     |
-| ruby   | ruby:X.X-slim-bookworm    | `:ruby`            | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, Bundler  | Web development        |
-| rust   | rust:X.XX-slim-bookworm   | `:rust`            | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, cargo    | Systems programming    |
-| php    | php:X.X-cli-bookworm      | `:php`             | git, curl, openssh-client, gnupg, Node.js, npm, Playwright deps, composer | Web development        |
+| Target | Base Image                | Tag                | Tools                                                    | Use Case               |
+| ------ | ------------------------- | ------------------ | -------------------------------------------------------- | ---------------------- |
+| base   | debian:bookworm-slim      | `:latest`, `:base` | git, curl, ca-certificates, openssh-client, gnupg        | Minimal runtime        |
+| node   | node:XX-bookworm-slim     | `:node`            | git, curl, openssh-client, gnupg, npm                    | Frontend development   |
+| bun    | oven/bun:X.X-slim         | `:bun`             | git, curl, openssh-client, gnupg, bun                    | Full-stack development |
+| python | python:X.XX-slim-bookworm | `:python`          | git, curl, openssh-client, gnupg, Node.js, npm, pip, uv  | Backend / Data science |
+| golang | golang:X.XX-bookworm      | `:golang`          | git, curl, openssh-client, gnupg, Node.js, npm           | System programming     |
+| ruby   | ruby:X.X-slim-bookworm    | `:ruby`            | git, curl, openssh-client, gnupg, Node.js, npm, Bundler  | Web development        |
+| rust   | rust:X.XX-slim-bookworm   | `:rust`            | git, curl, openssh-client, gnupg, Node.js, npm, cargo    | Systems programming    |
+| php    | php:X.X-cli-bookworm      | `:php`             | git, curl, openssh-client, gnupg, Node.js, npm, composer | Web development        |
 
 Each target must include base tools (git, curl, ca-certificates, openssh-client, gnupg) for Claude Code and Git signing to function properly.
 
 ## Tag Naming Convention
 
-| Pattern            | Example            | Description                                |
-| ------------------ | ------------------ | ------------------------------------------ |
-| `:base`            | `:base`            | Minimal runtime (no language tools)        |
-| `:<lang>`          | `:node`, `:python` | Language runtime with Node.js + Playwright |
-| `:X.Y.Z-<variant>` | `:1.0.0-node`      | Versioned tag                              |
+| Pattern            | Example            | Description                         |
+| ------------------ | ------------------ | ----------------------------------- |
+| `:base`            | `:base`            | Minimal runtime (no language tools) |
+| `:<lang>`          | `:node`, `:python` | Language runtime with tools         |
+| `:X.Y.Z-<variant>` | `:1.0.0-node`      | Versioned tag                       |
 
 ## Build Args
 

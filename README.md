@@ -92,16 +92,16 @@ docker compose run --rm cli autonoe run
 
 Choose the image tag that matches your project's language:
 
-| Tag      | Description                          |
-| -------- | ------------------------------------ |
-| `base`   | Minimal runtime (git, curl only)     |
-| `node`   | Node.js with npm and Playwright      |
-| `bun`    | Bun runtime with Playwright          |
-| `python` | Python with pip and Playwright       |
-| `golang` | Go toolchain with Playwright         |
-| `ruby`   | Ruby with gem/bundler and Playwright |
-| `rust`   | Rust toolchain with Playwright       |
-| `php`    | PHP with Composer and Playwright     |
+| Tag      | Description                      |
+| -------- | -------------------------------- |
+| `base`   | Minimal runtime (git, curl only) |
+| `node`   | Node.js with npm                 |
+| `bun`    | Bun runtime                      |
+| `python` | Python with pip and uv           |
+| `golang` | Go toolchain                     |
+| `ruby`   | Ruby with gem/bundler            |
+| `rust`   | Rust toolchain                   |
+| `php`    | PHP with Composer                |
 
 Example for a Python project:
 
@@ -507,24 +507,13 @@ Autonoe implements three layers of security:
 
 The Claude Agent SDK sandbox has platform-specific limitations:
 
-| Limitation                           | Workaround                                    |
-| ------------------------------------ | --------------------------------------------- |
-| macOS support unstable               | Use Docker                                    |
-| Linux ARM64 browser install fails    | Disable sandbox, use `npx playwright install` |
-| Cannot detect pre-installed browsers | Install browser at runtime via npx            |
+| Limitation             | Workaround |
+| ---------------------- | ---------- |
+| macOS support unstable | Use Docker |
 
 ### Docker (Recommended)
 
-Docker images disable the sandbox by default (`AUTONOE_NO_SANDBOX=1`) for maximum compatibility. Browser automation works reliably across all platforms.
-
-For browser automation, add to your `SPEC.md`:
-
-```markdown
-## Prerequisites
-
-Before browser testing, install Chromium:
-npx playwright install --with-deps chromium
-```
+Docker images disable the sandbox by default (`AUTONOE_NO_SANDBOX=1`) for maximum compatibility.
 
 ## Architecture
 

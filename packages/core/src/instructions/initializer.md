@@ -118,7 +118,7 @@ Focus on `SPEC.md` requirements and best practices for the chosen technology sta
 
 Based on the technology stack outlined in `SPEC.md`, set up a script to make the development environment ready for coding and testing.
 
-- Install system-level tools if needed (e.g., `npx playwright install chromium`, `apt install` for dependencies)
+- Install system-level tools if needed (e.g., `apt install` for dependencies)
 - Install project dependencies using package manager (e.g., npm install, bundle install, uv sync)
 - Start servers or services needed for development
 - Print helpful information about how to access the running application or services
@@ -133,7 +133,7 @@ Create script inside `bin/dev.sh` with executable permissions. Or use framework-
 
 # Verify environment
 echo "Setting up development environment..."
-# e.g. npx playwright install chromium for browser automation
+# e.g. install additional system dependencies
 # ...
 
 # Install dependencies

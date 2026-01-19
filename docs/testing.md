@@ -554,11 +554,10 @@ The `./tmp/` directory serves as the Docker volume mount point for test fixtures
 
 ### Test Categories
 
-| Category    | Scenarios         | Description                             |
-| ----------- | ----------------- | --------------------------------------- |
-| End-to-End  | IT-001 ~ IT-005   | Full workflow with CLI and deliverables |
-| SDK Sandbox | SC-X003           | Filesystem boundary enforcement         |
-| Browser     | SC-B001 ~ SC-B004 | Playwright MCP server integration       |
+| Category    | Scenarios       | Description                             |
+| ----------- | --------------- | --------------------------------------- |
+| End-to-End  | IT-001 ~ IT-005 | Full workflow with CLI and deliverables |
+| SDK Sandbox | SC-X003         | Filesystem boundary enforcement         |
 
 ### End-to-End Test Cases
 
@@ -612,15 +611,6 @@ The `./tmp/` directory serves as the Docker volume mount point for test fixtures
 | ID      | Input                     | Expected Output   |
 | ------- | ------------------------- | ----------------- |
 | SC-X003 | File read outside project | Permission denied |
-
-### Browser Test Cases
-
-| ID      | Input                   | Expected Output                  |
-| ------- | ----------------------- | -------------------------------- |
-| SC-B001 | Navigate to example.com | Page loaded, screenshot captured |
-| SC-B002 | Click without snapshot  | Error: snapshot required         |
-| SC-B003 | Form submission         | Form submitted, verified         |
-| SC-B004 | Text verification       | Assertion passes/fails           |
 
 ### CI Reporting
 

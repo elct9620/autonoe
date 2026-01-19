@@ -11,17 +11,16 @@
   - [Domain Model](docs/domain-model.md)
 - [3. Core Interfaces](#3-core-interfaces-design)
   - [Interfaces](docs/interfaces.md)
-- [4. Browser Automation](#4-browser-automation-design)
-- [5. State Management](#5-state-management-design)
-- [6. Security](#6-security-design)
+- [4. State Management](#4-state-management-design)
+- [5. Security](#5-security-design)
   - [Security Details](docs/security.md)
-- [7. Build & Distribution](#7-build--distribution-design)
+- [6. Build & Distribution](#6-build--distribution-design)
   - [Docker Configuration](docs/docker.md)
-- [8. CLI](#8-cli-design)
+- [7. CLI](#7-cli-design)
 - [Appendix A: Instructions](#appendix-a-instructions-design)
 
 ### Consistency Layer
-- [9. Decision Table](#9-decision-table-consistency)
+- [8. Decision Table](#8-decision-table-consistency)
 - [Test Scenarios](docs/testing.md)
 
 ---
@@ -106,11 +105,10 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 │  │                                │                                     ││
 │  │                                ▼                                     ││
 │  │  ┌─────────────────────────────────────────────────────────────────┐││
-│  │  │                      MCP Servers                                 │││
-│  │  │  ┌─────────────┐  ┌─────────────┐  ┌───────────────────────┐    │││
-│  │  │  │  Browser    │  │  Built-in   │  │   File System         │    │││
-│  │  │  │  Automation │  │  (Bash)     │  │   (Read/Write)        │    │││
-│  │  │  └─────────────┘  └─────────────┘  └───────────────────────┘    │││
+│  │  │                      Built-in Tools                              │││
+│  │  │  ┌─────────────────────────┐  ┌───────────────────────────────┐ │││
+│  │  │  │    Bash                 │  │   File System (Read/Write)    │ │││
+│  │  │  └─────────────────────────┘  └───────────────────────────────┘ │││
 │  │  └─────────────────────────────────────────────────────────────────┘││
 │  └─────────────────────────────────────────────────────────────────────┘│
 │                                │                                         │
@@ -142,12 +140,11 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 
 ### 1.3 Coding Agent Tools
 
-| Tool               | Source                         | Purpose                             |
-| ------------------ | ------------------------------ | ----------------------------------- |
-| Browser Automation | Playwright MCP (pre-installed) | UI verification and E2E testing     |
-| File System        | SDK Built-in                   | Read/Write project files            |
-| Bash               | SDK Built-in                   | Execute allowed commands            |
-| Skill              | SDK Built-in                   | Invoke Claude Code skills           |
+| Tool        | Source       | Purpose                   |
+| ----------- | ------------ | ------------------------- |
+| File System | SDK Built-in | Read/Write project files  |
+| Bash        | SDK Built-in | Execute allowed commands  |
+| Skill       | SDK Built-in | Invoke Claude Code skills |
 
 ---
 
@@ -478,77 +475,9 @@ For detailed specifications, see [Interfaces - Presenter](docs/interfaces.md#pre
 
 ---
 
-## 4. Browser Automation `[Design]`
+## 4. State Management `[Design]`
 
-Autonoe supports Browser Automation for verifying UI behavior and executing E2E tests.
-
-**Design Decisions:**
-- Browser Automation is recommended for verification
-- Playwright MCP is pre-installed as the default tool
-- Users can configure alternative Browser Automation tools via `agent.json` `mcpServers`
-
-### 4.1 Pre-installed Tool: Playwright MCP
-
-Uses Microsoft Playwright MCP server (`@playwright/mcp@latest`) with session isolation:
-
-| Flag | Purpose |
-|------|---------|
-| `--headless` | Run browser without GUI for CI/server environments |
-| `--isolated` | Ensure browser instance isolation per session |
-
-- Server: https://github.com/microsoft/playwright-mcp
-- Tool prefix: `mcp__playwright__*`
-- Allowed tools defined in `PLAYWRIGHT_MCP_TOOLS` constant (`packages/core/src/configuration.ts`)
-
-#### 4.1.1 Browser Installation
-
-| Platform     | Sandbox  | Browser Source      | Status        |
-|--------------|----------|---------------------|---------------|
-| Linux x64    | Enabled  | MCP browser_install | Supported     |
-| Linux ARM64  | Enabled  | MCP browser_install | Not supported |
-| Linux ARM64  | Disabled | npx playwright      | Supported     |
-| Docker       | Disabled | npx playwright      | Recommended   |
-
-**SDK Sandbox Limitations:**
-- MCP `browser_install` fails on Linux ARM64: "not supported on Linux Arm64"
-- SDK cannot detect pre-installed browsers (via `npx playwright install`)
-
-**Docker Configuration:**
-- `PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers`
-- `AUTONOE_NO_SANDBOX=1` (sandbox disabled for compatibility)
-
-**Recommended SPEC.md Prompt** (for Docker/ARM64):
-```markdown
-## Prerequisites
-Install Chromium before browser testing:
-npx playwright install --with-deps chromium
-```
-
-#### 4.1.2 Browser Lifecycle
-
-```text
-Session Start ─────► MCP Server Start ─────► Browser Launch
-                                                   │
-                                                   ▼
-                                            [Browser Operations]
-                                                   │
-                                                   ▼
-Session End ◄────── client.dispose() ◄────── Browser Close
-```
-
-**Session Isolation**: The `--isolated` flag ensures each session creates an independent browser context, preventing state leakage between iterations. This enables reliable multi-session workflows where browser state is fresh for each coding cycle.
-
-### 4.2 Verification Flow
-
-```text
-navigate ──▶ snapshot ──▶ interact ──▶ wait_for ──▶ verify_*
-```
-
----
-
-## 5. State Management `[Design]`
-
-### 5.1 Directory Structure
+### 4.1 Directory Structure
 
 ```text
 project/
@@ -557,7 +486,7 @@ project/
 └── .autonoe-note.md
 ```
 
-### 5.2 Status Tracking (.autonoe/status.json)
+### 4.2 Status Tracking (.autonoe/status.json)
 
 **Deliverable ID Format:**
 
@@ -613,7 +542,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 - Records are retained for tracking and auditing purposes
 - Deprecated deliverables are excluded from termination evaluation
 
-### 5.3 State Persistence
+### 4.3 State Persistence
 
 | State                | Writer                       | Reader | Description                        |
 | -------------------- | ---------------------------- | ------ | ---------------------------------- |
@@ -622,7 +551,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 | `.autonoe-note.md`    | Coding Agent (Direct)        | Both   | Session handoff notes (agent-maintained) |
 | Git History          | Coding Agent (Direct)        | Both   | Version control history            |
 
-### 5.4 Configuration
+### 4.4 Configuration
 
 **Configuration Sources:**
 
@@ -631,12 +560,11 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 │                    Configuration Sources                         │
 ├─────────────────────────────────────────────────────────────────┤
 │  Hardcoded (packages/core)                                       │
-│  ├── sandbox: { enabled: true }                                  │
-│  └── mcpServers: { playwright: @playwright/mcp --headless --isolated }│
+│  └── sandbox: { enabled: true }                                  │
 │                                                                  │
 │  Security Baseline (packages/core, always enforced)              │
 │  ├── permissions.allow: [Read(./**), Write(./**), Read(/tmp/**), Write(/tmp/**), ...]│
-│  ├── allowedTools: [Read, Write, Edit, Skill, ..., mcp__playwright__*]│
+│  ├── allowedTools: [Read, Write, Edit, Skill, ...]              │
 │  └── hooks: [BashSecurity, .autonoe Protection]                  │
 │                                                                  │
 │  Language Profiles                                               │
@@ -648,7 +576,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 │  ├── allowPkillTargets: [...]  # Hook layer extensions           │
 │  ├── permissions.allow: [...]  # SDK layer (Merged with baseline)│
 │  ├── allowedTools: [...]       # Merged with baseline            │
-│  └── mcpServers: { ... }       # User priority (see below)       │
+│  └── mcpServers: { ... }       # User-defined MCP servers        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -661,7 +589,7 @@ When a deliverable is removed from SPEC.md, it is not deleted but marked with `d
 | permissions      | baseline + user   | SDK        | Merge          |
 | allowedTools     | baseline + user   | SDK        | Merge          |
 | hooks            | baseline + user   | PreToolUse | Merge          |
-| mcpServers       | Hardcoded + user  | SDK        | User priority  |
+| mcpServers       | (none)            | SDK        | User-defined   |
 
 **Command Architecture:**
 
@@ -691,14 +619,12 @@ Language profile commands (node, bun, python, ruby, go, rust, php) are available
 | `run`   | All read-only | + mkdir, cp, language profiles, user extensions |
 | `sync`  | All read-only | + language profiles (no mkdir, cp) |
 
-**MCP Servers User Priority:**
+**MCP Servers Configuration:**
 
-| agent.json mcpServers | Result                           |
-| --------------------- | -------------------------------- |
-| (undefined)           | Built-in Playwright loaded       |
-| `{}`                  | No servers (disabled all)        |
-| `{ "playwright": {} }`| User config overrides built-in   |
-| `{ "custom": {} }`    | Built-in + custom (merged)       |
+| agent.json mcpServers | Result                          |
+| --------------------- | ------------------------------- |
+| (undefined)           | No MCP servers                  |
+| `{ "custom": {} }`    | User-defined servers loaded     |
 
 **Permission Rule Format:**
 
@@ -770,7 +696,7 @@ SDK settingSources: ['project'] (hardcoded)
 └── .claude/settings.json # Project SDK settings
 ```
 
-### 5.5 SDK Sandbox Configuration
+### 4.5 SDK Sandbox Configuration
 
 **SandboxSettings:**
 
@@ -787,13 +713,13 @@ SDK settingSources: ['project'] (hardcoded)
 **Scope:**
 Environment variable applies to all commands (run, sync).
 
-See Section 6 for security layer architecture.
+See Section 5 for security layer architecture.
 
 ---
 
-## 6. Security `[Design]`
+## 5. Security `[Design]`
 
-### 6.1 Security Layers
+### 5.1 Security Layers
 
 ```text
 ┌─────────────────────────────────────────────────────┐
@@ -820,7 +746,7 @@ See Section 6 for security layer architecture.
 | Bash Allowlist       | BashSecurity hook           | PreToolUse      |
 | .autonoe/ Protection | PreToolUse hook             | PreToolUse      |
 
-### 6.2 Base Security
+### 5.2 Base Security
 
 Base security capabilities shared by all execution modes:
 
@@ -845,14 +771,13 @@ Base security capabilities shared by all execution modes:
 
 See [Security Details - Base Security](docs/security.md#base-security) for validation flow and command chain handling.
 
-### 6.3 Run Command Security
+### 5.3 Run Command Security
 
 `run` mode extends Base Security with additional capabilities for implementation:
 
 | Addition         | Description                          |
 | ---------------- | ------------------------------------ |
 | File Write       | Full project access                  |
-| Playwright       | Browser automation via MCP           |
 | Profile Commands | Development layer (full toolchain)   |
 | User Extensions  | Custom commands via agent.json       |
 | Runtime Options  | --allow-destructive, --no-sandbox    |
@@ -871,7 +796,7 @@ See [Security Details - Base Security](docs/security.md#base-security) for valid
 
 See [Security Details - Run Command](docs/security.md#run-command-security) for command allowlists and runtime options.
 
-### 6.4 Sync Command Security
+### 5.4 Sync Command Security
 
 `sync` mode restricts `run` command capabilities for verification-only operations:
 
@@ -879,13 +804,12 @@ See [Security Details - Run Command](docs/security.md#run-command-security) for 
 | ---------------- | ------------------ | ------------------------------ |
 | File Write       | Full project       | `.autonoe-note.md` only          |
 | Bash             | Profile + File ops | Profile commands only          |
-| Browser Automation | Enabled          | Enabled                        |
 
 **`sync` Command = Base Commands + Language Profiles (no file ops):**
 
 | Profile | Commands |
 |---------|----------|
-| base    | All read-only commands (see Section 6.2) |
+| base    | All read-only commands (see Section 5.2) |
 | node    | All Node.js commands (npm, npx, node, vitest, jest, eslint, prettier, etc.) |
 | bun     | All Bun commands (bun, bunx) |
 | python  | All Python commands (pip, python, pytest, mypy, ruff, etc.) |
@@ -903,7 +827,7 @@ See [Security Details - Sync Command](docs/security.md#sync-command-security) fo
 
 ---
 
-## 7. Build & Distribution `[Design]`
+## 6. Build & Distribution `[Design]`
 
 **Package Overview:**
 
@@ -916,7 +840,7 @@ See [Security Details - Sync Command](docs/security.md#sync-command-security) fo
 
 Package configurations are defined in their respective `package.json` files.
 
-### 7.1 Distribution Formats
+### 6.1 Distribution Formats
 
 | Format | Platform | Use Case |
 |--------|----------|----------|
@@ -924,7 +848,7 @@ Package configurations are defined in their respective `package.json` files.
 | Docker | Container platforms | Containerized deployment |
 | Cloud Image | KVM/QEMU environments | VM deployment |
 
-### 7.2 Docker Images
+### 6.2 Docker Images
 
 See [Docker Configuration](docs/docker.md) for detailed build configuration.
 
@@ -941,7 +865,7 @@ See [Docker Configuration](docs/docker.md) for detailed build configuration.
 | rust | `:rust` | Systems programming |
 | php | `:php` | Web development |
 
-### 7.3 Cloud Image
+### 6.3 Cloud Image
 
 See [Cloud Image Configuration](docs/cloud-image.md) for detailed build configuration.
 
@@ -993,7 +917,7 @@ See [Cloud Image Configuration](docs/cloud-image.md) for detailed build configur
 | `autonoe-{version}-ubuntu-24.04.img` | Cloud Image |
 | `autonoe-{version}-ubuntu-24.04.img.sha256` | Checksum |
 
-### 7.4 Release Tools
+### 6.4 Release Tools
 
 | Tool | Purpose |
 |------|---------|
@@ -1004,9 +928,9 @@ See [Cloud Image Configuration](docs/cloud-image.md) for detailed build configur
 
 ---
 
-## 8. CLI `[Design]`
+## 7. CLI `[Design]`
 
-### 8.1 Common Options
+### 7.1 Common Options
 
 All commands share the following options:
 
@@ -1031,7 +955,7 @@ All commands share the following options:
 
 When validation fails, the command exits immediately with a non-zero exit code.
 
-### 8.1.1 Model Selection
+### 7.1.1 Model Selection
 
 | Instruction | Model Option | Default |
 |-------------|--------------|---------|
@@ -1040,7 +964,7 @@ When validation fails, the command exits immediately with a non-zero exit code.
 | coding | `--model` | sonnet |
 | verify | `--model` | sonnet |
 
-### 8.1.2 Prerequisites
+### 7.1.2 Prerequisites
 
 All commands require the following conditions:
 
@@ -1052,9 +976,9 @@ All commands require the following conditions:
 
 When a prerequisite is not met, the command exits immediately with a non-zero exit code and displays the error message to stderr.
 
-### 8.2 run Command
+### 7.2 run Command
 
-#### 8.2.1 Usage
+#### 7.2.1 Usage
 
 ```bash
 autonoe run [options]
@@ -1067,7 +991,7 @@ In addition to Common Options, the following options are available:
 | `--no-sandbox` | - | Disable SDK sandbox | false |
 | `--allow-destructive` | `-D` | Enable rm/mv with path validation | false |
 
-#### 8.2.2 Behavior
+#### 7.2.2 Behavior
 
 - Runs in specified project directory (or cwd if not specified)
 - All relative paths (.autonoe/, SPEC.md) resolved from project directory
@@ -1084,9 +1008,9 @@ In addition to Common Options, the following options are available:
 | relative path     | YES              | Resolve to absolute|
 | any path          | NO               | Exit with error    |
 
-### 8.3 sync Command
+### 7.3 sync Command
 
-#### 8.3.1 Usage
+#### 7.3.1 Usage
 
 ```bash
 autonoe sync [options]
@@ -1094,7 +1018,7 @@ autonoe sync [options]
 
 Uses Common Options only. No additional options.
 
-#### 8.3.2 Behavior
+#### 7.3.2 Behavior
 
 - Reads SPEC.md and uses Coding Agent to parse deliverables
 - Creates or updates `.autonoe/status.json`
@@ -1110,7 +1034,7 @@ Uses Common Options only. No additional options.
 | Removed deliverable from SPEC | Mark `deprecatedAt` date, retain record |
 | Verified as passed | Coding Agent validates code and marks passed=true |
 
-#### 8.3.3 Execution Flow
+#### 7.3.3 Execution Flow
 
 ```text
 SPEC.md ──► `sync` instruction ──► Create/Update status.json
@@ -1135,9 +1059,9 @@ The `sync` command uses a single SessionRunner loop with dynamic instruction sel
 
 ---
 
-## 9. Decision Table `[Consistency]`
+## 8. Decision Table `[Consistency]`
 
-### 9.1 Session Loop Behavior
+### 8.1 Session Loop Behavior
 
 | .autonoe/status.json | --max-iterations | Action                                  |
 | -------------------- | ---------------- | --------------------------------------- |
@@ -1150,35 +1074,34 @@ The `sync` command uses a single SessionRunner loop with dynamic instruction sel
 
 See [Appendix A](#appendix-a-instructions-design) for instruction selection rules.
 
-### 9.2 Coding Agent Tool Availability
+### 8.2 Coding Agent Tool Availability
 
-Tool availability by command. For detailed restrictions, see [Section 6](#6-security-design).
+Tool availability by command. For detailed restrictions, see [Section 5](#5-security-design).
 
-| Tool Category      | run                         | sync                        |
-| ------------------ | --------------------------- | --------------------------- |
-| File Read          | YES                         | YES                         |
-| File Write         | YES                         | LIMITED (`.autonoe-note.md`)  |
-| File Edit          | YES                         | LIMITED (`.autonoe-note.md`)  |
-| Bash               | Profile commands + File ops | Profile commands only       |
-| Git                | YES                         | YES                         |
-| Browser Automation | YES                         | YES                         |
-| Skill              | YES                         | YES                         |
-| Autonoe Tool       | YES                         | YES                         |
+| Tool Category | run                         | sync                          |
+| ------------- | --------------------------- | ----------------------------- |
+| File Read     | YES                         | YES                           |
+| File Write    | YES                         | LIMITED (`.autonoe-note.md`)  |
+| File Edit     | YES                         | LIMITED (`.autonoe-note.md`)  |
+| Bash          | Profile commands + File ops | Profile commands only         |
+| Git           | YES                         | YES                           |
+| Skill         | YES                         | YES                           |
+| Autonoe Tool  | YES                         | YES                           |
 
-### 9.3 Configuration Merge
+### 8.3 Configuration Merge
 
 | User Config (agent.json)    | Autonoe Behavior                            |
 | --------------------------- | ------------------------------------------- |
 | Custom permissions          | Merge with security baseline                |
 | Custom hooks                | Merge with security baseline                |
-| Custom mcpServers           | User priority (see Section 5.4)             |
+| Custom mcpServers           | User-defined (see Section 4.4)              |
 | Custom allowCommands        | Merge with profile commands                 |
 | Disable sandbox             | Allowed with warning (stderr)               |
 | Remove .autonoe/ protection | Re-apply security baseline                  |
 
-### 9.4 Profile Selection
+### 8.4 Profile Selection
 
-See [Section 6.3](#63-run-command-security) for profile details.
+See [Section 5.3](#53-run-command-security) for profile details.
 
 | agent.json profile     | Active Profiles                                           |
 | ---------------------- | --------------------------------------------------------- |
@@ -1187,7 +1110,7 @@ See [Section 6.3](#63-run-command-security) for profile details.
 | `"bun"`                | base + bun                                                |
 | `["node", "python"]`   | base + node + python                                      |
 
-### 9.5 Sync Command Behavior
+### 8.5 Sync Command Behavior
 
 | status.json      | SPEC.md Deliverable | Action                              |
 |------------------|---------------------|-------------------------------------|
@@ -1196,7 +1119,7 @@ See [Section 6.3](#63-run-command-security) for profile details.
 | EXISTS           | removed deliverable | Mark deprecatedAt, retain record    |
 | EXISTS           | existing match      | Verify and update passed status     |
 
-### 9.6 Deprecated Deliverable Handling
+### 8.6 Deprecated Deliverable Handling
 
 | Deliverable State | deprecatedAt | Termination Evaluation |
 |-------------------|--------------|------------------------|
@@ -1204,7 +1127,7 @@ See [Section 6.3](#63-run-command-security) for profile details.
 | passed=false      | not set      | Included               |
 | any               | set (dated)  | Excluded               |
 
-### 9.7 Termination by Command
+### 8.7 Termination by Command
 
 See [Section 3.4](#34-termination-conditions) for details.
 
@@ -1213,7 +1136,7 @@ See [Section 3.4](#34-termination-conditions) for details.
 | run     | All deliverables passed   | all_passed, all_blocked     |
 | sync    | All deliverables verified | all_verified                |
 
-### 9.8 Verification Result (Sync Command)
+### 8.8 Verification Result (Sync Command)
 
 | All Verified | Deliverable Statuses      | Result Description                    |
 | ------------ | ------------------------- | ------------------------------------- |
@@ -1223,7 +1146,7 @@ See [Section 3.4](#34-termination-conditions) for details.
 | YES          | some blocked              | Verification complete, some blocked   |
 | YES          | all blocked               | Verification complete, all blocked    |
 
-### 9.9 Session Runner Output Format
+### 8.9 Session Runner Output Format
 
 | Command | Overall Message Format |
 |---------|------------------------|
@@ -1241,7 +1164,7 @@ See [Section 3.4](#34-termination-conditions) for details.
 | quota_exceeded | both | `Quota exceeded` |
 | interrupted | both | `User interrupted` |
 
-### 9.10 Console Output Behavior
+### 8.10 Console Output Behavior
 
 See [Section 3.5](#35-console-output) and [Interfaces - Presenter](docs/interfaces.md#presenter) for details.
 

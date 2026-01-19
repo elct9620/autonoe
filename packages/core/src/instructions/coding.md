@@ -139,11 +139,11 @@ To make a progress on the chosen deliverable, process thoroughly:
 
 **CRITICAL:** You must verify the deliverable close to real user with all possible tools, e.g. browser automation tools, API testing tools, CLI tools, etc.
 
-**PREFER Browser Automation:** When verifying web UI deliverables, you MUST use browser automation tools as the PRIMARY verification method. First, check if the project has its own browser automation setup (e.g., Playwright, Puppeteer, Cypress tests). Only use Playwright MCP tools as a FALLBACK when the project has no browser automation configured. API/curl testing is acceptable for pure API deliverables, but NOT a replacement for E2E browser verification on UI deliverables.
+**PREFER Browser Automation:** When verifying web UI deliverables, you MUST use browser automation tools as the PRIMARY verification method. Check if the project has its own browser automation setup (e.g., Playwright, Puppeteer, Cypress tests) and use them. API/curl testing is acceptable for pure API deliverables, but NOT a replacement for E2E browser verification on UI deliverables.
 
-For example, if you are working on a web app and Playwright MCP tools is available:
+For example, if you are working on a web app and browser automation tools are available:
 
-- Navigate to the app use real browser
+- Navigate to the app using a real browser
 - Interact like a real user (click buttons, fill forms, etc.)
 - Take screenshots for each step
 - Verify both functionality and visual correctness
@@ -180,7 +180,7 @@ Deliverable: UI-001 - User Login Form
 
 Acceptance Criteria Verification:
 - [x] AC1: User can login with valid credentials
-      → Verified: Playwright test passed, screenshot: .screenshots/login-success.png
+      → Verified: E2E test passed, screenshot: .screenshots/login-success.png
 - [x] AC2: Error message shows on invalid input
       → Verified: Manual test, screenshot: .screenshots/login-error.png
 - [x] AC3: Session persists after refresh
@@ -200,14 +200,14 @@ Acceptance Criteria Verification:
 
 - `passed`: All acceptance criteria verified through actual testing
 - `pending`: Reset when a previously passed deliverable is found to have regressions or bugs
-- `blocked`: After 2-3 different attempts using various approaches, you still cannot verify the deliverable due to external constraints (e.g., deployment requires production access, external API credentials unavailable, browser automation tool not installed)
+- `blocked`: After 2-3 different attempts using various approaches, you still cannot verify the deliverable due to external constraints (e.g., deployment requires production access, external API credentials unavailable, required tools not installed)
 
 **CRITICAL:** If you CANNOT verify a deliverable, you MUST mark it as `blocked`, NOT `passed`. Never mark passed based on code logic alone - actual verification is required.
 
 **When to use blocked:**
 
 - External service or credentials are genuinely unavailable
-- Required tools (e.g., browser automation) are not installed and cannot be installed
+- Required tools are not installed and cannot be installed
 - The verification requires human intervention or production access
 
 **NEVER use blocked for:**
@@ -278,9 +278,9 @@ Ensure no breaking features or incomplete work should be left behind. The next s
 
 **ALL acceptance criteria must verified use end-to-end verification or manual verification.**
 
-**Priority:** Always check if the project provides testing tools FIRST, then use MCP tools as fallback:
+**Priority:** Always check if the project provides testing tools FIRST:
 
-- **Web apps**: Project's browser automation tests (Playwright/Puppeteer/Cypress) → Playwright MCP as fallback
+- **Web apps**: Project's browser automation tests (Playwright/Puppeteer/Cypress)
 - **APIs**: Project's API tests → curl/Postman for manual verification
 - **CLI apps**: Project's CLI tests → direct command execution
 
