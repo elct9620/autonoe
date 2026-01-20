@@ -940,7 +940,7 @@ All commands share the following options:
 | `--max-iterations` | `-n` | Maximum coding sessions | - |
 | `--max-retries` | - | Maximum retries on session error | 3 |
 | `--model` | `-m` | Claude model for coding/verify sessions | sonnet |
-| `--plan-model` | `-pm` | Claude model for planning sessions (initializer/sync) | opus |
+| `--plan-model` | `-P` | Claude model for planning sessions (initializer/sync) | opus |
 | `--debug` | `-d` | Show debug output | false |
 | `--wait-for-quota` | - | Wait for quota reset instead of exiting | false |
 | `--thinking` | - | Enable extended thinking mode (budget tokens) | 8192 |

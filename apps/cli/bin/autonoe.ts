@@ -18,7 +18,7 @@ cli
   )
   .option('-m, --model <model>', 'Claude model for coding sessions')
   .option(
-    '-pm, --plan-model <model>',
+    '-P, --plan-model <model>',
     'Claude model for planning sessions (initializer/sync)',
   )
   .option('-d, --debug', 'Show debug output')
@@ -57,7 +57,7 @@ cli
   )
   .option('-m, --model <model>', 'Claude model for coding sessions')
   .option(
-    '-pm, --plan-model <model>',
+    '-P, --plan-model <model>',
     'Claude model for planning sessions (initializer/sync)',
   )
   .option('-d, --debug', 'Show debug output')
