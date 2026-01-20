@@ -80,6 +80,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
+# Install Playwright system dependencies (browser installed via npx at runtime)
+RUN npx playwright install-deps chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
+
 # Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
 ENV AUTONOE_NO_SANDBOX=1
 
@@ -111,6 +115,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
+
+# Install Playwright system dependencies (browser installed via npx at runtime)
+RUN npx playwright install-deps chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
 
 # Disable SDK sandbox for Docker compatibility
 ENV AUTONOE_NO_SANDBOX=1
@@ -148,6 +156,10 @@ ENV PATH="/root/.local/bin:$PATH"
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
+# Install Playwright system dependencies (browser installed via npx at runtime)
+RUN npx playwright install-deps chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
+
 # Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
 ENV AUTONOE_NO_SANDBOX=1
 
@@ -179,6 +191,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
+
+# Install Playwright system dependencies (browser installed via npx at runtime)
+RUN npx playwright install-deps chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
 
 # Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
 ENV AUTONOE_NO_SANDBOX=1
@@ -212,6 +228,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
 
+# Install Playwright system dependencies (browser installed via npx at runtime)
+RUN npx playwright install-deps chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
+
 # Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
 ENV AUTONOE_NO_SANDBOX=1
 
@@ -243,6 +263,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
+
+# Install Playwright system dependencies (browser installed via npx at runtime)
+RUN npx playwright install-deps chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
 
 # Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
 ENV AUTONOE_NO_SANDBOX=1
@@ -279,6 +303,10 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 # Install claude-code CLI (required by claude-agent-sdk)
 RUN npm install -g @anthropic-ai/claude-code
+
+# Install Playwright system dependencies (browser installed via npx at runtime)
+RUN npx playwright install-deps chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright-browsers
 
 # Disable SDK sandbox for Docker compatibility (Linux ARM64, pre-installed browser detection)
 ENV AUTONOE_NO_SANDBOX=1
