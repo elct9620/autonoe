@@ -78,10 +78,10 @@ Otherwise, manually start any required services and document the process.
 
 ## STEP 3: Verify Previous Work (CRITICAL)
 
-**MANDATORY BEFORE NEW WORK:** The previous session may have introduced bugs. Before implementing anything new, you MUST verify the existing work.
+**MANDATORY BEFORE NEW WORK:** Before implementing anything new, you MUST verify that existing passed deliverables still work correctly.
 
 - Run tests if available
-- If there are passed deliverables, pick 1-2 to verify they still work correctly
+- If there are passed deliverables, randomly select 2 to verify they still work correctly
 - If no deliverables are passed yet (e.g., first coding session after initialization), skip to STEP 4
 
 For example, you are working on a web app, you might:
