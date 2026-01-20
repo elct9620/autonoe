@@ -26,19 +26,13 @@ You have access to these MCP tools for managing deliverables:
 - Use `verify` to confirm you have checked a deliverable (even if it remains pending)
 - Direct writes to `.autonoe/status.json` are blocked - you MUST use these tools
 
-## Working Principles
+## STEP 1: Identify Available Skills (MANDATORY)
 
-**Prefer Skills for task execution.** Skills encapsulate domain expertise and best practices. When a Skill matches your current task, use it—the Skill contains the correct workflow and knowledge for that domain.
+1. Review available Skills in your environment
+2. Throughout subsequent steps, invoke matching Skills immediately when tasks align with them
+3. If no Skill matches a task, proceed with project tools and conventions
 
-Skills provide:
-
-- **Expert knowledge**: Domain-specific best practices defined by experts
-- **Auditable execution**: Transparent decision logic and steps
-- **Consistency**: Reliable, repeatable workflows
-
-When no Skill matches, fall back to project-provided tools, then framework conventions.
-
-## STEP 1: Get your bearings (MANDATORY)
+## STEP 2: Get your bearings (MANDATORY)
 
 Start by orienting yourself:
 
@@ -67,7 +61,7 @@ cat .autonoe/status.json | grep '"passed": false' | wc -l
 
 Understand the `SPEC.md` is critical, it contains the full requirements for the project.
 
-## STEP 2: Start Servers
+## STEP 3: Start Servers
 
 If `bin/dev.sh` or similar dev script exists, run it to start any necessary servers:
 
@@ -78,7 +72,7 @@ chmod +x bin/dev.sh
 
 Otherwise, manually start any required services for verification.
 
-## STEP 3: Choose ONE Deliverable to Verify
+## STEP 4: Choose ONE Deliverable to Verify
 
 **Choose ONE deliverable** to verify. Use the `list` tool to see deliverables that haven't been verified yet:
 
@@ -100,7 +94,7 @@ Prioritize deliverables that are likely implemented based on:
 
 **ONE DELIVERABLE AT A TIME.** Complete verification before moving to next.
 
-## STEP 4: Execute Verification
+## STEP 5: Execute Verification
 
 **CRITICAL:** You must verify the deliverable close to real user with all possible tools, e.g. browser automation tools, API testing tools, CLI tools, etc.
 
@@ -128,7 +122,7 @@ For example, if you are working on a web app and browser automation tools are av
 - Skip visual verification if applicable
 - Mark passed without thorough verification
 
-## STEP 5: Mark Deliverable Status (CRITICAL)
+## STEP 6: Mark Deliverable Status (CRITICAL)
 
 **BEFORE marking passed, you MUST verify EACH acceptance criterion individually:**
 
@@ -206,7 +200,7 @@ When a tool or verification method fails:
 
 Only after exhausting alternatives should you mark the deliverable as `blocked`.
 
-## STEP 6: Commit Progress
+## STEP 7: Commit Progress
 
 Commit the status.json changes after verification:
 
@@ -218,7 +212,7 @@ git commit -m "chore: verify deliverable status
 - Updated verification notes"
 ```
 
-## STEP 7: Update Notes
+## STEP 8: Update Notes
 
 Update `.autonoe-note.md` with verification results:
 
@@ -227,9 +221,9 @@ Update `.autonoe-note.md` with verification results:
 - Any issues discovered during verification
 - Recommendations for the coding session
 
-## STEP 8: Continue or End
+## STEP 9: Continue or End
 
-If time permits and context allows, go back to STEP 3 to verify another deliverable.
+If time permits and context allows, go back to STEP 4 to verify another deliverable.
 
 ## ENDING THIS SESSION
 
@@ -262,4 +256,4 @@ Before ending, ensure you have:
 
 ---
 
-Starting from STEP 1. (Get your bearings) and proceed through the steps methodically.
+Starting from STEP 1. (Identify Available Skills) and proceed through the steps methodically.

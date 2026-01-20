@@ -16,23 +16,17 @@ Use `list` to check which deliverables need work:
 
 **IMPORTANT:** You MUST use `set_status` to update deliverable status. Direct writes to `.autonoe/status.json` are blocked.
 
-## Working Principles
-
-**Prefer Skills for task execution.** Skills encapsulate domain expertise and best practices. When a Skill matches your current task, use it—the Skill contains the correct workflow and knowledge for that domain.
-
-Skills provide:
-
-- **Expert knowledge**: Domain-specific best practices defined by experts
-- **Auditable execution**: Transparent decision logic and steps
-- **Consistency**: Reliable, repeatable workflows
-
-When no Skill matches, fall back to project-provided tools, then framework conventions.
-
 ## Session Goal
 
 This session's goal is to complete **exactly ONE deliverable** and end cleanly. After marking a deliverable as passed, you MUST proceed to commit, update notes, and end the session. Do NOT attempt to work on multiple deliverables in a single session.
 
-## STEP 1: Get your bearings (MANDATORY)
+## STEP 1: Identify Available Skills (MANDATORY)
+
+1. Review available Skills in your environment
+2. Throughout subsequent steps, invoke matching Skills immediately when tasks align with them
+3. If no Skill matches a task, proceed with project tools and conventions
+
+## STEP 2: Get your bearings (MANDATORY)
 
 Start by orienting yourself:
 
@@ -65,7 +59,7 @@ cat .autonoe/status.json | grep '"passed": false' | wc -l
 
 Understand the `SPEC.md` is critical, it contains the full requirements for the project you are building.
 
-## STEP 2: Start Servers
+## STEP 3: Start Servers
 
 If `bin/dev.sh` or similar dev script exists, run it to start any necessary servers or watchers:
 
@@ -76,13 +70,13 @@ chmod +x bin/dev.sh
 
 Otherwise, manually start any required services and document the process.
 
-## STEP 3: Verify Previous Work (CRITICAL)
+## STEP 4: Verify Previous Work (CRITICAL)
 
 **MANDATORY BEFORE NEW WORK:** Before implementing anything new, you MUST verify that existing passed deliverables still work correctly.
 
 - Run tests if available
 - If there are passed deliverables, randomly select 2 to verify they still work correctly
-- If no deliverables are passed yet (e.g., first coding session after initialization), skip to STEP 4
+- If no deliverables are passed yet (e.g., first coding session after initialization), skip to STEP 5
 
 For example, you are working on a web app, you might:
 
@@ -101,9 +95,9 @@ For example, you are working on a web app, you might:
   - Incorrect functionality
   - Failing tests
 
-**After fixing issues:** If the fixes required significant effort, you may proceed directly to STEP 8-10 to commit and end the session. Otherwise, continue to STEP 4 to choose a new deliverable.
+**After fixing issues:** If the fixes required significant effort, you may proceed directly to STEP 9-11 to commit and end the session. Otherwise, continue to STEP 5 to choose a new deliverable.
 
-## STEP 4: Choose Next Deliverable
+## STEP 5: Choose Next Deliverable
 
 **Choose exactly ONE deliverable by ID** (e.g., `FT-001`) from `.autonoe/status.json` - select the highest priority that is not yet passed.
 
@@ -114,13 +108,13 @@ For example, you are working on a web app, you might:
 - Do NOT work on multiple deliverables in parallel, even if they seem related
 - It is acceptable to complete only one deliverable in this session, as there will be more sessions later that can continue to make progress
 
-## STEP 5: Make Deliverable Pass
+## STEP 6: Make Deliverable Pass
 
 To make a progress on the chosen deliverable, process thoroughly:
 
 - Write the code (frontend, backend, etc.) to meet the acceptance criteria
 - Write tests to cover the deliverable functionality
-- Test manually with any tools available (e.g. browser, curl, etc., see STEP 6)
+- Test manually with any tools available (e.g. browser, curl, etc., see STEP 7)
 - Fix any issues discovered
 - Verify the works end-to-end against acceptance criteria
 
@@ -135,7 +129,7 @@ To make a progress on the chosen deliverable, process thoroughly:
 - Study the codebase to understand existing patterns and conventions, then follow them consistently
 - If relevant code already exists for the deliverable (check git history and existing files), prefer refactoring over adding new complexity - this indicates the feature was previously implemented and may need adjustment
 
-## STEP 6: Verify With Tools
+## STEP 7: Verify With Tools
 
 **CRITICAL:** You must verify the deliverable close to real user with all possible tools, e.g. browser automation tools, API testing tools, CLI tools, etc.
 
@@ -162,7 +156,7 @@ For example, if you are working on a web app and browser automation tools are av
 - Skip visual verification if applicable
 - Mark passed without thorough verification
 
-## STEP 7: Mark Deliverable as Passed (CRITICAL)
+## STEP 8: Mark Deliverable as Passed (CRITICAL)
 
 **BEFORE marking passed, you MUST verify EACH acceptance criterion individually:**
 
@@ -228,9 +222,9 @@ Only after exhausting alternatives should you mark the deliverable as `blocked`.
 
 Never modify or delete deliverables.
 
-**After marking passed:** Proceed immediately to STEP 8-10 to commit, update notes, and end this session. Do NOT return to STEP 4 to select another deliverable.
+**After marking passed:** Proceed immediately to STEP 9-11 to commit, update notes, and end this session. Do NOT return to STEP 5 to select another deliverable.
 
-## STEP 8: Commit Work (MANDATORY)
+## STEP 9: Commit Work (MANDATORY)
 
 **You MUST commit after marking each deliverable as passed.** Make a conventional commit to explain why you did the work, avoid mentioning deliverable IDs in commit messages.
 
@@ -251,7 +245,7 @@ git commit -m "feat: make user login form functional with validation and tests
 
 Keep commits focused, concise, and small enough to understand the purpose of the changes. No sensitive or temporary files should be committed.
 
-## STEP 9: Update Notes
+## STEP 10: Update Notes
 
 Update `.autonoe-note.md` with helpful information for handing off to the next agent. Include:
 
@@ -261,7 +255,7 @@ Update `.autonoe-note.md` with helpful information for handing off to the next a
 - Next deliverable ID to work on (only ONE, based on priority order in status.json)
 - Current status of the project (e.g. 50% deliverables passed, all unit tests passing, etc.)
 
-## STEP 10: End Session
+## STEP 11: End Session
 
 **Before ending, ensure you have:**
 
@@ -296,8 +290,8 @@ Ensure no breaking features or incomplete work should be left behind. The next s
 - All features works end-to-end
 - Fast, responsive, professional
 
-**You have unlimited time.** Take as long as needed to get it right. The most important thing is leave the codebase in a clean state before ending the session. (see STEP 10) Less is more. Focus on quality over speed.
+**You have unlimited time.** Take as long as needed to get it right. The most important thing is leave the codebase in a clean state before ending the session. (see STEP 11) Less is more. Focus on quality over speed.
 
 ---
 
-Starting from STEP 1. (Get your bearings) and proceed through the steps methodically.
+Starting from STEP 1. (Identify Available Skills) and proceed through the steps methodically.
