@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.8.0](https://github.com/elct9620/autonoe/compare/core-v0.7.1...core-v0.8.0) (2026-01-21)
+
+
+### Features
+
+* **core:** add Skills-first principle to agent instructions ([97c9e91](https://github.com/elct9620/autonoe/commit/97c9e9124f1b6ad4f5874ce4828aaef826988072))
+* **core:** integrate Skills into implementation and verification workflows ([15ed38c](https://github.com/elct9620/autonoe/commit/15ed38c22559c74c708b523f2c4ec2d0f6375b3e))
+* **core:** prioritize framework conventions for dev script setup ([19cef2e](https://github.com/elct9620/autonoe/commit/19cef2e7a5120d0827b441d5e99d885ca90b9bb9))
+* **core:** replace deliverable types with structured rubric ([3111c5f](https://github.com/elct9620/autonoe/commit/3111c5ff5159fcfa794265c5380377c54e1d00fe))
+
+
+### Bug Fixes
+
+* **core:** add deliverable independence principle to prevent sequential chains ([ff39946](https://github.com/elct9620/autonoe/commit/ff399460be4401127df0127c2d5be0cfd75e76c7))
+* **core:** clarify initializer to create placeholder files only ([6c1c28d](https://github.com/elct9620/autonoe/commit/6c1c28de74a8302bef7197767e434b00b823dac7))
+* **core:** clarify one deliverable means single ID not a group ([5e06413](https://github.com/elct9620/autonoe/commit/5e06413d91d41468e982af7ebd2ec80a3c88a050))
+* **core:** clarify verification target in coding instructions ([0db01b8](https://github.com/elct9620/autonoe/commit/0db01b8a1b2983294d02878f7327231f598a9c57))
+* **core:** distinguish structure from implementation in initializer ([46d5974](https://github.com/elct9620/autonoe/commit/46d5974e1fe318341d8093843b4063a335ed6d90))
+* **core:** enforce single deliverable focus after reading notes ([c59edf5](https://github.com/elct9620/autonoe/commit/c59edf559783b92e25995d0615843240f023ebdd))
+* **core:** remove built-in Playwright MCP from codebase ([36f9ed0](https://github.com/elct9620/autonoe/commit/36f9ed0dade35b46a233b94675df565ea1195563))
+* **core:** resolve session goal contradiction and clarify step flow ([9aae8fd](https://github.com/elct9620/autonoe/commit/9aae8fdfc9e2b4648f68ec32e528d4834a52e0b6))
+* **core:** sync one deliverable definition in initializer ([ee21add](https://github.com/elct9620/autonoe/commit/ee21add5e8cc2fade4c3507fbbee55d8978dc0b0))
+
 ## [0.7.1](https://github.com/elct9620/autonoe/compare/core-v0.7.0...core-v0.7.1) (2026-01-18)
 
 

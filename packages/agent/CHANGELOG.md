@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.6](https://github.com/elct9620/autonoe/compare/agent-v0.4.5...agent-v0.4.6) (2026-01-21)
+
+
+### Bug Fixes
+
+* **core:** remove built-in Playwright MCP from codebase ([36f9ed0](https://github.com/elct9620/autonoe/commit/36f9ed0dade35b46a233b94675df565ea1195563))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @autonoe/core bumped to 0.8.0
+
 ## [0.4.5](https://github.com/elct9620/autonoe/compare/agent-v0.4.4...agent-v0.4.5) (2026-01-18)
 
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.8.0](https://github.com/elct9620/autonoe/compare/cli-v0.7.1...cli-v0.8.0) (2026-01-21)
+
+
+### Features
+
+* **cli:** restore Playwright system dependencies in Docker images ([f8633f5](https://github.com/elct9620/autonoe/commit/f8633f58cce38818cffa8f29e6b339d59a34d2cb))
+
+
+### Bug Fixes
+
+* **cli:** change --plan-model short option from -pm to -P ([9c834be](https://github.com/elct9620/autonoe/commit/9c834be31119f69abd59feb45fbcb83cc2bfd434))
+* **core:** remove built-in Playwright MCP from codebase ([36f9ed0](https://github.com/elct9620/autonoe/commit/36f9ed0dade35b46a233b94675df565ea1195563))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @autonoe/core bumped to 0.8.0
+    * @autonoe/agent bumped to 0.4.6
+
 ## [0.7.1](https://github.com/elct9620/autonoe/compare/cli-v0.7.0...cli-v0.7.1) (2026-01-18)
 
 
