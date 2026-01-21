@@ -76,12 +76,30 @@ If you find yourself creating deliverables that form a sequential chain where ea
 - Order deliverables by priority, the foundational tasks should come first, followed by features that depend on them
 - Cover every deliverable in specification exhaustively, ensuring no part is left unaddressed
 
-**Deliverable Types:**
+**Deliverable Rubric:**
 
-- Functional Features: Features that deliver user value as described in `SPEC.md`, e.g. `BE`, `FE`, `API`, etc.
-- Styling Tasks: UI/UX improvements, responsive design, accessibility features, `e.g. `UI`, `UX`, `STYLE`, etc.
+Before creating a deliverable, verify it passes ALL criteria:
 
-The chore tasks like setup, configuration, documentation, testing infrastructure NOT added as deliverables. The testing and verification should be part of each deliverable's acceptance criteria not separate deliverables.
+| Criterion    | Question                                                                        | Y/N |
+| ------------ | ------------------------------------------------------------------------------- | --- |
+| User Value   | Does this deliver value that end users can directly use or observe?             |     |
+| User Impact  | Would users notice a difference if this was missing or broken?                  |     |
+| Independence | Can this be verified independently without completing other deliverables first? |     |
+
+- ALL Y → Create as deliverable
+- ANY N → Development activity, integrate into related deliverable's acceptance criteria
+
+**Applies to:**
+
+- Functional features (user-facing functionality)
+- Non-functional requirements when user-observable (performance, accessibility)
+- Styling and UI/UX improvements
+
+**Does NOT apply (development activities):**
+
+- Testing infrastructure (include verification in acceptance criteria)
+- Setup and configuration (part of initialization, STEP 3-4)
+- Internal refactoring (no user-visible change)
 
 **Acceptance Criteria Quality:**
 
