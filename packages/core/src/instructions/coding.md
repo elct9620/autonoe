@@ -80,6 +80,7 @@ Otherwise, manually start any required services and document the process.
 
 For example, you are working on a web app, you might:
 
+- Use Skills from STEP 1 to verify if applicable
 - Run unit tests: `npm test` or `pytest`
 - Manually verify UI features in the browser step by step following acceptance criteria
 
@@ -120,6 +121,7 @@ To make a progress on the chosen deliverable, process thoroughly:
 
 **TIPS:**
 
+- Use Skills from STEP 1 for implementation tasks if applicable (e.g., refactoring, spec alignment)
 - Use programming languages, frameworks, and libraries best suited for the task
 - Use `uv add`, `bundle add`, `npm install`, or equivalent commands to add dependencies correctly
 - Use `make`, `bundle exec`, `npm run`, or equivalent commands to run predefined tasks
@@ -131,7 +133,7 @@ To make a progress on the chosen deliverable, process thoroughly:
 
 ## STEP 7: Verify With Tools
 
-**CRITICAL:** You must verify the deliverable close to real user with all possible tools, e.g. browser automation tools, API testing tools, CLI tools, etc.
+**CRITICAL:** You must verify the deliverable close to real user with all possible tools, e.g. Skills, browser automation tools, API testing tools, CLI tools, etc.
 
 **PREFER Browser Automation:** When verifying web UI deliverables, you MUST use browser automation tools as the PRIMARY verification method. Check if the project has its own browser automation setup (e.g., Playwright, Puppeteer, Cypress tests) and use them. API/curl testing is acceptable for pure API deliverables, but NOT a replacement for E2E browser verification on UI deliverables.
 
