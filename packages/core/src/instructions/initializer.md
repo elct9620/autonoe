@@ -134,15 +134,16 @@ Focus on `SPEC.md` requirements and best practices for the chosen technology sta
 
 ## STEP 4: Create dev script
 
-Based on the technology stack outlined in `SPEC.md`, set up a script to make the development environment ready for coding and testing.
+Based on the technology stack in `SPEC.md` and the current project state (e.g., existing package.json, Gemfile, or other configuration files), set up a script that prepares and starts the development environment. After running `bin/dev.sh`, developers can immediately start working without additional manual steps.
 
 - Install system-level tools if needed (e.g., `apt install` for dependencies)
 - Install project dependencies using package manager (e.g., npm install, bundle install, uv sync)
 - Start servers or services needed for development
 - Print helpful information about how to access the running application or services
+- Start or launch the application — the final command should make the application ready for use
 - For non-standard setups, make script can interact with application directly, e.g. alias for CLI applications entrypoint, simple http server for static sites, etc.
 
-Create script inside `bin/dev.sh` with executable permissions. Or use framework-specific conventions if applicable (e.g. `bin/dev` for Ruby on Rails).
+If the framework provides a standard dev script (e.g., `bin/dev` for Ruby on Rails), use it directly. Otherwise, create `bin/dev.sh` with executable permissions.
 
 **Example `bin/dev.sh`:**
 
@@ -166,12 +167,7 @@ echo "Starting development server..."
 
 # Start application
 echo "Starting application..."
-# e.g. uv run dev / rails s / npm start
-# ...
-echo "Development environment is ready!"
-echo "Access the application at http://localhost:3000"
-# Helpful info or tips
-# ...
+# uv run dev / rails s / npm start / python main.py
 ```
 
 ## STEP 5: Initialize Git
