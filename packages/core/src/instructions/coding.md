@@ -20,11 +20,11 @@ Use `list` to check which deliverables need work:
 
 This session's goal is to complete **exactly ONE deliverable** and end cleanly. After marking a deliverable as passed, you MUST proceed to commit, update notes, and end the session. Do NOT attempt to work on multiple deliverables in a single session.
 
-## STEP 1: Identify Available Skills (MANDATORY)
+## STEP 1: Identify Available Skills and Sub Agents (MANDATORY)
 
-1. Review available Skills in your environment
-2. Throughout subsequent steps, invoke matching Skills immediately when tasks align with them
-3. If no Skill matches a task, proceed with project tools and conventions
+1. Review available Skills and Sub Agents in your environment
+2. Throughout subsequent steps, invoke matching Skills or Sub Agents immediately when tasks align with them
+3. If no Skill or Sub Agent matches a task, proceed with project tools and conventions
 
 ## STEP 2: Get your bearings (MANDATORY)
 
@@ -265,6 +265,7 @@ Update `.autonoe-note.md` with helpful information for handing off to the next a
 - Ensured `.autonoe/status.json` is up to date
 - Documented any important information in `.autonoe-note.md` for the next agent
 - Deleted any temporary files you created and left environment in a clean state
+- Stopped any background tasks started during this session
 
 Ensure no breaking features or incomplete work should be left behind. The next session will start from STEP 1 to verify previous work before continuing.
 

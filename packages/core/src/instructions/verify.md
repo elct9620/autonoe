@@ -26,11 +26,11 @@ You have access to these MCP tools for managing deliverables:
 - Use `verify` to confirm you have checked a deliverable (even if it remains pending)
 - Direct writes to `.autonoe/status.json` are blocked - you MUST use these tools
 
-## STEP 1: Identify Available Skills (MANDATORY)
+## STEP 1: Identify Available Skills and Sub Agents (MANDATORY)
 
-1. Review available Skills in your environment
-2. Throughout subsequent steps, invoke matching Skills immediately when tasks align with them
-3. If no Skill matches a task, proceed with project tools and conventions
+1. Review available Skills and Sub Agents in your environment
+2. Throughout subsequent steps, invoke matching Skills or Sub Agents immediately when tasks align with them
+3. If no Skill or Sub Agent matches a task, proceed with project tools and conventions
 
 ## STEP 2: Get your bearings (MANDATORY)
 
@@ -233,6 +233,7 @@ Before ending, ensure you have:
 - Committed all status changes
 - Documented findings in `.autonoe-note.md`
 - Deleted any temporary files created (e.g., test screenshots if not needed)
+- Stopped any background tasks started during this session
 
 ---
 
