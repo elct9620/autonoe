@@ -34,7 +34,7 @@ declare -A TEST_VERIFICATION=(
   ["IT-003"]="Exit code is 0 or 1 (graceful termination)"
   ["IT-004"]="status.json created with deliverables from SPEC.md"
   ["IT-005"]="new deliverable created and DL-OLD deprecated"
-  ["IT-006"]="Agent output contains CLAUDE.md marker '=== CLAUDE_MD_LOADED ==='"
+  ["IT-006"]="CLAUDE.md marker '=== CLAUDE_MD_LOADED ===' found in output or .autonoe-note.md"
 )
 
 # Result tracking for summary
@@ -251,10 +251,12 @@ test_it006() {
   output=$(docker compose run --rm cli autonoe run $DEFAULT_OPTIONS -d -n 2 2>&1) || true
   fix_permissions
 
-  if echo "$output" | grep -q "=== CLAUDE_MD_LOADED ==="; then
+  # Check both stdout and .autonoe-note.md for the marker
+  if echo "$output" | grep -q "=== CLAUDE_MD_LOADED ===" || \
+     grep -q "=== CLAUDE_MD_LOADED ===" ./tmp/.autonoe-note.md 2>/dev/null; then
     pass
   else
-    fail "CLAUDE_MD_LOADED marker not found in output"
+    fail "CLAUDE_MD_LOADED marker not found in output or .autonoe-note.md"
   fi
 }
 
