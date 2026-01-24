@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/elct9620/autonoe/compare/core-v0.8.0...core-v0.9.0) (2026-01-24)
+
+
+### Features
+
+* **core:** add Sub Agent guidance and background task cleanup to instructions ([f7abffb](https://github.com/elct9620/autonoe/commit/f7abffb4ead7c7f2d84f465e722dcf865a7ca4e3))
+
 ## [0.8.0](https://github.com/elct9620/autonoe/compare/core-v0.7.1...core-v0.8.0) (2026-01-21)
 
 
