@@ -6,6 +6,9 @@ Autonomous coding agent orchestrator powered by Claude's Agent SDK.
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/elct9620/autonoe)
 [![codecov](https://codecov.io/github/elct9620/autonoe/graph/badge.svg?token=A681DA03X2)](https://codecov.io/github/elct9620/autonoe)
 
+> [!CAUTION]
+> Since Anthropic limits OAuth token usage with the Claude Agent SDK, this project is pending for development until alternative solutions are available.
+
 ## Inspiration
 
 This project is inspired by:
