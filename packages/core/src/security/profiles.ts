@@ -44,6 +44,7 @@ export const BASE_READONLY_COMMANDS = new Set([
   // Utility (safe, no state modification)
   'echo',
   'sleep',
+  'timeout',
 ])
 
 /**
