@@ -8,7 +8,7 @@ import {
   type DeliverableStatusCallback,
   type StreamEvent,
 } from '@autonoe/core'
-import { FileDeliverableRepository } from '@autonoe/agent'
+import { FileDeliverableRepository } from '@autonoe/claude-agent'
 import {
   validateRunOptions,
   validateSyncOptions,

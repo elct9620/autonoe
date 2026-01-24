@@ -21,7 +21,7 @@ WORKDIR /app
 # Copy package files
 COPY package.json bun.lock ./
 COPY packages/core/package.json packages/core/
-COPY packages/agent/package.json packages/agent/
+COPY packages/claude-agent/package.json packages/claude-agent/
 COPY apps/cli/package.json apps/cli/
 
 # Install dependencies

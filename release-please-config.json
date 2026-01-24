@@ -8,11 +8,11 @@
       "changelog-path": "CHANGELOG.md",
       "component": "core"
     },
-    "packages/agent": {
+    "packages/claude-agent": {
       "release-type": "node",
-      "package-name": "@autonoe/agent",
+      "package-name": "@autonoe/claude-agent",
       "changelog-path": "CHANGELOG.md",
-      "component": "agent"
+      "component": "claude-agent"
     },
     "apps/cli": {
       "release-type": "node",

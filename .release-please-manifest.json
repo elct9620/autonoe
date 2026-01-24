@@ -1,5 +1,5 @@
 {
   "packages/core": "0.8.0",
-  "packages/agent": "0.4.6",
+  "packages/claude-agent": "0.4.6",
   "apps/cli": "0.8.0"
 }

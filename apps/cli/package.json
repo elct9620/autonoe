@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@autonoe/core": "workspace:*",
-    "@autonoe/agent": "workspace:*",
+    "@autonoe/claude-agent": "workspace:*",
     "cac": "^6.7.14"
   }
 }

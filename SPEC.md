@@ -88,7 +88,7 @@ Autonoe is an autonomous coding agent orchestrator that enables iterative, self-
 │                              Autonoe                                     │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  ┌────────────────┐    ┌────────────────┐   ┌────────────────────────┐  │
-│  │    apps/cli    │───▶│ packages/core  │   │ packages/agent         │  │
+│  │    apps/cli    │───▶│ packages/core  │   │ packages/claude-agent         │  │
 │  │  (Entry Point) │    │ (Orchestrator) │◀──│ (SDK Wrapper)          │  │
 │  └───────┬────────┘    └───────┬────────┘   │                        │  │
 │          │                     │            └───────────┬────────────┘  │
@@ -159,12 +159,12 @@ Package structure follows Clean Architecture (see Section 1.1 for diagram):
 | Presentation | apps/cli | CLI commands, argument parsing, output formatting |
 | Application | packages/core | SessionRunner, orchestration logic |
 | Domain | packages/core | Types, interfaces, business rules |
-| Infrastructure | packages/agent | ClaudeAgentClient, SDK converters |
+| Infrastructure | packages/claude-agent | ClaudeAgentClient, SDK converters |
 
 ### 2.2 Dependency Rule
 
 - `packages/core` has NO external dependencies (pure domain + application)
-- `packages/agent` depends on `@autonoe/core` for types only
+- `packages/claude-agent` depends on `@autonoe/core` for types only
 - `apps/cli` creates infrastructure and injects into application layer
 
 ### 2.3 Domain Model
@@ -835,7 +835,7 @@ See [Security Details - Sync Command](docs/security.md#sync-command-security) fo
 |---------|-------------|
 | root | Manages npm dependencies; child packages use `*` to inherit versions |
 | @autonoe/core | Domain types and application logic (NO external dependencies) |
-| @autonoe/agent | Wraps SDK, implements `AgentClient` interface from core |
+| @autonoe/claude-agent | Wraps SDK, implements `AgentClient` interface from core |
 | @autonoe/cli | Creates `ClaudeAgentClient`, injects into `SessionRunner` |
 
 Package configurations are defined in their respective `package.json` files.

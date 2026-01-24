@@ -13,7 +13,7 @@ import {
 } from '../src/options'
 
 // Mock @autonoe/agent
-vi.mock('@autonoe/agent', () => {
+vi.mock('@autonoe/claude-agent', () => {
   return {
     ClaudeAgentClient: class MockClaudeAgentClient {
       options: any

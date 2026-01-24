@@ -285,7 +285,7 @@ Full repository interface extending reader.
 | ------ | ---------------------------------------------- | ------------------ |
 | save   | `(status: DeliverableStatus) => Promise<void>` | Persist to storage |
 
-Implementation lives in infrastructure layer (`packages/agent`).
+Implementation lives in infrastructure layer (`packages/claude-agent`).
 
 ---
 

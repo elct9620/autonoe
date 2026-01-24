@@ -523,19 +523,19 @@ Docker images disable the sandbox by default (`AUTONOE_NO_SANDBOX=1`) for maximu
 └─────────────────────────────────────────────────────────────────┘
               │                                       │
               ▼                                       ▼
-┌─────────────────────────────────┐  ┌─────────────────────────────────┐
-│       packages/core             │  │  packages/agent                 │
-│  SessionRunner, Session         │  │  ClaudeAgentClient (SDK wrapper)│
-│  BashSecurity, Configuration    │  │  Converters (SDK ↔ Domain)      │
-│  Types (NO external deps)       │  │  Depends on @autonoe/core       │
-└─────────────────────────────────┘  └─────────────────────────────────┘
+┌─────────────────────────────────┐  ┌───────────────────────────────────────┐
+│       packages/core             │  │  packages/claude-agent                │
+│  SessionRunner, Session         │  │  ClaudeAgentClient (SDK wrapper)      │
+│  BashSecurity, Configuration    │  │  Converters (SDK ↔ Domain)            │
+│  Types (NO external deps)       │  │  Depends on @autonoe/core             │
+└─────────────────────────────────┘  └───────────────────────────────────────┘
 ```
 
-| Package          | Description                                                      |
-| ---------------- | ---------------------------------------------------------------- |
-| `@autonoe/cli`   | Entry point, CLI argument parsing                                |
-| `@autonoe/core`  | Domain types, session orchestration (zero external dependencies) |
-| `@autonoe/agent` | Claude Agent SDK wrapper                                         |
+| Package                 | Description                                                      |
+| ----------------------- | ---------------------------------------------------------------- |
+| `@autonoe/cli`          | Entry point, CLI argument parsing                                |
+| `@autonoe/core`         | Domain types, session orchestration (zero external dependencies) |
+| `@autonoe/claude-agent` | Claude Agent SDK wrapper                                         |
 
 ## Development
 

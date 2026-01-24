@@ -15,7 +15,7 @@ import {
   ClaudeAgentClient,
   createDeliverableMcpServer,
   type FileDeliverableRepository,
-} from '@autonoe/agent'
+} from '@autonoe/claude-agent'
 import {
   DEFAULT_CODING_MODEL,
   DEFAULT_PLANNING_MODEL,

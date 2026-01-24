@@ -534,7 +534,7 @@ sessionRunner.run(clientFactory, { onStreamEvent })
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ packages/agent (Infrastructure)                                  │
+│ packages/claude-agent (Infrastructure)                                  │
 ├─────────────────────────────────────────────────────────────────┤
 │ FileDeliverableRepository      │ Implements DeliverableRepository│
 │ createDeliverableMcpServer()   │ SDK MCP Server factory          │

@@ -28,13 +28,13 @@ bun apps/cli/bin/autonoe.ts run
 ```bash
 bun run test                                       # Run all tests
 bun run test --project core                        # Run core package tests
-bun run test --project agent                       # Run agent package tests
+bun run test --project claude-agent                       # Run agent package tests
 bun run test packages/core/tests/session.test.ts   # Run a single test file
-bun run test packages/agent/tests/converters.test.ts  # Agent package single test
+bun run test packages/claude-agent/tests/converters.test.ts  # Agent package single test
 bun run test --coverage                            # Run with coverage report
 ```
 
-Project names: `core`, `agent` (defined in each package's `vitest.config.ts`). Coverage reports are generated in `./coverage/`.
+Project names: `core`, `claude-agent` (defined in each package's `vitest.config.ts`). Coverage reports are generated in `./coverage/`.
 
 ### Integration Tests
 
@@ -65,12 +65,12 @@ Autonoe is a Bun/TypeScript monorepo that orchestrates an autonomous coding agen
 └─────────────────────────────────────────────────────────────────┘
               │                                       │
               ▼                                       ▼
-┌─────────────────────────────────┐  ┌─────────────────────────────────┐
-│       packages/core             │  │  packages/agent                 │
-│  SessionRunner, Session         │  │  ClaudeAgentClient (SDK wrapper)│
-│  BashSecurity, Configuration    │  │  Converters (SDK ↔ Domain)      │
-│  Types (NO external deps)       │  │  Depends on @autonoe/core       │
-└─────────────────────────────────┘  └─────────────────────────────────┘
+┌─────────────────────────────────┐  ┌───────────────────────────────────────┐
+│       packages/core             │  │  packages/claude-agent                │
+│  SessionRunner, Session         │  │  ClaudeAgentClient (SDK wrapper)      │
+│  BashSecurity, Configuration    │  │  Converters (SDK ↔ Domain)            │
+│  Types (NO external deps)       │  │  Depends on @autonoe/core             │
+└─────────────────────────────────┘  └───────────────────────────────────────┘
 ```
 
 **Key flow**: CLI → `SessionRunner.run(factory, logger)` → loop creates `Session` → `client.query()` returns `MessageStream` → process `StreamEvent` discriminated union → terminates when all deliverables pass (or all non-blocked pass)
@@ -79,14 +79,14 @@ Autonoe is a Bun/TypeScript monorepo that orchestrates an autonomous coding agen
 
 - `@autonoe/cli` - Entry point, argument parsing with CAC
 - `@autonoe/core` - Session orchestration, domain types, security hooks (NO external deps)
-- `@autonoe/agent` - SDK wrapper implementing `AgentClient` interface
+- `@autonoe/claude-agent` - SDK wrapper implementing `AgentClient` interface
 
 ### Dependency Rule
 
 ```
 apps/cli
     ├── @autonoe/core (types, SessionRunner)
-    └── @autonoe/agent (ClaudeAgentClient)
+    └── @autonoe/claude-agent (ClaudeAgentClient)
             └── @autonoe/core (types only)
 ```
 
@@ -130,7 +130,7 @@ Conventional commits 的 scope 會決定 Release Please 觸發哪個套件的版
 | Scope | Package | Path |
 |-------|---------|------|
 | `core` | @autonoe/core | packages/core |
-| `agent` | @autonoe/agent | packages/agent |
+| `claude-agent` | @autonoe/claude-agent | packages/claude-agent |
 | `cli` | @autonoe/cli | apps/cli |
 
 ### Examples
@@ -139,7 +139,7 @@ Conventional commits 的 scope 會決定 Release Please 觸發哪個套件的版
 # Triggers @autonoe/core release
 feat(core): add new session state machine
 
-# Triggers @autonoe/agent release
+# Triggers @autonoe/claude-agent release
 fix(agent): handle SDK timeout errors
 
 # Triggers @autonoe/cli release
@@ -189,8 +189,8 @@ See `SPEC.md` Section 6 for bash command allowlist and validation rules.
 | `packages/core/src/duration.ts` | Human-readable duration formatting |
 | `packages/core/src/deliverableService.ts` | Deliverable CRUD operations |
 | `packages/core/src/deliverableStatus.ts` | DeliverableStatus types and repository interface |
-| `packages/agent/src/claudeAgentClient.ts` | SDK wrapper implementation |
-| `packages/agent/src/converters.ts` | SDK ↔ Domain type conversions |
+| `packages/claude-agent/src/claudeAgentClient.ts` | SDK wrapper implementation |
+| `packages/claude-agent/src/converters.ts` | SDK ↔ Domain type conversions |
 | `apps/cli/bin/autonoe.ts` | CLI entry point |
 | `apps/cli/src/commandHandler.ts` | Command handler with DI pattern |
 | `apps/cli/src/presenter.ts` | Console output coordination (Log + Activity) |

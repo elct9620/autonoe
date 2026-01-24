@@ -20,7 +20,7 @@ import {
 
 // Mock delay for testing - resolves immediately
 const mockDelay: Delay = async () => {}
-import { FileDeliverableRepository } from '@autonoe/agent'
+import { FileDeliverableRepository } from '@autonoe/claude-agent'
 import {
   CommandHandler,
   VERSION,

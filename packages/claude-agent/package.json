@@ -1,5 +1,5 @@
 {
-  "name": "@autonoe/agent",
+  "name": "@autonoe/claude-agent",
   "version": "0.4.6",
   "license": "Apache-2.0",
   "type": "module",

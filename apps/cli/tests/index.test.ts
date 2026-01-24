@@ -26,7 +26,7 @@ vi.mock('../src/consolePresenter', () => {
 })
 
 // Mock @autonoe/agent to avoid SDK calls
-vi.mock('@autonoe/agent', () => {
+vi.mock('@autonoe/claude-agent', () => {
   return {
     ClaudeAgentClient: class MockClaudeAgentClient {
       options: any
