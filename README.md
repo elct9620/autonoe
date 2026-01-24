@@ -11,8 +11,7 @@ Autonomous coding agent orchestrator powered by Claude's Agent SDK.
 
 > [!NOTE]
 > After clarify with Claude's Fin AI Assistant, user should install Claude Code it's self and the project should not depend on Agent SDK which is allowed as a third-party tool.
-> This tool will redesign to fully remove the dependency on Claude Agent SDK and no pre-built docker images will be provided.
-> The identy of this project will be changed to a task manager for autonomous tasks using Claude Code.
+> Currently, pure Claude Code integration is evaluating which may not available due to `claude -p` has limited features compared to SDK.
 
 ## Inspiration
 
