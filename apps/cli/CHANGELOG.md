@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.0](https://github.com/elct9620/autonoe/compare/cli-v0.8.0...cli-v1.0.0) (2026-01-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **claude-agent:** Package renamed from @autonoe/agent to @autonoe/claude-agent. Users must update their imports.
+
+### Code Refactoring
+
+* **claude-agent:** rename package from @autonoe/agent to @autonoe/claude-agent ([ff7afa4](https://github.com/elct9620/autonoe/commit/ff7afa4531d05807d78cc372ae4b745d0afd99bd))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @autonoe/core bumped to 0.9.0
+    * @autonoe/claude-agent bumped to 1.0.0
+
 ## [0.8.0](https://github.com/elct9620/autonoe/compare/cli-v0.7.1...cli-v0.8.0) (2026-01-21)
 
 
