@@ -49,11 +49,11 @@ cat SPEC.md
 # 4. Read deliverables status to see all work
 cat .autonoe/status.json | head -50
 
-# 5. Read notes from previous sessions if available
-cat .autonoe-note.md || echo "No notes found"
-
-# 6. Check recent git history
+# 5. Check git history for recent progress (primary source for understanding past work)
 git log --oneline -20
+
+# 6. Read handoff notes from previous session if available
+cat .autonoe-note.md || echo "No handoff notes found"
 
 # 7. Count remaining pending deliverables
 cat .autonoe/status.json | grep '"passed": false' | wc -l
@@ -214,12 +214,14 @@ git commit -m "chore: verify deliverable status
 
 ## STEP 8: Update Notes
 
-Update `.autonoe-note.md` with verification results:
+**Replace** `.autonoe-note.md` with handoff information for the coding session. This file is replaced each session, not appended. Use git log to understand verification history.
+
+Include:
 
 - Which deliverables were verified and their results
 - Evidence collected (test results, screenshots paths)
 - Any issues discovered during verification
-- Recommendations for the coding session
+- Recommended next deliverable ID to work on (next priority after verified ones)
 
 ## STEP 9: Continue or End
 

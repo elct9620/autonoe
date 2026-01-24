@@ -43,18 +43,19 @@ cat SPEC.md
 # 4. Read deliverables status to see all work
 cat .autonoe/status.json | head -50
 
-# 5. Read notes from previous agents if available
-cat .autonoe-note.md || echo "No notes found"
+# 5. Check git history for recent progress (primary source for understanding past work)
+git log --oneline -20
+
+# 6. Read handoff notes from previous session if available
+cat .autonoe-note.md || echo "No handoff notes found"
 ```
 
 **NOTE:** The notes may mention multiple tasks or priorities. Remember: you will only work on ONE deliverable this session. Use the notes to understand context, not as a task list.
 
 ```bash
-# 6. Check recent git history
-git log --oneline -20
-
 # 7. Count remaining acceptance criteria
 cat .autonoe/status.json | grep '"passed": false' | wc -l
+
 ```
 
 Understand the `SPEC.md` is critical, it contains the full requirements for the project you are building.
@@ -249,7 +250,9 @@ Keep commits focused, concise, and small enough to understand the purpose of the
 
 ## STEP 10: Update Notes
 
-Update `.autonoe-note.md` with helpful information for handing off to the next agent. Include:
+**Replace** `.autonoe-note.md` with handoff information for the next agent. This file is replaced each session, not appended. Use git log to understand past progress.
+
+Include:
 
 - What you accomplished this session
 - Which acceptance criteria were completed
