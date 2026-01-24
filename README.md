@@ -24,9 +24,9 @@ Autonoe builds on these concepts by adding:
 
 ### Prerequisites
 
-**Default (Recommended):** Uses your Claude Code subscription. Requires [Claude Code](https://claude.ai/code) to be installed and authenticated.
+Set `ANTHROPIC_API_KEY` environment variable with your API key. See [Claude Agent SDK documentation](https://github.com/anthropics/claude-agent-sdk) for details.
 
-**Alternative:** Use an API key by setting `ANTHROPIC_API_KEY` environment variable. See [Claude Agent SDK documentation](https://github.com/anthropics/claude-agent-sdk) for details.
+> **Note:** Per [Anthropic's Commercial Terms](https://www.anthropic.com/legal/commercial-terms), using Claude Code OAuth tokens with the Claude Agent SDK is not permitted. You must use an API key.
 
 ### Installation
 
@@ -63,7 +63,7 @@ services:
       - .:/workspace
     working_dir: /workspace
     environment:
-      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
 ```
 
 ### Usage
@@ -113,7 +113,7 @@ services:
       - .:/workspace
     working_dir: /workspace
     environment:
-      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
 ```
 
 ### Custom Image with Additional Tools
@@ -136,7 +136,7 @@ services:
       - .:/workspace
     working_dir: /workspace
     environment:
-      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
 ```
 
 2. Create `.autonoe/agent.json` to allow the new command:
@@ -179,7 +179,7 @@ services:
       - /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock
     working_dir: /workspace
     environment:
-      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       SSH_AUTH_SOCK: /run/host-services/ssh-auth.sock
 ```
 
@@ -187,15 +187,14 @@ This mounts the host's SSH agent socket (macOS Docker Desktop) and a custom `.gi
 
 ### Authentication
 
-| Variable                  | Description                                  |
-| ------------------------- | -------------------------------------------- |
-| `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code subscription token (recommended) |
-| `ANTHROPIC_API_KEY`       | API key for direct billing                   |
+| Variable            | Description  |
+| ------------------- | ------------ |
+| `ANTHROPIC_API_KEY` | Your API key |
 
 Create a `.env` file (Docker Compose loads it automatically):
 
 ```bash
-CLAUDE_CODE_OAUTH_TOKEN=your-oauth-token
+ANTHROPIC_API_KEY=your-api-key
 ```
 
 ## CLI Reference
