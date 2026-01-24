@@ -9,6 +9,11 @@ Autonomous coding agent orchestrator powered by Claude's Agent SDK.
 > [!CAUTION]
 > Since Anthropic limits OAuth token usage with the Claude Agent SDK, this project is pending for development until alternative solutions are available.
 
+> [!NOTE]
+> After clarify with Claude's Fin AI Assistant, user should install Claude Code it's self and the project should not depend on Agent SDK which is allowed as a third-party tool.
+> This tool will redesign to fully remove the dependency on Claude Agent SDK and no pre-built docker images will be provided.
+> The identy of this project will be changed to a task manager for autonomous tasks using Claude Code.
+
 ## Inspiration
 
 This project is inspired by:
