@@ -767,7 +767,7 @@ Base security capabilities shared by all execution modes:
 | Text Processing | tree, sort, diff, date, printf, uniq, cut, tr, tac, jq |
 | Git | git |
 | Process Query | which, ps, lsof |
-| Utility | echo, sleep |
+| Utility | echo, sleep, timeout |
 
 See [Security Details - Base Security](docs/security.md#base-security) for validation flow and command chain handling.
 

@@ -39,7 +39,7 @@ Base commands are all read-only and available in all modes (run and sync):
 | Text Processing | tree, sort, diff, date, printf, uniq, cut, tr, tac, jq |
 | Git             | git                                                    |
 | Process Query   | which, ps, lsof                                        |
-| Utility         | echo, sleep                                            |
+| Utility         | echo, sleep, timeout                                   |
 
 **Run Command Extensions** - Only available in `run` mode:
 
