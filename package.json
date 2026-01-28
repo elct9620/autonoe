@@ -20,7 +20,7 @@
     "@types/bun": "latest",
     "@vitest/coverage-v8": "^4.0.17",
     "prettier": "^3.8.0",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.18"
   },
   "peerDependencies": {
     "typescript": "^5"
